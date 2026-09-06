@@ -31,6 +31,22 @@ python3 -B tests/test_runtime.py
 Runtime behavior depends on the source game's CodeX dialect. Unsupported
 opcodes and rendering modes must be implemented and verified per game.
 
-The `forest` branch contains a Forest-specific generator that consumes assets
-extracted from a legally obtained copy of Forest and writes a separate Ren'Py
-project.
+## Forest branch
+
+The `forest` branch contains a Forest-specific generator. It never downloads or
+bundles proprietary Forest data. Prepare an extracted resource directory with
+at least `scr/`, `grps/`, the other `grp*` directories, and converted OGG audio;
+create an empty Ren'Py project; then run:
+
+```bash
+python3 forest/build_forest_rscript.py \
+    /path/to/forest-resources /path/to/renpy-project
+```
+
+The generator requires Python 3, Pillow, `ffmpeg` for MPG conversion, and the
+experimental Forest GSC decoder included on this branch. Run LiarsoftTool's
+recursive unpack/conversion first when the resource tree still contains packed
+archives, WCG/LIM images, or embedded-Ogg WAV files.
+
+The bundled Noto Sans CJK JP font is distributed under the SIL Open Font
+License 1.1 in `forest/fonts/NotoSans.txt`.
