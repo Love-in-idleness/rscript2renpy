@@ -3,6 +3,9 @@
 Reusable Ren'Py runtime for scripts lowered from Liar-soft/raiL-soft CodeX
 RScript games.
 
+The current experimental release is **0.1.0**. Runtime behavior depends on the
+source game's CodeX dialect, so each new game still requires verification.
+
 This repository contains engine-side support only. It does not contain game
 scripts, images, audio, movies, fonts, executables, or other proprietary game
 data.
@@ -34,3 +37,9 @@ opcodes and rendering modes must be implemented and verified per game.
 The `forest` branch contains a Forest-specific generator that consumes assets
 extracted from a legally obtained copy of Forest and writes a separate Ren'Py
 project.
+
+## License
+
+Project code is available under the [MIT License](LICENSE). See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for incorporated code and the
+separately licensed font on the `forest` branch.
