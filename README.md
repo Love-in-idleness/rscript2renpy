@@ -13,7 +13,7 @@ data.
 python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
-The command copies the eight runtime modules into the project's `game/`
+The command copies the sixteen runtime modules into the project's `game/`
 directory. Existing different files are not overwritten unless `--force` is
 specified.
 
