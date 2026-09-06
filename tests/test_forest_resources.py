@@ -28,6 +28,5 @@ def main() -> None:
         total += len(instructions)
     print("OK: %d GSC files / %d instructions" % (len(files), total))
 
-
 if __name__ == "__main__":
     main()

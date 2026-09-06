@@ -48,5 +48,10 @@ experimental Forest GSC decoder included on this branch. Run LiarsoftTool's
 recursive unpack/conversion first when the resource tree still contains packed
 archives, WCG/LIM images, or embedded-Ogg WAV files.
 
+The generator only reads the directory supplied by the user. It expects
+`scr/*.gsc`, PNG files under the `grp*` directories, OGG files under `wav/`,
+`bgm/`, and `voice/`, and `mov/0001` plus `mov/0002` in MPG or WebM form. It
+does not locate, extract, download, or modify an installed copy of the game.
+
 The bundled Noto Sans CJK JP font is distributed under the SIL Open Font
 License 1.1 in `forest/fonts/NotoSans.txt`.

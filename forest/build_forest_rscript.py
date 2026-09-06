@@ -928,6 +928,36 @@ def convert_movies(source: Path, target: Path) -> None:
                 temporary.unlink()
 
 
+def validate_inputs(root: Path, game: Path) -> None:
+    required_dirs = (
+        "scr", "grpe", "grpo", "grpo_bg", "grpo_bu", "grpo_ci",
+        "grpo_f", "grps", "wav", "bgm", "voice", "mov",
+    )
+    missing = [str(root / name) for name in required_dirs
+               if not (root / name).is_dir()]
+    required_project_files = ("gui.rpy", "audio.rpy", "character.rpy")
+    missing.extend(str(game / name) for name in required_project_files
+                   if not (game / name).is_file())
+    required_assets = (
+        root / "grpe" / "9001.png",
+        root / "bgm" / "Track01.ogg",
+    )
+    missing.extend(str(path) for path in required_assets if not path.is_file())
+    if not list((root / "scr").glob("*.gsc")):
+        missing.append(str(root / "scr" / "*.gsc"))
+    for folder in ("wav", "voice"):
+        if not list((root / folder).glob("*.ogg")):
+            missing.append(str(root / folder / "*.ogg"))
+    for movie in ("0001", "0002"):
+        if not any((root / "mov" / (movie + suffix)).is_file()
+                   for suffix in (".mpg", ".MPG", ".webm")):
+            missing.append(str(root / "mov" / (movie + ".{mpg,webm}")))
+    if missing:
+        raise FileNotFoundError(
+            "resources must be unpacked and converted first; missing:\n- " +
+            "\n- ".join(missing))
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print("usage: build_forest_rscript.py <extracted-forest-resources> "
@@ -939,10 +969,7 @@ def main(argv: list[str]) -> int:
     runtime = here / "runtime"
     font_source = here / "forest" / "fonts"
     game = target / "game"
-    missing = [path for path in (root / "scr", root / "grps", game)
-               if not path.is_dir()]
-    if missing:
-        raise FileNotFoundError("missing required directory: %s" % missing[0])
+    validate_inputs(root, game)
     scenario = game / "scenario"
     scenario.mkdir(parents=True, exist_ok=True)
     for cache in scenario.glob("*.rpyc"):
