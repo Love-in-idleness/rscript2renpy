@@ -19,8 +19,7 @@ def main() -> None:
                      "voice", "mov"):
             (resources / name).mkdir(parents=True)
         game.mkdir(parents=True)
-        for name in ("gui.rpy", "audio.rpy", "character.rpy"):
-            (game / name).write_text("", encoding="utf-8")
+        (game / "gui.rpy").write_text("", encoding="utf-8")
         for path in (resources / "scr" / "0000.gsc",
                      resources / "grpe" / "9001.png",
                      resources / "bgm" / "Track01.ogg",

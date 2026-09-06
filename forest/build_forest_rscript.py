@@ -635,7 +635,6 @@ screen say(who, what, center=False):
             color "#ffffff"
             xpos text_indent + 1
             ypos 8
-            xmaximum 768 - text_indent
             xsize 768 - text_indent
             text_align (0.5 if center else 0.0)
             line_spacing 7
@@ -935,7 +934,7 @@ def validate_inputs(root: Path, game: Path) -> None:
     )
     missing = [str(root / name) for name in required_dirs
                if not (root / name).is_dir()]
-    required_project_files = ("gui.rpy", "audio.rpy", "character.rpy")
+    required_project_files = ("gui.rpy",)
     missing.extend(str(game / name) for name in required_project_files
                    if not (game / name).is_file())
     required_assets = (
