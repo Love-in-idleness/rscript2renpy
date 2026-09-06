@@ -3,6 +3,9 @@
 Reusable Ren'Py runtime for scripts lowered from Liar-soft/raiL-soft CodeX
 RScript games.
 
+The current experimental release is **0.1.0**. Runtime behavior depends on the
+source game's CodeX dialect, so each new game still requires verification.
+
 This repository contains engine-side support only. It does not contain game
 scripts, images, audio, movies, fonts, executables, or other proprietary game
 data.
@@ -53,5 +56,11 @@ The generator only reads the directory supplied by the user. It expects
 `bgm/`, and `voice/`, and `mov/0001` plus `mov/0002` in MPG or WebM form. It
 does not locate, extract, download, or modify an installed copy of the game.
 
-The bundled Noto Sans CJK JP font is distributed under the SIL Open Font
+The Noto Sans CJK JP font on this branch is distributed under the SIL Open Font
 License 1.1 in `forest/fonts/NotoSans.txt`.
+
+## License
+
+Project code is available under the [MIT License](LICENSE). See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for incorporated code and the
+separately licensed font on the `forest` branch.
