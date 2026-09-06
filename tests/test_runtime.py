@@ -17,6 +17,7 @@ def main() -> None:
     for marker in ("class RScriptReg", "renpy.register_statement",
                    "def parse_txcls", "renpy.register_shader"):
         assert marker in combined
+    assert "xalign gui.dialogue_text_xalign\n            xpos gui.dialogue_xpos" not in combined
 
     with TemporaryDirectory() as temporary:
         project = Path(temporary)
