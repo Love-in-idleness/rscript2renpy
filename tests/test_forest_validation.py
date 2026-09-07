@@ -20,8 +20,9 @@ def main() -> None:
             (resources / name).mkdir(parents=True)
         game.mkdir(parents=True)
         (game / "gui.rpy").write_text("", encoding="utf-8")
-        for path in (resources / "scr" / "0000.gsc",
-                     resources / "grpe" / "9001.png",
+        (resources / "scr" / "0000.tsc").write_text(
+            ";@gsc-structure-v1 size=0 fnv1a64=0\n", encoding="utf-8")
+        for path in (resources / "grpe" / "9001.png",
                      resources / "bgm" / "Track01.ogg",
                      resources / "wav" / "0001.ogg",
                      resources / "voice" / "0001.ogg",
@@ -29,10 +30,17 @@ def main() -> None:
                      resources / "mov" / "0002.mpg"):
             path.write_bytes(b"fixture")
         validate_inputs(resources, game)
+        (resources / "scr" / "0000.tsc").unlink()
+        (resources / "scr" / "0000.gsc").write_bytes(b"not accepted")
+        try:
+            validate_inputs(resources, game)
+        except FileNotFoundError as error:
+            assert "scr/*.tsc" in str(error)
+        else:
+            raise AssertionError("GSC-only input was accepted")
+        (resources / "scr" / "0000.gsc").unlink()
         (resources / "scr" / "0000.tsc").write_text(
             ";@gsc-structure-v1 size=0 fnv1a64=0\n", encoding="utf-8")
-        (resources / "scr" / "0000.gsc").unlink()
-        validate_inputs(resources, game)
         (resources / "voice" / "0001.ogg").unlink()
         try:
             validate_inputs(resources, game)

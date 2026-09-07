@@ -5,12 +5,12 @@
 本项目把 Liar-soft 2004 年作品《Forest》从 CodeX RScript 运行环境迁移到 Ren'Py 7。最终方案不是把剧本手工改写为普通 Ren'Py 脚本，而是：
 
 1. 用 LiarsoftTool 2.0 将原版 `scr/*.gsc` 转成结构化 `scr/*.tsc`；
-2. 由生成器调用 LiarsoftTool 恢复指令结构，并按 offset 应用 TSC 正文修改；
-3. 将指令、表达式、跳转和文本降级为接近原 RScript 语义的 `.rpy`；
+2. 由生成器直接读取 TSC 的结构化元数据和正文修改；
+3. 将其中的指令、表达式、跳转和文本降级为接近原 RScript 语义的 `.rpy`；
 4. 在 Ren'Py 中实现一层 RScript 兼容运行时；
 5. 直接复用解包并转换后的原版图像、音频和视频资源。
 
-当前 103 个 GSC 文件、38,397 条指令均能解析，生成剧本中没有残留的 `unlifted opcode`。PC 版可运行，Android 版可构建；真实设备仍应完成全路线验收。
+当前 103 个 TSC 文件、38,397 条指令均能解析，生成剧本中没有残留的 `unlifted opcode`。PC 版可运行，Android 版可构建；真实设备仍应完成全路线验收。
 
 本次归档版本为 `1.0`。已验证 APK：
 
@@ -21,11 +21,10 @@
 
 ## 2. 目录和职责
 
-- `forest/forest_gsc.py`：Forest 旧式 28 字节头 GSC 的结构解析器。
+- `forest/forest_tsc.py`：LiarsoftTool 2.0 结构化 Forest TSC 读取器。
 - `forest/build_forest_rscript.py`：从原版资源及 TSC 生成完整 Ren'Py 工程。
-- `tests/test_forest_resources.py`：检查全部 GSC 的指令边界。
+- `tests/test_forest_resources.py`：检查全部 TSC 的指令边界。
 - `tests/test_forest_builder.py`：检查生成规则、关键剧情和资源处理回归。
-- `tests/test_liarsofttool2.py`：检查 LiarsoftTool 2.0 TSC 往返及正文编辑。
 - `runtime/`：RScript 的 Ren'Py 通用运行时模板。
 - 用户提供的资源目录：解包、转换后的 Forest 原版资源及 TSC 输入。
 - 用户提供的 Ren'Py 工程：生成出的、可直接运行和打包的工程。
@@ -92,14 +91,15 @@ LIM/WCG 必须先用 LiarsoftTool 解包或转换为 PNG，并保留资源目录
 
 ## 6. 可重复生成与验证
 
-在 LiarsoftTool 仓库根目录执行：
+先用 LiarsoftTool 生成 TSC，然后在 rscript2renpy 仓库根目录执行：
 
 ```bash
-python3 -B tsc/test_forest_gsc.py
-python3 -B tsc/test_forest_rscript.py
-python3 -B tsc/build_forest_rscript.py \
-  res_ft/Forest /home/idleness/Source/renpy/Forest
-/opt/apps/renpy7/renpy.sh /home/idleness/Source/renpy/Forest lint
+liarsofttool -R --unpack-only --gsc-to-tsc /path/to/forest-resources
+python3 -B tests/test_forest_resources.py /path/to/forest-resources
+python3 -B tests/test_forest_builder.py /path/to/forest-resources
+python3 -B forest/build_forest_rscript.py \
+  /path/to/forest-resources /path/to/renpy-project
+/path/to/renpy.sh /path/to/renpy-project lint
 ```
 
 Android 构建：

@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""Lower Forest's verified legacy GSC stream to Jeanne-style rscript RPY."""
+"""Lower LiarsoftTool's structured Forest TSC to Jeanne-style rscript RPY."""
 
 from pathlib import Path
 import argparse
-import os
 import re
 import shutil
 import subprocess
 import sys
-from tempfile import TemporaryDirectory
 
 from PIL import Image
 
-from forest_gsc import E, read_gsc
+from forest_tsc import E, read_tsc
 
 
 COMMANDS = {
@@ -92,71 +90,6 @@ def menu_text(value: str) -> str:
     return re.sub(r"<@(\d+)>", lambda match: "[_r[%s]]" % match.group(1), value)
 
 
-def find_liarsofttool(explicit: str | Path | None = None) -> Path:
-    candidates = []
-    if explicit:
-        candidate = Path(explicit).expanduser()
-        if candidate.is_file():
-            return candidate.resolve()
-        raise FileNotFoundError("LiarsoftTool executable not found: %s" % candidate)
-    if os.environ.get("LIARSOFTTOOL"):
-        candidates.append(Path(os.environ["LIARSOFTTOOL"]).expanduser())
-    for name in ("liarsofttool", "LiarsoftTool", "LiarsoftTool.exe"):
-        found = shutil.which(name)
-        if found:
-            candidates.append(Path(found))
-    source_root = Path(__file__).resolve().parents[2]
-    candidates.extend((
-        source_root / "LiarsoftTool" / "build" / "liarsofttool",
-        source_root / "LiarsoftTool" / "build" / "Release" / "LiarsoftTool.exe",
-    ))
-    for candidate in candidates:
-        if candidate.is_file():
-            return candidate.resolve()
-    raise FileNotFoundError(
-        "LiarsoftTool 2.0 is required for TSC input; pass --liarsofttool PATH "
-        "or set LIARSOFTTOOL")
-
-
-def read_scenario(source: Path, liarsofttool: str | Path | None = None):
-    if source.suffix.lower() == ".gsc":
-        return read_gsc(source), {}
-    if source.suffix.lower() != ".tsc":
-        raise ValueError("unsupported scenario file: %s" % source)
-    executable = find_liarsofttool(liarsofttool)
-    with TemporaryDirectory(prefix="rscript2renpy-") as temporary:
-        restored = Path(temporary) / (source.stem + ".gsc")
-        completed = subprocess.run(
-            [str(executable), "-o", str(restored), str(source)],
-            text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        if completed.returncode or not restored.is_file():
-            detail = completed.stdout.strip()
-            raise RuntimeError(
-                "LiarsoftTool could not restore %s%s" %
-                (source, (":\n" + detail) if detail else ""))
-        return read_gsc(restored), tsc_text_edits(source)
-
-
-def tsc_text_edits(source: Path) -> dict[int, str]:
-    edits = {}
-    pending = None
-    after_structure = False
-    for line in source.read_text(encoding="utf-8").splitlines():
-        if line == ";@gsc-structure-end":
-            after_structure = True
-            continue
-        if not after_structure:
-            continue
-        marker = re.fullmatch(r"; @([0-9a-fA-F]{6})", line)
-        if marker:
-            pending = int(marker.group(1), 16)
-            continue
-        if pending is not None and line.startswith("\\"):
-            edits[pending] = line
-        pending = None
-    return edits
-
-
 def tsc_txt(line: str) -> tuple[str, str]:
     content = line[1:]
     delimiter = '"："'
@@ -166,21 +99,18 @@ def tsc_txt(line: str) -> tuple[str, str]:
 
 
 def scenario_sources(folder: Path) -> list[Path]:
-    """Return one script per stem, preferring editable LiarsoftTool 2.0 TSC."""
-    selected = {}
-    for source in sorted(folder.iterdir() if folder.is_dir() else ()):
-        suffix = source.suffix.lower()
-        if source.is_file() and suffix in (".gsc", ".tsc"):
-            previous = selected.get(source.stem)
-            if previous is None or suffix == ".tsc":
-                selected[source.stem] = source
-    return [selected[stem] for stem in sorted(selected)]
+    """Return the structured TSC scripts in a resource directory."""
+    if not folder.is_dir():
+        return []
+    return sorted(source for source in folder.iterdir()
+                  if source.is_file() and source.suffix.lower() == ".tsc")
 
 
-def compile_scene(source: Path, liarsofttool: str | Path | None = None) -> str:
-    gsc, text_edits = read_scenario(source, liarsofttool)
+def compile_scene(source: Path) -> str:
+    tsc = read_tsc(source)
+    text_edits = tsc.text_edits
     scene = source.stem
-    instructions = gsc.instructions()
+    instructions = tsc.instructions()
     targets = {item.operands[0] for item in instructions if item.opcode in (3, 4, 5)}
     for item in instructions:
         if item.opcode == 14:
@@ -209,40 +139,40 @@ def compile_scene(source: Path, liarsofttool: str | Path | None = None) -> str:
             lines.append("    return")
         elif opcode == 14:
             count = min(operands[0], 5)
-            prompt = gsc.string(operands[1])
+            prompt = tsc.string(operands[1])
             result = packed(operands[12])
             lines.append("    $ jump_back_point = renpy.game.log.current.identifier")
             lines.append("    $ forest_choice_prompt = %r" % menu_text(prompt))
             lines.append("    menu:")
             for number, index in enumerate(operands[7:7 + count]):
-                if index < len(gsc.strings):
-                    choice = menu_text(gsc.string(index))
+                if index < len(tsc.strings):
+                    choice = menu_text(tsc.string(index))
                     branch = item.operands[2 + number]
                     lines.extend(("        %r:" % choice,
                                   "            $ _r[%s] = %d" % (result, number),
                                   "            jump %s" % scene_label(scene, branch)))
         elif opcode == 18:
             destination = packed(operands[0])
-            for index, value in enumerate(gsc.data(operands[1])):
+            for index, value in enumerate(tsc.data(operands[1])):
                 lines.append("    $ _r[(%s) + %d] = %d" % (destination, index, value))
         elif opcode == 81:
             if item.offset in text_edits:
                 name, text = tsc_txt(text_edits[item.offset])
             else:
-                name, text = gsc.string(operands[4]), gsc.string(operands[5])
+                name, text = tsc.string(operands[4]), tsc.string(operands[5])
             value = (name + "：" if name else "") + text
             if operands[1]:
                 lines.append("    _voice %s 0 0 0" % packed(operands[1]))
             lines.append("    _say japanese %r" % value)
         elif opcode == 82:
             edit = text_edits.get(item.offset)
-            text = edit[8:] if edit and edit.startswith("\\append ") else gsc.string(operands[4])
+            text = edit[8:] if edit and edit.startswith("\\append ") else tsc.string(operands[4])
             lines.append("    _append japanese %r" % text)
         elif opcode == 32:
             args = " ".join(packed(value) for value in operands[:5])
-            lines.append("    _oload %s %r" % (args, gsc.string(operands[5])))
-        elif opcode == 121 and operands[1] < len(gsc.strings):
-            lines.append("    _forest_folder %s %r" % (packed(operands[0]), gsc.string(operands[1])))
+            lines.append("    _oload %s %r" % (args, tsc.string(operands[5])))
+        elif opcode == 121 and operands[1] < len(tsc.strings):
+            lines.append("    _forest_folder %s %r" % (packed(operands[0]), tsc.string(operands[1])))
         elif opcode == 15:
             lines.append("    _gosub %s" % packed(operands[0]))
         elif opcode == 16:
@@ -261,7 +191,7 @@ def compile_scene(source: Path, liarsofttool: str | Path | None = None) -> str:
             lines.append("    _se_off 0 %s" % packed(operands[0]))
         elif opcode in (30, 36):
             values = list(operands)
-            # Forest's 2500.gsc contains one mistyped background number. The
+            # Forest's 2500.tsc contains one mistyped background number. The
             # surrounding loads use 4416 and grpo_bg/4416.png is the asset that
             # exists; 44120 has no corresponding resource.
             if scene == "2500" and item.offset == 0x22366 and values[1] == 44120:
@@ -1036,7 +966,7 @@ def validate_inputs(root: Path, game: Path) -> None:
     )
     missing.extend(str(path) for path in required_assets if not path.is_file())
     if not scenario_sources(root / "scr"):
-        missing.append(str(root / "scr" / "*.{tsc,gsc}"))
+        missing.append(str(root / "scr" / "*.tsc"))
     for folder in ("wav", "voice"):
         if not list((root / folder).glob("*.ogg")):
             missing.append(str(root / folder / "*.ogg"))
@@ -1055,9 +985,6 @@ def main(argv: list[str]) -> int:
         description="Build a Forest Ren'Py project from converted resources")
     parser.add_argument("resources", type=Path)
     parser.add_argument("project", type=Path)
-    parser.add_argument(
-        "--liarsofttool", metavar="PATH",
-        help="LiarsoftTool 2.0 executable used to restore editable TSC input")
     args = parser.parse_args(argv[1:])
     root = args.resources.resolve()
     target = args.project.resolve()
@@ -1210,7 +1137,7 @@ def main(argv: list[str]) -> int:
     sources = scenario_sources(root / "scr")
     for source in sources:
         (scenario / (source.stem + ".rpy")).write_text(
-            compile_scene(source, args.liarsofttool), encoding="utf-8")
+            compile_scene(source), encoding="utf-8")
     print("Wrote %s: %d rscript scenes" % (target, len(sources)))
     return 0
 

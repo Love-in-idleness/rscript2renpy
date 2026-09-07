@@ -15,9 +15,8 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 移植工作流依赖
 [LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool) 完成资源预处理，
 包括递归解包 XFL/LWG、GSC→TSC、WCG/LIM→PNG，以及封装 WAV→OGG。
-运行时本身不链接 LiarsoftTool。Forest 生成器可以直接使用 LiarsoftTool 2.0
-生成的结构化 TSC：调用 LiarsoftTool 恢复指令结构，并读取 TSC 中修改后的
-TXT/TXA 正文来生成 Ren'Py 剧本。
+运行时和生成器都不链接或调用 LiarsoftTool。Forest 生成器只读取
+LiarsoftTool 2.0 预先生成的结构化 TSC，不接受 GSC 输入。
 
 ### 安装通用运行时
 
@@ -41,13 +40,10 @@ liarsofttool -R --unpack-only --gsc-to-tsc /path/to/forest-resources
 
 ```bash
 python3 forest/build_forest_rscript.py \
-    --liarsofttool /path/to/liarsofttool \
     /path/to/forest-resources /path/to/renpy-project
 ```
 
-`scr/` 中同名的 `.tsc` 和 `.gsc` 同时存在时优先使用 `.tsc`，因此只需修改
-TSC 的可读正文，不必删除原始 GSC。也可以通过 `LIARSOFTTOOL` 环境变量或
-`PATH` 指定程序；仅使用旧式 `.gsc` 输入时仍保留兼容支持。
+生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
 生成器还需要 Python 3、Pillow 和 `ffmpeg`。它只读取用户指定的资源目录，
 不会查找、下载或修改已安装的游戏。
@@ -105,18 +101,15 @@ Prepare both converted resources and structured TSC files first:
 ```bash
 liarsofttool -R --unpack-only --gsc-to-tsc /path/to/forest-resources
 python3 forest/build_forest_rscript.py \
-    --liarsofttool /path/to/liarsofttool \
     /path/to/forest-resources /path/to/renpy-project
 ```
 
-The executable may instead be supplied through `LIARSOFTTOOL` or `PATH`.
-When `scr/foo.tsc` and `scr/foo.gsc` both exist, the TSC is selected. The
-generator uses LiarsoftTool to restore its instruction structure and applies
-readable TXT/TXA edits while lowering. Direct GSC input remains available for
-compatibility.
+The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
+accepts GSC input. Keeping original GSC files beside the TSC files does not
+affect generation.
 
 The generator only reads the directory supplied by the user. It expects
-`scr/*.tsc` or `scr/*.gsc`, PNG files under the `grp*` directories, OGG files
+`scr/*.tsc`, PNG files under the `grp*` directories, OGG files
 under `wav/`, `bgm/`, and `voice/`, and `mov/0001` plus `mov/0002` in MPG or
 WebM form. It does not locate, extract, download, or modify an installed copy
 of the game.

@@ -86,7 +86,7 @@ def main() -> None:
         assert not (movie_target / "old.MPG").exists()
     font = ROOT / "forest" / "fonts" / "NotoSansCJKjp-Regular.otf"
     assert font.is_file() and font.stat().st_size > 1_000_000
-    files = sorted((resources / "scr").glob("*.gsc"))
+    files = sorted((resources / "scr").glob("*.tsc"))
     scenes = [compile_scene(path) for path in files]
     assert len(scenes) == 103
     compiled = "".join(scenes)
@@ -194,7 +194,7 @@ def main() -> None:
             in FOREST_COMPAT)
     assert "'label main_menu:\\n'" in builder
     assert "'define config.version = \"1.0\"\\n'" in builder
-    print("OK: lowered %d Forest GSC files to rscript RPY" % len(scenes))
+    print("OK: lowered %d Forest TSC files to rscript RPY" % len(scenes))
 
 
 if __name__ == "__main__":
