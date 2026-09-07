@@ -4,10 +4,11 @@
 
 本项目把 Liar-soft 2004 年作品《Forest》从 CodeX RScript 运行环境迁移到 Ren'Py 7。最终方案不是把剧本手工改写为普通 Ren'Py 脚本，而是：
 
-1. 解析原版 `scr/*.gsc`；
-2. 将指令、表达式、跳转和文本降级为接近原 RScript 语义的 `.rpy`；
-3. 在 Ren'Py 中实现一层 RScript 兼容运行时；
-4. 直接复用解包并转换后的原版图像、音频和视频资源。
+1. 用 LiarsoftTool 2.0 将原版 `scr/*.gsc` 转成结构化 `scr/*.tsc`；
+2. 由生成器调用 LiarsoftTool 恢复指令结构，并按 offset 应用 TSC 正文修改；
+3. 将指令、表达式、跳转和文本降级为接近原 RScript 语义的 `.rpy`；
+4. 在 Ren'Py 中实现一层 RScript 兼容运行时；
+5. 直接复用解包并转换后的原版图像、音频和视频资源。
 
 当前 103 个 GSC 文件、38,397 条指令均能解析，生成剧本中没有残留的 `unlifted opcode`。PC 版可运行，Android 版可构建；真实设备仍应完成全路线验收。
 
@@ -20,13 +21,14 @@
 
 ## 2. 目录和职责
 
-- `tsc/forest_gsc.py`：Forest 旧式 28 字节头 GSC 的结构解析器。
-- `tsc/build_forest_rscript.py`：从原版资源生成完整 Ren'Py 工程。
-- `tsc/test_forest_gsc.py`：检查全部 GSC 的指令边界和字符串引用。
-- `tsc/test_forest_rscript.py`：检查生成规则、关键剧情和资源处理回归。
-- `res_ft/renpy-rscript-new/`：RScript 的 Ren'Py 运行时模板。
-- `res_ft/Forest/`：解包、转换后的 Forest 原版资源和 GSC 输入。
-- `/home/idleness/Source/renpy/Forest`：生成出的、可直接运行和打包的工程。
+- `forest/forest_gsc.py`：Forest 旧式 28 字节头 GSC 的结构解析器。
+- `forest/build_forest_rscript.py`：从原版资源及 TSC 生成完整 Ren'Py 工程。
+- `tests/test_forest_resources.py`：检查全部 GSC 的指令边界。
+- `tests/test_forest_builder.py`：检查生成规则、关键剧情和资源处理回归。
+- `tests/test_liarsofttool2.py`：检查 LiarsoftTool 2.0 TSC 往返及正文编辑。
+- `runtime/`：RScript 的 Ren'Py 通用运行时模板。
+- 用户提供的资源目录：解包、转换后的 Forest 原版资源及 TSC 输入。
+- 用户提供的 Ren'Py 工程：生成出的、可直接运行和打包的工程。
 
 生成目录不应成为手工修改的唯一位置。通用解释器修改写入 runtime 模板；Forest 专用兼容修改写入生成器。对易被忽略的 runtime 修复，生成器还应提供幂等补丁，防止下一次生成丢失。
 

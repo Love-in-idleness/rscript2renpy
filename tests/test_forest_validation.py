@@ -29,6 +29,10 @@ def main() -> None:
                      resources / "mov" / "0002.mpg"):
             path.write_bytes(b"fixture")
         validate_inputs(resources, game)
+        (resources / "scr" / "0000.tsc").write_text(
+            ";@gsc-structure-v1 size=0 fnv1a64=0\n", encoding="utf-8")
+        (resources / "scr" / "0000.gsc").unlink()
+        validate_inputs(resources, game)
         (resources / "voice" / "0001.ogg").unlink()
         try:
             validate_inputs(resources, game)
