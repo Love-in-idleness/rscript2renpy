@@ -658,7 +658,7 @@ screen say(who, what, center=False):
             color "#ffffff"
             xpos text_indent + 1
             ypos 8
-            xsize 768 - text_indent
+            xsize 19 * 22
             text_align (0.5 if center else 0.0)
             line_spacing 7
 

@@ -144,8 +144,7 @@ def main() -> None:
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
     assert "xpos text_indent + 1" in FOREST_COMPAT
-    assert "xsize 768 - text_indent" in FOREST_COMPAT
-    assert "xmaximum 768 - text_indent" not in FOREST_COMPAT
+    assert "xsize 19 * 22" in FOREST_COMPAT
     assert '"images/grps/gf%03d.png" % forest_speaker' in FOREST_COMPAT
     assert 'screen forest_compane():' in FOREST_COMPAT
     assert 'use forest_compane' in FOREST_COMPAT
