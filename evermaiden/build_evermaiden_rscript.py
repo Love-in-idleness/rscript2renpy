@@ -166,6 +166,9 @@ def compile_scene(source: Path) -> str:
             edit = tsc.text_edits.get(item.offset)
             text = tsc_text(edit)[1] if edit else tsc.string(operands[4])
             lines.append("    _append chinese %r" % text)
+        elif opcode == 121:
+            lines.append("    _folder %s %s" %
+                         (packed(operands[0]), tsc.string(operands[1])))
         elif opcode == 202:
             lines.append("    $ evermaiden_flagset(%s, %s, %s)" % tuple(
                 packed(v) for v in operands))
@@ -219,7 +222,9 @@ init python:
 
     def evermaiden_image(layer, cg):
         stem = "%04d" % (cg & 0xffff)
-        preferred = {
+        folder_name = store.folder.get(layer, store.folder.get(0))
+        preferred = (folder_name,) if folder_name else ()
+        preferred += {
             49: ("grpe", "grpo_ex"),
             47: ("grpo_ef", "grpo_ex"),
             42: ("grpo_cu", "grpo_bu0", "grpo_bu1"),
@@ -526,7 +531,11 @@ def main(argv: list[str]) -> int:
         'define config.check_conflicting_properties = True\n', encoding="utf-8")
     (game / "script.rpy").write_text(
         'label main_menu:\n    return\n\n'
-        'label start:\n    scene black\n    call _0000\n    return\n', encoding="utf-8")
+        'label start:\n'
+        '    scene onlayer master\n'
+        '    scene black onlayer black\n'
+        '    call _0000\n'
+        '    return\n', encoding="utf-8")
     install_font(game)
     image_root = game / "images"
     for name in ("grpe", "grpo", "grpo_bg", "grpo_bu0", "grpo_bu1",

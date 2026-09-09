@@ -22,11 +22,17 @@ def main() -> None:
     assert "_say japanese" not in compiled
     assert "unsupported opcode" not in compiled
     assert "$ _r[0] = 1" in scenes[[path.stem for path in files].index("4330")]
+    title_scene = scenes[[path.stem for path in files].index("0001")]
+    assert "    _folder 0 grpo" in title_scene
+    assert "    _folder 1 grpe" in title_scene
     for path, scene in zip(files, scenes):
         for target in re.findall(r"^    _insub (\d+)", scene, re.MULTILINE):
             assert "label _%s_%s:" % (path.stem, target) in scene
     assert 'return "%s %s" % (folder_name, stem)' in COMPAT
     assert "return path\n        renpy.log(\"Evermaiden: missing image" not in COMPAT
+    builder = (ROOT / "evermaiden" / "build_evermaiden_rscript.py").read_text()
+    assert "'    scene onlayer master\\n'" in builder
+    assert "'    scene black onlayer black\\n'" in builder
     print("OK: 208 Evermaiden scenes, Chinese text, all opcodes lifted")
 
 
