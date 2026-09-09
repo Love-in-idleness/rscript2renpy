@@ -33,6 +33,8 @@ def main() -> None:
             ";@gsc-section data -\n"
             ";@gsc-structure-end\n")
         (resources / "scr" / "0000.tsc").write_text(tsc, encoding="utf-8")
+        patch_dir = base / "english-patch"
+        patch_dir.mkdir()
         for path in (resources / "grpe" / "9001.png",
                      resources / "bgm" / "Track01.ogg",
                      resources / "wav" / "0001.ogg",
@@ -46,14 +48,28 @@ def main() -> None:
                 patch.object(forest_builder, "convert_masks"), \
                 patch.object(forest_builder, "convert_movies"):
             forest_builder.main(["build_forest_rscript.py",
-                                 str(resources), str(project)])
+                                 str(resources), str(project),
+                                 "--language", "english=" + str(patch_dir)])
         gui = project / "game" / "gui.rpy"
         gui_text = gui.read_text(encoding="utf-8")
         assert "gui.init(800, 600)" in gui_text
         assert '"fonts/NotoSansCJKjp-Regular.otf"' in gui_text
         assert "gui.scale(" not in gui_text
+        compat_text = (project / "game" / "forest_compat.rpy").read_text(
+            encoding="utf-8")
+        assert "define forest_languages = [(None, '原文'), ('english', 'english')]" in compat_text
+        assert "screen forest_title_preferences():" in compat_text
+        assert "default persistent.forest_text_size = 22" in compat_text
+        assert "default persistent.forest_line_chars = 19" in compat_text
+        assert "default persistent.forest_progress_backup = None" in compat_text
+        assert (project / "game" / "tl" / "english" /
+                "forest_strings.rpy").read_text(encoding="utf-8") == \
+            "translate english python:\n    pass\n"
         text_runtime = (project / "game" / "05_rscript_text.rpy").read_text(
             encoding="utf-8")
+        util_runtime = (project / "game" / "01_util.rpy").read_text(
+            encoding="utf-8")
+        assert "renpy.translation.translate_string(eval(text).rstrip())" in util_runtime
         say_start = text_runtime.index("    def execute_say(o):")
         append_start = text_runtime.index("    def execute_append(o):")
         say_runtime = text_runtime[say_start:append_start]

@@ -46,6 +46,22 @@ python3 forest/build_forest_rscript.py \
 默认生成的 `_say` 和 `_append` 不附带语言标记。如需保留语言信息，可添加
 `--language japanese`（或其他 Ren'Py 标识符）。
 
+可重复添加 `--language 标识符=补丁目录`，在标题页的简易设置菜单中提供
+语言切换。例如：
+
+```bash
+python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
+    --language japanese \
+    --language english=/path/to/english-patch
+```
+
+补丁目录不是另一份完整游戏，只放相对于原资源发生变化的已转换文件：
+`scr/*.tsc`、`grp*/*.png`、`wav|bgm|voice/*.ogg` 或 `mov/*.webm`。TSC
+补丁只允许改变文本，不能改变指令结构。语言标识符同时作为菜单中的标签。
+
+标题页设置菜单还可调整字号和每行字符数（默认 22/19），并提供持久化
+游戏进度的备份、读取与清除功能；清除进度时保留备份。
+
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
 生成器还需要 Python 3、Pillow 和 `ffmpeg`。它只读取用户指定的资源目录，
@@ -121,6 +137,12 @@ python3 forest/build_forest_rscript.py \
 
 By default, generated `_say` and `_append` statements have no language marker.
 Pass `--language japanese` (or another Ren'Py identifier) to emit one.
+Repeat `--language ID=PATCH_DIR` to add language choices to the simple title
+settings screen. A patch directory contains only converted files that differ
+from the base resources, using the same relative layout. Structured TSC
+patches may replace text but not instruction structure. The same screen also
+controls text size, characters per line, and persistent-progress backup,
+restore, and clearing; clearing progress keeps the backup.
 
 The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
 accepts GSC input. Keeping original GSC files beside the TSC files does not

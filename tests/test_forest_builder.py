@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
 from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS, compile_scene,
                                   convert_masks, convert_movies, copy_assets,
-                                  tsc_txt)
+                                  language_patch_strings, scene_strings, tsc_txt)
 
 
 def main() -> None:
@@ -134,7 +134,8 @@ def main() -> None:
     assert "_load 10 44120" not in scene_2500
     assert "_load 10 4416 _r[802] 300 0 0" in scene_2500
     assert ("$ jump_back_point = renpy.game.log.current.identifier\n"
-            "    $ forest_choice_prompt = 'お話を聞かせる？'\n"
+            "    $ forest_choice_prompt = "
+            "renpy.translation.translate_string('お話を聞かせる？')\n"
             "    menu:" in story)
     assert "    menu:\n        'お話を聞かせる？'" not in story
     assert "'いいよ':\n            $ _r[2] = 0\n            jump _2100_L_0000ba" in story
@@ -143,7 +144,8 @@ def main() -> None:
     assert "    _osize 40 25" in credits
     assert "    _oload 40 400 270 0 0 '企画・原案・シナリオ'" in credits
     assert 'color = "#C8AF00"' in RSCRIPT_OBJECTS
-    assert "xmaximum = font_size * 19" in RSCRIPT_OBJECTS
+    assert "xmaximum = font_size * persistent.forest_line_chars" in RSCRIPT_OBJECTS
+    assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
     assert tsc_txt('\\^cy"："^g999Text') == ("", "^g999Text")
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
@@ -151,7 +153,13 @@ def main() -> None:
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
     assert "xpos text_indent + 1" in FOREST_COMPAT
-    assert "xsize 19 * 22" in FOREST_COMPAT
+    assert "xsize persistent.forest_line_chars * persistent.forest_text_size" in FOREST_COMPAT
+    assert "screen forest_title_preferences():" in FOREST_COMPAT
+    assert "default persistent.forest_progress_backup = None" in FOREST_COMPAT
+    assert "forest_save_progress()" in FOREST_COMPAT
+    assert "forest_load_progress()" in FOREST_COMPAT
+    assert "forest_clear_progress()" in FOREST_COMPAT
+    assert 'return ShowMenu("forest_title_preferences")' in FOREST_COMPAT
     assert '"images/grps/gf%03d.png" % forest_speaker' in FOREST_COMPAT
     assert "default forest_speaker_visible = False" in FOREST_COMPAT
     assert "if forest_speaker_visible and forest_speaker is not None:" in FOREST_COMPAT
@@ -175,7 +183,8 @@ def main() -> None:
     save_guard = FOREST_COMPAT.index('if store.save_enabled:')
     assert save_guard < FOREST_COMPAT.index('action ShowMenu("save")', save_guard)
     assert save_guard < FOREST_COMPAT.index('action ShowMenu("load")', save_guard)
-    assert 'ShowMenu("preferences", title_mode=not store.menu_enabled)' in FOREST_COMPAT
+    assert 'return ShowMenu("preferences")' in FOREST_COMPAT
+    assert 'return ShowMenu("forest_title_preferences")' in FOREST_COMPAT
     assert 'config.overlay_screens.append("forest_touch_controls")' in FOREST_COMPAT
     assert 'if renpy.variant("touch")' in FOREST_COMPAT
     assert 'textbutton "メニュー" action ShowMenu("preferences")' in FOREST_COMPAT
@@ -203,6 +212,19 @@ def main() -> None:
             in FOREST_COMPAT)
     assert "'label main_menu:\\n'" in builder
     assert "'define config.version = \"1.0\"\\n'" in builder
+    with TemporaryDirectory() as temporary:
+        patch_scr = Path(temporary) / "scr"
+        patch_scr.mkdir()
+        source = resources / "scr" / "2100.tsc"
+        patched = source.read_text(encoding="utf-8")
+        first = next(line for line in patched.splitlines()
+                     if line.startswith("\\") and not line.startswith("\\append "))
+        (patch_scr / source.name).write_text(
+            patched.replace(first, "\\^g999TRANSLATED", 1), encoding="utf-8")
+        old = next(value for (key, value) in scene_strings(source).items()
+                   if key[1] == "say")
+        assert language_patch_strings(resources / "scr", patch_scr)[old] == \
+            "^g999TRANSLATED"
     print("OK: lowered %d Forest TSC files to rscript RPY" % len(scenes))
 
 

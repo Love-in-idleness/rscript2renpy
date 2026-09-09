@@ -109,6 +109,116 @@ def scenario_sources(folder: Path) -> list[Path]:
                   if source.is_file() and source.suffix.lower() == ".tsc")
 
 
+def scene_strings(source: Path) -> dict[tuple[int, str], str]:
+    """Return strings that a language patch may replace, keyed by command."""
+    tsc = read_tsc(source)
+    result = {}
+    for item in tsc.instructions():
+        opcode, operands = item.opcode, item.operands
+        if opcode == 14:
+            result[(item.offset, "prompt")] = menu_text(tsc.string(operands[1]))
+            for number, index in enumerate(operands[7:7 + min(operands[0], 5)]):
+                if index < len(tsc.strings):
+                    result[(item.offset, "choice%d" % number)] = menu_text(
+                        tsc.string(index))
+        elif opcode == 81:
+            if item.offset in tsc.text_edits:
+                name, text = tsc_txt(tsc.text_edits[item.offset])
+            else:
+                name, text = tsc.string(operands[4]), tsc.string(operands[5])
+                if re.fullmatch(r"(?:\^c[yk])+", name):
+                    name = ""
+            result[(item.offset, "say")] = (name + "：" if name else "") + text
+        elif opcode == 82:
+            edit = tsc.text_edits.get(item.offset)
+            result[(item.offset, "append")] = (
+                edit[8:] if edit and edit.startswith("\\append ")
+                else tsc.string(operands[4]))
+        elif opcode == 32:
+            result[(item.offset, "oload")] = tsc.string(operands[5])
+    return result
+
+
+def language_patch_strings(base_scr: Path, patch_scr: Path) -> dict[str, str]:
+    translations = {}
+    for patch_source in scenario_sources(patch_scr):
+        base_source = base_scr / patch_source.name
+        if not base_source.is_file():
+            raise FileNotFoundError(
+                "%s has no matching base scenario" % patch_source)
+        base = scene_strings(base_source)
+        patch = scene_strings(patch_source)
+        if base.keys() != patch.keys():
+            raise ValueError(
+                "%s changes scenario structure; language patches may only "
+                "replace text" % patch_source)
+        for key, old in base.items():
+            new = patch[key]
+            if old == new:
+                continue
+            previous = translations.get(old)
+            if previous is not None and previous != new:
+                raise ValueError(
+                    "%s translates the same source text inconsistently" %
+                    patch_source)
+            translations[old] = new
+    return translations
+
+
+def write_language_patch(base: Path, patch: Path, language: str,
+                         game: Path) -> None:
+    target = game / "tl" / language
+    translations = language_patch_strings(base / "scr", patch / "scr")
+    if target.is_dir():
+        shutil.rmtree(target)
+    target.mkdir(parents=True)
+    if translations:
+        lines = ["translate %s strings:" % language]
+        for old, new in translations.items():
+            lines.extend(("", "    old %r" % old, "    new %r" % new))
+        content = "\n".join(lines) + "\n"
+    else:
+        content = "translate %s python:\n    pass\n" % language
+    (target / "forest_strings.rpy").write_text(content, encoding="utf-8")
+
+    for folder in ("grpe", "grpo", "grpo_bg", "grpo_bu", "grpo_ci",
+                   "grpo_f", "grps"):
+        copy_assets(patch / folder, "*.png", target / "images" / folder)
+        copy_assets(patch / folder, ".meta.xml", target / "images" / folder)
+    for source_folder, target_folder in (("wav", "wav"), ("wav", "audio"),
+                                         ("bgm", "bgm"), ("voice", "voice")):
+        copy_assets(patch / source_folder, "*.ogg", target / target_folder)
+    copy_assets(patch / "mov", "*.webm", target / "mov")
+    if list((patch / "mov").glob("*.mpg")):
+        convert_movies(patch / "mov", target / "mov")
+
+
+def parse_language_options(specs: list[str]) -> tuple[str | None,
+                                                       list[tuple[str, Path]]]:
+    marker = None
+    patches = []
+    names = set()
+    for spec in specs:
+        if "=" not in spec:
+            if marker is not None:
+                raise ValueError("only one plain --language marker is allowed")
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", spec):
+                raise ValueError("invalid language name: %s" % spec)
+            marker = spec
+            continue
+        language, folder = spec.split("=", 1)
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", language):
+            raise ValueError("invalid language name: %s" % language)
+        if language in names:
+            raise ValueError("duplicate language patch: %s" % language)
+        patch = Path(folder).resolve()
+        if not patch.is_dir():
+            raise FileNotFoundError("language patch directory not found: %s" % patch)
+        names.add(language)
+        patches.append((language, patch))
+    return marker, patches
+
+
 def compile_scene(source: Path, language: str | None = None) -> str:
     if language and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", language):
         raise ValueError("invalid language name: %s" % language)
@@ -148,7 +258,9 @@ def compile_scene(source: Path, language: str | None = None) -> str:
             prompt = tsc.string(operands[1])
             result = packed(operands[12])
             lines.append("    $ jump_back_point = renpy.game.log.current.identifier")
-            lines.append("    $ forest_choice_prompt = %r" % menu_text(prompt))
+            lines.append(
+                "    $ forest_choice_prompt = renpy.translation.translate_string(%r)" %
+                menu_text(prompt))
             lines.append("    menu:")
             for number, index in enumerate(operands[7:7 + count]):
                 if index < len(tsc.strings):
@@ -244,9 +356,10 @@ RSCRIPT_OBJECTS = r'''
         tag = "layer%d" % layer
         text_value, _ = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
+        font_size = max(1, font_size * persistent.forest_text_size // 22)
         text = Text(text_value, font = gui.text_font,
                     size = font_size, color = "#C8AF00",
-                    xmaximum = font_size * 19)
+                    xmaximum = font_size * persistent.forest_line_chars)
         trans = Transform(
             xpos = xpos,
             ypos = ypos,
@@ -310,6 +423,10 @@ default forest_speaker = None
 default forest_speaker_visible = False
 default forest_last_voice = None
 default persistent.textbox_opacity = 1.0
+default persistent.forest_text_size = 22
+default persistent.forest_line_chars = 19
+default persistent.forest_progress_backup = None
+define forest_languages = [(None, "原文")]
 
 init python:
     def forest_open_game_menu():
@@ -324,8 +441,38 @@ init python:
             renpy.music.play(forest_last_voice, channel="rscript_voice",
                              loop=False, if_changed=False)
 
+    def forest_adjust_text(name, delta, low, high):
+        value = max(low, min(high, getattr(persistent, name) + delta))
+        setattr(persistent, name, value)
+        renpy.save_persistent()
+
+    def forest_save_progress():
+        persistent.forest_progress_backup = {
+            "reg": dict(persistent._reg),
+            "seen_cg": dict(persistent.seen_cg),
+        }
+        renpy.save_persistent()
+        renpy.notify("持久化数据已保存")
+
+    def forest_load_progress():
+        data = persistent.forest_progress_backup
+        if data is None:
+            renpy.notify("没有可读取的持久化数据备份")
+            return
+        persistent._reg = dict(data["reg"])
+        persistent.seen_cg = dict(data["seen_cg"])
+        renpy.save_persistent()
+        renpy.notify("持久化数据已读取")
+
+    def forest_clear_progress():
+        persistent._reg = {}
+        persistent.seen_cg = {}
+        renpy.save_persistent()
+        renpy.notify("持久化游戏进度已清除（备份已保留）")
+
     config.game_menu_action = Function(forest_open_game_menu)
     config.save_json_callbacks.append(forest_save_json)
+    config.say_menu_text_filter = renpy.translation.translate_string
 
     if "K_AC_BACK" in config.keymap["rollback"]:
         config.keymap["rollback"].remove("K_AC_BACK")
@@ -546,6 +693,7 @@ screen preferences(title_mode=False):
                 action Return()
                 xpos 115 ypos 372
                 activate_sound "wav/0001.ogg"
+
         imagebutton:
             idle "images/grps/confscrn/title.png"
             hover "images/grps/confscrn/title_f.png"
@@ -559,6 +707,60 @@ screen preferences(title_mode=False):
                 action Quit(confirm=True)
                 xpos 311 ypos 372
                 activate_sound "wav/0001.ogg"
+
+screen forest_title_preferences():
+    tag menu
+    modal True
+    key "game_menu" action Return()
+
+    add Solid("#000000b0")
+    frame:
+        xalign 0.5
+        yalign 0.5
+        xpadding 36
+        ypadding 28
+        vbox:
+            spacing 14
+            text "文本显示":
+                size 26
+                xalign 0.5
+            hbox:
+                spacing 12
+                text "字号 [persistent.forest_text_size]"
+                textbutton "－" action Function(
+                    forest_adjust_text, "forest_text_size", -1, 14, 40)
+                textbutton "＋" action Function(
+                    forest_adjust_text, "forest_text_size", 1, 14, 40)
+            hbox:
+                spacing 12
+                text "每行字符 [persistent.forest_line_chars]"
+                textbutton "－" action Function(
+                    forest_adjust_text, "forest_line_chars", -1, 10, 40)
+                textbutton "＋" action Function(
+                    forest_adjust_text, "forest_line_chars", 1, 10, 40)
+
+            if len(forest_languages) > 1:
+                text "语言"
+                hbox:
+                    spacing 10
+                    for language, label in forest_languages:
+                        textbutton label:
+                            action Language(language)
+                            selected _preferences.language == language
+
+            text "持久化游戏进度"
+            hbox:
+                spacing 10
+                textbutton "保存备份" action Function(forest_save_progress)
+                textbutton "读取备份" action Function(forest_load_progress)
+            textbutton "清除进度":
+                xalign 0.5
+                action Confirm(
+                    "确定清除持久化游戏进度？备份会保留。",
+                    Function(forest_clear_progress))
+            textbutton "返回":
+                xalign 0.5
+                action Return()
 
 screen save():
     tag menu
@@ -665,11 +867,11 @@ screen say(who, what, center=False):
         text what:
             id "what"
             font gui.text_font
-            size 22
+            size persistent.forest_text_size
             color "#ffffff"
             xpos text_indent + 1
             ypos 8
-            xsize 19 * 22
+            xsize persistent.forest_line_chars * persistent.forest_text_size
             text_align (0.5 if center else 0.0)
             line_spacing 7
 
@@ -853,7 +1055,9 @@ python early:
         if value == 2:
             return ShowMenu("load")
         if value == 3:
-            return ShowMenu("preferences", title_mode=not store.menu_enabled)
+            if store.menu_enabled:
+                return ShowMenu("preferences")
+            return ShowMenu("forest_title_preferences")
         return Return(value)
 
     def parse_forest_setlink(lex):
@@ -994,9 +1198,10 @@ def main(argv: list[str]) -> int:
     parser.add_argument("resources", type=Path)
     parser.add_argument("project", type=Path)
     parser.add_argument(
-        "--language", metavar="NAME",
-        help="optional language marker emitted after _say and _append")
+        "--language", metavar="NAME[=PATCH_DIR]", action="append", default=[],
+        help="plain NAME marks _say/_append; NAME=DIR adds a translated patch")
     args = parser.parse_args(argv[1:])
+    language_marker, language_patches = parse_language_options(args.language)
     root = args.resources.resolve()
     target = args.project.resolve()
     here = Path(__file__).resolve().parents[1]
@@ -1113,7 +1318,7 @@ def main(argv: list[str]) -> int:
     util_text = util_path.read_text(encoding="utf-8")
     util_text = util_text.replace(
         "        text = eval(text).rstrip()",
-        "        text = eval(text).rstrip()\n"
+        "        text = renpy.translation.translate_string(eval(text).rstrip())\n"
         "        speaker = renpy.re.match(r\"^\\^g(\\d{3})\", text)\n"
         "        if speaker:\n"
         "            store.forest_speaker = int(speaker.group(1))\n"
@@ -1136,7 +1341,12 @@ def main(argv: list[str]) -> int:
     character_text = character_text.replace("        xpos 1191", "        xpos 735")
     character_text = character_text.replace("        ypos 639", "        ypos 565")
     character_path.write_text(character_text, encoding="utf-8")
-    (game / "forest_compat.rpy").write_text(FOREST_COMPAT, encoding="utf-8")
+    language_labels = [(None, language_marker or "原文")]
+    language_labels.extend((name, name) for name, _ in language_patches)
+    compat = FOREST_COMPAT.replace(
+        'define forest_languages = [(None, "原文")]',
+        "define forest_languages = %r" % language_labels)
+    (game / "forest_compat.rpy").write_text(compat, encoding="utf-8")
     for folder in ("grpe", "grpo", "grpo_bg", "grpo_bu", "grpo_ci", "grpo_f", "grps"):
         copy_assets(root / folder, "*.png", game / "images" / folder)
         copy_assets(root / folder, ".meta.xml", game / "images" / folder)
@@ -1151,6 +1361,8 @@ def main(argv: list[str]) -> int:
                 obsolete.unlink()
         copy_assets(root / source_folder, "*.ogg", audio_target)
     convert_movies(root / "mov", game / "mov")
+    for language, patch in language_patches:
+        write_language_patch(root, patch, language, game)
     (game / "options.rpy").write_text(
         'define config.name = "Forest"\n'
         'define config.version = "1.0"\n'
@@ -1176,7 +1388,7 @@ def main(argv: list[str]) -> int:
     sources = scenario_sources(root / "scr")
     for source in sources:
         (scenario / (source.stem + ".rpy")).write_text(
-            compile_scene(source, args.language), encoding="utf-8")
+            compile_scene(source, language_marker), encoding="utf-8")
     print("Wrote %s: %d rscript scenes" % (target, len(sources)))
     return 0
 
