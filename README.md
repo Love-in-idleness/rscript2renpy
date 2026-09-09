@@ -15,7 +15,7 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 移植工作流依赖
 [LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool) 完成资源预处理，
 包括递归解包 XFL/LWG、GSC→TSC、WCG/LIM→PNG，以及封装 WAV→OGG。
-运行时和生成器都不链接或调用 LiarsoftTool。Forest 生成器只读取
+运行时和生成器都不链接或调用 LiarsoftTool。各游戏生成器只读取
 LiarsoftTool 2.0 预先生成的结构化 TSC，不接受 GSC 输入。
 
 ### 安装通用运行时
@@ -50,6 +50,13 @@ python3 forest/build_forest_rscript.py \
 
 项目代码采用 [MIT License](LICENSE)。项目附带的 Noto Sans CJK JP
 字体采用 SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
+
+### Evermaiden 生成器
+
+`evermaiden` 目录中的生成器面向中文资源，支持 LiarsoftTool 2.0 的 `modern-36` TSC，
+并将正文生成为 `_say chinese`。生成方法见
+[`evermaiden/README.zh-CN.md`](evermaiden/README.zh-CN.md)。生成器需要
+Python 3、fontTools 与 `ffmpeg`，不会附带或下载游戏资源。
 
 ---
 
@@ -88,6 +95,11 @@ python3 -B tests/test_runtime.py
 
 Runtime behavior depends on the source game's CodeX dialect. Unsupported
 opcodes and rendering modes must be implemented and verified per game.
+
+## Evermaiden generator
+
+The `evermaiden` directory contains a Chinese, `modern-36` TSC adapter. See
+`evermaiden/README.zh-CN.md`; it requires Python 3, fontTools, and `ffmpeg`.
 
 ## Forest generator
 
