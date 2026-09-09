@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import argparse
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +22,9 @@ def main() -> None:
     assert "_say japanese" not in compiled
     assert "unsupported opcode" not in compiled
     assert "$ _r[0] = 1" in scenes[[path.stem for path in files].index("4330")]
+    for path, scene in zip(files, scenes):
+        for target in re.findall(r"^    _insub (\d+)", scene, re.MULTILINE):
+            assert "label _%s_%s:" % (path.stem, target) in scene
     assert 'return "%s %s" % (folder_name, stem)' in COMPAT
     assert "return path\n        renpy.log(\"Evermaiden: missing image" not in COMPAT
     print("OK: 208 Evermaiden scenes, Chinese text, all opcodes lifted")

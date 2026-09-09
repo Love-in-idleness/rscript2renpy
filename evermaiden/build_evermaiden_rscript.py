@@ -107,6 +107,7 @@ def compile_scene(source: Path) -> str:
     instructions = tsc.instructions()
     scene = source.stem
     targets = {i.operands[0] for i in instructions if i.opcode in (3, 4, 5)}
+    local_targets = {i.operands[0] for i in instructions if i.opcode == 200}
     for item in instructions:
         if item.opcode == 14:
             targets.update(item.operands[2:2 + min(item.operands[0], 5)])
@@ -117,6 +118,8 @@ def compile_scene(source: Path) -> str:
     for item in instructions:
         if item.offset in targets:
             lines.extend(("", "label %s:" % scene_label(scene, item.offset)))
+        if item.offset in local_targets:
+            lines.extend(("", "label _%s_%d:" % (scene, item.offset)))
         opcode, operands = item.opcode, item.operands
         if opcode & 0xf000:
             lines.extend("    " + line for line in emit_vm(opcode, operands, temps))
@@ -189,6 +192,8 @@ def compile_scene(source: Path) -> str:
     emitted = {item.offset for item in instructions}
     for target in sorted(targets - emitted):
         lines.extend(("", "label %s:" % scene_label(scene, target), "    return"))
+    for target in sorted(local_targets - emitted):
+        lines.extend(("", "label _%s_%d:" % (scene, target), "    return"))
     lines.append("    return")
     return "\n".join(lines) + "\n"
 
