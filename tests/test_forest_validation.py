@@ -51,6 +51,7 @@ def main() -> None:
         gui_text = gui.read_text(encoding="utf-8")
         assert "gui.init(800, 600)" in gui_text
         assert '"fonts/NotoSansCJKjp-Regular.otf"' in gui_text
+        assert "gui.scale(" not in gui_text
         (resources / "scr" / "0000.tsc").unlink()
         (resources / "scr" / "0000.gsc").write_bytes(b"not accepted")
         try:

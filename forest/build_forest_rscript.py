@@ -1024,6 +1024,7 @@ def main(argv: list[str]) -> int:
         "NOTO_SANS", '"fonts/NotoSansCJKjp-Regular.otf"')
     gui_text = gui_text.replace(
         '"DejaVuSans.ttf"', '"fonts/NotoSansCJKjp-Regular.otf"')
+    gui_text = re.sub(r"gui\.scale\((-?\d+(?:\.\d+)?)\)", r"\1", gui_text)
     gui_path.write_text(gui_text, encoding="utf-8")
     fonts = game / "fonts"
     fonts.mkdir(parents=True, exist_ok=True)
