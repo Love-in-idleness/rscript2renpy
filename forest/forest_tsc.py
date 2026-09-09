@@ -38,7 +38,8 @@ class ForestTsc:
         return list(self.decoded_instructions)
 
 
-def read_tsc(path: str | Path) -> ForestTsc:
+def read_tsc(path: str | Path,
+             byte_formats: tuple[str, ...] = ("legacy-28",)) -> ForestTsc:
     path = Path(path)
     sections: dict[str, bytearray] = {}
     instructions = []
@@ -111,25 +112,28 @@ def read_tsc(path: str | Path) -> ForestTsc:
     if in_structure or not complete:
         raise ValueError(
             f"{path}: not a structured TSC; regenerate it with LiarsoftTool 2.0")
-    if byte_format != "legacy-28":
-        raise ValueError(f"{path}: Forest requires ;@gsc-byte-format legacy-28")
+    if byte_format not in byte_formats:
+        expected = ", ".join(byte_formats)
+        raise ValueError(f"{path}: expected ;@gsc-byte-format {expected}")
     if not encoding:
         raise ValueError(f"{path}: missing TSC text encoding")
     try:
         header = bytes(sections["header"])
-        declaration = bytes(sections["declaration"])
+        string_index = bytes(sections[
+            "declaration" if byte_format == "legacy-28" else "string-index"])
         string_data = bytes(sections["strings"])
         data_index = bytes(sections["data-index"])
         data = bytes(sections["data"])
     except KeyError as error:
         raise ValueError(f"{path}: missing structured TSC section {error.args[0]}") from error
-    if len(header) != 28:
-        raise ValueError(f"{path}: malformed Forest TSC header")
-    _, header_size, code_size, declaration_size, string_size, index_size, words = \
-        struct.unpack("<7I", header)
-    if (header_size != 28 or len(declaration) != declaration_size or
+    expected_header_size = 28 if byte_format == "legacy-28" else 36
+    if len(header) != expected_header_size:
+        raise ValueError(f"{path}: malformed structured TSC header")
+    fields = struct.unpack(f"<{expected_header_size // 4}I", header)
+    _, header_size, code_size, string_index_size, string_size, index_size, words = fields[:7]
+    if (header_size != expected_header_size or len(string_index) != string_index_size or
             len(string_data) != string_size or len(data_index) != index_size or
-            len(data) != words * 2 or declaration_size % 4 or index_size % 4):
+            len(data) != words * 2 or string_index_size % 4 or index_size % 4):
         raise ValueError(f"{path}: structured TSC section sizes do not match")
 
     cursor = 0
@@ -141,7 +145,7 @@ def read_tsc(path: str | Path) -> ForestTsc:
         raise ValueError(f"{path}: TSC instructions do not fill the code section")
 
     strings = []
-    for (offset,) in struct.iter_unpack("<I", declaration):
+    for (offset,) in struct.iter_unpack("<I", string_index):
         end = string_data.find(b"\0", offset)
         if offset >= len(string_data) or end < 0:
             raise ValueError(f"{path}: malformed TSC string table")
