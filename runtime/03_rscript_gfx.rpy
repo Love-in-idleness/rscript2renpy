@@ -43,7 +43,7 @@ python early:
         ypos = args.yLoc * store.layer_y_grid
         anchor = store.layer_anchor.get(layer, (0.0, 0.0))
         tag = "layer%d" % layer
-        text_value, _ = parse_rscript_text(repr(args.Text))
+        text_value, _ = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
         text = Text(text_value, font = gui.text_font,
                     size = font_size, color = "#C8AF00",

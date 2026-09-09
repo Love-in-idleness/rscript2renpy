@@ -95,7 +95,10 @@ def tsc_txt(line: str) -> tuple[str, str]:
     delimiter = '"："'
     if delimiter not in content:
         return "", content
-    return tuple(content.split(delimiter, 1))
+    name, text = content.split(delimiter, 1)
+    if re.fullmatch(r"(?:\^c[yk])+", name):
+        name = ""
+    return name, text
 
 
 def scenario_sources(folder: Path) -> list[Path]:
@@ -163,6 +166,8 @@ def compile_scene(source: Path, language: str | None = None) -> str:
                 name, text = tsc_txt(text_edits[item.offset])
             else:
                 name, text = tsc.string(operands[4]), tsc.string(operands[5])
+                if re.fullmatch(r"(?:\^c[yk])+", name):
+                    name = ""
             value = (name + "：" if name else "") + text
             if operands[1]:
                 lines.append("    _voice %s 0 0 0" % packed(operands[1]))
@@ -237,7 +242,7 @@ RSCRIPT_OBJECTS = r'''
         ypos = args.yLoc * store.layer_y_grid
         anchor = store.layer_anchor.get(layer, (0.0, 0.0))
         tag = "layer%d" % layer
-        text_value, _ = parse_rscript_text(repr(args.Text))
+        text_value, _ = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
         text = Text(text_value, font = gui.text_font,
                     size = font_size, color = "#C8AF00",

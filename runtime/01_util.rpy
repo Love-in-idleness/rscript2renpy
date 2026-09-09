@@ -101,7 +101,7 @@ python early:
 
 
 
-    def parse_rscript_text(text):
+    def parse_rscript_text(text, color_controls = False):
 
         if not text:
             return text
@@ -118,7 +118,10 @@ python early:
         text = renpy.re.sub(r"\^d\d+([<>]|$)", r"\1", text)
         text = renpy.re.sub(r"(\^d\d+)(.*?)(?=\^d|[<>]|$)", speed_change, text)
         text = renpy.re.sub(r"\^w(\d+)", lambda m: "{w=%f}" % (int(m.group(1)) / 10.), text)
-        text = renpy.re.sub(r"\^c([yk])(.*?)(?=\^c[yk]|$)", color_change, text)
+        if color_controls:
+            text = renpy.re.sub(r"\^c([yk])(.*?)(?=\^c[yk]|$)", color_change, text)
+        else:
+            text = renpy.re.sub(r"\^c[yk]", "", text)
 
 
         if text.endswith("<"):

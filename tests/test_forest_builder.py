@@ -9,7 +9,8 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
 from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS, compile_scene,
-                                  convert_masks, convert_movies, copy_assets)
+                                  convert_masks, convert_movies, copy_assets,
+                                  tsc_txt)
 
 
 def main() -> None:
@@ -143,6 +144,8 @@ def main() -> None:
     assert "    _oload 40 400 270 0 0 '企画・原案・シナリオ'" in credits
     assert 'color = "#C8AF00"' in RSCRIPT_OBJECTS
     assert "xmaximum = font_size * 19" in RSCRIPT_OBJECTS
+    assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
+    assert tsc_txt('\\^cy"："^g999Text') == ("", "^g999Text")
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
     assert "text_align (0.5 if center else 0.0)" in FOREST_COMPAT
     assert ('background Transform("images/grps/tbox01/back.png", '

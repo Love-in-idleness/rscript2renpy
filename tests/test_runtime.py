@@ -21,6 +21,8 @@ def main() -> None:
     assert 'lang = lex.word()' in combined
     assert '"y": "#C8AF00", "k": "#000000"' in combined
     assert "xmaximum = font_size * 19" in combined
+    assert "def parse_rscript_text(text, color_controls = False):" in combined
+    assert "parse_rscript_text(repr(args.Text), True)" in combined
 
     with TemporaryDirectory() as temporary:
         project = Path(temporary)
