@@ -228,7 +228,7 @@ init python:
         for folder_name in preferred:
             path = "images/%s/%s.png" % (folder_name, stem)
             if renpy.loadable(path):
-                return path
+                return "%s %s" % (folder_name, stem)
         renpy.log("Evermaiden: missing image layer=%s cg=%s" % (layer, cg))
         return "nothing"
 

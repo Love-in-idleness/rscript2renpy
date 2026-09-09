@@ -5,7 +5,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evermaiden"))
-from build_evermaiden_rscript import compile_scene
+from build_evermaiden_rscript import COMPAT, compile_scene
 
 
 def main() -> None:
@@ -21,6 +21,8 @@ def main() -> None:
     assert "_say japanese" not in compiled
     assert "unsupported opcode" not in compiled
     assert "$ _r[0] = 1" in scenes[[path.stem for path in files].index("4330")]
+    assert 'return "%s %s" % (folder_name, stem)' in COMPAT
+    assert "return path\n        renpy.log(\"Evermaiden: missing image" not in COMPAT
     print("OK: 208 Evermaiden scenes, Chinese text, all opcodes lifted")
 
 
