@@ -52,6 +52,18 @@ def main() -> None:
         assert "gui.init(800, 600)" in gui_text
         assert '"fonts/NotoSansCJKjp-Regular.otf"' in gui_text
         assert "gui.scale(" not in gui_text
+        text_runtime = (project / "game" / "05_rscript_text.rpy").read_text(
+            encoding="utf-8")
+        say_start = text_runtime.index("    def execute_say(o):")
+        append_start = text_runtime.index("    def execute_append(o):")
+        say_runtime = text_runtime[say_start:append_start]
+        append_runtime = text_runtime[append_start:]
+        assert say_runtime.index("store.forest_speaker_visible = True") < \
+            say_runtime.index("renpy.say(") < \
+            say_runtime.index("store.forest_speaker_visible = False")
+        assert append_runtime.index("store.forest_speaker_visible = True") < \
+            append_runtime.index("renpy.say(") < \
+            append_runtime.index("store.forest_speaker_visible = False")
         (resources / "scr" / "0000.tsc").unlink()
         (resources / "scr" / "0000.gsc").write_bytes(b"not accepted")
         try:

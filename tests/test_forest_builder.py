@@ -153,6 +153,9 @@ def main() -> None:
     assert "xpos text_indent + 1" in FOREST_COMPAT
     assert "xsize 19 * 22" in FOREST_COMPAT
     assert '"images/grps/gf%03d.png" % forest_speaker' in FOREST_COMPAT
+    assert "default forest_speaker_visible = False" in FOREST_COMPAT
+    assert "if forest_speaker_visible and forest_speaker is not None:" in FOREST_COMPAT
+    assert "elif forest_speaker_visible and who:" in FOREST_COMPAT
     assert 'screen forest_compane():' in FOREST_COMPAT
     assert 'use forest_compane' in FOREST_COMPAT
     assert 'xpos 606\n            ypos 120' in FOREST_COMPAT

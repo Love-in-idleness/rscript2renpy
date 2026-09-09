@@ -307,6 +307,7 @@ default forest_click_values = {}
 default forest_click_system = {}
 default forest_choice_prompt = ""
 default forest_speaker = None
+default forest_speaker_visible = False
 default forest_last_voice = None
 default persistent.textbox_opacity = 1.0
 
@@ -649,11 +650,11 @@ screen say(who, what, center=False):
         ypos 462
         xsize 800
         ysize 138
-        if forest_speaker is not None:
+        if forest_speaker_visible and forest_speaker is not None:
             $ speaker_image = "images/grps/gf%03d.png" % forest_speaker
             if renpy.loadable(speaker_image):
                 add speaker_image xpos 0 ypos 7
-        elif who:
+        elif forest_speaker_visible and who:
             text who:
                 id "who"
                 font gui.name_text_font
@@ -1083,7 +1084,29 @@ def main(argv: list[str]) -> int:
     text_runtime = text_runtime.replace(
         "        what, center = parse_rscript_text(what)",
         "        store.forest_speaker = None\n"
+        "        store.forest_speaker_visible = True\n"
         "        what, center = parse_rscript_text(what)",
+        1)
+    text_runtime = text_runtime.replace(
+        "        if store.jump_back_point is None:",
+        "        store.forest_speaker_visible = False\n\n"
+        "        if store.jump_back_point is None:",
+        1)
+    text_runtime = text_runtime.replace(
+        "        who  = store.last_spk\n"
+        "        what, center = parse_rscript_text(what)",
+        "        who  = store.last_spk\n"
+        "        store.forest_speaker_visible = True\n"
+        "        what, center = parse_rscript_text(what)",
+        1)
+    text_runtime = text_runtime.replace(
+        "        who.do_extend()\n"
+        "        renpy.say(who, what, interact = True, show_center = center)\n\n"
+        "    renpy.register_statement(\"_append\"",
+        "        who.do_extend()\n"
+        "        renpy.say(who, what, interact = True, show_center = center)\n"
+        "        store.forest_speaker_visible = False\n\n"
+        "    renpy.register_statement(\"_append\"",
         1)
     text_path.write_text(text_runtime, encoding="utf-8")
     util_path = game / "01_util.rpy"
