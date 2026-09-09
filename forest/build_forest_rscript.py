@@ -950,16 +950,13 @@ def convert_movies(source: Path, target: Path) -> None:
                 temporary.unlink()
 
 
-def validate_inputs(root: Path, game: Path) -> None:
+def validate_inputs(root: Path) -> None:
     required_dirs = (
         "scr", "grpe", "grpo", "grpo_bg", "grpo_bu", "grpo_ci",
         "grpo_f", "grps", "wav", "bgm", "voice", "mov",
     )
     missing = [str(root / name) for name in required_dirs
                if not (root / name).is_dir()]
-    required_project_files = ("gui.rpy",)
-    missing.extend(str(game / name) for name in required_project_files
-                   if not (game / name).is_file())
     required_assets = (
         root / "grpe" / "9001.png",
         root / "bgm" / "Track01.ogg",
@@ -991,8 +988,9 @@ def main(argv: list[str]) -> int:
     here = Path(__file__).resolve().parents[1]
     runtime = here / "runtime"
     font_source = here / "forest" / "fonts"
+    gui_template = here / "forest" / "gui.rpy"
     game = target / "game"
-    validate_inputs(root, game)
+    validate_inputs(root)
     scenario = game / "scenario"
     scenario.mkdir(parents=True, exist_ok=True)
     for cache in scenario.glob("*.rpyc"):
@@ -1018,10 +1016,14 @@ def main(argv: list[str]) -> int:
     if "def parse_oload(lex):" not in gfx_text:
         gfx_path.write_text(gfx_text.rstrip() + RSCRIPT_OBJECTS, encoding="utf-8")
     gui_path = game / "gui.rpy"
+    if not gui_path.is_file():
+        shutil.copyfile(gui_template, gui_path)
     gui_text = gui_path.read_text(encoding="utf-8")
     gui_text = gui_text.replace("gui.init(1280, 720)", "gui.init(800, 600)")
     gui_text = gui_text.replace(
         "NOTO_SANS", '"fonts/NotoSansCJKjp-Regular.otf"')
+    gui_text = gui_text.replace(
+        '"DejaVuSans.ttf"', '"fonts/NotoSansCJKjp-Regular.otf"')
     gui_path.write_text(gui_text, encoding="utf-8")
     fonts = game / "fonts"
     fonts.mkdir(parents=True, exist_ok=True)
