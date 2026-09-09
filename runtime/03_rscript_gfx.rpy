@@ -43,9 +43,11 @@ python early:
         ypos = args.yLoc * store.layer_y_grid
         anchor = store.layer_anchor.get(layer, (0.0, 0.0))
         tag = "layer%d" % layer
-        text = Text(args.Text, font = gui.text_font,
-                    size = store.object_size.get(layer, gui.text_size),
-                    color = "#ffffff")
+        text_value, _ = parse_rscript_text(repr(args.Text))
+        font_size = store.object_size.get(layer, gui.text_size)
+        text = Text(text_value, font = gui.text_font,
+                    size = font_size, color = "#C8AF00",
+                    xmaximum = font_size * 19)
         trans = Transform(
             xpos = xpos,
             ypos = ypos,

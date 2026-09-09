@@ -103,9 +103,8 @@ def main() -> None:
         "    $ jump_back_point = renpy.game.log.current.identifier\n")
     assert "label _2100:" in scenes[[p.stem for p in files].index("2100")]
     assert all("label _" in scene and "forest_run" not in scene for scene in scenes)
-    assert all("_say english" not in scene and "_append english" not in scene for scene in scenes)
-    assert all("_say japanese" in scene or "_append japanese" in scene
-               for scene in scenes if "_say " in scene or "_append " in scene)
+    assert "_say japanese" not in compiled
+    assert "_append japanese" not in compiled
     title = scenes[[p.stem for p in files].index("0001")]
     assert "_forest_click 0 0" in title
     assert 'font "fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT
@@ -121,7 +120,10 @@ def main() -> None:
     assert "    _oaction 29 4" in story
     assert "_se 0 1008\n    _se_on 0 999 0 0" in story
     assert "_se 999 1008" not in story
-    assert "    _voice 91 0 0 0\n    _say japanese '^g005うっわ、くっさぁ" in story
+    assert "    _voice 91 0 0 0\n    _say '^g005うっわ、くっさぁ" in story
+    japanese_story = compile_scene(
+        files[[p.stem for p in files].index("2100")], language="japanese")
+    assert "    _say japanese '^g005うっわ、くっさぁ" in japanese_story
     scene_2500 = scenes[[p.stem for p in files].index("2500")]
     assert "unlifted opcode 0x0009" not in scene_2500
     assert scene_2500.count("renpy.random.randrange(0x8000)") == 7
@@ -139,6 +141,8 @@ def main() -> None:
     credits = scenes[[p.stem for p in files].index("5000")]
     assert "    _osize 40 25" in credits
     assert "    _oload 40 400 270 0 0 '企画・原案・シナリオ'" in credits
+    assert 'color = "#C8AF00"' in RSCRIPT_OBJECTS
+    assert "xmaximum = font_size * 19" in RSCRIPT_OBJECTS
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
     assert "text_align (0.5 if center else 0.0)" in FOREST_COMPAT
     assert ('background Transform("images/grps/tbox01/back.png", '

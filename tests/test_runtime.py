@@ -18,6 +18,9 @@ def main() -> None:
                    "def parse_txcls", "renpy.register_shader"):
         assert marker in combined
     assert "xalign gui.dialogue_text_xalign\n            xpos gui.dialogue_xpos" not in combined
+    assert 'lang = lex.word()' in combined
+    assert '"y": "#C8AF00", "k": "#000000"' in combined
+    assert "xmaximum = font_size * 19" in combined
 
     with TemporaryDirectory() as temporary:
         project = Path(temporary)

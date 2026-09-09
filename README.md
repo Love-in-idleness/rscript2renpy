@@ -43,6 +43,9 @@ python3 forest/build_forest_rscript.py \
     /path/to/forest-resources /path/to/renpy-project
 ```
 
+默认生成的 `_say` 和 `_append` 不附带语言标记。如需保留语言信息，可添加
+`--language japanese`（或其他 Ren'Py 标识符）。
+
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
 生成器还需要 Python 3、Pillow 和 `ffmpeg`。它只读取用户指定的资源目录，
@@ -115,6 +118,9 @@ liarsofttool -R --unpack-only --gsc-to-tsc /path/to/forest-resources
 python3 forest/build_forest_rscript.py \
     /path/to/forest-resources /path/to/renpy-project
 ```
+
+By default, generated `_say` and `_append` statements have no language marker.
+Pass `--language japanese` (or another Ren'Py identifier) to emit one.
 
 The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
 accepts GSC input. Keeping original GSC files beside the TSC files does not

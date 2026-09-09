@@ -5,7 +5,7 @@ python early:
 
 
     def parse_say(lex):
-        lang = lex.require(lex.word)
+        lang = lex.word()
         who = lex.match(r"(.*?)：")
 
         what = lex.rest()
@@ -59,7 +59,7 @@ python early:
 
 
     def parse_append(lex):
-        lang = lex.require(lex.word)
+        lang = lex.word()
         what = lex.rest()
         return lang, what
 

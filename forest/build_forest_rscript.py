@@ -106,7 +106,10 @@ def scenario_sources(folder: Path) -> list[Path]:
                   if source.is_file() and source.suffix.lower() == ".tsc")
 
 
-def compile_scene(source: Path) -> str:
+def compile_scene(source: Path, language: str | None = None) -> str:
+    if language and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", language):
+        raise ValueError("invalid language name: %s" % language)
+    language_arg = " " + language if language else ""
     tsc = read_tsc(source)
     text_edits = tsc.text_edits
     scene = source.stem
@@ -163,11 +166,11 @@ def compile_scene(source: Path) -> str:
             value = (name + "：" if name else "") + text
             if operands[1]:
                 lines.append("    _voice %s 0 0 0" % packed(operands[1]))
-            lines.append("    _say japanese %r" % value)
+            lines.append("    _say%s %r" % (language_arg, value))
         elif opcode == 82:
             edit = text_edits.get(item.offset)
             text = edit[8:] if edit and edit.startswith("\\append ") else tsc.string(operands[4])
-            lines.append("    _append japanese %r" % text)
+            lines.append("    _append%s %r" % (language_arg, text))
         elif opcode == 32:
             args = " ".join(packed(value) for value in operands[:5])
             lines.append("    _oload %s %r" % (args, tsc.string(operands[5])))
@@ -234,9 +237,11 @@ RSCRIPT_OBJECTS = r'''
         ypos = args.yLoc * store.layer_y_grid
         anchor = store.layer_anchor.get(layer, (0.0, 0.0))
         tag = "layer%d" % layer
-        text = Text(args.Text, font = gui.text_font,
-                    size = store.object_size.get(layer, gui.text_size),
-                    color = "#ffffff")
+        text_value, _ = parse_rscript_text(repr(args.Text))
+        font_size = store.object_size.get(layer, gui.text_size)
+        text = Text(text_value, font = gui.text_font,
+                    size = font_size, color = "#C8AF00",
+                    xmaximum = font_size * 19)
         trans = Transform(
             xpos = xpos,
             ypos = ypos,
@@ -982,6 +987,9 @@ def main(argv: list[str]) -> int:
         description="Build a Forest Ren'Py project from converted resources")
     parser.add_argument("resources", type=Path)
     parser.add_argument("project", type=Path)
+    parser.add_argument(
+        "--language", metavar="NAME",
+        help="optional language marker emitted after _say and _append")
     args = parser.parse_args(argv[1:])
     root = args.resources.resolve()
     target = args.project.resolve()
@@ -1140,7 +1148,7 @@ def main(argv: list[str]) -> int:
     sources = scenario_sources(root / "scr")
     for source in sources:
         (scenario / (source.stem + ".rpy")).write_text(
-            compile_scene(source), encoding="utf-8")
+            compile_scene(source, args.language), encoding="utf-8")
     print("Wrote %s: %d rscript scenes" % (target, len(sources)))
     return 0
 

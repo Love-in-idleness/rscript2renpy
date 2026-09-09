@@ -95,6 +95,10 @@ python early:
             return "{size=-%d}%s{/size}" % (-size * 10, text)
         return "{size=+%d}%s{/size}" % (size * 10, text)
 
+    def color_change(match):
+        color = {"y": "#C8AF00", "k": "#000000"}[match.group(1)]
+        return "{color=%s}%s{/color}" % (color, match.group(2))
+
 
 
     def parse_rscript_text(text):
@@ -114,6 +118,7 @@ python early:
         text = renpy.re.sub(r"\^d\d+([<>]|$)", r"\1", text)
         text = renpy.re.sub(r"(\^d\d+)(.*?)(?=\^d|[<>]|$)", speed_change, text)
         text = renpy.re.sub(r"\^w(\d+)", lambda m: "{w=%f}" % (int(m.group(1)) / 10.), text)
+        text = renpy.re.sub(r"\^c([yk])(.*?)(?=\^c[yk]|$)", color_change, text)
 
 
         if text.endswith("<"):
