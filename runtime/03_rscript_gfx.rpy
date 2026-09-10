@@ -21,7 +21,7 @@ python early:
             return
 
         if not args.Colormode in [0, 1, 2, 3, 4]:
-            print "Unhandled colormode for load/clear effect", args.Colormode
+            print("Unhandled colormode for load/clear effect", args.Colormode)
 
     renpy.register_statement("_load", parse = parse_load, execute = execute_load, predict = predict_load, lint = lint_load)
 
@@ -363,7 +363,7 @@ python early:
 
     def lint_draw(args):
         if args.Mode == 3:
-            print "[Lint] Unhandled blend mode:", args.Mode
+            print("[Lint] Unhandled blend mode:", args.Mode)
 
     renpy.register_statement("_draw", parse = parse_draw, execute = execute_draw, lint = lint_draw)
 

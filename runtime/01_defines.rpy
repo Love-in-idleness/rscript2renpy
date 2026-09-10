@@ -119,7 +119,7 @@ init python:
                 self[key] = data[key]
 
     def eval_key(key):
-        if isinstance(key, basestring):
+        if isinstance(key, str):
             if not key in persistent._defs:
                 raise Exception("Key name \"%s\" not defined." % key)
 
@@ -140,10 +140,10 @@ init python:
         return eval_key(alias)
 
     def compile_macro(name, macro):
-        macro = renpy.re.sub(ur"\^\_", ur" ", macro)
-        macro = renpy.re.sub(ur"\^\/", ur"\n", macro)
-        macro = renpy.re.sub(ur"^=", ur"_queue", macro)
-        macro = renpy.re.sub(ur"\*", ur"_", macro)
+        macro = renpy.re.sub(r"\^\_", r" ", macro)
+        macro = renpy.re.sub(r"\^\/", "\n", macro)
+        macro = renpy.re.sub(r"^=", r"_queue", macro)
+        macro = renpy.re.sub(r"\*", r"_", macro)
 
         source = ("$ apply_macro_params()\n" + macro +
                   "\n$ clear_macro_params()\nreturn")

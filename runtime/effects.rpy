@@ -423,7 +423,7 @@ init python:
             elif layer == 0:
 
                 numeric_layers = [num for num in store.layer_info
-                                  if isinstance(num, (int, long, float))]
+                                  if isinstance(num, (int, float))]
                 for num in numeric_layers:
                     queue_draw(renpy.hide, "layer%d" % num, layer = IMAGE_LAYER)
                     store.layer_info.pop(num, None)
@@ -556,7 +556,7 @@ init python:
 
 
     def move_layer(layer, x, y, effect, speed, relative = False):
-        if isinstance(layer, (int, long, float)):
+        if isinstance(layer, (int, float)):
             tag = "layer%d" % layer
             layer_name = IMAGE_LAYER
 

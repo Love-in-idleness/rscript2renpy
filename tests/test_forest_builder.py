@@ -45,7 +45,7 @@ def main() -> None:
     assert "store.effect_pause = max(store.effect_pause, dur)" in util
     effects = (ROOT / "runtime" / "effects.rpy").read_text(encoding="utf-8")
     assert "if layer not in store.layer_info:" in effects
-    assert "if isinstance(num, (int, long, float))" in effects
+    assert "if isinstance(num, (int, float))" in effects
     assert 'queue_draw(renpy.hide, "layer%d" % num' in effects
     commands = (ROOT / "runtime" / "02_rscript_cmd.rpy").read_text(encoding="utf-8")
     assert "def parse_setclksub(lex):" in commands

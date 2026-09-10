@@ -23,6 +23,9 @@ def main() -> None:
     assert "xmaximum = font_size * 19" in combined
     assert "def parse_rscript_text(text, color_controls = False):" in combined
     assert "parse_rscript_text(repr(args.Text), True)" in combined
+    for python2_only in ('basestring', 'ur"', "ur'", '(int, long, float)',
+                         'print "'):
+        assert python2_only not in combined
 
     with TemporaryDirectory() as temporary:
         project = Path(temporary)

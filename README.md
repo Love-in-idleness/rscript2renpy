@@ -7,6 +7,9 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 图像、音频、文字、特效和着色器支持；具体游戏仍需单独提供适配层、资源
 命名规则和转换后的剧本。
 
+当前运行时面向 Ren'Py 8（Python 3）；Forest 已使用 `/opt/apps/renpy`
+中的 Ren'Py 8.5 完成生成与 lint 验证。
+
 本项目不包含任何游戏剧本、图像、音频、视频或可执行文件。用户必须从
 自己合法持有的游戏副本中准备资源。
 
@@ -85,6 +88,9 @@ Python 3、fontTools 与 `ffmpeg`，不会附带或下载游戏资源。
 
 Reusable Ren'Py runtime for scripts lowered from Liar-soft/raiL-soft CodeX
 RScript games.
+
+The runtime now targets Ren'Py 8 and Python 3. Forest generation and lint have
+been verified with Ren'Py 8.5.
 
 The current experimental release is **0.1.0**. Runtime behavior depends on the
 source game's CodeX dialect, so each new game still requires verification.

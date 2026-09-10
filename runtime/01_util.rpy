@@ -143,7 +143,7 @@ python early:
 
         text = text.replace("%",  "%%")
         text = text.replace("[",  "[[")
-        text = text.replace("\{", "{{")
+        text = text.replace("\\{", "{{")
         text = text.replace("\\n", "\n")
         text = text.replace("^n", "\n")
         text = text.replace("/'", "'")
@@ -263,7 +263,7 @@ python early:
         for i, (fn, args, kwargs) in enumerate(store.draw_queue):
             if fn == remove_fn:
                 to_delete.append(i)
-                print "unqueueing", fn
+                print("unqueueing", fn)
 
         for i in sorted(to_delete, reverse = True):
             del store.draw_queue[i]
@@ -272,7 +272,7 @@ python early:
         for i, (fn, args, kwargs) in enumerate(store.draw_queue_delayed):
             if fn == remove_fn:
                 to_delete.append(i)
-                print "unqueueing", fn
+                print("unqueueing", fn)
 
         for i in sorted(to_delete, reverse = True):
             del store.draw_queue_delayed[i]
