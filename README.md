@@ -21,7 +21,7 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 [LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool) 完成资源预处理，
 包括递归解包 XFL/LWG、GSC→TSC、WCG/LIM→PNG，以及封装 WAV→OGG。
 运行时和生成器都不链接或调用 LiarsoftTool。Forest 生成器只读取
-LiarsoftTool 2.0 当前生成的命令式 TSC（`*TXT`、`*load`、标签等），不接受
+LiarsoftTool 2.1 当前生成的命令式 TSC（`*TXT`、`*load`、标签等），不接受
 旧版 `;@gsc-structure-v1` 转储或 GSC 输入。
 
 ### 安装通用运行时
@@ -35,7 +35,7 @@ python3 tools/install_runtime.py /path/to/renpy-project
 
 ### Forest 生成器
 
-项目提供《Forest》专用生成器。先使用 LiarsoftTool 2.0 解包、转换
+项目提供《Forest》专用生成器。先使用 LiarsoftTool 2.1 解包、转换
 用户自行准备的原版资源，并为剧本生成可编辑 TSC：
 
 ```bash
@@ -97,7 +97,7 @@ TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`
 
 ### Evermaiden 生成器
 
-`evermaiden` 目录中的生成器面向中文资源，支持 LiarsoftTool 2.0 的 `modern-36` TSC，
+`evermaiden` 目录中的生成器面向中文资源，支持 LiarsoftTool 2.1 的 `modern-36` TSC，
 并将正文生成为 `_say chinese`。生成方法见
 [`evermaiden/README.zh-CN.md`](evermaiden/README.zh-CN.md)。生成器需要
 Python 3、fontTools 与 `ffmpeg`，不会附带或下载游戏资源。
@@ -156,7 +156,7 @@ The project contains a Forest-specific generator. It never downloads or
 bundles proprietary Forest data. Prepare an extracted resource directory with
 at least `scr/`, `grps/`, the other `grp*` directories, and converted OGG audio;
 then create an empty Ren'Py project. The generator requires Python 3, Pillow,
-`ffmpeg` for MPG conversion, and LiarsoftTool 2.0 for editable TSC input.
+`ffmpeg` for MPG conversion, and LiarsoftTool 2.1 for editable TSC input.
 Prepare both converted resources and current command-based TSC files first:
 
 ```bash
