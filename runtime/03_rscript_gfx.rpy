@@ -46,7 +46,7 @@ python early:
         text_value, _ = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
         text = Text(text_value, font = gui.text_font,
-                    size = font_size, color = "#C8AF00",
+                    size = font_size, color = "#FFFFFF",
                     xmaximum = font_size * 19)
         trans = Transform(
             xpos = xpos,

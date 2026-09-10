@@ -157,7 +157,7 @@ def main() -> None:
                        for item in credits_tsc.instructions()
                        if item.opcode == 32 and item.operands[0] == 40)
     assert "    _oload 40 400 270 0 0 %r" % credit_text in credits
-    assert 'color = "#C8AF00"' in RSCRIPT_OBJECTS
+    assert 'color = "#FFFFFF"' in RSCRIPT_OBJECTS
     assert "font = forest_current_font()" in RSCRIPT_OBJECTS
     assert "xmaximum = font_size * persistent.forest_line_chars" in RSCRIPT_OBJECTS
     assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS

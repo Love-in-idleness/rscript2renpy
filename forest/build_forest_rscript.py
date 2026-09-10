@@ -535,7 +535,7 @@ RSCRIPT_OBJECTS = r'''
         font_size = store.object_size.get(layer, gui.text_size)
         font_size = max(1, font_size * persistent.forest_text_size // 22)
         text = Text(text_value, font = forest_current_font(),
-                    size = font_size, color = "#C8AF00",
+                    size = font_size, color = "#FFFFFF",
                     xmaximum = font_size * persistent.forest_line_chars)
         trans = Transform(
             xpos = xpos,
