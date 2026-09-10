@@ -13,6 +13,8 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 除通用鼠标光标外，本项目不包含游戏剧本、图像、音频、视频或可执行文件。
 用户必须从自己合法持有的游戏副本中准备其余资源。
 
+本项目只维护并推送 Git 仓库源码，不再发布新的 GitHub Release 或版本包。
+
 ### 依赖 LiarsoftTool
 
 移植工作流依赖
@@ -47,11 +49,16 @@ python3 forest/build_forest_rscript.py \
     /path/to/forest-resources /path/to/renpy-project
 ```
 
-默认生成的 `_say` 和 `_append` 不附带语言标记。如需保留语言信息，可添加
-`--language japanese`（或其他 Ren'Py 标识符）。
+#### 语言标签与补丁
 
-可重复添加 `--language 标识符=补丁目录`，在标题页的简易设置菜单中提供
-语言切换。例如：
+默认生成的 `_say` 和 `_append` 不附带语言标记，标题页把基准语言显示为
+“原文”。普通参数 `--language NAME` 只为基准脚本添加 RScript/Ren'Py 语言
+标记，并把基准语言的菜单标签改为 `NAME`；它不读取补丁，也不会新增一种语言。
+
+参数 `--language NAME=PATCH_DIR` 才会加入一种可切换语言。`NAME` 必须是合法的
+Ren'Py 标识符，同时会原样显示为标题页语言标签；`PATCH_DIR` 是该语言的补丁
+目录。此参数可以重复使用，以同时加入多个语言补丁，也可以与一个普通的
+`--language NAME` 组合。例如：
 
 ```bash
 python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
@@ -59,12 +66,17 @@ python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
     --language english=/path/to/english-patch
 ```
 
-补丁目录不是另一份完整游戏，只放相对于原资源发生变化的已转换文件：
-`scr/*.tsc`、`grp*/*.png`、`wav|bgm|voice/*.ogg` 或 `mov/*.webm`。TSC
-补丁可翻译已有 `*TXT`、`*TXA`、`*select`、`*font` 文本，也可为原版只有
-语音的段落添加 `*font` 字幕；字幕附带的 `*cls` 和 `*wait` 会一并仅在该语言
-启用。其他新增、删除或重排指令仍会报错。译文按场景与指令位置对应，因此同一句
-原文可以因上下文使用不同译文。语言标识符同时作为菜单中的标签。
+补丁目录不是另一份完整游戏，只需按原资源的相对路径放置发生变化的文件；不变的
+文件应当省略。支持的内容包括 `scr/*.tsc`、`grp*/*.png`、
+`wav|bgm|voice/*.ogg` 和 `mov/*.webm`。例如，英文补丁的 `scr/2100.tsc`
+对应基准资源的 `scr/2100.tsc`，补丁目录不需要包含其余 102 个未修改场景。
+
+TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`、`*select`
+与 `*font` 文本，也可以给原版只有语音的段落新增 `*font` 字幕。新增字幕配套的
+`*cls` 清除和 `*wait` 显示时长会随该语言一起启用；切回基准语言时不会执行。
+同一句原文可以因所在位置不同而使用不同译文。为防止翻译补丁意外改变剧情，其他
+指令的新增、删除或重排都会报错，补丁中的跳转、变量及其他游戏逻辑不会取代基准
+脚本。
 
 标题页设置菜单还可调整字号和每行字符数（默认 22/19），并提供持久化
 游戏进度的备份、读取与清除功能；清除进度时保留备份。把 `.ttf`、`.otf`
@@ -100,8 +112,10 @@ RScript games.
 The runtime now targets Ren'Py 8 and Python 3. Forest generation and lint have
 been verified with Ren'Py 8.5.
 
-The current experimental release is **0.1.0**. Runtime behavior depends on the
-source game's CodeX dialect, so each new game still requires verification.
+This project is maintained and distributed directly from the Git repository.
+No new GitHub Releases or versioned release packages will be published.
+Runtime behavior depends on the source game's CodeX dialect, so each new game
+still requires verification.
 
 Apart from the shared mouse cursor, this repository contains engine-side
 support only. It does not contain game scripts, images, audio, movies,
@@ -151,22 +165,38 @@ python3 forest/build_forest_rscript.py \
     /path/to/forest-resources /path/to/renpy-project
 ```
 
-By default, generated `_say` and `_append` statements have no language marker.
-Pass `--language japanese` (or another Ren'Py identifier) to emit one.
-Repeat `--language ID=PATCH_DIR` to add language choices to the simple title
-settings screen. A patch directory contains only converted files that differ
-from the base resources, using the same relative layout. Command-based TSC
-patches may translate existing `*TXT`, `*TXA`, `*select`, and `*font` text, and
-may add `*font` subtitles (plus their `*cls` and `*wait` display timing) for
-voice-only passages. Other inserted, removed, or reordered commands are
-rejected. Translations are matched by scene and instruction position, so the
-same source text may have context-specific translations. Old
-`;@gsc-structure-v1` dumps are intentionally unsupported. The same screen also
-controls text size, characters per line, and persistent-progress backup,
-restore, and clearing; clearing progress keeps the backup. Additional `.ttf`,
-`.otf`, and `.ttc` files placed in the generated project's `game/fonts/`
-directory can be cycled from the same screen; Noto Sans CJK JP remains the
-default.
+### Language labels and patches
+
+By default, generated `_say` and `_append` statements have no language marker,
+and the base language is labelled `原文` in the title settings screen. A plain
+`--language NAME` adds that marker to the base script and uses `NAME` as the
+base-language label. It does not read a patch or add another language.
+
+`--language NAME=PATCH_DIR` adds a switchable language. `NAME` must be a valid
+Ren'Py identifier and is also used verbatim as its menu label. The option may
+be repeated for multiple patches and may be combined with one plain base
+language marker, as in the example above.
+
+A patch directory contains only converted files that differ from the base
+resources, at the same relative paths; unchanged files should be omitted. It
+may contain `scr/*.tsc`, `grp*/*.png`, `wav|bgm|voice/*.ogg`, and
+`mov/*.webm`. A patched `scr/2100.tsc`, for example, is compared with the base
+`scr/2100.tsc`; the other unchanged scenarios are not required in the patch.
+
+Command-based TSC patches are aligned by scene and instruction position. They
+may translate existing `*TXT`, `*TXA`, `*select`, and `*font` text, and may add
+`*font` subtitles for voice-only passages. Subtitle-related `*cls` clearing and
+`*wait` timing are enabled only while that patch language is selected. The same
+source text may therefore have context-specific translations. Other inserted,
+removed, or reordered commands are rejected, and patched jumps, variables, or
+other gameplay logic never replace the base script. Old `;@gsc-structure-v1`
+dumps are intentionally unsupported.
+
+The same title settings screen also controls text size, characters per line,
+and persistent-progress backup, restore, and clearing; clearing progress keeps
+the backup. Additional `.ttf`, `.otf`, and `.ttc` files placed in the generated
+project's `game/fonts/` directory can be cycled from the same screen; Noto Sans
+CJK JP remains the default.
 
 The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
 accepts GSC input. Keeping original GSC files beside the TSC files does not
