@@ -144,6 +144,7 @@ def main() -> None:
     assert "    _osize 40 25" in credits
     assert "    _oload 40 400 270 0 0 '企画・原案・シナリオ'" in credits
     assert 'color = "#C8AF00"' in RSCRIPT_OBJECTS
+    assert "font = forest_current_font()" in RSCRIPT_OBJECTS
     assert "xmaximum = font_size * persistent.forest_line_chars" in RSCRIPT_OBJECTS
     assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
@@ -156,6 +157,12 @@ def main() -> None:
     assert "xsize persistent.forest_line_chars * persistent.forest_text_size" in FOREST_COMPAT
     assert "screen forest_title_preferences():" in FOREST_COMPAT
     assert "default persistent.forest_progress_backup = None" in FOREST_COMPAT
+    assert ('default persistent.forest_text_font = '
+            '"fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT)
+    assert "def forest_fonts():" in FOREST_COMPAT
+    assert "def forest_cycle_font(step):" in FOREST_COMPAT
+    assert 'text "字体 [forest_font_name()]"' in FOREST_COMPAT
+    assert FOREST_COMPAT.count("font forest_current_font()") == 4
     assert "forest_save_progress()" in FOREST_COMPAT
     assert "forest_load_progress()" in FOREST_COMPAT
     assert "forest_clear_progress()" in FOREST_COMPAT

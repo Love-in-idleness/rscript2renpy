@@ -357,7 +357,7 @@ RSCRIPT_OBJECTS = r'''
         text_value, _ = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
         font_size = max(1, font_size * persistent.forest_text_size // 22)
-        text = Text(text_value, font = gui.text_font,
+        text = Text(text_value, font = forest_current_font(),
                     size = font_size, color = "#C8AF00",
                     xmaximum = font_size * persistent.forest_line_chars)
         trans = Transform(
@@ -425,6 +425,7 @@ default forest_last_voice = None
 default persistent.textbox_opacity = 1.0
 default persistent.forest_text_size = 22
 default persistent.forest_line_chars = 19
+default persistent.forest_text_font = "fonts/NotoSansCJKjp-Regular.otf"
 default persistent.forest_progress_backup = None
 define forest_languages = [(None, "原文")]
 
@@ -444,6 +445,31 @@ init python:
     def forest_adjust_text(name, delta, low, high):
         value = max(low, min(high, getattr(persistent, name) + delta))
         setattr(persistent, name, value)
+        renpy.save_persistent()
+
+    def forest_fonts():
+        return sorted(name for name in renpy.list_files()
+                      if name.startswith("fonts/") and
+                      name.lower().endswith((".ttf", ".otf", ".ttc")))
+
+    def forest_current_font():
+        fonts = forest_fonts()
+        if persistent.forest_text_font in fonts:
+            return persistent.forest_text_font
+        return fonts[0] if fonts else gui.text_font
+
+    def forest_font_name():
+        return forest_current_font().rsplit("/", 1)[-1]
+
+    def forest_cycle_font(step):
+        fonts = forest_fonts()
+        if not fonts:
+            return
+        try:
+            index = fonts.index(persistent.forest_text_font)
+        except ValueError:
+            index = -1 if step > 0 else 0
+        persistent.forest_text_font = fonts[(index + step) % len(fonts)]
         renpy.save_persistent()
 
     def forest_save_progress():
@@ -738,6 +764,11 @@ screen forest_title_preferences():
                     forest_adjust_text, "forest_line_chars", -1, 10, 40)
                 textbutton "＋" action Function(
                     forest_adjust_text, "forest_line_chars", 1, 10, 40)
+            hbox:
+                spacing 12
+                text "字体 [forest_font_name()]"
+                textbutton "上一字体" action Function(forest_cycle_font, -1)
+                textbutton "下一字体" action Function(forest_cycle_font, 1)
 
             if len(forest_languages) > 1:
                 text "语言"
@@ -859,14 +890,14 @@ screen say(who, what, center=False):
         elif forest_speaker_visible and who:
             text who:
                 id "who"
-                font gui.name_text_font
+                font forest_current_font()
                 size 22
                 color "#ffffff"
                 xpos 0
                 ypos 7
         text what:
             id "what"
-            font gui.text_font
+            font forest_current_font()
             size persistent.forest_text_size
             color "#ffffff"
             xpos text_indent + 1
@@ -963,7 +994,7 @@ screen choice(items):
                 ysize 48
                 add "images/grps/sel_q00/body.png"
                 text forest_choice_prompt:
-                    font gui.text_font
+                    font forest_current_font()
                     size 20
                     color "#2a2015"
                     xpos 35
@@ -983,7 +1014,7 @@ screen choice(items):
                     action item.action
                 if asset is None:
                     text item.caption:
-                        font gui.text_font
+                        font forest_current_font()
                         size 21
                         color "#ffffff"
                         outlines [(2, "#18220d", 0, 0)]

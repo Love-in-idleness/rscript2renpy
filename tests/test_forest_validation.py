@@ -61,6 +61,10 @@ def main() -> None:
         assert "screen forest_title_preferences():" in compat_text
         assert "default persistent.forest_text_size = 22" in compat_text
         assert "default persistent.forest_line_chars = 19" in compat_text
+        assert ('default persistent.forest_text_font = '
+                '"fonts/NotoSansCJKjp-Regular.otf"' in compat_text)
+        assert 'textbutton "上一字体"' in compat_text
+        assert 'textbutton "下一字体"' in compat_text
         assert "default persistent.forest_progress_backup = None" in compat_text
         assert (project / "game" / "tl" / "english" /
                 "forest_strings.rpy").read_text(encoding="utf-8") == \

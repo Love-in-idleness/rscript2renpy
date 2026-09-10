@@ -60,7 +60,9 @@ python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
 补丁只允许改变文本，不能改变指令结构。语言标识符同时作为菜单中的标签。
 
 标题页设置菜单还可调整字号和每行字符数（默认 22/19），并提供持久化
-游戏进度的备份、读取与清除功能；清除进度时保留备份。
+游戏进度的备份、读取与清除功能；清除进度时保留备份。把 `.ttf`、`.otf`
+或 `.ttc` 文件放入生成工程的 `game/fonts/` 后，可在同一菜单中循环切换；
+默认仍使用随生成器提供的 Noto Sans CJK JP。
 
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
@@ -142,7 +144,10 @@ settings screen. A patch directory contains only converted files that differ
 from the base resources, using the same relative layout. Structured TSC
 patches may replace text but not instruction structure. The same screen also
 controls text size, characters per line, and persistent-progress backup,
-restore, and clearing; clearing progress keeps the backup.
+restore, and clearing; clearing progress keeps the backup. Additional `.ttf`,
+`.otf`, and `.ttc` files placed in the generated project's `game/fonts/`
+directory can be cycled from the same screen; Noto Sans CJK JP remains the
+default.
 
 The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
 accepts GSC input. Keeping original GSC files beside the TSC files does not
