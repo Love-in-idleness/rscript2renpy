@@ -12,7 +12,7 @@ from install_runtime import install  # noqa: E402
 
 def main() -> None:
     files = sorted((ROOT / "runtime").glob("*.rpy"))
-    assert len(files) == 16
+    assert len(files) == 17
     combined = "\n".join(path.read_text(encoding="utf-8") for path in files)
     for marker in ("class RScriptReg", "renpy.register_statement",
                    "def parse_txcls", "renpy.register_shader"):
@@ -23,6 +23,8 @@ def main() -> None:
     assert "xmaximum = font_size * 19" in combined
     assert "def parse_rscript_text(text, color_controls = False):" in combined
     assert "parse_rscript_text(repr(args.Text), True)" in combined
+    assert 'config.mouse = {' in combined
+    assert '"gui/rscript_cursor.png", 0, 0' in combined
     for python2_only in ('basestring', 'ur"', "ur'", '(int, long, float)',
                          'print "'):
         assert python2_only not in combined
@@ -31,10 +33,10 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 16
+        assert len(installed) == 17
         assert all(path.is_file() for path in installed)
 
-    print("OK: 16 generic RScript runtime modules")
+    print("OK: 17 generic RScript runtime modules")
 
 
 if __name__ == "__main__":

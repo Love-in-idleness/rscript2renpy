@@ -28,7 +28,7 @@ LiarsoftTool 2.0 当前生成的命令式 TSC（`*TXT`、`*load`、标签等）�
 python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
-该命令会把 16 个运行时模块复制到 Ren'Py 工程的 `game/` 目录。除非使用
+该命令会把 17 个运行时模块复制到 Ren'Py 工程的 `game/` 目录。除非使用
 `--force`，否则不会覆盖内容不同的已有文件。
 
 ### Forest 生成器
@@ -70,8 +70,13 @@ python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
 
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
-生成器还需要 Python 3、Pillow 和 `ffmpeg`。它只读取用户指定的资源目录，
-不会查找、下载或修改已安装的游戏。
+Forest 生成器会从资源目录顶层的原版 `Forest.exe` 提取 32×32 光标，写入
+生成工程的 `game/gui/rscript_cursor.png`；光标本身不会收入本仓库。通用运行时
+检测到该文件时会自动启用它。提取需要 `wrestool`（Linux 上通常由
+`icoutils` 提供）。
+
+生成器还需要 Python 3、Pillow、`wrestool` 和 `ffmpeg`。它只读取用户指定的
+资源目录，不会查找、下载或修改已安装的游戏。
 
 项目代码采用 [MIT License](LICENSE)。项目附带的 Noto Sans CJK JP
 字体采用 SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
@@ -106,7 +111,7 @@ data.
 python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
-The command copies the sixteen runtime modules into the project's `game/`
+The command copies the seventeen runtime modules into the project's `game/`
 directory. Existing different files are not overwritten unless `--force` is
 specified.
 
@@ -160,6 +165,11 @@ default.
 The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
 accepts GSC input. Keeping original GSC files beside the TSC files does not
 affect generation.
+
+The Forest generator extracts the original 32x32 cursor from `Forest.exe` at
+build time and writes `game/gui/rscript_cursor.png`; the proprietary cursor is
+not stored in this repository. The generic runtime enables that file when it
+is present. Extraction requires `wrestool` (usually provided by `icoutils`).
 
 The generator only reads the directory supplied by the user. It expects
 `scr/*.tsc`, PNG files under the `grp*` directories, OGG files
