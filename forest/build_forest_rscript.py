@@ -3,6 +3,7 @@
 
 from pathlib import Path
 import argparse
+from functools import lru_cache
 import re
 import shutil
 import subprocess
@@ -34,6 +35,7 @@ COMMANDS = {
 }
 OPERATORS = {2: "or", 3: "and", 4: "==", 5: ">=", 6: ">", 7: "<=",
              8: "<", 9: "!=", 10: "+", 11: "-", 12: "*", 13: "//", 14: "%"}
+PATCH_INSERT_OPCODES = {13, 32, 36}
 
 
 def packed(value: int) -> str:
@@ -98,52 +100,170 @@ def scenario_sources(folder: Path) -> list[Path]:
                   if source.is_file() and source.suffix.lower() == ".tsc")
 
 
-def scene_strings(source: Path) -> dict[tuple[int, str], str]:
-    """Return strings that a language patch may replace, keyed by command."""
-    tsc = read_tsc(source)
+def instruction_strings(tsc, item) -> dict[str, str]:
+    """Return the translatable strings carried by one instruction."""
     result = {}
-    for item in tsc.instructions():
-        opcode, operands = item.opcode, item.operands
-        if opcode == 14:
-            result[(item.offset, "prompt")] = menu_text(tsc.string(operands[1]))
-            for number, index in enumerate(operands[7:7 + min(operands[0], 5)]):
-                if index < len(tsc.strings):
-                    result[(item.offset, "choice%d" % number)] = menu_text(
-                        tsc.string(index))
-        elif opcode == 81:
-            name, text = tsc.string(operands[4]), tsc.string(operands[5])
-            if re.fullmatch(r"(?:\^c[yk])+", name):
-                name = ""
-            result[(item.offset, "say")] = (name + "：" if name else "") + text
-        elif opcode == 82:
-            result[(item.offset, "append")] = tsc.string(operands[4])
-        elif opcode == 32:
-            result[(item.offset, "oload")] = tsc.string(operands[5])
+    opcode, operands = item.opcode, item.operands
+    if opcode == 14:
+        result["prompt"] = menu_text(tsc.string(operands[1]))
+        for number, index in enumerate(operands[7:7 + min(operands[0], 5)]):
+            if index < len(tsc.strings):
+                result["choice%d" % number] = menu_text(tsc.string(index))
+    elif opcode == 81:
+        name, text = tsc.string(operands[4]), tsc.string(operands[5])
+        if re.fullmatch(r"(?:\^c[yk])+", name):
+            name = ""
+        result["say"] = (name + "：" if name else "") + text
+    elif opcode == 82:
+        result["append"] = tsc.string(operands[4])
+    elif opcode == 32:
+        result["oload"] = tsc.string(operands[5])
     return result
 
 
-def language_patch_strings(base_scr: Path, patch_scr: Path) -> dict[str, str]:
-    translations = {}
+def scene_strings(source: Path) -> dict[tuple[int, str], str]:
+    """Return strings that a language patch may replace, keyed by command."""
+    tsc = read_tsc(source)
+    return {(item.offset, kind): value
+            for item in tsc.instructions()
+            for kind, value in instruction_strings(tsc, item).items()}
+
+
+def align_insertable_segment(base, patch):
+    """Match existing wait/font/cls commands and leave patch additions."""
+    @lru_cache(maxsize=None)
+    def align(base_index, patch_index):
+        if base_index == len(base):
+            return ()
+        if patch_index == len(patch):
+            return None
+        if base[base_index].opcode == patch[patch_index].opcode:
+            rest = align(base_index + 1, patch_index + 1)
+            if rest is not None:
+                return ((base_index, patch_index),) + rest
+        return align(base_index, patch_index + 1)
+
+    result = align(0, 0)
+    if result is None:
+        raise ValueError("language patch removes an existing display command")
+    return result
+
+
+def render_patch_command(tsc, item) -> str:
+    if item.opcode == 13:
+        return "_wait %s" % packed(item.operands[0])
+    if item.opcode == 32:
+        args = " ".join(packed(value) for value in item.operands[:5])
+        return "_oload %s %r" % (args, tsc.string(item.operands[5]))
+    if item.opcode == 36:
+        args = " ".join(packed(value) for value in item.operands)
+        return "_cls %s" % args
+    raise ValueError("unsupported language-patch insertion")
+
+
+def language_patch_data(base_scr: Path, patch_scr: Path):
+    """Return translated strings and language-only subtitle commands."""
+    replacements = {}
+    insertions = {}
     for patch_source in scenario_sources(patch_scr):
         base_source = base_scr / patch_source.name
         if not base_source.is_file():
             raise FileNotFoundError(
                 "%s has no matching base scenario" % patch_source)
-        base = scene_strings(base_source)
-        patch = scene_strings(patch_source)
-        if base.keys() != patch.keys():
+        base_tsc, patch_tsc = read_tsc(base_source), read_tsc(patch_source)
+        base_items = base_tsc.instructions()
+        patch_items = patch_tsc.instructions()
+        base_fixed = [(index, item) for index, item in enumerate(base_items)
+                      if item.opcode not in PATCH_INSERT_OPCODES]
+        patch_fixed = [(index, item) for index, item in enumerate(patch_items)
+                       if item.opcode not in PATCH_INSERT_OPCODES]
+        if [item.opcode for _, item in base_fixed] != \
+                [item.opcode for _, item in patch_fixed]:
             raise ValueError(
                 "%s changes scenario structure; language patches may only "
-                "replace text" % patch_source)
-        for key, old in base.items():
-            new = patch[key]
-            if old == new:
-                continue
+                "replace text and add subtitle display commands" % patch_source)
+
+        pairs = []
+        added = []
+        base_previous = patch_previous = -1
+        for fixed_index in range(len(base_fixed) + 1):
+            base_next = (base_fixed[fixed_index][0]
+                         if fixed_index < len(base_fixed) else len(base_items))
+            patch_next = (patch_fixed[fixed_index][0]
+                          if fixed_index < len(patch_fixed) else len(patch_items))
+            base_segment = base_items[base_previous + 1:base_next]
+            patch_segment = patch_items[patch_previous + 1:patch_next]
+            try:
+                matched = align_insertable_segment(base_segment, patch_segment)
+            except ValueError as error:
+                raise ValueError("%s: %s" % (patch_source, error)) from error
+            matched_patch = {patch_index for _, patch_index in matched}
+            for base_index, patch_index in matched:
+                pairs.append((base_previous + 1 + base_index,
+                              patch_previous + 1 + patch_index))
+            for patch_index, item in enumerate(patch_segment):
+                if patch_index in matched_patch:
+                    continue
+                next_match = next((base_index for base_index, matched_index in matched
+                                   if matched_index > patch_index),
+                                  len(base_segment))
+                base_index = base_previous + 1 + next_match
+                offset = (base_items[base_index].offset
+                          if base_index < len(base_items) else base_tsc.code_size)
+                added.append((patch_previous + 1 + patch_index, offset, item))
+            if fixed_index < len(base_fixed):
+                pairs.append((base_next, patch_next))
+                base_previous, patch_previous = base_next, patch_next
+
+        added.sort()
+        added_fonts = {item.operands[0] for _, _, item in added
+                       if item.opcode == 32}
+        for _, _, item in added:
+            if item.opcode == 36 and (item.operands[0] not in added_fonts or
+                                      item.operands[1] != 0):
+                raise ValueError(
+                    "%s adds a clear command unrelated to an added subtitle" %
+                    patch_source)
+            if item.opcode == 13 and not added_fonts:
+                raise ValueError(
+                    "%s adds a wait command without an added subtitle" %
+                    patch_source)
+
+        scene_replacements = {}
+        for base_index, patch_index in sorted(pairs):
+            base = instruction_strings(base_tsc, base_items[base_index])
+            patch = instruction_strings(patch_tsc, patch_items[patch_index])
+            if base.keys() != patch.keys():
+                raise ValueError("%s changes translatable command structure" %
+                                 patch_source)
+            for kind, old in base.items():
+                new = patch[kind]
+                if old == new:
+                    continue
+                scene_replacements[(base_items[base_index].offset, kind)] = new
+
+        if scene_replacements:
+            replacements[patch_source.name] = scene_replacements
+        if added:
+            scene_insertions = insertions.setdefault(patch_source.name, {})
+            for _, offset, item in added:
+                scene_insertions.setdefault(offset, []).append(
+                    render_patch_command(patch_tsc, item))
+    return replacements, insertions
+
+
+def language_patch_strings(base_scr: Path, patch_scr: Path) -> dict[str, str]:
+    replacements, _ = language_patch_data(base_scr, patch_scr)
+    translations = {}
+    for source_name, scene_replacements in replacements.items():
+        base = scene_strings(base_scr / source_name)
+        for key, new in scene_replacements.items():
+            old = base[key]
             previous = translations.get(old)
             if previous is not None and previous != new:
                 raise ValueError(
                     "%s translates the same source text inconsistently" %
-                    patch_source)
+                    (patch_scr / source_name))
             translations[old] = new
     return translations
 
@@ -151,17 +271,10 @@ def language_patch_strings(base_scr: Path, patch_scr: Path) -> dict[str, str]:
 def write_language_patch(base: Path, patch: Path, language: str,
                          game: Path) -> None:
     target = game / "tl" / language
-    translations = language_patch_strings(base / "scr", patch / "scr")
     if target.is_dir():
         shutil.rmtree(target)
     target.mkdir(parents=True)
-    if translations:
-        lines = ["translate %s strings:" % language]
-        for old, new in translations.items():
-            lines.extend(("", "    old %r" % old, "    new %r" % new))
-        content = "\n".join(lines) + "\n"
-    else:
-        content = "translate %s python:\n    pass\n" % language
+    content = "translate %s python:\n    pass\n" % language
     (target / "forest_strings.rpy").write_text(content, encoding="utf-8")
 
     for folder in ("grpe", "grpo", "grpo_bg", "grpo_bu", "grpo_ci",
@@ -202,9 +315,24 @@ def parse_language_options(specs: list[str]) -> tuple[str | None,
     return marker, patches
 
 
-def compile_scene(source: Path, language: str | None = None) -> str:
+def patch_text_expression(language_texts, item, kind, default):
+    replacements = {
+        language: texts[(item.offset, kind)]
+        for language, texts in (language_texts or {}).items()
+        if (item.offset, kind) in texts
+    }
+    if not replacements:
+        return repr(default), False
+    return "%r.get(_preferences.language, %r)" % (replacements, default), True
+
+
+def compile_scene(source: Path, language: str | None = None,
+                  language_texts=None, language_insertions=None) -> str:
     if language and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", language):
         raise ValueError("invalid language name: %s" % language)
+    for patch_language in set(language_texts or {}) | set(language_insertions or {}):
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", patch_language):
+            raise ValueError("invalid language name: %s" % patch_language)
     language_arg = " " + language if language else ""
     tsc = read_tsc(source)
     scene = source.stem
@@ -219,6 +347,12 @@ def compile_scene(source: Path, language: str | None = None) -> str:
     temps: dict[int, str] = {}
     pending_se: str | None = None
     for item in instructions:
+        for patch_language, commands in (language_insertions or {}).items():
+            added = commands.get(item.offset, ())
+            if added:
+                lines.append("    if _preferences.language == %r:" %
+                             patch_language)
+                lines.extend("        " + command for command in added)
         if item.offset in targets:
             lines.extend(("", "label %s:" % scene_label(scene, item.offset)))
         opcode, operands = item.opcode, item.operands
@@ -237,20 +371,33 @@ def compile_scene(source: Path, language: str | None = None) -> str:
             lines.append("    return")
         elif opcode == 14:
             count = min(operands[0], 5)
-            prompt = tsc.string(operands[1])
+            prompt = menu_text(tsc.string(operands[1]))
+            prompt, _ = patch_text_expression(
+                language_texts, item, "prompt", prompt)
             result = packed(operands[12])
             lines.append("    $ jump_back_point = renpy.game.log.current.identifier")
             lines.append(
-                "    $ forest_choice_prompt = renpy.translation.translate_string(%r)" %
-                menu_text(prompt))
-            lines.append("    menu:")
+                "    $ forest_choice_prompt = renpy.translation.translate_string(%s)" %
+                prompt)
+            choices = []
             for number, index in enumerate(operands[7:7 + count]):
-                if index < len(tsc.strings):
-                    choice = menu_text(tsc.string(index))
-                    branch = item.operands[2 + number]
-                    lines.extend(("        %r:" % choice,
-                                  "            $ _r[%s] = %d" % (result, number),
-                                  "            jump %s" % scene_label(scene, branch)))
+                if index >= len(tsc.strings):
+                    continue
+                choice = menu_text(tsc.string(index))
+                choice, changed = patch_text_expression(
+                    language_texts, item, "choice%d" % number, choice)
+                if changed:
+                    variable = "forest_choice_%d" % number
+                    lines.append("    $ %s = %s" % (variable, choice))
+                    caption = "[%s]" % variable
+                else:
+                    caption = menu_text(tsc.string(index))
+                choices.append((number, caption, item.operands[2 + number]))
+            lines.append("    menu:")
+            for number, caption, branch in choices:
+                lines.extend(("        %r:" % caption,
+                              "            $ _r[%s] = %d" % (result, number),
+                              "            jump %s" % scene_label(scene, branch)))
         elif opcode == 18:
             destination = packed(operands[0])
             for index, value in enumerate(tsc.data(operands[1])):
@@ -260,15 +407,19 @@ def compile_scene(source: Path, language: str | None = None) -> str:
             if re.fullmatch(r"(?:\^c[yk])+", name):
                 name = ""
             value = (name + "：" if name else "") + text
+            value, _ = patch_text_expression(language_texts, item, "say", value)
             if operands[1]:
                 lines.append("    _voice %s 0 0 0" % packed(operands[1]))
-            lines.append("    _say%s %r" % (language_arg, value))
+            lines.append("    _say%s %s" % (language_arg, value))
         elif opcode == 82:
             text = tsc.string(operands[4])
-            lines.append("    _append%s %r" % (language_arg, text))
+            text, _ = patch_text_expression(language_texts, item, "append", text)
+            lines.append("    _append%s %s" % (language_arg, text))
         elif opcode == 32:
             args = " ".join(packed(value) for value in operands[:5])
-            lines.append("    _oload %s %r" % (args, tsc.string(operands[5])))
+            text, _ = patch_text_expression(
+                language_texts, item, "oload", tsc.string(operands[5]))
+            lines.append("    _oload %s %s" % (args, text))
         elif opcode == 121 and operands[1] < len(tsc.strings):
             lines.append("    _forest_folder %s %r" % (packed(operands[0]), tsc.string(operands[1])))
         elif opcode == 15:
@@ -306,6 +457,11 @@ def compile_scene(source: Path, language: str | None = None) -> str:
             lines.append("    _%s%s" % (COMMANDS[opcode], " " + args if args else ""))
         else:
             lines.append("    # unlifted opcode 0x%04x %s" % (opcode, operands))
+    for patch_language, commands in (language_insertions or {}).items():
+        added = commands.get(tsc.code_size, ())
+        if added:
+            lines.append("    if _preferences.language == %r:" % patch_language)
+            lines.extend("        " + command for command in added)
     emitted = {item.offset for item in instructions}
     for target in sorted(targets - emitted):
         lines.extend(("", "label %s:" % scene_label(scene, target), "    return"))
@@ -1373,7 +1529,13 @@ def main(argv: list[str]) -> int:
                 obsolete.unlink()
         copy_assets(root / source_folder, "*.ogg", audio_target)
     convert_movies(root / "mov", game / "mov")
+    patch_texts = {}
+    patch_insertions = {}
     for language, patch in language_patches:
+        replacements, insertions = language_patch_data(root / "scr",
+                                                        patch / "scr")
+        patch_texts[language] = replacements
+        patch_insertions[language] = insertions
         write_language_patch(root, patch, language, game)
     (game / "options.rpy").write_text(
         'define config.name = "Forest"\n'
@@ -1399,8 +1561,20 @@ def main(argv: list[str]) -> int:
         '    return\n', encoding="utf-8")
     sources = scenario_sources(root / "scr")
     for source in sources:
+        scene_texts = {
+            language: replacements[source.name]
+            for language, replacements in patch_texts.items()
+            if source.name in replacements
+        }
+        scene_insertions = {
+            language: insertions[source.name]
+            for language, insertions in patch_insertions.items()
+            if source.name in insertions
+        }
         (scenario / (source.stem + ".rpy")).write_text(
-            compile_scene(source, language_marker), encoding="utf-8")
+            compile_scene(source, language_marker, scene_texts,
+                          scene_insertions),
+            encoding="utf-8")
     print("Wrote %s: %d rscript scenes" % (target, len(sources)))
     return 0
 

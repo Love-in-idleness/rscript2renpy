@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
 from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS, compile_scene,
                                   convert_masks, convert_movies, copy_assets,
-                                  language_patch_strings, menu_text,
+                                  language_patch_data, language_patch_strings, menu_text,
                                   scene_strings)
 from forest_tsc import read_tsc
 
@@ -251,6 +251,46 @@ def main() -> None:
                    if key[1] == "say")
         assert language_patch_strings(resources / "scr", patch_scr)[old] == \
             "^g999TRANSLATED"
+        first_voice = next(line for line in patched.splitlines()
+                           if line.startswith("*voice "))
+        first_voice_wait = next(line for line in patched.splitlines()
+                                if line == "*voice_wait")
+        fonts = "\n".join(
+            '*font %d 175 50 0 0 "%sAdded subtitle"' %
+            (layer, "^cy" if layer == 49 else "^ck")
+            for layer in range(45, 50))
+        clears = "\n".join("*cls %d 0" % layer for layer in range(45, 50))
+        subtitle_patch = patched.replace(
+            first_voice, first_voice + "\n" + fonts, 1).replace(
+                first_voice_wait,
+                first_voice_wait + "\n" + clears + "\n*wait 20", 1)
+        subtitle_patch = subtitle_patch.replace(first, '"'.join(changed), 1)
+        (patch_scr / source.name).write_text(subtitle_patch, encoding="utf-8")
+        replacements, insertions = language_patch_data(resources / "scr",
+                                                        patch_scr)
+        commands = [command
+                    for group in insertions[source.name].values()
+                    for command in group]
+        assert sum(command.startswith("_oload ") for command in commands) == 5
+        assert sum(command.startswith("_cls ") for command in commands) == 5
+        assert commands.count("_wait 20") == 1
+        compiled_patch = compile_scene(
+            source,
+            language_texts={"english": replacements[source.name]},
+            language_insertions={"english": insertions[source.name]})
+        assert "{'english': '^g999TRANSLATED'}.get(_preferences.language" in \
+            compiled_patch
+        assert "if _preferences.language == 'english':" in compiled_patch
+        assert "_oload 49 175 50 0 0 '^cyAdded subtitle'" in compiled_patch
+        invalid_patch = subtitle_patch.replace(
+            first_voice, first_voice + "\n*voice 999 0 0 0", 1)
+        (patch_scr / source.name).write_text(invalid_patch, encoding="utf-8")
+        try:
+            language_patch_data(resources / "scr", patch_scr)
+        except ValueError as error:
+            assert "changes scenario structure" in str(error)
+        else:
+            raise AssertionError("language patch added a gameplay instruction")
     print("OK: lowered %d Forest TSC files to rscript RPY" % len(scenes))
 
 

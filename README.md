@@ -61,7 +61,10 @@ python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
 
 补丁目录不是另一份完整游戏，只放相对于原资源发生变化的已转换文件：
 `scr/*.tsc`、`grp*/*.png`、`wav|bgm|voice/*.ogg` 或 `mov/*.webm`。TSC
-补丁只允许改变命令中的文本，不能改变指令结构。语言标识符同时作为菜单中的标签。
+补丁可翻译已有 `*TXT`、`*TXA`、`*select`、`*font` 文本，也可为原版只有
+语音的段落添加 `*font` 字幕；字幕附带的 `*cls` 和 `*wait` 会一并仅在该语言
+启用。其他新增、删除或重排指令仍会报错。译文按场景与指令位置对应，因此同一句
+原文可以因上下文使用不同译文。语言标识符同时作为菜单中的标签。
 
 标题页设置菜单还可调整字号和每行字符数（默认 22/19），并提供持久化
 游戏进度的备份、读取与清除功能；清除进度时保留备份。把 `.ttf`、`.otf`
@@ -153,7 +156,11 @@ Pass `--language japanese` (or another Ren'Py identifier) to emit one.
 Repeat `--language ID=PATCH_DIR` to add language choices to the simple title
 settings screen. A patch directory contains only converted files that differ
 from the base resources, using the same relative layout. Command-based TSC
-patches may replace text but not instruction structure. Old
+patches may translate existing `*TXT`, `*TXA`, `*select`, and `*font` text, and
+may add `*font` subtitles (plus their `*cls` and `*wait` display timing) for
+voice-only passages. Other inserted, removed, or reordered commands are
+rejected. Translations are matched by scene and instruction position, so the
+same source text may have context-specific translations. Old
 `;@gsc-structure-v1` dumps are intentionally unsupported. The same screen also
 controls text size, characters per line, and persistent-progress backup,
 restore, and clearing; clearing progress keeps the backup. Additional `.ttf`,
