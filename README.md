@@ -10,8 +10,8 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 当前运行时面向 Ren'Py 8（Python 3）；Forest 已使用 `/opt/apps/renpy`
 中的 Ren'Py 8.5 完成生成与 lint 验证。
 
-本项目不包含任何游戏剧本、图像、音频、视频或可执行文件。用户必须从
-自己合法持有的游戏副本中准备资源。
+除通用鼠标光标外，本项目不包含游戏剧本、图像、音频、视频或可执行文件。
+用户必须从自己合法持有的游戏副本中准备其余资源。
 
 ### 依赖 LiarsoftTool
 
@@ -28,7 +28,7 @@ LiarsoftTool 2.0 当前生成的命令式 TSC（`*TXT`、`*load`、标签等）�
 python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
-该命令会把 17 个运行时模块复制到 Ren'Py 工程的 `game/` 目录。除非使用
+该命令会把 17 个运行时模块和通用光标复制到 Ren'Py 工程的 `game/` 目录。除非使用
 `--force`，否则不会覆盖内容不同的已有文件。
 
 ### Forest 生成器
@@ -70,12 +70,11 @@ python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
 
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
-Forest 生成器会从资源目录顶层的原版 `Forest.exe` 提取 32×32 光标，写入
-生成工程的 `game/gui/rscript_cursor.png`；光标本身不会收入本仓库。通用运行时
-检测到该文件时会自动启用它。提取需要 `wrestool`（Linux 上通常由
-`icoutils` 提供）。
+仓库保存了从《Forest》原版提取的 32×32 光标。安装通用运行时或运行 Forest
+生成器时，它会复制为 `game/gui/rscript_cursor.png` 并自动启用；以后其他移植
+项目也统一使用这一光标。
 
-生成器还需要 Python 3、Pillow、`wrestool` 和 `ffmpeg`。它只读取用户指定的
+生成器还需要 Python 3、Pillow 和 `ffmpeg`。它只读取用户指定的
 资源目录，不会查找、下载或修改已安装的游戏。
 
 项目代码采用 [MIT License](LICENSE)。项目附带的 Noto Sans CJK JP
@@ -101,9 +100,9 @@ been verified with Ren'Py 8.5.
 The current experimental release is **0.1.0**. Runtime behavior depends on the
 source game's CodeX dialect, so each new game still requires verification.
 
-This repository contains engine-side support only. It does not contain game
-scripts, images, audio, movies, fonts, executables, or other proprietary game
-data.
+Apart from the shared mouse cursor, this repository contains engine-side
+support only. It does not contain game scripts, images, audio, movies,
+executables, or other proprietary game data.
 
 ## Install the runtime
 
@@ -111,9 +110,9 @@ data.
 python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
-The command copies the seventeen runtime modules into the project's `game/`
-directory. Existing different files are not overwritten unless `--force` is
-specified.
+The command copies the seventeen runtime modules and shared cursor into the
+project's `game/` directory. Existing different files are not overwritten
+unless `--force` is specified.
 
 These modules provide the register model, custom RScript statements, drawing,
 audio, text, effects, and shaders. A game adapter must still provide its own
@@ -166,10 +165,9 @@ The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
 accepts GSC input. Keeping original GSC files beside the TSC files does not
 affect generation.
 
-The Forest generator extracts the original 32x32 cursor from `Forest.exe` at
-build time and writes `game/gui/rscript_cursor.png`; the proprietary cursor is
-not stored in this repository. The generic runtime enables that file when it
-is present. Extraction requires `wrestool` (usually provided by `icoutils`).
+The repository carries the original 32x32 Forest cursor as the shared RScript
+cursor. Runtime installation and the Forest generator copy it to
+`game/gui/rscript_cursor.png`; future game adapters use the same asset.
 
 The generator only reads the directory supplied by the user. It expects
 `scr/*.tsc`, PNG files under the `grp*` directories, OGG files

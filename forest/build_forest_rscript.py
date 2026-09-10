@@ -12,9 +12,6 @@ from PIL import Image
 
 from forest_tsc import E, read_tsc
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from rscript_cursor import extract_cursor
-
 
 COMMANDS = {
     10: "hit", 11: "hitc", 12: "jump", 13: "wait",
@@ -1185,7 +1182,6 @@ def validate_inputs(root: Path) -> None:
     missing = [str(root / name) for name in required_dirs
                if not (root / name).is_dir()]
     required_assets = (
-        root / "Forest.exe",
         root / "grpe" / "9001.png",
         root / "bgm" / "Track01.ogg",
     )
@@ -1223,7 +1219,6 @@ def main(argv: list[str]) -> int:
     gui_template = here / "forest" / "gui.rpy"
     game = target / "game"
     validate_inputs(root)
-    extract_cursor(root / "Forest.exe", game / "gui" / "rscript_cursor.png")
     scenario = game / "scenario"
     scenario.mkdir(parents=True, exist_ok=True)
     for cache in scenario.glob("*.rpyc"):
@@ -1231,6 +1226,9 @@ def main(argv: list[str]) -> int:
     for source in runtime.glob("*.rpy"):
         if source.name not in {"script.rpy", "build.rpy", "options.rpy"} and not source.name.startswith("unren-"):
             shutil.copyfile(source, game / source.name)
+    cursor = game / "gui" / "rscript_cursor.png"
+    cursor.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(runtime / "gui" / "rscript_cursor.png", cursor)
     for obsolete in game.glob("unren-*.rpy*"):
         obsolete.unlink()
     definitions_path = game / "01_defines.rpy"

@@ -27,7 +27,6 @@ def main() -> None:
             ";@gsc-schema early\n"
             "*end\n")
         (resources / "scr" / "0000.tsc").write_text(tsc, encoding="utf-8")
-        (resources / "Forest.exe").write_bytes(b"fixture")
         patch_dir = base / "english-patch"
         patch_dir.mkdir()
         for path in (resources / "grpe" / "9001.png",
@@ -41,11 +40,12 @@ def main() -> None:
         project = base / "project"
         with patch.object(forest_builder, "copy_assets"), \
                 patch.object(forest_builder, "convert_masks"), \
-                patch.object(forest_builder, "convert_movies"), \
-                patch.object(forest_builder, "extract_cursor"):
+                patch.object(forest_builder, "convert_movies"):
             forest_builder.main(["build_forest_rscript.py",
                                  str(resources), str(project),
                                  "--language", "english=" + str(patch_dir)])
+        assert (project / "game" / "gui" / "rscript_cursor.png").read_bytes() == \
+            (ROOT / "runtime" / "gui" / "rscript_cursor.png").read_bytes()
         gui = project / "game" / "gui.rpy"
         gui_text = gui.read_text(encoding="utf-8")
         assert "gui.init(800, 600)" in gui_text

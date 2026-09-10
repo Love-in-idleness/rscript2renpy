@@ -33,8 +33,9 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 17
+        assert len(installed) == 18
         assert all(path.is_file() for path in installed)
+        assert (project / "game" / "gui" / "rscript_cursor.png").is_file()
 
     print("OK: 17 generic RScript runtime modules")
 

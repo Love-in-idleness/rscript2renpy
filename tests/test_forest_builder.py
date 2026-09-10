@@ -13,7 +13,6 @@ from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS, compile_scene,
                                   language_patch_strings, menu_text,
                                   scene_strings)
 from forest_tsc import read_tsc
-from rscript_cursor import extract_cursor
 
 
 def main() -> None:
@@ -88,11 +87,6 @@ def main() -> None:
         (movie_target / "old.MPG").write_bytes(b"obsolete")
         convert_movies(movie_source, movie_target)
         assert not (movie_target / "old.MPG").exists()
-        cursor = target / "cursor.png"
-        assert extract_cursor(resources / "Forest.exe", cursor) == (0, 0)
-        with Image.open(cursor) as image:
-            assert image.format == "PNG" and image.size == (32, 32)
-            assert image.getbbox() is not None
     font = ROOT / "forest" / "fonts" / "NotoSansCJKjp-Regular.otf"
     assert font.is_file() and font.stat().st_size > 1_000_000
     files = sorted((resources / "scr").glob("*.tsc"))
@@ -235,6 +229,9 @@ def main() -> None:
     assert 'return Quit(confirm=True)' in FOREST_COMPAT
     assert '"gui/rscript_cursor.png", 0, 0' in (
         ROOT / "runtime" / "cursor.rpy").read_text(encoding="utf-8")
+    with Image.open(ROOT / "runtime" / "gui" / "rscript_cursor.png") as cursor:
+        assert cursor.format == "PNG" and cursor.size == (32, 32)
+        assert cursor.getbbox() is not None
     assert ('execute=execute_forest_setclksys, lint=lint_undef)'
             in FOREST_COMPAT)
     assert "'label main_menu:\\n'" in builder

@@ -18,10 +18,11 @@ def install(project: Path, force: bool = False) -> list[Path]:
         raise ValueError("Ren'Py game directory not found: %s" % game)
 
     installed = []
-    for source in sorted(RUNTIME.glob("*.rpy")):
-        target = game / source.name
+    for source in sorted(path for path in RUNTIME.rglob("*") if path.is_file()):
+        target = game / source.relative_to(RUNTIME)
         if target.exists() and target.read_bytes() != source.read_bytes() and not force:
             raise FileExistsError("refusing to overwrite different file: %s" % target)
+        target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
         installed.append(target)
     return installed
