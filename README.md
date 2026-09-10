@@ -18,8 +18,9 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 移植工作流依赖
 [LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool) 完成资源预处理，
 包括递归解包 XFL/LWG、GSC→TSC、WCG/LIM→PNG，以及封装 WAV→OGG。
-运行时和生成器都不链接或调用 LiarsoftTool。各游戏生成器只读取
-LiarsoftTool 2.0 预先生成的结构化 TSC，不接受 GSC 输入。
+运行时和生成器都不链接或调用 LiarsoftTool。Forest 生成器只读取
+LiarsoftTool 2.0 当前生成的命令式 TSC（`*TXT`、`*load`、标签等），不接受
+旧版 `;@gsc-structure-v1` 转储或 GSC 输入。
 
 ### 安装通用运行时
 
@@ -60,7 +61,7 @@ python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
 
 补丁目录不是另一份完整游戏，只放相对于原资源发生变化的已转换文件：
 `scr/*.tsc`、`grp*/*.png`、`wav|bgm|voice/*.ogg` 或 `mov/*.webm`。TSC
-补丁只允许改变文本，不能改变指令结构。语言标识符同时作为菜单中的标签。
+补丁只允许改变命令中的文本，不能改变指令结构。语言标识符同时作为菜单中的标签。
 
 标题页设置菜单还可调整字号和每行字符数（默认 22/19），并提供持久化
 游戏进度的备份、读取与清除功能；清除进度时保留备份。把 `.ttf`、`.otf`
@@ -135,7 +136,7 @@ bundles proprietary Forest data. Prepare an extracted resource directory with
 at least `scr/`, `grps/`, the other `grp*` directories, and converted OGG audio;
 then create an empty Ren'Py project. The generator requires Python 3, Pillow,
 `ffmpeg` for MPG conversion, and LiarsoftTool 2.0 for editable TSC input.
-Prepare both converted resources and structured TSC files first:
+Prepare both converted resources and current command-based TSC files first:
 
 ```bash
 liarsofttool -R --unpack-only --gsc-to-tsc /path/to/forest-resources
@@ -147,8 +148,9 @@ By default, generated `_say` and `_append` statements have no language marker.
 Pass `--language japanese` (or another Ren'Py identifier) to emit one.
 Repeat `--language ID=PATCH_DIR` to add language choices to the simple title
 settings screen. A patch directory contains only converted files that differ
-from the base resources, using the same relative layout. Structured TSC
-patches may replace text but not instruction structure. The same screen also
+from the base resources, using the same relative layout. Command-based TSC
+patches may replace text but not instruction structure. Old
+`;@gsc-structure-v1` dumps are intentionally unsupported. The same screen also
 controls text size, characters per line, and persistent-progress backup,
 restore, and clearing; clearing progress keeps the backup. Additional `.ttf`,
 `.otf`, and `.ttc` files placed in the generated project's `game/fonts/`

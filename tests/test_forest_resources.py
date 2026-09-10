@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate structured Forest TSC files when legal resources are present."""
+"""Validate current command-based Forest TSC files when resources are present."""
 
 from pathlib import Path
 import argparse

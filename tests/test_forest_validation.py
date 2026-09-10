@@ -22,16 +22,10 @@ def main() -> None:
                      "voice", "mov"):
             (resources / name).mkdir(parents=True)
         tsc = (
-            ";@gsc-structure-v1 size=0 fnv1a64=0\n"
             ";@gsc-byte-format legacy-28\n"
-            ";@gsc-text-encoding cp932\n"
-            ";@gsc-section header "
-            "000000001c0000000000000000000000000000000000000000000000\n"
-            ";@gsc-section declaration -\n"
-            ";@gsc-section strings -\n"
-            ";@gsc-section data-index -\n"
-            ";@gsc-section data -\n"
-            ";@gsc-structure-end\n")
+            ";@gsc-text-encoding CP932\n"
+            ";@gsc-schema early\n"
+            "*end\n")
         (resources / "scr" / "0000.tsc").write_text(tsc, encoding="utf-8")
         patch_dir = base / "english-patch"
         patch_dir.mkdir()
@@ -101,6 +95,28 @@ def main() -> None:
             assert "voice/*.ogg" in str(error)
         else:
             raise AssertionError("missing converted voice was accepted")
+        old_tsc = (
+            ";@gsc-structure-v1 size=0 fnv1a64=0\n"
+            ";@gsc-byte-format legacy-28\n"
+            ";@gsc-text-encoding CP932\n"
+            ";@gsc-structure-end\n")
+        (resources / "scr" / "0000.tsc").write_text(old_tsc, encoding="utf-8")
+        try:
+            forest_builder.read_tsc(resources / "scr" / "0000.tsc")
+        except ValueError as error:
+            assert "obsolete TSC format" in str(error)
+        else:
+            raise AssertionError("obsolete structured TSC was accepted")
+        current_tsc = (
+            ";@gsc-byte-format legacy-28\n"
+            ";@gsc-text-encoding CP932\n"
+            ";@gsc-schema early\n"
+            "*TXT 0 0 0 0 \"\" \"^g999Edited text\" 1\n"
+            "*end\n")
+        (resources / "scr" / "0000.tsc").write_text(
+            current_tsc, encoding="utf-8")
+        assert "    _say '^g999Edited text'" in forest_builder.compile_scene(
+            resources / "scr" / "0000.tsc")
     print("OK: Forest input validation")
 
 

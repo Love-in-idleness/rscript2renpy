@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lower LiarsoftTool's structured Forest TSC to Jeanne-style rscript RPY."""
+"""Lower LiarsoftTool's current Forest TSC to Jeanne-style rscript RPY."""
 
 from pathlib import Path
 import argparse
@@ -90,19 +90,8 @@ def menu_text(value: str) -> str:
     return re.sub(r"<@(\d+)>", lambda match: "[_r[%s]]" % match.group(1), value)
 
 
-def tsc_txt(line: str) -> tuple[str, str]:
-    content = line[1:]
-    delimiter = '"："'
-    if delimiter not in content:
-        return "", content
-    name, text = content.split(delimiter, 1)
-    if re.fullmatch(r"(?:\^c[yk])+", name):
-        name = ""
-    return name, text
-
-
 def scenario_sources(folder: Path) -> list[Path]:
-    """Return the structured TSC scripts in a resource directory."""
+    """Return current command-based TSC scripts in a resource directory."""
     if not folder.is_dir():
         return []
     return sorted(source for source in folder.iterdir()
@@ -122,18 +111,12 @@ def scene_strings(source: Path) -> dict[tuple[int, str], str]:
                     result[(item.offset, "choice%d" % number)] = menu_text(
                         tsc.string(index))
         elif opcode == 81:
-            if item.offset in tsc.text_edits:
-                name, text = tsc_txt(tsc.text_edits[item.offset])
-            else:
-                name, text = tsc.string(operands[4]), tsc.string(operands[5])
-                if re.fullmatch(r"(?:\^c[yk])+", name):
-                    name = ""
+            name, text = tsc.string(operands[4]), tsc.string(operands[5])
+            if re.fullmatch(r"(?:\^c[yk])+", name):
+                name = ""
             result[(item.offset, "say")] = (name + "：" if name else "") + text
         elif opcode == 82:
-            edit = tsc.text_edits.get(item.offset)
-            result[(item.offset, "append")] = (
-                edit[8:] if edit and edit.startswith("\\append ")
-                else tsc.string(operands[4]))
+            result[(item.offset, "append")] = tsc.string(operands[4])
         elif opcode == 32:
             result[(item.offset, "oload")] = tsc.string(operands[5])
     return result
@@ -224,7 +207,6 @@ def compile_scene(source: Path, language: str | None = None) -> str:
         raise ValueError("invalid language name: %s" % language)
     language_arg = " " + language if language else ""
     tsc = read_tsc(source)
-    text_edits = tsc.text_edits
     scene = source.stem
     instructions = tsc.instructions()
     targets = {item.operands[0] for item in instructions if item.opcode in (3, 4, 5)}
@@ -274,19 +256,15 @@ def compile_scene(source: Path, language: str | None = None) -> str:
             for index, value in enumerate(tsc.data(operands[1])):
                 lines.append("    $ _r[(%s) + %d] = %d" % (destination, index, value))
         elif opcode == 81:
-            if item.offset in text_edits:
-                name, text = tsc_txt(text_edits[item.offset])
-            else:
-                name, text = tsc.string(operands[4]), tsc.string(operands[5])
-                if re.fullmatch(r"(?:\^c[yk])+", name):
-                    name = ""
+            name, text = tsc.string(operands[4]), tsc.string(operands[5])
+            if re.fullmatch(r"(?:\^c[yk])+", name):
+                name = ""
             value = (name + "：" if name else "") + text
             if operands[1]:
                 lines.append("    _voice %s 0 0 0" % packed(operands[1]))
             lines.append("    _say%s %r" % (language_arg, value))
         elif opcode == 82:
-            edit = text_edits.get(item.offset)
-            text = edit[8:] if edit and edit.startswith("\\append ") else tsc.string(operands[4])
+            text = tsc.string(operands[4])
             lines.append("    _append%s %r" % (language_arg, text))
         elif opcode == 32:
             args = " ".join(packed(value) for value in operands[:5])

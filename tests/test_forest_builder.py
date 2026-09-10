@@ -10,7 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
 from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS, compile_scene,
                                   convert_masks, convert_movies, copy_assets,
-                                  language_patch_strings, scene_strings, tsc_txt)
+                                  language_patch_strings, menu_text,
+                                  scene_strings)
+from forest_tsc import read_tsc
 
 
 def main() -> None:
@@ -118,13 +120,15 @@ def main() -> None:
     assert "'forest_asset_3501':" in scenes[[p.stem for p in files].index("1000")]
     assert "__forest_asset_" not in compiled
     story = scenes[[p.stem for p in files].index("2100")]
+    story_source = files[[p.stem for p in files].index("2100")]
+    story_tsc = read_tsc(story_source)
     assert "    _oaction 29 4" in story
     assert "_se 0 1008\n    _se_on 0 999 0 0" in story
     assert "_se 999 1008" not in story
-    assert "    _voice 91 0 0 0\n    _say '^g005うっわ、くっさぁ" in story
+    assert "    _voice 91 0 0 0\n    _say " in story
     japanese_story = compile_scene(
-        files[[p.stem for p in files].index("2100")], language="japanese")
-    assert "    _say japanese '^g005うっわ、くっさぁ" in japanese_story
+        story_source, language="japanese")
+    assert "    _voice 91 0 0 0\n    _say japanese " in japanese_story
     scene_2500 = scenes[[p.stem for p in files].index("2500")]
     assert "unlifted opcode 0x0009" not in scene_2500
     assert scene_2500.count("renpy.random.randrange(0x8000)") == 7
@@ -133,22 +137,30 @@ def main() -> None:
     assert "_load 10 -21416" not in scene_2500
     assert "_load 10 44120" not in scene_2500
     assert "_load 10 4416 _r[802] 300 0 0" in scene_2500
+    first_select = next(item for item in story_tsc.instructions()
+                        if item.opcode == 14)
+    prompt = menu_text(story_tsc.string(first_select.operands[1]))
     assert ("$ jump_back_point = renpy.game.log.current.identifier\n"
             "    $ forest_choice_prompt = "
-            "renpy.translation.translate_string('お話を聞かせる？')\n"
-            "    menu:" in story)
-    assert "    menu:\n        'お話を聞かせる？'" not in story
-    assert "'いいよ':\n            $ _r[2] = 0\n            jump _2100_L_0000ba" in story
-    assert "'いやだ':\n            $ _r[2] = 1\n            jump _2100_L_0000c6" in story
+            "renpy.translation.translate_string(%r)\n" % prompt in story)
+    for number, index in enumerate(first_select.operands[7:9]):
+        choice = menu_text(story_tsc.string(index))
+        target = first_select.operands[2 + number]
+        assert ("%r:\n            $ _r[2] = %d\n"
+                "            jump _2100_L_%06x" %
+                (choice, number, target)) in story
     credits = scenes[[p.stem for p in files].index("5000")]
+    credits_tsc = read_tsc(files[[p.stem for p in files].index("5000")])
     assert "    _osize 40 25" in credits
-    assert "    _oload 40 400 270 0 0 '企画・原案・シナリオ'" in credits
+    credit_text = next(credits_tsc.string(item.operands[5])
+                       for item in credits_tsc.instructions()
+                       if item.opcode == 32 and item.operands[0] == 40)
+    assert "    _oload 40 400 270 0 0 %r" % credit_text in credits
     assert 'color = "#C8AF00"' in RSCRIPT_OBJECTS
     assert "font = forest_current_font()" in RSCRIPT_OBJECTS
     assert "xmaximum = font_size * persistent.forest_line_chars" in RSCRIPT_OBJECTS
     assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
-    assert tsc_txt('\\^cy"："^g999Text') == ("", "^g999Text")
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
     assert "text_align (0.5 if center else 0.0)" in FOREST_COMPAT
     assert ('background Transform("images/grps/tbox01/back.png", '
@@ -225,9 +237,11 @@ def main() -> None:
         source = resources / "scr" / "2100.tsc"
         patched = source.read_text(encoding="utf-8")
         first = next(line for line in patched.splitlines()
-                     if line.startswith("\\") and not line.startswith("\\append "))
+                     if line.startswith("*TXT "))
+        changed = first.rsplit('"', 2)
+        changed[-2] = "^g999TRANSLATED"
         (patch_scr / source.name).write_text(
-            patched.replace(first, "\\^g999TRANSLATED", 1), encoding="utf-8")
+            patched.replace(first, '"'.join(changed), 1), encoding="utf-8")
         old = next(value for (key, value) in scene_strings(source).items()
                    if key[1] == "say")
         assert language_patch_strings(resources / "scr", patch_scr)[old] == \
