@@ -8,7 +8,8 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
-from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS, compile_scene,
+from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS,
+                                  compile_credits_scene, compile_scene,
                                   convert_masks, convert_movies, copy_assets,
                                   language_patch_data, language_patch_strings, menu_text,
                                   scene_strings)
@@ -195,7 +196,10 @@ def main() -> None:
     assert 'insensitive "images/grps/compane/voc_off.png"' in FOREST_COMPAT
     assert 'action HideInterface()' in FOREST_COMPAT
     assert 'config.game_menu_action = Function(forest_open_game_menu)' in FOREST_COMPAT
-    assert 'if store.menu_enabled:' in FOREST_COMPAT
+    assert 'if store.menu_enabled and not store.forest_input_locked:' in FOREST_COMPAT
+    assert "default forest_input_locked = False" in FOREST_COMPAT
+    assert 'textbutton "戻る" action Rollback() sensitive not forest_input_locked' in FOREST_COMPAT
+    assert 'textbutton "メニュー" action ShowMenu("preferences") sensitive not forest_input_locked' in FOREST_COMPAT
     assert 'screen preferences(title_mode=False):' in FOREST_COMPAT
     assert 'if not title_mode:' in FOREST_COMPAT
     assert 'if store.save_enabled:' in FOREST_COMPAT
@@ -291,6 +295,32 @@ def main() -> None:
             assert "changes scenario structure" in str(error)
         else:
             raise AssertionError("language patch added a gameplay instruction")
+    with TemporaryDirectory() as temporary:
+        patch_root = Path(temporary)
+        patch_scr = patch_root / "scr"
+        patch_scr.mkdir()
+        credits_source = resources / "scr" / "5000.tsc"
+        patched_credits = credits_source.read_text(encoding="utf-8").replace(
+            '*font 40 400 270 0 0 "企画・原案・シナリオ"',
+            '*font 40 400 270 0 0 "Whole-scene credits"', 1).replace(
+                "*bgm_on 9 0", "*bgm_on 9 0\n*wait 99", 1)
+        (patch_scr / "5000.tsc").write_text(
+            patched_credits, encoding="utf-8")
+        replacements, insertions = language_patch_data(
+            resources / "scr", patch_scr)
+        assert replacements == {} and insertions == {}
+        credits = compile_credits_scene(
+            credits_source, None, [("english", patch_root)])
+        assert "label _5000:" in credits
+        assert "call _5000_english" in credits
+        assert "call _5000_original" in credits
+        assert "label _5000_english:" in credits
+        assert "label _5000_original:" in credits
+        assert "Whole-scene credits" in credits
+        assert "    _wait 99" in credits
+        assert "    $ forest_input_locked = True" in credits
+        assert "    $ _rollback = False" in credits
+        assert "    $ forest_input_locked = False" in credits
     print("OK: lowered %d Forest TSC files to rscript RPY" % len(scenes))
 
 

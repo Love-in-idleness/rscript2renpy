@@ -170,6 +170,8 @@ def language_patch_data(base_scr: Path, patch_scr: Path):
         if not base_source.is_file():
             raise FileNotFoundError(
                 "%s has no matching base scenario" % patch_source)
+        if patch_source.name == "5000.tsc":
+            continue
         base_tsc, patch_tsc = read_tsc(base_source), read_tsc(patch_source)
         base_items = base_tsc.instructions()
         patch_items = patch_tsc.instructions()
@@ -327,15 +329,18 @@ def patch_text_expression(language_texts, item, kind, default):
 
 
 def compile_scene(source: Path, language: str | None = None,
-                  language_texts=None, language_insertions=None) -> str:
+                  language_texts=None, language_insertions=None,
+                  scene_name: str | None = None) -> str:
     if language and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", language):
         raise ValueError("invalid language name: %s" % language)
+    if scene_name and not re.fullmatch(r"[A-Za-z0-9_]+", scene_name):
+        raise ValueError("invalid scene name: %s" % scene_name)
     for patch_language in set(language_texts or {}) | set(language_insertions or {}):
         if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", patch_language):
             raise ValueError("invalid language name: %s" % patch_language)
     language_arg = " " + language if language else ""
     tsc = read_tsc(source)
-    scene = source.stem
+    scene = scene_name or source.stem
     instructions = tsc.instructions()
     targets = {item.operands[0] for item in instructions if item.opcode in (3, 4, 5)}
     for item in instructions:
@@ -469,6 +474,44 @@ def compile_scene(source: Path, language: str | None = None,
     return "\n".join(lines) + "\n"
 
 
+def compile_credits_scene(source: Path, language: str | None,
+                          language_patches: list[tuple[str, Path]]) -> str:
+    patched = [(name, root / "scr" / source.name)
+               for name, root in language_patches
+               if (root / "scr" / source.name).is_file()]
+    lines = [
+        "# Forest credits select a complete script for the active language.",
+        "label _5000:",
+        "    $ forest_previous_rollback = _rollback",
+        "    $ renpy.block_rollback()",
+        "    $ forest_input_locked = True",
+        "    $ _rollback = False",
+    ]
+    for index, (patch_language, _) in enumerate(patched):
+        keyword = "if" if index == 0 else "elif"
+        lines.extend((
+            "    %s _preferences.language == %r:" % (keyword, patch_language),
+            "        call _5000_%s" % patch_language,
+        ))
+    if patched:
+        lines.extend(("    else:", "        call _5000_original"))
+    else:
+        lines.append("    call _5000_original")
+    lines.extend((
+        "    $ _rollback = forest_previous_rollback",
+        "    $ forest_input_locked = False",
+        "    $ renpy.block_rollback()",
+        "    return",
+        "",
+    ))
+    result = "\n".join(lines)
+    result += compile_scene(source, language, scene_name="5000_original")
+    for patch_language, patch_source in patched:
+        result += "\n" + compile_scene(
+            patch_source, scene_name="5000_%s" % patch_language)
+    return result
+
+
 RSCRIPT_OBJECTS = r'''
 
 
@@ -556,6 +599,7 @@ default forest_choice_prompt = ""
 default forest_speaker = None
 default forest_speaker_visible = False
 default forest_last_voice = None
+default forest_input_locked = False
 default persistent.textbox_opacity = 1.0
 default persistent.forest_text_size = 22
 default persistent.forest_line_chars = 19
@@ -565,7 +609,7 @@ define forest_languages = [(None, "原文")]
 
 init python:
     def forest_open_game_menu():
-        if store.menu_enabled:
+        if store.menu_enabled and not store.forest_input_locked:
             renpy.run(ShowMenu("preferences"))
 
     def forest_save_json(data):
@@ -652,10 +696,10 @@ screen forest_touch_controls():
             xalign 0.995
             yalign 0.01
 
-            textbutton "戻る" action Rollback()
+            textbutton "戻る" action Rollback() sensitive not forest_input_locked
             textbutton "スキップ" action Skip()
             textbutton "オート" action Preference("auto-forward", "toggle")
-            textbutton "メニュー" action ShowMenu("preferences")
+            textbutton "メニュー" action ShowMenu("preferences") sensitive not forest_input_locked
 
 style forest_touch_button:
     xminimum 90
@@ -1068,7 +1112,7 @@ screen forest_compane():
                 hover "images/grps/compane/rev_f.png"
                 selected_idle "images/grps/compane/rev.png"
                 action If(jump_back_point, RollbackToIdentifier(jump_back_point), NullAction())
-                sensitive jump_back_point is not None
+                sensitive jump_back_point is not None and not forest_input_locked
                 xpos 88
                 ypos 2
                 focus_mask True
@@ -1077,6 +1121,7 @@ screen forest_compane():
                 hover "images/grps/compane/bak_f.png"
                 selected_idle "images/grps/compane/bak.png"
                 action Rollback()
+                sensitive not forest_input_locked
                 xpos 105
                 ypos 2
                 focus_mask True
@@ -1561,6 +1606,11 @@ def main(argv: list[str]) -> int:
         '    return\n', encoding="utf-8")
     sources = scenario_sources(root / "scr")
     for source in sources:
+        if source.name == "5000.tsc":
+            content = compile_credits_scene(
+                source, language_marker, language_patches)
+            (scenario / "5000.rpy").write_text(content, encoding="utf-8")
+            continue
         scene_texts = {
             language: replacements[source.name]
             for language, replacements in patch_texts.items()
