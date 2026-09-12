@@ -1535,7 +1535,9 @@ def main(argv: list[str]) -> int:
         "        speaker = renpy.re.match(r\"^\\^g(\\d{3})\", text)\n"
         "        if speaker:\n"
         "            store.forest_speaker = int(speaker.group(1))\n"
-        "            text = text[speaker.end():]",
+        "            text = text[speaker.end():]\n"
+        "        text = renpy.re.sub(r\"\\^g(\\d{3})\", "
+        "r\"{image=images/grps/gf\\1.png}\", text)",
         1)
     util_path.write_text(util_text, encoding="utf-8")
     channels_path = game / "audio.rpy"
