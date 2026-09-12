@@ -162,6 +162,7 @@ def main() -> None:
     assert "xmaximum = font_size * persistent.forest_line_chars" in RSCRIPT_OBJECTS
     assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
+    assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in builder
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
     assert "text_align (0.5 if center else 0.0)" in FOREST_COMPAT
     assert ('background Transform("images/grps/tbox01/back.png", '

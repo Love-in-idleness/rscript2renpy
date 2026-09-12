@@ -19,7 +19,9 @@ def main() -> None:
         assert marker in combined
     assert "xalign gui.dialogue_text_xalign\n            xpos gui.dialogue_xpos" not in combined
     assert 'lang = lex.word()' in combined
-    assert '"y": "#C8AF00", "k": "#000000"' in combined
+    assert '"y": "#FFDE00", "g": "#D7FFB3"' in combined
+    assert '"w": "#FFFFFF", "k": "#000000"' in combined
+    assert r"\^c([ygwk])" in combined
     assert "xmaximum = font_size * 19" in combined
     assert "def parse_rscript_text(text, color_controls = False):" in combined
     assert "parse_rscript_text(repr(args.Text), True)" in combined

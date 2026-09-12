@@ -111,7 +111,7 @@ def instruction_strings(tsc, item) -> dict[str, str]:
                 result["choice%d" % number] = menu_text(tsc.string(index))
     elif opcode == 81:
         name, text = tsc.string(operands[4]), tsc.string(operands[5])
-        if re.fullmatch(r"(?:\^c[yk])+", name):
+        if re.fullmatch(r"(?:\^c[ygwk])+", name):
             name = ""
         result["say"] = (name + "：" if name else "") + text
     elif opcode == 82:
@@ -409,7 +409,7 @@ def compile_scene(source: Path, language: str | None = None,
                 lines.append("    $ _r[(%s) + %d] = %d" % (destination, index, value))
         elif opcode == 81:
             name, text = tsc.string(operands[4]), tsc.string(operands[5])
-            if re.fullmatch(r"(?:\^c[yk])+", name):
+            if re.fullmatch(r"(?:\^c[ygwk])+", name):
                 name = ""
             value = (name + "：" if name else "") + text
             value, _ = patch_text_expression(language_texts, item, "say", value)
