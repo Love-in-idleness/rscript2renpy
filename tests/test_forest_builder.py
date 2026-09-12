@@ -26,6 +26,8 @@ def main() -> None:
     assert 'not source.name.startswith("unren-")' in builder
     assert 'game.glob("unren-*.rpy*")' in builder
     assert 'convert_movies(root / "mov", game / "mov")' in builder
+    assert 'replace("        xpos 1191", "        xpos 747")' in builder
+    assert 'replace("        ypos 639", "        ypos 556")' in builder
     assert "'label splashscreen:\\n'" in builder
     assert ("'    _movie 2\\n'\n"
             "        '    _movie 1\\n'\n"

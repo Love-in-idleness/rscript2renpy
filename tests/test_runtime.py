@@ -26,6 +26,7 @@ def main() -> None:
     assert "def parse_rscript_text(text, color_controls = False):" in combined
     assert "parse_rscript_text(repr(args.Text), True)" in combined
     assert "{k=-2}" not in combined
+    assert '"grps wait00 body"\n            xpos 4\n            ypos 5' in combined
     assert 'config.mouse = {' in combined
     assert '"gui/rscript_cursor.png", 0, 0' in combined
     for python2_only in ('basestring', 'ur"', "ur'", '(int, long, float)',

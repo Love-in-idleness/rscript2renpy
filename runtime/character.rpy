@@ -6,6 +6,8 @@ init:
 
         contains:
             "grps wait00 body"
+            xpos 4
+            ypos 5
         contains:
 
             "grps wait00 grow"

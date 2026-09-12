@@ -1551,8 +1551,8 @@ def main(argv: list[str]) -> int:
     channels_path.write_text(channels_text, encoding="utf-8")
     character_path = game / "character.rpy"
     character_text = character_path.read_text(encoding="utf-8")
-    character_text = character_text.replace("        xpos 1191", "        xpos 735")
-    character_text = character_text.replace("        ypos 639", "        ypos 565")
+    character_text = character_text.replace("        xpos 1191", "        xpos 747")
+    character_text = character_text.replace("        ypos 639", "        ypos 556")
     character_path.write_text(character_text, encoding="utf-8")
     language_labels = [(None, language_marker or "原文")]
     language_labels.extend((name, name) for name, _ in language_patches)
