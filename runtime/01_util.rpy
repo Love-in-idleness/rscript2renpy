@@ -152,9 +152,6 @@ python early:
         text = text.replace("―", "—")
         text = text.replace("…", "...")
 
-        text = renpy.re.sub(r"(—+)(—)", r"{k=-2}\1{/k}\2", text)
-
-
         center = False
         if "^m" in text:
             center = True
