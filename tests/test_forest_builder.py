@@ -197,7 +197,11 @@ def main() -> None:
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
     assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in builder
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
-    assert "slow_cps 30" in FOREST_COMPAT
+    assert "default persistent.forest_text_cps = 30" in FOREST_COMPAT
+    assert "def forest_text_speed_label():" in FOREST_COMPAT
+    assert 'persistent, "forest_text_cps", range=120,' in FOREST_COMPAT
+    assert "max_is_zero=True, step=5" in FOREST_COMPAT
+    assert "slow_cps persistent.forest_text_cps" in FOREST_COMPAT
     assert "text_align (0.5 if center else 0.0)" in FOREST_COMPAT
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)

@@ -600,6 +600,7 @@ default forest_input_locked = False
 default persistent.textbox_opacity = 1.0
 default persistent.forest_text_size = 22
 default persistent.forest_line_chars = 19
+default persistent.forest_text_cps = 30
 default persistent.forest_text_font = "fonts/NotoSansCJKjp-Regular.otf"
 default persistent.forest_progress_backup = None
 define forest_languages = [(None, "Original")]
@@ -632,6 +633,9 @@ init python:
         value = max(low, min(high, getattr(persistent, name) + delta))
         setattr(persistent, name, value)
         renpy.save_persistent()
+
+    def forest_text_speed_label():
+        return "Instant" if persistent.forest_text_cps == 0 else "%d cps" % persistent.forest_text_cps
 
     def forest_fonts():
         return sorted(name for name in renpy.list_files()
@@ -969,6 +973,24 @@ screen forest_title_preferences():
                         forest_adjust_text, "forest_line_chars", -1, 10, 40)
                     textbutton "+" action Function(
                         forest_adjust_text, "forest_line_chars", 1, 10, 40)
+            hbox:
+                xfill True
+                ysize 38
+                spacing 12
+                text "Text Speed":
+                    xsize 180
+                    yalign 0.5
+                bar:
+                    xsize 280
+                    yalign 0.5
+                    value FieldValue(
+                        persistent, "forest_text_cps", range=120,
+                        max_is_zero=True, step=5,
+                        action=Function(renpy.save_persistent))
+                text "[forest_text_speed_label()]":
+                    xsize 80
+                    yalign 0.5
+                    text_align 1.0
             vbox:
                 xfill True
                 spacing 4
@@ -1113,7 +1135,7 @@ screen say(who, what, center=False):
             font forest_current_font()
             size persistent.forest_text_size
             color "#ffffff"
-            slow_cps 30
+            slow_cps persistent.forest_text_cps
             xpos text_indent + 1
             ypos 8
             xsize persistent.forest_line_chars * persistent.forest_text_size
