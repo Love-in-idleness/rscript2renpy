@@ -446,9 +446,15 @@ def compile_scene(source: Path, language: str | None = None,
             # surrounding loads use 4416 and grpo_bg/4416.png is the asset that
             # exists; 44120 has no corresponding resource.
             if scene == "2500" and item.offset == 0x22366 and values[1] == 44120:
+                lines.append(
+                    "    # Forest conversion: CG 44120 flattened to 4416 "
+                    "because only 4416 exists.")
                 values[1] = 4416
             effect_index = 4 if opcode == 30 else 1
-            if values[effect_index] in (1, 4):
+            if values[effect_index] == 4:
+                lines.append(
+                    "    # Forest conversion: unsupported %s effect 4 "
+                    "flattened to 0." % COMMANDS[opcode])
                 values[effect_index] = 0
             args = " ".join(packed(value) if kind == E else str(value)
                             for kind, value in zip(item.kinds, values))

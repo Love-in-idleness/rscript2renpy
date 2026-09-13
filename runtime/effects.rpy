@@ -120,6 +120,16 @@ transform rotate_zoom_out:
     zoom 1.0
     linear 0.5 rotate 360 zoom 0.0
 
+transform rscript_zoom_in:
+    transform_anchor True
+    zoom 0.0
+    linear 0.5 zoom 1.0
+
+transform rscript_zoom_out:
+    transform_anchor True
+    zoom 1.0
+    linear 0.5 zoom 0.0
+
 transform rotate_clockwise:
     transform_anchor True
     rotate 0
@@ -476,6 +486,21 @@ init python:
 
 
 
+
+
+        elif effect == 1:
+            if not clear:
+                at_list.append(rscript_zoom_in)
+                _queue_load()
+                queue_ef_pause(0.5)
+
+            elif layer in store.layer_info:
+                img = store.layer_info.pop(layer)
+                store.layer_pos.pop(layer, None)
+                queue_draw(renpy.show, img, at_list = [trans, rscript_zoom_out],
+                           tag = tag, layer = IMAGE_LAYER)
+                queue_ef_pause(0.5)
+                queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
 
         elif effect == 3:

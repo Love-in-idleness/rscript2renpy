@@ -29,6 +29,8 @@ def main() -> None:
     assert '"grps wait00 body"\n            xpos 4\n            ypos 5' in combined
     assert 'config.mouse = {' in combined
     assert '"gui/rscript_cursor.png", 0, 0' in combined
+    assert "transform rscript_zoom_in:" in combined
+    assert "elif effect == 1:" in combined
     assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN' ]" in combined
     assert "dismiss = [ 'mouseup_1', 'mousedown_5'" in combined
     for python2_only in ('basestring', 'ur"', "ur'", '(int, long, float)',

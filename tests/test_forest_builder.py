@@ -158,6 +158,14 @@ def main() -> None:
     assert "    _oaction 29 4" in story
     assert story.count("    _load 30 21 _r[602] 300 28 1") == 2
     assert "    _cls 30 28" in story
+    scene_3031 = scenes[[p.stem for p in files].index("3031")]
+    assert scene_3031.count("    _load 30 11 _r[602] 300 1 0") == 1
+    flattened_effects = sum(
+        1 for source in files for item in read_tsc(source).instructions()
+        if item.opcode in (30, 36) and
+        item.operands[4 if item.opcode == 30 else 1] == 4)
+    assert flattened_effects == 91
+    assert compiled.count("effect 4 flattened to 0.") == flattened_effects
     assert "_se 0 1008\n    _se_on 0 999 0 0" in story
     assert "_se 999 1008" not in story
     assert "    _voice 91 0 0 0\n    _say " in story
@@ -172,6 +180,7 @@ def main() -> None:
     assert "_load 10 -21416" not in scene_2500
     assert "_load 10 44120" not in scene_2500
     assert "_load 10 4416 _r[802] 300 0 0" in scene_2500
+    assert "CG 44120 flattened to 4416 because only 4416 exists." in scene_2500
     first_select = next(item for item in story_tsc.instructions()
                         if item.opcode == 14)
     prompt = menu_text(story_tsc.string(first_select.operands[1]))
