@@ -48,6 +48,10 @@ def main() -> None:
             (ROOT / "runtime" / "gui" / "rscript_cursor.png").read_bytes()
         assert '"mov/%04d.mpg"' in (
             project / "game" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
+        gfx_text = (project / "game" / "03_rscript_gfx.rpy").read_text(
+            encoding="utf-8")
+        assert "forest_hang_punctuation(text_value, font_size)" in gfx_text
+        assert "xmaximum = font_size * persistent.forest_line_chars" in gfx_text
         for name in ("android.json", "android-icon_background.png",
                      "android-icon_foreground.png"):
             assert (project / name).read_bytes() == \

@@ -531,6 +531,7 @@ RSCRIPT_OBJECTS = r'''
         text_value, _ = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
         font_size = max(1, font_size * persistent.forest_text_size // 22)
+        text_value = forest_hang_punctuation(text_value, font_size)
         text = Text(text_value, font = forest_current_font(),
                     size = font_size, color = "#FFFFFF",
                     xmaximum = font_size * persistent.forest_line_chars)
@@ -606,6 +607,35 @@ default persistent.forest_progress_backup = None
 define forest_languages = [(None, "Original")]
 
 init python:
+    import unicodedata
+
+    _forest_hanging_punctuation = frozenset(
+        "、。，．！？!?：；;,.…‥—―」』）】》〉〕］｝”’")
+
+    def forest_hang_punctuation(text, font_size):
+        def hang_line(line):
+            tags = ""
+            while line.endswith("}"):
+                start = line.rfind("{")
+                if start < 0:
+                    break
+                tags = line[start:] + tags
+                line = line[:start]
+
+            start = len(line)
+            while start and line[start - 1] in _forest_hanging_punctuation:
+                start -= 1
+            if start == len(line):
+                return line + tags
+
+            punctuation = line[start:]
+            width = sum(font_size if unicodedata.east_asian_width(char) in "WFA"
+                        else font_size * 0.5 for char in punctuation)
+            return "%s%s{space=-%d}%s" % (
+                line[:start], punctuation, max(1, int(round(width))), tags)
+
+        return "\n".join(hang_line(line) for line in text.split("\n"))
+
     def forest_g_tag(tag, argument):
         try:
             number, text_size = argument.split(":", 1)
@@ -978,8 +1008,8 @@ screen forest_title_preferences():
                     xalign 1.0
                     yalign 0.5
                     spacing 10
-                    text "[persistent.forest_text_cps] cps":
-                        min_width 80
+                    text "[persistent.forest_text_cps]":
+                        min_width 48
                         text_align 0.5
                     textbutton "-" action Function(
                         forest_adjust_text, "forest_text_cps", -5, 5, 120)
@@ -1124,7 +1154,7 @@ screen say(who, what, center=False):
                 color "#ffffff"
                 xpos 0
                 ypos 7
-        text what:
+        text forest_hang_punctuation(what, persistent.forest_text_size):
             id "what"
             font forest_current_font()
             size persistent.forest_text_size
@@ -1488,6 +1518,17 @@ def main(argv: list[str]) -> int:
     gfx_path = game / "03_rscript_gfx.rpy"
     gfx_text = gfx_path.read_text(encoding="utf-8")
     gfx_text = gfx_text.replace('"mov/%04d.webm"', '"mov/%04d.mpg"')
+    gfx_text = gfx_text.replace(
+        "        font_size = store.object_size.get(layer, gui.text_size)\n"
+        "        text = Text(text_value, font = gui.text_font,\n"
+        "                    size = font_size, color = \"#FFFFFF\",\n"
+        "                    xmaximum = font_size * 19)",
+        "        font_size = store.object_size.get(layer, gui.text_size)\n"
+        "        font_size = max(1, font_size * persistent.forest_text_size // 22)\n"
+        "        text_value = forest_hang_punctuation(text_value, font_size)\n"
+        "        text = Text(text_value, font = forest_current_font(),\n"
+        "                    size = font_size, color = \"#FFFFFF\",\n"
+        "                    xmaximum = font_size * persistent.forest_line_chars)")
     if "def parse_oload(lex):" not in gfx_text:
         gfx_text = gfx_text.rstrip() + RSCRIPT_OBJECTS
     gfx_path.write_text(gfx_text, encoding="utf-8")

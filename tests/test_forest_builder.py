@@ -3,6 +3,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import argparse
 import sys
+import textwrap
 
 from PIL import Image
 
@@ -195,10 +196,23 @@ def main() -> None:
     assert "xmaximum = font_size * persistent.forest_line_chars" in RSCRIPT_OBJECTS
     assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
+    assert "forest_hang_punctuation(text_value, font_size)" in RSCRIPT_OBJECTS
     assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in builder
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
+    assert "def forest_hang_punctuation(text, font_size):" in FOREST_COMPAT
+    assert "text forest_hang_punctuation(what, persistent.forest_text_size):" in FOREST_COMPAT
+    helper_start = FOREST_COMPAT.index("    _forest_hanging_punctuation")
+    helper_end = FOREST_COMPAT.index("    def forest_g_tag", helper_start)
+    helper_namespace = {}
+    exec("import unicodedata\n" + textwrap.dedent(
+        FOREST_COMPAT[helper_start:helper_end]), helper_namespace)
+    hang = helper_namespace["forest_hang_punctuation"]
+    assert hang("甲" * 19 + "。", 22) == "甲" * 19 + "。{space=-22}"
+    assert hang("甲。{/color}", 22) == "甲。{space=-22}{/color}"
+    assert hang("Plain text", 22) == "Plain text"
     assert "default persistent.forest_text_cps = 20" in FOREST_COMPAT
-    assert 'text "[persistent.forest_text_cps] cps"' in FOREST_COMPAT
+    assert 'text "[persistent.forest_text_cps]"' in FOREST_COMPAT
+    assert "min_width 48" in FOREST_COMPAT
     assert 'forest_adjust_text, "forest_text_cps", -5, 5, 120' in FOREST_COMPAT
     assert 'forest_adjust_text, "forest_text_cps", 5, 5, 120' in FOREST_COMPAT
     assert "slow_cps persistent.forest_text_cps" in FOREST_COMPAT
