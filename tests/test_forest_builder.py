@@ -200,7 +200,9 @@ def main() -> None:
     assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in builder
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
     assert "def forest_hang_punctuation(text, font_size):" in FOREST_COMPAT
-    assert "text forest_hang_punctuation(what, persistent.forest_text_size):" in FOREST_COMPAT
+    assert "        text what:\n            id \"what\"" in FOREST_COMPAT
+    assert "text forest_hang_punctuation(what" not in FOREST_COMPAT
+    assert "forest_hang_punctuation(what, persistent.forest_text_size)" in builder
     helper_start = FOREST_COMPAT.index("    _forest_hanging_punctuation")
     helper_end = FOREST_COMPAT.index("    def forest_g_tag", helper_start)
     helper_namespace = {}

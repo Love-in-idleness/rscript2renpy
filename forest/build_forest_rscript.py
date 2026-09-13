@@ -1154,7 +1154,7 @@ screen say(who, what, center=False):
                 color "#ffffff"
                 xpos 0
                 ypos 7
-        text forest_hang_punctuation(what, persistent.forest_text_size):
+        text what:
             id "what"
             font forest_current_font()
             size persistent.forest_text_size
@@ -1612,6 +1612,10 @@ def main(argv: list[str]) -> int:
         "        store.forest_speaker_visible = False\n\n"
         "    renpy.register_statement(\"_append\"",
         1)
+    text_runtime = text_runtime.replace(
+        "renpy.say(who, what, interact = True, show_center = center)",
+        "renpy.say(who, forest_hang_punctuation(what, persistent.forest_text_size), "
+        "interact = True, show_center = center)")
     text_path.write_text(text_runtime, encoding="utf-8")
     util_path = game / "01_util.rpy"
     util_text = util_path.read_text(encoding="utf-8")
