@@ -1113,6 +1113,7 @@ screen say(who, what, center=False):
             font forest_current_font()
             size persistent.forest_text_size
             color "#ffffff"
+            slow_cps 30
             xpos text_indent + 1
             ypos 8
             xsize persistent.forest_line_chars * persistent.forest_text_size

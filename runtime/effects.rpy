@@ -58,6 +58,12 @@ transform dissolve_zoom_out(xpos, ypos, anchor):
 
 define fast_dissolve = Dissolve(.2)
 
+transform oload_fade:
+    alpha 0.0
+    linear 0.2 alpha 1.0
+    on hide:
+        linear 0.2 alpha 0.0
+
 
 
 transform move_instant(xpos, ypos, anchor, dur):

@@ -58,7 +58,7 @@ python early:
 
         store.layer_info[layer] = text
         store.layer_pos[layer] = (xpos, ypos)
-        queue_draw(renpy.show, tag, what = text, at_list = [trans],
+        queue_draw(renpy.show, tag, what = text, at_list = [trans, oload_fade],
                    zorder = store.layer_zorder.get(layer, layer * 2),
                    layer = IMAGE_LAYER)
         process_draw_queue()

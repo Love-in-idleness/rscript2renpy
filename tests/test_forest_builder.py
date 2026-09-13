@@ -59,6 +59,7 @@ def main() -> None:
     gfx = (ROOT / "runtime" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
     assert "args.Colormode in [0, 1, 2, 3, 4, 5, 6]" in gfx
     assert "store.layer_info[CG_LAYER] = shown_img" in gfx
+    assert "at_list = [trans, oload_fade]" in gfx
     util = (ROOT / "runtime" / "01_util.rpy").read_text(encoding="utf-8")
     assert "def speed_change(match):" in util
     assert "def size_change(match):" in util
@@ -196,6 +197,7 @@ def main() -> None:
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
     assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in builder
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
+    assert "slow_cps 30" in FOREST_COMPAT
     assert "text_align (0.5 if center else 0.0)" in FOREST_COMPAT
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
