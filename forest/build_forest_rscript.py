@@ -450,12 +450,6 @@ def compile_scene(source: Path, language: str | None = None,
                     "    # Forest conversion: CG 44120 flattened to 4416 "
                     "because only 4416 exists.")
                 values[1] = 4416
-            effect_index = 4 if opcode == 30 else 1
-            if values[effect_index] == 4:
-                lines.append(
-                    "    # Forest conversion: unsupported %s effect 4 "
-                    "flattened to 0." % COMMANDS[opcode])
-                values[effect_index] = 0
             args = " ".join(packed(value) if kind == E else str(value)
                             for kind, value in zip(item.kinds, values))
             lines.append("    _%s %s" % (COMMANDS[opcode], args))
@@ -1502,9 +1496,10 @@ def main(argv: list[str]) -> int:
     for source in runtime.glob("*.rpy"):
         if source.name not in {"script.rpy", "build.rpy", "options.rpy"} and not source.name.startswith("unren-"):
             shutil.copyfile(source, game / source.name)
-    cursor = game / "gui" / "rscript_cursor.png"
-    cursor.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(runtime / "gui" / "rscript_cursor.png", cursor)
+    gui_runtime = game / "gui"
+    gui_runtime.mkdir(parents=True, exist_ok=True)
+    for name in ("rscript_cursor.png", "rscript_dither.svg"):
+        shutil.copyfile(runtime / "gui" / name, gui_runtime / name)
     for name in ("android.json", "android-icon_background.png",
                  "android-icon_foreground.png"):
         shutil.copyfile(android_source / name, target / name)

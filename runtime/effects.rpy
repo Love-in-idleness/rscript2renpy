@@ -57,6 +57,8 @@ transform dissolve_zoom_out(xpos, ypos, anchor):
     easein_cubic 0.5 alpha 0.0 zoom 1.25
 
 define fast_dissolve = Dissolve(.2)
+define rscript_dither = ImageDissolve(
+    Tile("gui/rscript_dither.svg"), 0.5, ramplen = 8)
 
 transform oload_fade:
     alpha 0.0
@@ -506,6 +508,10 @@ init python:
         elif effect == 3:
             _queue_load()
             queue_ef(renpy.with_statement, dissolve)
+
+        elif effect == 4:
+            _queue_load()
+            queue_ef(renpy.with_statement, rscript_dither)
 
 
         elif effect == 5:

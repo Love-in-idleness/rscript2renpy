@@ -147,7 +147,8 @@ def main() -> None:
     assert 'renpy.music.play(voice_file, channel = \\"rscript_voice\\"' in builder
     assert 'store.forest_last_voice = voice_file' in builder
     assert "who = None" in builder
-    assert "_load 11 1001 515 267 0 0" in title
+    assert '"rscript_dither.svg"' in builder
+    assert "_load 11 1001 515 267 4 0" in title
     assert "_se 0 1\n    _se_on 0 1 0 0" in title
     assert "_forest_folder 0 'grpo'" in scenes[[p.stem for p in files].index("0000")]
     assert "'forest_asset_3501':" in scenes[[p.stem for p in files].index("1000")]
@@ -165,7 +166,12 @@ def main() -> None:
         if item.opcode in (30, 36) and
         item.operands[4 if item.opcode == 30 else 1] == 4)
     assert flattened_effects == 91
-    assert compiled.count("effect 4 flattened to 0.") == flattened_effects
+    generated_effects = sum(
+        1 for line in compiled.splitlines()
+        if ((line.strip().startswith("_load ") and line.split()[-2] == "4") or
+            (line.strip().startswith("_cls ") and line.split()[-1] == "4")))
+    assert generated_effects == flattened_effects
+    assert "effect 4 flattened to 0." not in compiled
     assert "_se 0 1008\n    _se_on 0 999 0 0" in story
     assert "_se 999 1008" not in story
     assert "    _voice 91 0 0 0\n    _say " in story

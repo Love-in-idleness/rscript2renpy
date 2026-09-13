@@ -31,6 +31,10 @@ def main() -> None:
     assert '"gui/rscript_cursor.png", 0, 0' in combined
     assert "transform rscript_zoom_in:" in combined
     assert "elif effect == 1:" in combined
+    assert "define rscript_dither = ImageDissolve(" in combined
+    assert 'Tile("gui/rscript_dither.svg")' in combined
+    assert "im.Tile" not in combined
+    assert "elif effect == 4:" in combined
     assert "ef_time = step * wait / 100." in combined
     assert "ef_time = step * wait / 1000." not in combined
     assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN' ]" in combined
@@ -43,9 +47,10 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 18
+        assert len(installed) == 19
         assert all(path.is_file() for path in installed)
         assert (project / "game" / "gui" / "rscript_cursor.png").is_file()
+        assert (project / "game" / "gui" / "rscript_dither.svg").is_file()
 
     print("OK: 17 generic RScript runtime modules")
 
