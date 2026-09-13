@@ -20,7 +20,7 @@ python early:
         if not isinstance(args.Colormode, (int, float)):
             return
 
-        if not args.Colormode in [0, 1, 2, 3, 4]:
+        if not args.Colormode in [0, 1, 2, 3, 4, 5, 6]:
             print("Unhandled colormode for load/clear effect", args.Colormode)
 
     renpy.register_statement("_load", parse = parse_load, execute = execute_load, predict = predict_load, lint = lint_load)

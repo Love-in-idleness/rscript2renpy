@@ -49,9 +49,15 @@ def main() -> None:
                     "alpha1 = 0;", "alpha2 = 0;", "alpha3 = 0;"):
         assert invalid not in shader
     assert "vec3 rscript_grayscale" in shader
+    assert "vec3 rscript_night" in shader
+    assert "vec3 rscript_sunset" in shader
     assert "u_colormode == 3.0" in shader
+    assert "u_colormode == 5.0" in shader
+    assert "u_colormode == 6.0" in shader
+    assert "18.0 / 32.0, 15.0 / 32.0, 35.0 / 32.0" in shader
+    assert "return vec3(1.0, l, 2.0 * l - 1.0);" in shader
     gfx = (ROOT / "runtime" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
-    assert "args.Colormode in [0, 1, 2, 3, 4]" in gfx
+    assert "args.Colormode in [0, 1, 2, 3, 4, 5, 6]" in gfx
     assert "store.layer_info[CG_LAYER] = shown_img" in gfx
     util = (ROOT / "runtime" / "01_util.rpy").read_text(encoding="utf-8")
     assert "def speed_change(match):" in util

@@ -39,6 +39,30 @@ init python:
       float gray = dot(c.rgb, vec3(0.299, 0.587, 0.114));
       return vec3(gray);
     }
+
+    // Forest colormode 5: the original engine's blue-purple night tint.
+    vec3 rscript_night(vec3 c)
+    {
+      float l = (c.r + c.g + c.b) / 3.0;
+      if (l <= 0.5) {
+        return l * vec3(18.0 / 32.0, 15.0 / 32.0, 35.0 / 32.0);
+      }
+      return vec3(
+        (46.0 * l - 14.0) / 32.0,
+        (49.0 * l - 17.0) / 32.0,
+        (29.0 * l + 3.0) / 32.0
+      );
+    }
+
+    // Forest colormode 6: the original engine's orange sunset tint.
+    vec3 rscript_sunset(vec3 c)
+    {
+      float l = (c.r + c.g + c.b) / 3.0;
+      if (l <= 0.5) {
+        return vec3(2.0 * l, l, 0.0);
+      }
+      return vec3(1.0, l, 2.0 * l - 1.0);
+    }
     """,
     fragment_1000 = """
     if (u_colormode == 1.0) {
@@ -63,6 +87,18 @@ init python:
     if (u_colormode == 4.0) {
       gl_FragColor.rgb /= gl_FragColor.a;
       gl_FragColor.rgb = rscript_sepia(gl_FragColor.rgb);
+      gl_FragColor.rgb *= gl_FragColor.a;
+    }
+
+    if (u_colormode == 5.0 && gl_FragColor.a > 0.0) {
+      gl_FragColor.rgb /= gl_FragColor.a;
+      gl_FragColor.rgb = rscript_night(gl_FragColor.rgb);
+      gl_FragColor.rgb *= gl_FragColor.a;
+    }
+
+    if (u_colormode == 6.0 && gl_FragColor.a > 0.0) {
+      gl_FragColor.rgb /= gl_FragColor.a;
+      gl_FragColor.rgb = rscript_sunset(gl_FragColor.rgb);
       gl_FragColor.rgb *= gl_FragColor.a;
     }
     """
