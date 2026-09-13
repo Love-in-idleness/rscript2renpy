@@ -31,8 +31,8 @@ init -99:
     debug_voicing = [ 'alt_shift_K_v', 'meta_shift_K_v' ],
 
 
-    rollforward = [ 'mousedown_5', 'K_PAGEDOWN', 'repeat_K_PAGEDOWN' ],
-    dismiss = [ 'mouseup_1', 'K_RETURN', 'K_SPACE', 'K_KP_ENTER', 'K_SELECT' ],
+    rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN' ],
+    dismiss = [ 'mouseup_1', 'mousedown_5', 'K_RETURN', 'K_SPACE', 'K_KP_ENTER', 'K_SELECT' ],
     dismiss_unfocused = [ ],
 
 
