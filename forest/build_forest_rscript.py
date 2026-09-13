@@ -1471,7 +1471,8 @@ def main(argv: list[str]) -> int:
     gui_path.write_text(gui_text, encoding="utf-8")
     fonts = game / "fonts"
     fonts.mkdir(parents=True, exist_ok=True)
-    for name in ("NotoSansCJKjp-Regular.otf", "NotoSans.txt"):
+    for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",
+                 "NotoSerifCJK-Regular.ttc", "NotoSans.txt"):
         shutil.copyfile(font_source / name, fonts / name)
     audio_path = game / "04_rscript_audio.rpy"
     audio_text = audio_path.read_text(encoding="utf-8")

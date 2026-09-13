@@ -18,8 +18,8 @@ shared compatibility asset for RScript game ports. This image is not covered
 by this repository's MIT license; all rights remain with its original
 copyright holder.
 
-## Forest branch font
+## Forest fonts
 
-The `forest` branch includes Noto Sans CJK JP. The font is licensed under the
-SIL Open Font License 1.1; its license text is stored at
-`forest/fonts/NotoSans.txt` on that branch.
+The Forest generator includes Noto Sans CJK JP Regular, Noto Sans CJK Light,
+and Noto Serif CJK Regular. These fonts are licensed under the SIL Open Font
+License 1.1; its license text is stored at `forest/fonts/NotoSans.txt`.

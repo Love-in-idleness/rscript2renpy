@@ -80,8 +80,9 @@ TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`
 
 标题页设置菜单还可调整字号和每行字符数（默认 22/19），并提供持久化
 游戏进度的备份、读取与清除功能；清除进度时保留备份。把 `.ttf`、`.otf`
-或 `.ttc` 文件放入生成工程的 `game/fonts/` 后，可在同一菜单中循环切换；
-默认仍使用随生成器提供的 Noto Sans CJK JP。
+或 `.ttc` 文件放入生成工程的 `game/fonts/` 后，可在同一菜单中循环切换。
+生成器附带 Noto Sans CJK JP Regular、Noto Sans CJK Light 和
+Noto Serif CJK Regular；默认仍使用 Noto Sans CJK JP Regular。
 
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
@@ -92,8 +93,8 @@ TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`
 生成器还需要 Python 3、Pillow 和 `ffmpeg`。它只读取用户指定的
 资源目录，不会查找、下载或修改已安装的游戏。
 
-项目代码采用 [MIT License](LICENSE)。项目附带的 Noto Sans CJK JP
-字体采用 SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
+项目代码采用 [MIT License](LICENSE)。项目附带的 Noto CJK 字体采用
+SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
 
 ### Evermaiden 生成器
 
@@ -212,8 +213,9 @@ under `wav/`, `bgm/`, and `voice/`, and `mov/0001` plus `mov/0002` in MPG or
 WebM form. It does not locate, extract, download, or modify an installed copy
 of the game.
 
-The Noto Sans CJK JP font is distributed under the SIL Open Font
-License 1.1 in `forest/fonts/NotoSans.txt`.
+The bundled Noto Sans CJK JP Regular, Noto Sans CJK Light, and Noto Serif CJK
+Regular fonts are distributed under the SIL Open Font License 1.1 in
+`forest/fonts/NotoSans.txt`.
 
 ## License
 

@@ -96,8 +96,10 @@ def main() -> None:
         (movie_target / "old.MPG").write_bytes(b"obsolete")
         convert_movies(movie_source, movie_target)
         assert not (movie_target / "old.MPG").exists()
-    font = ROOT / "forest" / "fonts" / "NotoSansCJKjp-Regular.otf"
-    assert font.is_file() and font.stat().st_size > 1_000_000
+    for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",
+                 "NotoSerifCJK-Regular.ttc"):
+        font = ROOT / "forest" / "fonts" / name
+        assert font.is_file() and font.stat().st_size > 1_000_000
     files = sorted((resources / "scr").glob("*.tsc"))
     scenes = [compile_scene(path) for path in files]
     assert len(scenes) == 103
