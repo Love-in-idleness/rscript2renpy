@@ -930,54 +930,81 @@ screen forest_title_preferences():
 
     add Solid("#000000b0")
     frame:
+        background Solid("#080808e8")
         xalign 0.5
         yalign 0.5
-        xpadding 36
-        ypadding 28
+        xsize 640
+        xpadding 32
+        ypadding 22
         vbox:
-            spacing 14
+            xfill True
+            spacing 10
             text "Text Display":
                 size 26
                 xalign 0.5
-            hbox:
-                spacing 12
-                text "Text Size [persistent.forest_text_size]"
-                textbutton "－" action Function(
-                    forest_adjust_text, "forest_text_size", -1, 14, 40)
-                textbutton "＋" action Function(
-                    forest_adjust_text, "forest_text_size", 1, 14, 40)
-            hbox:
-                spacing 12
-                text "Characters per Line [persistent.forest_line_chars]"
-                textbutton "－" action Function(
-                    forest_adjust_text, "forest_line_chars", -1, 10, 40)
-                textbutton "＋" action Function(
-                    forest_adjust_text, "forest_line_chars", 1, 10, 40)
-            hbox:
-                spacing 12
-                text "Font [forest_font_name()]"
-                textbutton "Previous Font" action Function(forest_cycle_font, -1)
-                textbutton "Next Font" action Function(forest_cycle_font, 1)
+            fixed:
+                xfill True
+                ysize 38
+                text "Text Size" yalign 0.5
+                hbox:
+                    xalign 1.0
+                    yalign 0.5
+                    spacing 10
+                    text "[persistent.forest_text_size]":
+                        min_width 48
+                        text_align 0.5
+                    textbutton "-" action Function(
+                        forest_adjust_text, "forest_text_size", -1, 14, 40)
+                    textbutton "+" action Function(
+                        forest_adjust_text, "forest_text_size", 1, 14, 40)
+            fixed:
+                xfill True
+                ysize 38
+                text "Characters per Line" yalign 0.5
+                hbox:
+                    xalign 1.0
+                    yalign 0.5
+                    spacing 10
+                    text "[persistent.forest_line_chars]":
+                        min_width 48
+                        text_align 0.5
+                    textbutton "-" action Function(
+                        forest_adjust_text, "forest_line_chars", -1, 10, 40)
+                    textbutton "+" action Function(
+                        forest_adjust_text, "forest_line_chars", 1, 10, 40)
+            vbox:
+                xfill True
+                spacing 4
+                text "Font" xalign 0.5
+                text "[forest_font_name()]":
+                    size 18
+                    xalign 0.5
+                hbox:
+                    xalign 0.5
+                    spacing 16
+                    textbutton "Previous Font" action Function(forest_cycle_font, -1)
+                    textbutton "Next Font" action Function(forest_cycle_font, 1)
 
             if len(forest_languages) > 1:
-                text "Language"
+                text "Language" xalign 0.5
                 hbox:
-                    spacing 10
+                    xalign 0.5
+                    spacing 14
                     for language, label in forest_languages:
                         textbutton label:
                             action Language(language)
                             selected _preferences.language == language
 
-            text "Persistent Progress"
+            text "Persistent Progress" xalign 0.5
             hbox:
-                spacing 10
+                xalign 0.5
+                spacing 14
                 textbutton "Save Backup" action Function(forest_save_progress)
                 textbutton "Load Backup" action Function(forest_load_progress)
-            textbutton "Clear Progress":
-                xalign 0.5
-                action Confirm(
-                    "Clear persistent progress? The backup will be kept.",
-                    Function(forest_clear_progress))
+                textbutton "Clear Progress":
+                    action Confirm(
+                        "Clear persistent progress? The backup will be kept.",
+                        Function(forest_clear_progress))
             textbutton "Back":
                 xalign 0.5
                 action Return()
