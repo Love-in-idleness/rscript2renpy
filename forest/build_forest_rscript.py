@@ -608,6 +608,17 @@ default persistent.forest_progress_backup = None
 define forest_languages = [(None, "原文")]
 
 init python:
+    def forest_g_tag(tag, argument):
+        try:
+            number, text_size = argument.split(":", 1)
+            zoom = int(text_size) / 22.0
+        except (AttributeError, TypeError, ValueError):
+            return []
+        image = Transform("images/grps/gf%s.png" % number, zoom=zoom)
+        return [(renpy.TEXT_DISPLAYABLE, image)]
+
+    config.self_closing_custom_text_tags["forest_g"] = forest_g_tag
+
     def forest_open_game_menu():
         if store.menu_enabled and not store.forest_input_locked:
             renpy.run(ShowMenu("preferences"))
@@ -1537,7 +1548,8 @@ def main(argv: list[str]) -> int:
         "            store.forest_speaker = int(speaker.group(1))\n"
         "            text = text[speaker.end():]\n"
         "        text = renpy.re.sub(r\"\\^g(\\d{3})\", "
-        "r\"{image=images/grps/gf\\1.png}\", text)",
+        "lambda match: \"{forest_g=%s:%d}\" % "
+        "(match.group(1), persistent.forest_text_size), text)",
         1)
     util_path.write_text(util_text, encoding="utf-8")
     channels_path = game / "audio.rpy"

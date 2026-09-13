@@ -28,9 +28,12 @@ def main() -> None:
     assert 'convert_movies(root / "mov", game / "mov")' in builder
     assert 'replace("        xpos 1191", "        xpos 747")' in builder
     assert 'replace("        ypos 639", "        ypos 556")' in builder
-    inline_graphic = r'{image=images/grps/gf\\1.png}'
+    inline_graphic = "{forest_g=%s:%d}"
     assert inline_graphic in builder
     assert builder.index('speaker = renpy.re.match') < builder.index(inline_graphic)
+    assert 'config.self_closing_custom_text_tags["forest_g"]' in FOREST_COMPAT
+    assert 'zoom = int(text_size) / 22.0' in FOREST_COMPAT
+    assert 'renpy.TEXT_DISPLAYABLE, image' in FOREST_COMPAT
     assert "'label splashscreen:\\n'" in builder
     assert ("'    _movie 2\\n'\n"
             "        '    _movie 1\\n'\n"
