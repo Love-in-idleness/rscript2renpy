@@ -69,6 +69,8 @@ def main() -> None:
         assert "screen forest_title_preferences():" in compat_text
         assert "default persistent.forest_text_size = 22" in compat_text
         assert "default persistent.forest_line_chars = 19" in compat_text
+        assert "default persistent.forest_line_spacing = 7" in compat_text
+        assert "line_spacing persistent.forest_line_spacing" in compat_text
         assert ('default persistent.forest_text_font = '
                 '"fonts/NotoSansCJKjp-Regular.otf"' in compat_text)
         assert 'textbutton "Previous Font"' in compat_text

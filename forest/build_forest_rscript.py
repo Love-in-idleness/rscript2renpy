@@ -601,6 +601,7 @@ default forest_input_locked = False
 default persistent.textbox_opacity = 1.0
 default persistent.forest_text_size = 22
 default persistent.forest_line_chars = 19
+default persistent.forest_line_spacing = 7
 default persistent.forest_text_cps = 20
 default persistent.forest_text_font = "fonts/NotoSansCJKjp-Regular.otf"
 default persistent.forest_progress_backup = None
@@ -1003,6 +1004,21 @@ screen forest_title_preferences():
             fixed:
                 xfill True
                 ysize 38
+                text "Line Spacing" yalign 0.5
+                hbox:
+                    xalign 1.0
+                    yalign 0.5
+                    spacing 10
+                    text "[persistent.forest_line_spacing]":
+                        min_width 48
+                        text_align 0.5
+                    textbutton "-" action Function(
+                        forest_adjust_text, "forest_line_spacing", -1, -10, 30)
+                    textbutton "+" action Function(
+                        forest_adjust_text, "forest_line_spacing", 1, -10, 30)
+            fixed:
+                xfill True
+                ysize 38
                 text "Text Speed" yalign 0.5
                 hbox:
                     xalign 1.0
@@ -1164,7 +1180,7 @@ screen say(who, what, center=False):
             ypos 8
             xsize persistent.forest_line_chars * persistent.forest_text_size
             text_align (0.5 if center else 0.0)
-            line_spacing 7
+            line_spacing persistent.forest_line_spacing
 
         use forest_compane
 

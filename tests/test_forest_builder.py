@@ -238,6 +238,11 @@ def main() -> None:
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
     assert "xpos text_indent + 1" in FOREST_COMPAT
     assert "xsize persistent.forest_line_chars * persistent.forest_text_size" in FOREST_COMPAT
+    assert "default persistent.forest_line_spacing = 7" in FOREST_COMPAT
+    assert "line_spacing persistent.forest_line_spacing" in FOREST_COMPAT
+    assert 'text "Line Spacing" yalign 0.5' in FOREST_COMPAT
+    assert ('forest_adjust_text, "forest_line_spacing", -1, -10, 30' in
+            FOREST_COMPAT)
     assert "screen forest_title_preferences():" in FOREST_COMPAT
     assert 'background Solid("#080808e8")' in FOREST_COMPAT
     assert "xsize 640" in FOREST_COMPAT
