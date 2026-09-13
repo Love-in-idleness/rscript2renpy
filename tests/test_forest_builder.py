@@ -185,7 +185,7 @@ def main() -> None:
             '"fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT)
     assert "def forest_fonts():" in FOREST_COMPAT
     assert "def forest_cycle_font(step):" in FOREST_COMPAT
-    assert 'text "字体 [forest_font_name()]"' in FOREST_COMPAT
+    assert 'text "Font [forest_font_name()]"' in FOREST_COMPAT
     assert FOREST_COMPAT.count("font forest_current_font()") == 4
     assert "forest_save_progress()" in FOREST_COMPAT
     assert "forest_load_progress()" in FOREST_COMPAT
@@ -209,8 +209,8 @@ def main() -> None:
     assert 'config.game_menu_action = Function(forest_open_game_menu)' in FOREST_COMPAT
     assert 'if store.menu_enabled and not store.forest_input_locked:' in FOREST_COMPAT
     assert "default forest_input_locked = False" in FOREST_COMPAT
-    assert 'textbutton "戻る" action Rollback() sensitive not forest_input_locked' in FOREST_COMPAT
-    assert 'textbutton "メニュー" action ShowMenu("preferences") sensitive not forest_input_locked' in FOREST_COMPAT
+    assert 'textbutton "Back" action Rollback() sensitive not forest_input_locked' in FOREST_COMPAT
+    assert 'textbutton "Menu" action ShowMenu("preferences") sensitive not forest_input_locked' in FOREST_COMPAT
     assert 'screen preferences(title_mode=False):' in FOREST_COMPAT
     assert 'if not title_mode:' in FOREST_COMPAT
     assert 'if store.save_enabled:' in FOREST_COMPAT
@@ -221,7 +221,7 @@ def main() -> None:
     assert 'return ShowMenu("forest_title_preferences")' in FOREST_COMPAT
     assert 'config.overlay_screens.append("forest_touch_controls")' in FOREST_COMPAT
     assert 'if renpy.variant("touch")' in FOREST_COMPAT
-    assert 'textbutton "メニュー" action ShowMenu("preferences")' in FOREST_COMPAT
+    assert 'textbutton "Menu" action ShowMenu("preferences")' in FOREST_COMPAT
     assert 'config.keymap["game_menu"].append("K_AC_BACK")' in FOREST_COMPAT
     assert 'style forest_volume_bar is bar:' in FOREST_COMPAT
     assert FOREST_COMPAT.count('style "forest_volume_bar"') == 3

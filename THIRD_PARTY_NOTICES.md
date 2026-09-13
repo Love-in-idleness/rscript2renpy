@@ -18,6 +18,14 @@ shared compatibility asset for RScript game ports. This image is not covered
 by this repository's MIT license; all rights remain with its original
 copyright holder.
 
+## Forest Android application icon
+
+`forest/android/android-icon_foreground.png` contains the application icon
+from Liar-soft's *Forest*. It is copied only when generating a Forest port.
+This image is not covered by this repository's MIT license; all rights remain
+with its original copyright holder. The accompanying background image is a
+solid-color adaptive-icon layer.
+
 ## Forest fonts
 
 The Forest generator includes Noto Sans CJK JP Regular, Noto Sans CJK Light,

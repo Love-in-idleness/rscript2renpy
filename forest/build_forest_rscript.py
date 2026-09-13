@@ -605,7 +605,7 @@ default persistent.forest_text_size = 22
 default persistent.forest_line_chars = 19
 default persistent.forest_text_font = "fonts/NotoSansCJKjp-Regular.otf"
 default persistent.forest_progress_backup = None
-define forest_languages = [(None, "原文")]
+define forest_languages = [(None, "Original")]
 
 init python:
     def forest_g_tag(tag, argument):
@@ -667,23 +667,23 @@ init python:
             "seen_cg": dict(persistent.seen_cg),
         }
         renpy.save_persistent()
-        renpy.notify("持久化数据已保存")
+        renpy.notify("Progress backup saved.")
 
     def forest_load_progress():
         data = persistent.forest_progress_backup
         if data is None:
-            renpy.notify("没有可读取的持久化数据备份")
+            renpy.notify("No progress backup is available.")
             return
         persistent._reg = dict(data["reg"])
         persistent.seen_cg = dict(data["seen_cg"])
         renpy.save_persistent()
-        renpy.notify("持久化数据已读取")
+        renpy.notify("Progress backup restored.")
 
     def forest_clear_progress():
         persistent._reg = {}
         persistent.seen_cg = {}
         renpy.save_persistent()
-        renpy.notify("持久化游戏进度已清除（备份已保留）")
+        renpy.notify("Persistent progress cleared (backup kept).")
 
     config.game_menu_action = Function(forest_open_game_menu)
     config.save_json_callbacks.append(forest_save_json)
@@ -707,10 +707,10 @@ screen forest_touch_controls():
             xalign 0.995
             yalign 0.01
 
-            textbutton "戻る" action Rollback() sensitive not forest_input_locked
-            textbutton "スキップ" action Skip()
-            textbutton "オート" action Preference("auto-forward", "toggle")
-            textbutton "メニュー" action ShowMenu("preferences") sensitive not forest_input_locked
+            textbutton "Back" action Rollback() sensitive not forest_input_locked
+            textbutton "Skip" action Skip()
+            textbutton "Auto" action Preference("auto-forward", "toggle")
+            textbutton "Menu" action ShowMenu("preferences") sensitive not forest_input_locked
 
 style forest_touch_button:
     xminimum 90
@@ -936,31 +936,31 @@ screen forest_title_preferences():
         ypadding 28
         vbox:
             spacing 14
-            text "文本显示":
+            text "Text Display":
                 size 26
                 xalign 0.5
             hbox:
                 spacing 12
-                text "字号 [persistent.forest_text_size]"
+                text "Text Size [persistent.forest_text_size]"
                 textbutton "－" action Function(
                     forest_adjust_text, "forest_text_size", -1, 14, 40)
                 textbutton "＋" action Function(
                     forest_adjust_text, "forest_text_size", 1, 14, 40)
             hbox:
                 spacing 12
-                text "每行字符 [persistent.forest_line_chars]"
+                text "Characters per Line [persistent.forest_line_chars]"
                 textbutton "－" action Function(
                     forest_adjust_text, "forest_line_chars", -1, 10, 40)
                 textbutton "＋" action Function(
                     forest_adjust_text, "forest_line_chars", 1, 10, 40)
             hbox:
                 spacing 12
-                text "字体 [forest_font_name()]"
-                textbutton "上一字体" action Function(forest_cycle_font, -1)
-                textbutton "下一字体" action Function(forest_cycle_font, 1)
+                text "Font [forest_font_name()]"
+                textbutton "Previous Font" action Function(forest_cycle_font, -1)
+                textbutton "Next Font" action Function(forest_cycle_font, 1)
 
             if len(forest_languages) > 1:
-                text "语言"
+                text "Language"
                 hbox:
                     spacing 10
                     for language, label in forest_languages:
@@ -968,17 +968,17 @@ screen forest_title_preferences():
                             action Language(language)
                             selected _preferences.language == language
 
-            text "持久化游戏进度"
+            text "Persistent Progress"
             hbox:
                 spacing 10
-                textbutton "保存备份" action Function(forest_save_progress)
-                textbutton "读取备份" action Function(forest_load_progress)
-            textbutton "清除进度":
+                textbutton "Save Backup" action Function(forest_save_progress)
+                textbutton "Load Backup" action Function(forest_load_progress)
+            textbutton "Clear Progress":
                 xalign 0.5
                 action Confirm(
-                    "确定清除持久化游戏进度？备份会保留。",
+                    "Clear persistent progress? The backup will be kept.",
                     Function(forest_clear_progress))
-            textbutton "返回":
+            textbutton "Back":
                 xalign 0.5
                 action Return()
 
@@ -1061,8 +1061,8 @@ screen confirm(message, yes_action, no_action):
             hbox:
                 xalign 0.5
                 spacing 50
-                textbutton "はい" action yes_action
-                textbutton "いいえ" action no_action
+                textbutton "Yes" action yes_action
+                textbutton "No" action no_action
 
 screen say(who, what, center=False):
     window:
@@ -1429,6 +1429,7 @@ def main(argv: list[str]) -> int:
     runtime = here / "runtime"
     font_source = here / "forest" / "fonts"
     gui_template = here / "forest" / "gui.rpy"
+    android_source = here / "forest" / "android"
     game = target / "game"
     validate_inputs(root)
     scenario = game / "scenario"
@@ -1441,6 +1442,9 @@ def main(argv: list[str]) -> int:
     cursor = game / "gui" / "rscript_cursor.png"
     cursor.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(runtime / "gui" / "rscript_cursor.png", cursor)
+    for name in ("android.json", "android-icon_background.png",
+                 "android-icon_foreground.png"):
+        shutil.copyfile(android_source / name, target / name)
     for obsolete in game.glob("unren-*.rpy*"):
         obsolete.unlink()
     definitions_path = game / "01_defines.rpy"
@@ -1569,10 +1573,10 @@ def main(argv: list[str]) -> int:
     character_text = character_text.replace("        xpos 1191", "        xpos 747")
     character_text = character_text.replace("        ypos 639", "        ypos 556")
     character_path.write_text(character_text, encoding="utf-8")
-    language_labels = [(None, language_marker or "原文")]
+    language_labels = [(None, language_marker or "Original")]
     language_labels.extend((name, name) for name, _ in language_patches)
     compat = FOREST_COMPAT.replace(
-        'define forest_languages = [(None, "原文")]',
+        'define forest_languages = [(None, "Original")]',
         "define forest_languages = %r" % language_labels)
     (game / "forest_compat.rpy").write_text(compat, encoding="utf-8")
     for folder in ("grpe", "grpo", "grpo_bg", "grpo_bu", "grpo_ci", "grpo_f", "grps"):

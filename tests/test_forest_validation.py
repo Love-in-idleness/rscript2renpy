@@ -46,6 +46,12 @@ def main() -> None:
                                  "--language", "english=" + str(patch_dir)])
         assert (project / "game" / "gui" / "rscript_cursor.png").read_bytes() == \
             (ROOT / "runtime" / "gui" / "rscript_cursor.png").read_bytes()
+        for name in ("android.json", "android-icon_background.png",
+                     "android-icon_foreground.png"):
+            assert (project / name).read_bytes() == \
+                (ROOT / "forest" / "android" / name).read_bytes()
+        assert not (project / "android.keystore").exists()
+        assert not (project / "bundle.keystore").exists()
         gui = project / "game" / "gui.rpy"
         gui_text = gui.read_text(encoding="utf-8")
         assert "gui.init(800, 600)" in gui_text
@@ -53,14 +59,18 @@ def main() -> None:
         assert "gui.scale(" not in gui_text
         compat_text = (project / "game" / "forest_compat.rpy").read_text(
             encoding="utf-8")
-        assert "define forest_languages = [(None, '原文'), ('english', 'english')]" in compat_text
+        assert "define forest_languages = [(None, 'Original'), ('english', 'english')]" in compat_text
         assert "screen forest_title_preferences():" in compat_text
         assert "default persistent.forest_text_size = 22" in compat_text
         assert "default persistent.forest_line_chars = 19" in compat_text
         assert ('default persistent.forest_text_font = '
                 '"fonts/NotoSansCJKjp-Regular.otf"' in compat_text)
-        assert 'textbutton "上一字体"' in compat_text
-        assert 'textbutton "下一字体"' in compat_text
+        assert 'textbutton "Previous Font"' in compat_text
+        assert 'textbutton "Next Font"' in compat_text
+        for old_text in ("原文", "持久化", "戻る", "スキップ", "オート",
+                         "メニュー", "文本", "字号", "字体", "语言",
+                         "返回", "はい", "いいえ"):
+            assert old_text not in compat_text
         assert "default persistent.forest_progress_backup = None" in compat_text
         assert (project / "game" / "tl" / "english" /
                 "forest_strings.rpy").read_text(encoding="utf-8") == \

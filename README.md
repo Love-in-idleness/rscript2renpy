@@ -10,7 +10,8 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 当前运行时面向 Ren'Py 8（Python 3）；Forest 已使用 `/opt/apps/renpy`
 中的 Ren'Py 8.5 完成生成与 lint 验证。
 
-除通用鼠标光标外，本项目不包含游戏剧本、图像、音频、视频或可执行文件。
+除通用鼠标光标和 Forest Android 应用图标外，本项目不包含游戏剧本、图像、
+音频、视频或可执行文件。
 用户必须从自己合法持有的游戏副本中准备其余资源。
 
 本项目只维护并推送 Git 仓库源码，不再发布新的 GitHub Release 或版本包。
@@ -52,8 +53,10 @@ python3 forest/build_forest_rscript.py \
 #### 语言标签与补丁
 
 默认生成的 `_say` 和 `_append` 不附带语言标记，标题页把基准语言显示为
-“原文”。普通参数 `--language NAME` 只为基准脚本添加 RScript/Ren'Py 语言
+`Original`。普通参数 `--language NAME` 只为基准脚本添加 RScript/Ren'Py 语言
 标记，并把基准语言的菜单标签改为 `NAME`；它不读取补丁，也不会新增一种语言。
+未指定时，基准语言在菜单中显示为 `Original`。生成器创建的菜单、确认框、
+触屏按钮和通知统一使用英文；用户传入的语言标签仍原样显示。
 
 参数 `--language NAME=PATCH_DIR` 才会加入一种可切换语言。`NAME` 必须是合法的
 Ren'Py 标识符，同时会原样显示为标题页语言标签；`PATCH_DIR` 是该语言的补丁
@@ -93,6 +96,10 @@ Noto Serif CJK Regular；默认仍使用 Noto Sans CJK JP Regular。
 生成器还需要 Python 3、Pillow 和 `ffmpeg`。它只读取用户指定的
 资源目录，不会查找、下载或修改已安装的游戏。
 
+生成器会同时写入 Forest 已验证的 Ren'Py Android 配置和自适应图标，包括
+横屏方向、包名与版本。签名用的 `android.keystore` 和 `bundle.keystore`
+不会纳入仓库或复制到工程；Ren'Py 会在构建机器上创建或使用本地签名密钥。
+
 项目代码采用 [MIT License](LICENSE)。项目附带的 Noto CJK 字体采用
 SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
 
@@ -118,9 +125,10 @@ No new GitHub Releases or versioned release packages will be published.
 Runtime behavior depends on the source game's CodeX dialect, so each new game
 still requires verification.
 
-Apart from the shared mouse cursor, this repository contains engine-side
-support only. It does not contain game scripts, images, audio, movies,
-executables, or other proprietary game data.
+Apart from the shared mouse cursor and Forest Android application icon, this
+repository contains engine-side support only. It does not contain game
+scripts, other images, audio, movies, executables, or other proprietary game
+data.
 
 ## Install the runtime
 
@@ -169,7 +177,7 @@ python3 forest/build_forest_rscript.py \
 ### Language labels and patches
 
 By default, generated `_say` and `_append` statements have no language marker,
-and the base language is labelled `原文` in the title settings screen. A plain
+and the base language is labelled `Original` in the title settings screen. A plain
 `--language NAME` adds that marker to the base script and uses `NAME` as the
 base-language label. It does not read a patch or add another language.
 
@@ -177,6 +185,10 @@ base-language label. It does not read a patch or add another language.
 Ren'Py identifier and is also used verbatim as its menu label. The option may
 be repeated for multiple patches and may be combined with one plain base
 language marker, as in the example above.
+
+All menus, confirmation prompts, touch controls, and notifications created by
+the generator use English. User-supplied language labels are displayed
+verbatim.
 
 A patch directory contains only converted files that differ from the base
 resources, at the same relative paths; unchanged files should be omitted. It
@@ -212,6 +224,11 @@ The generator only reads the directory supplied by the user. It expects
 under `wav/`, `bgm/`, and `voice/`, and `mov/0001` plus `mov/0002` in MPG or
 WebM form. It does not locate, extract, download, or modify an installed copy
 of the game.
+
+The generator also writes the verified Forest Ren'Py Android configuration and
+adaptive icons, including landscape orientation, package name, and version.
+Signing files (`android.keystore` and `bundle.keystore`) remain local to the
+build machine and are never bundled by this repository.
 
 The bundled Noto Sans CJK JP Regular, Noto Sans CJK Light, and Noto Serif CJK
 Regular fonts are distributed under the SIL Open Font License 1.1 in
