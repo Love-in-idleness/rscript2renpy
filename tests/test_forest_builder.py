@@ -210,6 +210,8 @@ def main() -> None:
     assert 'if store.menu_enabled and not store.forest_input_locked:' in FOREST_COMPAT
     assert "default forest_input_locked = False" in FOREST_COMPAT
     assert 'textbutton "Back" action Rollback() sensitive not forest_input_locked' in FOREST_COMPAT
+    assert 'textbutton "Hide" action HideInterface()' in FOREST_COMPAT
+    assert 'textbutton "Auto"' not in FOREST_COMPAT
     assert 'textbutton "Menu" action ShowMenu("preferences") sensitive not forest_input_locked' in FOREST_COMPAT
     assert 'screen preferences(title_mode=False):' in FOREST_COMPAT
     assert 'if not title_mode:' in FOREST_COMPAT

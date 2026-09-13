@@ -709,7 +709,7 @@ screen forest_touch_controls():
 
             textbutton "Back" action Rollback() sensitive not forest_input_locked
             textbutton "Skip" action Skip()
-            textbutton "Auto" action Preference("auto-forward", "toggle")
+            textbutton "Hide" action HideInterface()
             textbutton "Menu" action ShowMenu("preferences") sensitive not forest_input_locked
 
 style forest_touch_button:
