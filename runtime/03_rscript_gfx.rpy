@@ -247,7 +247,7 @@ python early:
         wait   = args.Wait
 
 
-        ef_time = step * wait / 1000.
+        ef_time = step * wait / 100.
         trans = None
 
         if effect == 0:

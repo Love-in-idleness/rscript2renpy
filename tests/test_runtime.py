@@ -31,6 +31,8 @@ def main() -> None:
     assert '"gui/rscript_cursor.png", 0, 0' in combined
     assert "transform rscript_zoom_in:" in combined
     assert "elif effect == 1:" in combined
+    assert "ef_time = step * wait / 100." in combined
+    assert "ef_time = step * wait / 1000." not in combined
     assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN' ]" in combined
     assert "dismiss = [ 'mouseup_1', 'mousedown_5'" in combined
     for python2_only in ('basestring', 'ur"', "ur'", '(int, long, float)',

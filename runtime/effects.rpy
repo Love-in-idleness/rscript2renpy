@@ -713,7 +713,7 @@ init python:
 
 
 
-        ef_time = step * wait / 1000.
+        ef_time = step * wait / 100.
 
         return ImageDissolve("images/grps/ef%02d.png" % effect, ef_time * 2, ramplen = 64, reverse = True)
 
