@@ -154,6 +154,8 @@ def main() -> None:
     story_source = files[[p.stem for p in files].index("2100")]
     story_tsc = read_tsc(story_source)
     assert "    _oaction 29 4" in story
+    assert story.count("    _load 30 21 _r[602] 300 28 1") == 2
+    assert "    _cls 30 28" in story
     assert "_se 0 1008\n    _se_on 0 999 0 0" in story
     assert "_se 999 1008" not in story
     assert "    _voice 91 0 0 0\n    _say " in story

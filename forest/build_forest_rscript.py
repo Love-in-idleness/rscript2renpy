@@ -448,7 +448,7 @@ def compile_scene(source: Path, language: str | None = None,
             if scene == "2500" and item.offset == 0x22366 and values[1] == 44120:
                 values[1] = 4416
             effect_index = 4 if opcode == 30 else 1
-            if values[effect_index] in (1, 4, 28):
+            if values[effect_index] in (1, 4):
                 values[effect_index] = 0
             args = " ".join(packed(value) if kind == E else str(value)
                             for kind, value in zip(item.kinds, values))
