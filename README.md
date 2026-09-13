@@ -103,13 +103,6 @@ Noto Serif CJK Regular；默认仍使用 Noto Sans CJK JP Regular。
 项目代码采用 [MIT License](LICENSE)。项目附带的 Noto CJK 字体采用
 SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
 
-### Evermaiden 生成器
-
-`evermaiden` 目录中的生成器面向中文资源，支持 LiarsoftTool 2.1 的 `modern-36` TSC，
-并将正文生成为 `_say chinese`。生成方法见
-[`evermaiden/README.zh-CN.md`](evermaiden/README.zh-CN.md)。生成器需要
-Python 3 与 fontTools，不会附带或下载游戏资源。
-
 ---
 
 ## English
@@ -153,11 +146,6 @@ python3 -B tests/test_runtime.py
 
 Runtime behavior depends on the source game's CodeX dialect. Unsupported
 opcodes and rendering modes must be implemented and verified per game.
-
-## Evermaiden generator
-
-The `evermaiden` directory contains a Chinese, `modern-36` TSC adapter. See
-`evermaiden/README.zh-CN.md`; it requires Python 3 and fontTools.
 
 ## Forest generator
 
