@@ -33,19 +33,21 @@ def main() -> None:
                      resources / "bgm" / "Track01.ogg",
                      resources / "wav" / "0001.ogg",
                      resources / "voice" / "0001.ogg",
-                     resources / "mov" / "0001.webm",
+                     resources / "mov" / "0001.mpg",
                      resources / "mov" / "0002.mpg"):
             path.write_bytes(b"fixture")
         validate_inputs(resources)
         project = base / "project"
         with patch.object(forest_builder, "copy_assets"), \
                 patch.object(forest_builder, "convert_masks"), \
-                patch.object(forest_builder, "convert_movies"):
+                patch.object(forest_builder, "copy_movies"):
             forest_builder.main(["build_forest_rscript.py",
                                  str(resources), str(project),
                                  "--language", "english=" + str(patch_dir)])
         assert (project / "game" / "gui" / "rscript_cursor.png").read_bytes() == \
             (ROOT / "runtime" / "gui" / "rscript_cursor.png").read_bytes()
+        assert '"mov/%04d.mpg"' in (
+            project / "game" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
         for name in ("android.json", "android-icon_background.png",
                      "android-icon_foreground.png"):
             assert (project / name).read_bytes() == \

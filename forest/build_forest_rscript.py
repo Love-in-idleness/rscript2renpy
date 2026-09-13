@@ -6,7 +6,6 @@ import argparse
 from functools import lru_cache
 import re
 import shutil
-import subprocess
 import sys
 
 from PIL import Image
@@ -286,9 +285,7 @@ def write_language_patch(base: Path, patch: Path, language: str,
     for source_folder, target_folder in (("wav", "wav"), ("wav", "audio"),
                                          ("bgm", "bgm"), ("voice", "voice")):
         copy_assets(patch / source_folder, "*.ogg", target / target_folder)
-    copy_assets(patch / "mov", "*.webm", target / "mov")
-    if list((patch / "mov").glob("*.mpg")):
-        convert_movies(patch / "mov", target / "mov")
+    copy_movies(patch / "mov", target / "mov")
 
 
 def parse_language_options(specs: list[str]) -> tuple[str | None,
@@ -1385,32 +1382,18 @@ def convert_masks(source: Path, target: Path) -> None:
             image.save(output, "PNG")
 
 
-def convert_movies(source: Path, target: Path) -> None:
-    ffmpeg = shutil.which("ffmpeg")
-    if ffmpeg is None:
-        raise RuntimeError("ffmpeg is required to convert Forest's MPEG movies")
+def copy_movies(source: Path, target: Path, clear: bool = False) -> None:
+    if not source.is_dir():
+        return
     target.mkdir(parents=True, exist_ok=True)
-    for obsolete in target.iterdir():
-        if obsolete.is_file() and obsolete.suffix.lower() == ".mpg":
-            obsolete.unlink()
-    for asset in sorted(source.glob("*.mpg")):
-        output = target / (asset.stem + ".webm")
-        if (output.is_file() and output.stat().st_size
-                and output.stat().st_mtime_ns >= asset.stat().st_mtime_ns):
-            continue
-        temporary = output.with_name(output.stem + ".tmp" + output.suffix)
-        try:
-            subprocess.run([
-                ffmpeg, "-hide_banner", "-loglevel", "error", "-y",
-                "-i", str(asset),
-                "-c:v", "libvpx-vp9", "-crf", "18", "-b:v", "0",
-                "-c:a", "libvorbis", "-q:a", "5",
-                str(temporary),
-            ], check=True)
-            temporary.replace(output)
-        finally:
-            if temporary.exists():
-                temporary.unlink()
+    if clear:
+        for obsolete in target.iterdir():
+            if (obsolete.is_file() and
+                    obsolete.suffix.lower() in {".mpg", ".webm"}):
+                obsolete.unlink()
+    for asset in sorted(source.iterdir()):
+        if asset.is_file() and asset.suffix.lower() == ".mpg":
+            shutil.copyfile(asset, target / (asset.stem + ".mpg"))
 
 
 def validate_inputs(root: Path) -> None:
@@ -1432,8 +1415,8 @@ def validate_inputs(root: Path) -> None:
             missing.append(str(root / folder / "*.ogg"))
     for movie in ("0001", "0002"):
         if not any((root / "mov" / (movie + suffix)).is_file()
-                   for suffix in (".mpg", ".MPG", ".webm")):
-            missing.append(str(root / "mov" / (movie + ".{mpg,webm}")))
+                   for suffix in (".mpg", ".MPG")):
+            missing.append(str(root / "mov" / (movie + ".mpg")))
     if missing:
         raise FileNotFoundError(
             "resources must be unpacked and converted first; missing:\n- " +
@@ -1487,8 +1470,10 @@ def main(argv: list[str]) -> int:
     definitions_path.write_text(definitions_text, encoding="utf-8")
     gfx_path = game / "03_rscript_gfx.rpy"
     gfx_text = gfx_path.read_text(encoding="utf-8")
+    gfx_text = gfx_text.replace('"mov/%04d.webm"', '"mov/%04d.mpg"')
     if "def parse_oload(lex):" not in gfx_text:
-        gfx_path.write_text(gfx_text.rstrip() + RSCRIPT_OBJECTS, encoding="utf-8")
+        gfx_text = gfx_text.rstrip() + RSCRIPT_OBJECTS
+    gfx_path.write_text(gfx_text, encoding="utf-8")
     gui_path = game / "gui.rpy"
     if not gui_path.is_file():
         shutil.copyfile(gui_template, gui_path)
@@ -1619,7 +1604,7 @@ def main(argv: list[str]) -> int:
             for obsolete in audio_target.glob(pattern):
                 obsolete.unlink()
         copy_assets(root / source_folder, "*.ogg", audio_target)
-    convert_movies(root / "mov", game / "mov")
+    copy_movies(root / "mov", game / "mov", clear=True)
     patch_texts = {}
     patch_insertions = {}
     for language, patch in language_patches:

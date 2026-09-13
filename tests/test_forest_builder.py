@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
 from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS,
                                   compile_credits_scene, compile_scene,
-                                  convert_masks, convert_movies, copy_assets,
+                                  convert_masks, copy_assets, copy_movies,
                                   language_patch_data, language_patch_strings, menu_text,
                                   scene_strings)
 from forest_tsc import read_tsc
@@ -25,7 +25,9 @@ def main() -> None:
     assert '"                renpy.save_persistent()")' in builder
     assert 'not source.name.startswith("unren-")' in builder
     assert 'game.glob("unren-*.rpy*")' in builder
-    assert 'convert_movies(root / "mov", game / "mov")' in builder
+    assert 'copy_movies(root / "mov", game / "mov", clear=True)' in builder
+    assert "subprocess" not in builder
+    assert "ffmpeg" not in builder
     assert 'replace("        xpos 1191", "        xpos 747")' in builder
     assert 'replace("        ypos 639", "        ypos 556")' in builder
     inline_graphic = "{forest_g=%s:%d}"
@@ -39,7 +41,8 @@ def main() -> None:
             "        '    _movie 1\\n'\n"
             "        '    return\\n\\n'\n"
             "        'label main_menu:\\n'" in builder)
-    assert ('obsolete.suffix.lower() == ".mpg"' in builder)
+    assert 'obsolete.suffix.lower() in {".mpg", ".webm"}' in builder
+    assert 'gfx_text.replace(\'"mov/%04d.webm"\', \'"mov/%04d.mpg"\')' in builder
     shader = (ROOT / "runtime" / "shaders.rpy").read_text(encoding="utf-8")
     for invalid in ("(1 - v)", "== 1)", "== 2)", "== 4)",
                     "vec3(0)", "1 - gl_FragColor.rgb", "(1 - col.",
@@ -93,9 +96,13 @@ def main() -> None:
         movie_target = target / "movie-target"
         movie_source.mkdir()
         movie_target.mkdir()
+        (movie_source / "0001.MPG").write_bytes(b"original MPEG")
         (movie_target / "old.MPG").write_bytes(b"obsolete")
-        convert_movies(movie_source, movie_target)
+        (movie_target / "old.webm").write_bytes(b"obsolete")
+        copy_movies(movie_source, movie_target, clear=True)
         assert not (movie_target / "old.MPG").exists()
+        assert not (movie_target / "old.webm").exists()
+        assert (movie_target / "0001.mpg").read_bytes() == b"original MPEG"
     for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",
                  "NotoSerifCJK-Regular.ttc"):
         font = ROOT / "forest" / "fonts" / name

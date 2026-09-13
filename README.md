@@ -71,7 +71,7 @@ python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
 
 补丁目录不是另一份完整游戏，只需按原资源的相对路径放置发生变化的文件；不变的
 文件应当省略。支持的内容包括 `scr/*.tsc`、`grp*/*.png`、
-`wav|bgm|voice/*.ogg` 和 `mov/*.webm`。例如，英文补丁的 `scr/2100.tsc`
+`wav|bgm|voice/*.ogg` 和 `mov/*.mpg`。例如，英文补丁的 `scr/2100.tsc`
 对应基准资源的 `scr/2100.tsc`，补丁目录不需要包含其余 102 个未修改场景。
 
 TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`、`*select`
@@ -93,8 +93,8 @@ Noto Serif CJK Regular；默认仍使用 Noto Sans CJK JP Regular。
 生成器时，它会复制为 `game/gui/rscript_cursor.png` 并自动启用；以后其他移植
 项目也统一使用这一光标。
 
-生成器还需要 Python 3、Pillow 和 `ffmpeg`。它只读取用户指定的
-资源目录，不会查找、下载或修改已安装的游戏。
+生成器还需要 Python 3 和 Pillow。Forest 的原始 MPG 会直接复制到工程，
+不会重新编码。生成器只读取用户指定的资源目录，不会查找、下载或修改已安装的游戏。
 
 生成器会同时写入 Forest 已验证的 Ren'Py Android 配置和自适应图标，包括
 横屏方向、包名与版本。签名用的 `android.keystore` 和 `bundle.keystore`
@@ -108,7 +108,7 @@ SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
 `evermaiden` 目录中的生成器面向中文资源，支持 LiarsoftTool 2.1 的 `modern-36` TSC，
 并将正文生成为 `_say chinese`。生成方法见
 [`evermaiden/README.zh-CN.md`](evermaiden/README.zh-CN.md)。生成器需要
-Python 3、fontTools 与 `ffmpeg`，不会附带或下载游戏资源。
+Python 3 与 fontTools，不会附带或下载游戏资源。
 
 ---
 
@@ -157,7 +157,7 @@ opcodes and rendering modes must be implemented and verified per game.
 ## Evermaiden generator
 
 The `evermaiden` directory contains a Chinese, `modern-36` TSC adapter. See
-`evermaiden/README.zh-CN.md`; it requires Python 3, fontTools, and `ffmpeg`.
+`evermaiden/README.zh-CN.md`; it requires Python 3 and fontTools.
 
 ## Forest generator
 
@@ -165,7 +165,7 @@ The project contains a Forest-specific generator. It never downloads or
 bundles proprietary Forest data. Prepare an extracted resource directory with
 at least `scr/`, `grps/`, the other `grp*` directories, and converted OGG audio;
 then create an empty Ren'Py project. The generator requires Python 3, Pillow,
-`ffmpeg` for MPG conversion, and LiarsoftTool 2.1 for editable TSC input.
+and LiarsoftTool 2.1 for editable TSC input.
 Prepare both converted resources and current command-based TSC files first:
 
 ```bash
@@ -193,7 +193,7 @@ verbatim.
 A patch directory contains only converted files that differ from the base
 resources, at the same relative paths; unchanged files should be omitted. It
 may contain `scr/*.tsc`, `grp*/*.png`, `wav|bgm|voice/*.ogg`, and
-`mov/*.webm`. A patched `scr/2100.tsc`, for example, is compared with the base
+`mov/*.mpg`. A patched `scr/2100.tsc`, for example, is compared with the base
 `scr/2100.tsc`; the other unchanged scenarios are not required in the patch.
 
 Command-based TSC patches are aligned by scene and instruction position. They
@@ -221,9 +221,10 @@ cursor. Runtime installation and the Forest generator copy it to
 
 The generator only reads the directory supplied by the user. It expects
 `scr/*.tsc`, PNG files under the `grp*` directories, OGG files
-under `wav/`, `bgm/`, and `voice/`, and `mov/0001` plus `mov/0002` in MPG or
-WebM form. It does not locate, extract, download, or modify an installed copy
-of the game.
+under `wav/`, `bgm/`, and `voice/`, and `mov/0001.mpg` plus
+`mov/0002.mpg`. Original MPG files are copied without re-encoding. The
+generator does not locate, extract, download, or modify an installed copy of
+the game.
 
 The generator also writes the verified Forest Ren'Py Android configuration and
 adaptive icons, including landscape orientation, package name, and version.
