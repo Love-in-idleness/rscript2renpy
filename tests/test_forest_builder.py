@@ -67,6 +67,12 @@ def main() -> None:
     assert "if layer not in store.layer_info:" in effects
     assert "if isinstance(num, (int, float))" in effects
     assert 'queue_draw(renpy.hide, "layer%d" % num' in effects
+    assert "transform rotate_zoom_in:" in effects
+    assert "linear 0.5 rotate 0 zoom 1.0" in effects
+    assert "transform rotate_zoom_out:" in effects
+    assert "linear 0.5 rotate 360 zoom 0.0" in effects
+    assert "transform rotate_clockwise:" in effects
+    assert "def rotate_layer(layer):" in effects
     commands = (ROOT / "runtime" / "02_rscript_cmd.rpy").read_text(encoding="utf-8")
     assert "def parse_setclksub(lex):" in commands
     assert "label = label_insub" in commands
@@ -82,8 +88,9 @@ def main() -> None:
     assert "store.text_indent = args.Indent" in text_runtime
     assert "def parse_oload(lex):" in gfx
     assert "store.object_size[args.Layer] = args.Size" in gfx
-    assert "move_layer(args.Layer, 0, 0, 9, 4, relative = True)" in gfx
+    assert "rotate_layer(args.Layer)" in gfx
     assert "def parse_oload(lex):" in RSCRIPT_OBJECTS
+    assert "rotate_layer(args.Layer)" in RSCRIPT_OBJECTS
     assert 'if "def parse_oload(lex):" not in gfx_text:' in builder
     assert 'if "    default object_size = {}" not in definitions_text:' in builder
     with TemporaryDirectory() as temporary:

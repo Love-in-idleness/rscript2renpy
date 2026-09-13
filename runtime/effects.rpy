@@ -102,6 +102,23 @@ transform move_shake_v_sm(xpos, ypos, anchor, dur):
         repeat round(dur / (FRAME * 6)) - 1
     easeout FRAME * 3 yoffset 0
 
+transform rotate_zoom_in:
+    transform_anchor True
+    rotate 360
+    zoom 0.0
+    linear 0.5 rotate 0 zoom 1.0
+
+transform rotate_zoom_out:
+    transform_anchor True
+    rotate 0
+    zoom 1.0
+    linear 0.5 rotate 360 zoom 0.0
+
+transform rotate_clockwise:
+    transform_anchor True
+    rotate 0
+    linear 0.5 rotate 360
+
 
 
 transform _zupdate_in(new_widget, old_widget, new_anchor):
@@ -548,9 +565,41 @@ init python:
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
+        elif effect == 28:
+            if not clear:
+                at_list.append(rotate_zoom_in)
+                _queue_load()
+                queue_ef_pause(0.5)
+
+            elif layer in store.layer_info:
+                img = store.layer_info.pop(layer)
+                store.layer_pos.pop(layer, None)
+                queue_draw(renpy.show, img, at_list = [trans, rotate_zoom_out],
+                           tag = tag, layer = IMAGE_LAYER)
+                queue_ef_pause(0.5)
+                queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
+
         else:
             raise Exception("Unhandled load/clear effect %d" % effect)
 
+        process_draw_queue()
+
+
+    def rotate_layer(layer):
+        if layer not in store.layer_info:
+            return
+
+        img = store.layer_info[layer]
+        xpos, ypos = store.layer_pos.get(layer, (0, 0))
+        anchor = store.layer_anchor.get(layer, (0.0, 0.0))
+        tag = "layer%d" % layer
+        stable = Transform(xpos = xpos, ypos = ypos, anchor = anchor)
+
+        queue_draw(renpy.show, img, at_list = [stable, rotate_clockwise],
+                   tag = tag, layer = IMAGE_LAYER)
+        queue_ef_pause(0.5)
+        queue_draw_extra_delayed(renpy.show, img, at_list = [stable],
+                                 tag = tag, layer = IMAGE_LAYER)
         process_draw_queue()
 
 

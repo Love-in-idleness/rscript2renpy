@@ -572,7 +572,7 @@ RSCRIPT_OBJECTS = r'''
 
     def execute_oaction(args):
         if args.Action == 4:
-            move_layer(args.Layer, 0, 0, 9, 4, relative = True)
+            rotate_layer(args.Layer)
         else:
             raise Exception("Unhandled object action %d" % args.Action)
 
