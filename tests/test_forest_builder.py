@@ -388,15 +388,15 @@ def main() -> None:
                 first_voice_wait + "\n" + clears + "\n*wait 20", 1)
         subtitle_patch = subtitle_patch.replace(first, '"'.join(changed), 1)
         (patch_scr / source.name).write_text(subtitle_patch, encoding="utf-8")
-        replacements, insertions, waits = language_patch_data(resources / "scr",
-                                                               patch_scr)
+        replacements, insertions, overrides = language_patch_data(
+            resources / "scr", patch_scr)
         commands = [command
                     for group in insertions[source.name].values()
                     for command in group]
         assert sum(command.startswith("_oload ") for command in commands) == 5
         assert sum(command.startswith("_cls ") for command in commands) == 5
         assert commands.count("_wait 20") == 1
-        assert waits == {}
+        assert overrides == {}
         compiled_patch = compile_scene(
             source,
             language_texts={"english": replacements[source.name]},
@@ -407,16 +407,16 @@ def main() -> None:
         assert "_oload 49 175 50 0 0 '^cyAdded subtitle'" in compiled_patch
         timed_patch = subtitle_patch.replace("*wait 10", "*wait 40", 1)
         (patch_scr / source.name).write_text(timed_patch, encoding="utf-8")
-        replacements, insertions, waits = language_patch_data(
+        replacements, insertions, overrides = language_patch_data(
             resources / "scr", patch_scr)
         first_wait = next(item for item in read_tsc(source).instructions()
                           if item.opcode == 13)
-        assert waits[source.name][first_wait.offset] == 40
+        assert overrides[source.name][first_wait.offset] == (40,)
         compiled_patch = compile_scene(
             source,
             language_texts={"english": replacements[source.name]},
             language_insertions={"english": insertions[source.name]},
-            language_waits={"english": waits[source.name]})
+            language_operands={"english": overrides[source.name]})
         assert "if _preferences.language == 'english':\n        _wait 40" in \
             compiled_patch
         assert "    else:\n        _wait 10" in compiled_patch
@@ -429,6 +429,42 @@ def main() -> None:
             assert "changes scenario structure" in str(error)
         else:
             raise AssertionError("language patch added a gameplay instruction")
+        voice_parts = first_voice.split()
+        voice_parts[1] = str(int(voice_parts[1]) + 1)
+        changed_voice = " ".join(voice_parts)
+        (patch_scr / source.name).write_text(
+            subtitle_patch.replace(first_voice, changed_voice, 1),
+            encoding="utf-8")
+        replacements, insertions, overrides = language_patch_data(
+            resources / "scr", patch_scr)
+        voice_item = next(item for item in read_tsc(source).instructions()
+                          if item.opcode == 66)
+        assert overrides[source.name][voice_item.offset][0] == \
+            int(voice_parts[1])
+        compiled_patch = compile_scene(
+            source, language_operands={"english": overrides[source.name]})
+        assert ("if _preferences.language == 'english':\n"
+                "        _voice %s" % " ".join(voice_parts[1:])) in \
+            compiled_patch
+    with TemporaryDirectory() as temporary:
+        patch_scr = Path(temporary) / "scr"
+        patch_scr.mkdir()
+        source = resources / "scr" / "0602.tsc"
+        patched = source.read_text(encoding="utf-8").replace(
+            "*texsize 0 29", "*texsize 0 21", 1)
+        (patch_scr / source.name).write_text(patched, encoding="utf-8")
+        replacements, insertions, overrides = language_patch_data(
+            resources / "scr", patch_scr)
+        texsize = next(item for item in read_tsc(source).instructions()
+                       if item.opcode == 96)
+        assert replacements == {} and insertions == {}
+        assert overrides[source.name][texsize.offset] == (0, 21)
+        compiled_patch = compile_scene(
+            source, language_operands={"chinese": overrides[source.name]})
+        assert ("if _preferences.language == 'chinese':\n"
+                "        _texsize 0 21\n"
+                "    else:\n"
+                "        _texsize 0 29") in compiled_patch
     with TemporaryDirectory() as temporary:
         patch_root = Path(temporary)
         patch_scr = patch_root / "scr"
@@ -440,9 +476,9 @@ def main() -> None:
                 "*bgm_on 9 0", "*bgm_on 9 0\n*wait 99", 1)
         (patch_scr / "5000.tsc").write_text(
             patched_credits, encoding="utf-8")
-        replacements, insertions, waits = language_patch_data(
+        replacements, insertions, overrides = language_patch_data(
             resources / "scr", patch_scr)
-        assert replacements == {} and insertions == {} and waits == {}
+        assert replacements == {} and insertions == {} and overrides == {}
         credits = compile_credits_scene(
             credits_source, None, [("english", patch_root)])
         assert "label _5000:" in credits

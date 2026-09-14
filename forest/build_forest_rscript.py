@@ -11,7 +11,7 @@ import sys
 
 from PIL import Image
 
-from forest_tsc import E, read_tsc
+from forest_tsc import E, STRING_OPERANDS, read_tsc
 
 
 COMMANDS = {
@@ -36,6 +36,9 @@ COMMANDS = {
 OPERATORS = {2: "or", 3: "and", 4: "==", 5: ">=", 6: ">", 7: "<=",
              8: "<", 9: "!=", 10: "+", 11: "-", 12: "*", 13: "//", 14: "%"}
 PATCH_INSERT_OPCODES = {13, 32, 36}
+PATCH_OVERRIDE_OPCODES = set(COMMANDS) - {
+    12, 15, 16, 30, 32, 36, 62, 63, 64, 121,
+}
 
 
 def packed(value: int) -> str:
@@ -161,11 +164,30 @@ def render_patch_command(tsc, item) -> str:
     raise ValueError("unsupported language-patch insertion")
 
 
+def changed_instruction_parameters(base_tsc, patch_tsc, base_item, patch_item,
+                                   patch_to_base_offsets) -> bool:
+    """Whether aligned commands differ outside translatable strings."""
+    for index, (base, patch) in enumerate(zip(base_item.operands,
+                                               patch_item.operands)):
+        if index in STRING_OPERANDS.get(base_item.opcode, set()):
+            continue
+        target = (base_item.opcode in (3, 4, 5) or
+                  (base_item.opcode == 14 and
+                   2 <= index < 2 + min(base_item.operands[0], 5)))
+        if target:
+            patch = patch_to_base_offsets.get(patch, ("unmapped", patch))
+        elif base_item.opcode == 18 and index == 1:
+            base, patch = base_tsc.data(base), patch_tsc.data(patch)
+        if base != patch:
+            return True
+    return False
+
+
 def language_patch_data(base_scr: Path, patch_scr: Path):
-    """Return translated strings, subtitle insertions, and patched waits."""
+    """Return translated strings, subtitle insertions, and operand overrides."""
     replacements = {}
     insertions = {}
-    wait_overrides = {}
+    operand_overrides = {}
     for patch_source in scenario_sources(patch_scr):
         base_source = base_scr / patch_source.name
         if not base_source.is_file():
@@ -232,13 +254,24 @@ def language_patch_data(base_scr: Path, patch_scr: Path):
                     "%s adds a wait command without an added subtitle" %
                     patch_source)
 
+        patch_to_base_offsets = {
+            patch_items[patch_index].offset: base_items[base_index].offset
+            for base_index, patch_index in pairs
+        }
+        patch_to_base_offsets[patch_tsc.code_size] = base_tsc.code_size
         scene_replacements = {}
-        scene_wait_overrides = {}
+        scene_operand_overrides = {}
         for base_index, patch_index in sorted(pairs):
             base_item = base_items[base_index]
             patch_item = patch_items[patch_index]
-            if base_item.opcode == 13 and base_item.operands != patch_item.operands:
-                scene_wait_overrides[base_item.offset] = patch_item.operands[0]
+            if changed_instruction_parameters(
+                    base_tsc, patch_tsc, base_item, patch_item,
+                    patch_to_base_offsets):
+                if base_item.opcode not in PATCH_OVERRIDE_OPCODES:
+                    raise ValueError(
+                        "%s changes unsupported parameters for opcode %d" %
+                        (patch_source, base_item.opcode))
+                scene_operand_overrides[base_item.offset] = patch_item.operands
             base = instruction_strings(base_tsc, base_items[base_index])
             patch = instruction_strings(patch_tsc, patch_items[patch_index])
             if base.keys() != patch.keys():
@@ -252,14 +285,14 @@ def language_patch_data(base_scr: Path, patch_scr: Path):
 
         if scene_replacements:
             replacements[patch_source.name] = scene_replacements
-        if scene_wait_overrides:
-            wait_overrides[patch_source.name] = scene_wait_overrides
+        if scene_operand_overrides:
+            operand_overrides[patch_source.name] = scene_operand_overrides
         if added:
             scene_insertions = insertions.setdefault(patch_source.name, {})
             for _, offset, item in added:
                 scene_insertions.setdefault(offset, []).append(
                     render_patch_command(patch_tsc, item))
-    return replacements, insertions, wait_overrides
+    return replacements, insertions, operand_overrides
 
 
 def language_patch_strings(base_scr: Path, patch_scr: Path) -> dict[str, str]:
@@ -398,7 +431,7 @@ def patch_text_expression(language_texts, item, kind, default):
 
 def compile_scene(source: Path, language: str | None = None,
                   language_texts=None, language_insertions=None,
-                  language_waits=None,
+                  language_operands=None,
                   scene_name: str | None = None) -> str:
     if language and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", language):
         raise ValueError("invalid language name: %s" % language)
@@ -406,7 +439,7 @@ def compile_scene(source: Path, language: str | None = None,
         raise ValueError("invalid scene name: %s" % scene_name)
     for patch_language in (set(language_texts or {}) |
                            set(language_insertions or {}) |
-                           set(language_waits or {})):
+                           set(language_operands or {})):
         if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", patch_language):
             raise ValueError("invalid language name: %s" % patch_language)
     language_arg = " " + language if language else ""
@@ -515,19 +548,20 @@ def compile_scene(source: Path, language: str | None = None,
         elif opcode == 64:
             lines.append("    _se_off 0 %s" % packed(operands[0]))
         elif opcode == 13:
-            patched_waits = {
-                patch_language: waits[item.offset]
-                for patch_language, waits in (language_waits or {}).items()
-                if item.offset in waits
+            patched_operands = {
+                patch_language: overrides[item.offset]
+                for patch_language, overrides in
+                (language_operands or {}).items()
+                if item.offset in overrides
             }
-            if patched_waits:
-                for index, (patch_language, wait) in enumerate(
-                        patched_waits.items()):
+            if patched_operands:
+                for index, (patch_language, values) in enumerate(
+                        patched_operands.items()):
                     keyword = "if" if index == 0 else "elif"
                     lines.extend((
                         "    %s _preferences.language == %r:" %
                         (keyword, patch_language),
-                        "        _wait %s" % packed(wait)))
+                        "        _wait %s" % packed(values[0])))
                 lines.extend(("    else:",
                               "        _wait %s" % packed(operands[0])))
             else:
@@ -546,9 +580,30 @@ def compile_scene(source: Path, language: str | None = None,
                             for kind, value in zip(item.kinds, values))
             lines.append("    _%s %s" % (COMMANDS[opcode], args))
         elif opcode in COMMANDS:
-            args = " ".join(packed(value) if kind == E else str(value)
-                            for kind, value in zip(item.kinds, operands))
-            lines.append("    _%s%s" % (COMMANDS[opcode], " " + args if args else ""))
+            def statement(values):
+                args = " ".join(
+                    packed(value) if kind == E else str(value)
+                    for kind, value in zip(item.kinds, values))
+                return "_%s%s" % (COMMANDS[opcode],
+                                   " " + args if args else "")
+
+            patched_operands = {
+                patch_language: overrides[item.offset]
+                for patch_language, overrides in
+                (language_operands or {}).items()
+                if item.offset in overrides
+            }
+            if patched_operands:
+                for index, (patch_language, values) in enumerate(
+                        patched_operands.items()):
+                    keyword = "if" if index == 0 else "elif"
+                    lines.extend((
+                        "    %s _preferences.language == %r:" %
+                        (keyword, patch_language),
+                        "        " + statement(values)))
+                lines.extend(("    else:", "        " + statement(operands)))
+            else:
+                lines.append("    " + statement(operands))
         else:
             lines.append("    # unlifted opcode 0x%04x %s" % (opcode, operands))
     for patch_language, commands in (language_insertions or {}).items():
@@ -1858,13 +1913,13 @@ def main(argv: list[str]) -> int:
         base_keywords_target.unlink()
     patch_texts = {}
     patch_insertions = {}
-    patch_waits = {}
+    patch_operands = {}
     for language, patch in language_patches:
-        replacements, insertions, waits = language_patch_data(root / "scr",
-                                                               patch / "scr")
+        replacements, insertions, overrides = language_patch_data(
+            root / "scr", patch / "scr")
         patch_texts[language] = replacements
         patch_insertions[language] = insertions
-        patch_waits[language] = waits
+        patch_operands[language] = overrides
         write_language_patch(root, patch, language, game)
     (game / "options.rpy").write_text(
         'define config.name = "Forest"\n'
@@ -1905,14 +1960,14 @@ def main(argv: list[str]) -> int:
             for language, insertions in patch_insertions.items()
             if source.name in insertions
         }
-        scene_waits = {
-            language: waits[source.name]
-            for language, waits in patch_waits.items()
-            if source.name in waits
+        scene_operands = {
+            language: overrides[source.name]
+            for language, overrides in patch_operands.items()
+            if source.name in overrides
         }
         (scenario / (source.stem + ".rpy")).write_text(
             compile_scene(source, language_marker, scene_texts,
-                          scene_insertions, scene_waits),
+                          scene_insertions, scene_operands),
             encoding="utf-8")
     print("Wrote %s: %d rscript scenes" % (target, len(sources)))
     return 0
