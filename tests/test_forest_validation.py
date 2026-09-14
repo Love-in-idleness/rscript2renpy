@@ -97,8 +97,11 @@ def main() -> None:
                 "keywords.json").read_text(encoding="utf-8") == keywords_text
         text_runtime = (project / "game" / "05_rscript_text.rpy").read_text(
             encoding="utf-8")
+        audio_runtime = (project / "game" / "04_rscript_audio.rpy").read_text(
+            encoding="utf-8")
         util_runtime = (project / "game" / "01_util.rpy").read_text(
             encoding="utf-8")
+        assert 'wait_audio("rscript_voice", hard = True)' in audio_runtime
         assert "renpy.translation.translate_string(eval(text).rstrip())" in util_runtime
         assert "text = forest_prepare_wiki_text(text)" in util_runtime
         assert ('"#D7FFB3" if persistent.forest_wiki_mode else "#FFFFFF"'
