@@ -240,7 +240,8 @@ def main() -> None:
     assert "    _oload 40 400 270 0 0 %r" % credit_text in credits
     assert 'color = "#FFFFFF"' in RSCRIPT_OBJECTS
     assert "font = forest_current_font()" in RSCRIPT_OBJECTS
-    assert "xmaximum = font_size * persistent.forest_oload_line_chars" in RSCRIPT_OBJECTS
+    assert "xmaximum = font_size * persistent.forest_oload_line_chars" not in \
+        RSCRIPT_OBJECTS
     assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
     assert ("forest_hang_punctuation(\n"
@@ -270,13 +271,16 @@ def main() -> None:
     exec("import unicodedata\n" + textwrap.dedent(
         FOREST_COMPAT[helper_start:helper_end]), helper_namespace)
     hang = helper_namespace["forest_hang_punctuation"]
-    assert hang("甲" * 19 + "。", 22, 19) == \
-        "甲" * 19 + "。{space=-22}"
-    assert hang("甲。{/color}", 22, 19) == "甲。{space=-22}{/color}"
+    assert hang("甲" * 19 + "。", 22, 19) == "甲" * 19 + "。"
+    assert hang("甲。{/color}", 22, 19) == "甲。{/color}"
     assert hang("Plain text", 22, 19) == "Plain text"
+    assert hang("吾会重新唤回那远去的“太一之力”……", 22, 19) == \
+        "吾会重新唤回那远去的“太一之力”……"
+    assert hang("甲" * 19 + "……", 22, 19) == "甲" * 19 + "……"
+    assert hang("甲" * 20, 22, 19) == "甲" * 19 + "\n甲"
     wrapped = "孕育生命，抚养生命，是女子之宿命及责任，亦是天地恒常。"
     assert hang(wrapped, 22, 19) == wrapped.replace(
-        "责任，", "责任，{space=-22}").replace("。", "。{space=-22}")
+        "责任，", "责任，\n")
     assert "default persistent.forest_text_cps = 20" in FOREST_COMPAT
     assert "default persistent.forest_wiki_mode = False" in FOREST_COMPAT
     assert "def forest_prepare_wiki_text(text):" in FOREST_COMPAT
@@ -311,7 +315,7 @@ def main() -> None:
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
     assert "xpos text_indent + 1" in FOREST_COMPAT
-    assert "xsize persistent.forest_say_line_chars * persistent.forest_text_size" in FOREST_COMPAT
+    assert "xsize config.screen_width - text_indent - 1" in FOREST_COMPAT
     assert "default persistent.forest_say_line_chars = 19" in FOREST_COMPAT
     assert "default persistent.forest_oload_line_chars = 20" in FOREST_COMPAT
     assert "default persistent.forest_line_spacing = 7" in FOREST_COMPAT

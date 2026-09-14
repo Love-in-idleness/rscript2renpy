@@ -60,7 +60,8 @@ def main() -> None:
         assert ("forest_hang_punctuation(\n"
                 "            text_value, font_size, "
                 "persistent.forest_oload_line_chars)" in gfx_text)
-        assert "xmaximum = font_size * persistent.forest_oload_line_chars" in gfx_text
+        assert ("xmaximum = font_size * persistent.forest_oload_line_chars"
+                not in gfx_text)
         for name in ("android.json", "android-icon_background.png",
                      "android-icon_foreground.png"):
             assert (project / name).read_bytes() == \

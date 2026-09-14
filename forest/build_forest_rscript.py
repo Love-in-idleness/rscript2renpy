@@ -685,8 +685,7 @@ RSCRIPT_OBJECTS = r'''
         text_value = forest_hang_punctuation(
             text_value, font_size, persistent.forest_oload_line_chars)
         text = Text(text_value, font = forest_current_font(),
-                    size = font_size, color = "#FFFFFF",
-                    xmaximum = font_size * persistent.forest_oload_line_chars)
+                    size = font_size, color = "#FFFFFF")
         trans = Transform(
             xpos = xpos,
             ypos = ypos,
@@ -770,18 +769,6 @@ init python:
 
     def forest_hang_punctuation(text, font_size, line_chars):
         def hang_line(line):
-            content_end = len(line)
-            while content_end and line[content_end - 1] == "}":
-                start = line.rfind("{", 0, content_end)
-                if start < 0:
-                    break
-                content_end = start
-
-            trailing_start = content_end
-            while (trailing_start and
-                   line[trailing_start - 1] in _forest_hanging_punctuation):
-                trailing_start -= 1
-
             width = 0.0
             limit = font_size * line_chars
             result = []
@@ -798,17 +785,12 @@ init python:
                 char_width = (font_size if
                               unicodedata.east_asian_width(char) in "WFA"
                               else font_size * 0.5)
-                hangs = (char in _forest_hanging_punctuation and
-                         (index >= trailing_start or
-                          width + char_width > limit))
+                if (char not in _forest_hanging_punctuation and
+                        width + char_width > limit):
+                    result.append("\n")
+                    width = 0.0
                 result.append(char)
-                if hangs:
-                    result.append("{space=-%d}" %
-                                  max(1, int(round(char_width))))
-                else:
-                    if width + char_width > limit:
-                        width = 0.0
-                    width += char_width
+                width += char_width
                 index += 1
             return "".join(result)
 
@@ -1417,7 +1399,7 @@ screen say(who, what, center=False):
             slow_cps persistent.forest_text_cps
             xpos text_indent + 1
             ypos 8
-            xsize persistent.forest_say_line_chars * persistent.forest_text_size
+            xsize config.screen_width - text_indent - 1
             text_align (0.5 if center else 0.0)
             line_spacing persistent.forest_line_spacing
 
@@ -1784,8 +1766,7 @@ def main(argv: list[str]) -> int:
         "        text_value = forest_hang_punctuation(\n"
         "            text_value, font_size, persistent.forest_oload_line_chars)\n"
         "        text = Text(text_value, font = forest_current_font(),\n"
-        "                    size = font_size, color = \"#FFFFFF\",\n"
-        "                    xmaximum = font_size * persistent.forest_oload_line_chars)")
+        "                    size = font_size, color = \"#FFFFFF\")")
     if "def parse_oload(lex):" not in gfx_text:
         gfx_text = gfx_text.rstrip() + RSCRIPT_OBJECTS
     gfx_path.write_text(gfx_text, encoding="utf-8")
