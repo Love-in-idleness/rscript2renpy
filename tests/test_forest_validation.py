@@ -58,7 +58,7 @@ def main() -> None:
         gfx_text = (project / "game" / "03_rscript_gfx.rpy").read_text(
             encoding="utf-8")
         assert "forest_hang_punctuation(text_value, font_size)" in gfx_text
-        assert "xmaximum = font_size * persistent.forest_line_chars" in gfx_text
+        assert "xmaximum = font_size * persistent.forest_oload_line_chars" in gfx_text
         for name in ("android.json", "android-icon_background.png",
                      "android-icon_foreground.png"):
             assert (project / name).read_bytes() == \
@@ -75,7 +75,8 @@ def main() -> None:
         assert "define forest_languages = [(None, 'Original'), ('english', 'english')]" in compat_text
         assert "screen forest_title_preferences():" in compat_text
         assert "default persistent.forest_text_size = 22" in compat_text
-        assert "default persistent.forest_line_chars = 19" in compat_text
+        assert "default persistent.forest_say_line_chars = 19" in compat_text
+        assert "default persistent.forest_oload_line_chars = 20" in compat_text
         assert "default persistent.forest_line_spacing = 7" in compat_text
         assert "default persistent.forest_wiki_mode = False" in compat_text
         assert "'https://example.test/a//b'" in compat_text

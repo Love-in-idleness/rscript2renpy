@@ -210,7 +210,7 @@ def main() -> None:
     assert "    _oload 40 400 270 0 0 %r" % credit_text in credits
     assert 'color = "#FFFFFF"' in RSCRIPT_OBJECTS
     assert "font = forest_current_font()" in RSCRIPT_OBJECTS
-    assert "xmaximum = font_size * persistent.forest_line_chars" in RSCRIPT_OBJECTS
+    assert "xmaximum = font_size * persistent.forest_oload_line_chars" in RSCRIPT_OBJECTS
     assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
     assert "forest_hang_punctuation(text_value, font_size)" in RSCRIPT_OBJECTS
@@ -273,7 +273,9 @@ def main() -> None:
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
     assert "xpos text_indent + 1" in FOREST_COMPAT
-    assert "xsize persistent.forest_line_chars * persistent.forest_text_size" in FOREST_COMPAT
+    assert "xsize persistent.forest_say_line_chars * persistent.forest_text_size" in FOREST_COMPAT
+    assert "default persistent.forest_say_line_chars = 19" in FOREST_COMPAT
+    assert "default persistent.forest_oload_line_chars = 20" in FOREST_COMPAT
     assert "default persistent.forest_line_spacing = 7" in FOREST_COMPAT
     assert "line_spacing persistent.forest_line_spacing" in FOREST_COMPAT
     assert 'text "Line Spacing" yalign 0.5' in FOREST_COMPAT

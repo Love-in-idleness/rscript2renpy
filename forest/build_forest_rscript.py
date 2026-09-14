@@ -626,7 +626,7 @@ RSCRIPT_OBJECTS = r'''
         text_value = forest_hang_punctuation(text_value, font_size)
         text = Text(text_value, font = forest_current_font(),
                     size = font_size, color = "#FFFFFF",
-                    xmaximum = font_size * persistent.forest_line_chars)
+                    xmaximum = font_size * persistent.forest_oload_line_chars)
         trans = Transform(
             xpos = xpos,
             ypos = ypos,
@@ -692,7 +692,8 @@ default forest_last_voice = None
 default forest_input_locked = False
 default persistent.textbox_opacity = 1.0
 default persistent.forest_text_size = 22
-default persistent.forest_line_chars = 19
+default persistent.forest_say_line_chars = 19
+default persistent.forest_oload_line_chars = 20
 default persistent.forest_line_spacing = 7
 default persistent.forest_text_cps = 20
 default persistent.forest_text_font = "fonts/NotoSansCJKjp-Regular.otf"
@@ -1115,18 +1116,33 @@ screen forest_title_preferences():
             fixed:
                 xfill True
                 ysize 38
-                text "Characters per Line" yalign 0.5
+                text "Dialogue Characters per Line" yalign 0.5
                 hbox:
                     xalign 1.0
                     yalign 0.5
                     spacing 10
-                    text "[persistent.forest_line_chars]":
+                    text "[persistent.forest_say_line_chars]":
                         min_width 48
                         text_align 0.5
                     textbutton "-" action Function(
-                        forest_adjust_text, "forest_line_chars", -1, 10, 40)
+                        forest_adjust_text, "forest_say_line_chars", -1, 10, 40)
                     textbutton "+" action Function(
-                        forest_adjust_text, "forest_line_chars", 1, 10, 40)
+                        forest_adjust_text, "forest_say_line_chars", 1, 10, 40)
+            fixed:
+                xfill True
+                ysize 38
+                text "Overlay Characters per Line" yalign 0.5
+                hbox:
+                    xalign 1.0
+                    yalign 0.5
+                    spacing 10
+                    text "[persistent.forest_oload_line_chars]":
+                        min_width 48
+                        text_align 0.5
+                    textbutton "-" action Function(
+                        forest_adjust_text, "forest_oload_line_chars", -1, 10, 40)
+                    textbutton "+" action Function(
+                        forest_adjust_text, "forest_oload_line_chars", 1, 10, 40)
             fixed:
                 xfill True
                 ysize 38
@@ -1313,7 +1329,7 @@ screen say(who, what, center=False):
             slow_cps persistent.forest_text_cps
             xpos text_indent + 1
             ypos 8
-            xsize persistent.forest_line_chars * persistent.forest_text_size
+            xsize persistent.forest_say_line_chars * persistent.forest_text_size
             text_align (0.5 if center else 0.0)
             line_spacing persistent.forest_line_spacing
 
@@ -1680,7 +1696,7 @@ def main(argv: list[str]) -> int:
         "        text_value = forest_hang_punctuation(text_value, font_size)\n"
         "        text = Text(text_value, font = forest_current_font(),\n"
         "                    size = font_size, color = \"#FFFFFF\",\n"
-        "                    xmaximum = font_size * persistent.forest_line_chars)")
+        "                    xmaximum = font_size * persistent.forest_oload_line_chars)")
     if "def parse_oload(lex):" not in gfx_text:
         gfx_text = gfx_text.rstrip() + RSCRIPT_OBJECTS
     gfx_path.write_text(gfx_text, encoding="utf-8")
