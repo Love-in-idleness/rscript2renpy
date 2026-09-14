@@ -766,6 +766,8 @@ init python:
 
     _forest_hanging_punctuation = frozenset(
         "、。，．！？!?：；;,.…‥—―」』）】》〉〕］｝”’")
+    _forest_opening_punctuation = frozenset(
+        "（［｛〔〈《「『【〖〘〚“‘〝([{«")
 
     def forest_hang_punctuation(text, font_size, line_chars):
         def hang_line(line):
@@ -785,8 +787,11 @@ init python:
                 char_width = (font_size if
                               unicodedata.east_asian_width(char) in "WFA"
                               else font_size * 0.5)
-                if (char not in _forest_hanging_punctuation and
-                        width + char_width > limit):
+                if width and (
+                        (char in _forest_opening_punctuation and
+                         width + char_width >= limit) or
+                        (char not in _forest_hanging_punctuation and
+                         width + char_width > limit)):
                     result.append("\n")
                     width = 0.0
                 result.append(char)
