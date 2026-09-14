@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import re
 import sys
 
 
@@ -25,6 +26,10 @@ def main() -> None:
     assert "xmaximum = font_size * 19" in combined
     assert "def parse_rscript_text(text, color_controls = False):" in combined
     assert "parse_rscript_text(repr(args.Text), True)" in combined
+    line_break_pattern = r"[ \t]*(\^n)([\<\>]?)[ \t]*"
+    assert line_break_pattern in combined
+    assert re.sub(line_break_pattern, r"\1\2", "left^n\u3000right") == \
+        "left^n\u3000right"
     assert "{k=-2}" not in combined
     assert '"grps wait00 body"\n            xpos 4\n            ypos 5' in combined
     assert 'config.mouse = {' in combined

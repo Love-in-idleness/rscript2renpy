@@ -112,7 +112,7 @@ python early:
         text = eval(text).rstrip()
 
 
-        text = renpy.re.sub(r"\s*(\^n)([\<\>]?)\s*", r"\1\2", text, flags = renpy.re.UNICODE)
+        text = renpy.re.sub(r"[ \t]*(\^n)([\<\>]?)[ \t]*", r"\1\2", text, flags = renpy.re.UNICODE)
 
         text = renpy.re.sub(r"\^b(.*?)(\^b|$)", r"{b}\1{/b}", text)
         text = renpy.re.sub(r"\^i(.*?)(\^i|$)", r"{i}\1{/i}", text)
