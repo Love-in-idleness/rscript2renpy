@@ -15,7 +15,7 @@ from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS,
                                   convert_masks, copy_assets, copy_movies,
                                   language_patch_data, language_patch_strings,
                                   menu_text, read_keywords, scene_strings,
-                                  strip_json_comments)
+                                  strip_json_comments, wiki_image_links)
 from forest_tsc import read_tsc
 
 
@@ -38,6 +38,7 @@ def main() -> None:
     assert builder.index('speaker = renpy.re.match') < \
         builder.index('text = forest_inline_graphics(text)')
     assert 'config.self_closing_custom_text_tags["forest_g"]' in FOREST_COMPAT
+    assert 'config.self_closing_custom_text_tags["forest_a"]' in FOREST_COMPAT
     assert 'zoom = int(text_size) / 22.0' in FOREST_COMPAT
     assert 'renpy.TEXT_DISPLAYABLE, image' in FOREST_COMPAT
     inline_start = FOREST_COMPAT.index("    def forest_inline_graphics")
@@ -51,6 +52,8 @@ def main() -> None:
          inline_namespace)
     assert inline_namespace["forest_inline_graphics"](
         "A^g715B") == "A{forest_g=715:22}B"
+    assert inline_namespace["forest_inline_graphics"](
+        "A^a601B") == "A{forest_a=601:22}B"
     assert "'label splashscreen:\\n'" in builder
     assert ("'    _movie 2\\n'\n"
             "        '    _movie 1\\n'\n"
@@ -265,6 +268,13 @@ def main() -> None:
         keywords.write_text(commented_keywords, encoding="utf-8")
         assert read_keywords(keywords) == [
             ("A keyword.", "https://example.test/a//b", "keyword")]
+    assert wiki_image_links([
+        ("special", "https://example.test/page#keeper", "special"),
+        ("special", "https://example.test/page#replay", "special"),
+    ]) == {
+        "601": "https://example.test/page#keeper",
+        "603": "https://example.test/page#replay",
+    }
     helper_start = FOREST_COMPAT.index("    _forest_hanging_punctuation")
     helper_end = FOREST_COMPAT.index("    def forest_g_tag", helper_start)
     helper_namespace = {}
@@ -320,11 +330,13 @@ def main() -> None:
     assert 'forest_adjust_text, "forest_text_cps", -5, 5, 120' in FOREST_COMPAT
     assert 'forest_adjust_text, "forest_text_cps", 5, 5, 120' in FOREST_COMPAT
     assert "slow_cps persistent.forest_text_cps" in FOREST_COMPAT
+    assert "xpos (0 if center else text_indent + 1)" in FOREST_COMPAT
+    assert "xsize (config.screen_width if center else" in FOREST_COMPAT
     assert "text_align (0.5 if center else 0.0)" in FOREST_COMPAT
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
-    assert "xpos text_indent + 1" in FOREST_COMPAT
-    assert "xsize config.screen_width - text_indent - 1" in FOREST_COMPAT
+    assert "xpos (0 if center else text_indent + 1)" in FOREST_COMPAT
+    assert "config.screen_width - text_indent - 1)" in FOREST_COMPAT
     assert "default persistent.forest_say_line_chars = 19" in FOREST_COMPAT
     assert "default persistent.forest_oload_line_chars = 20" in FOREST_COMPAT
     assert "default persistent.forest_line_spacing = 7" in FOREST_COMPAT

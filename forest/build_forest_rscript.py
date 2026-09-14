@@ -370,6 +370,18 @@ def read_keywords(source: Path) -> list[tuple[str, str, str]]:
     return result
 
 
+def wiki_image_links(entries: list[tuple[str, str, str]]) -> dict[str, str]:
+    """Return the links used by Forest's two inline wiki images."""
+    anchors = {"keeper": "601", "replay": "603"}
+    result = {}
+    for _, url, _ in entries:
+        anchor = url.rpartition("#")[2]
+        number = anchors.get(anchor)
+        if number is not None:
+            result[number] = url
+    return result
+
+
 def write_language_patch(base: Path, patch: Path, language: str,
                          game: Path) -> None:
     target = game / "tl" / language
@@ -760,6 +772,7 @@ default persistent.forest_wiki_mode = False
 default persistent.forest_progress_backup = None
 define forest_languages = [(None, "Original")]
 define forest_wiki_keywords = {}
+define forest_wiki_images = {}
 
 init python:
     import unicodedata
@@ -810,13 +823,35 @@ init python:
         image = Transform("images/grps/gf%s.png" % number, zoom=zoom)
         return [(renpy.TEXT_DISPLAYABLE, image)]
 
+    def forest_a_tag(tag, argument):
+        try:
+            number, text_size = argument.split(":", 1)
+            zoom = int(text_size) / 22.0
+        except (AttributeError, TypeError, ValueError):
+            return []
+        prefix = "gg" if persistent.forest_wiki_mode else "gf"
+        image = Transform("images/grps/%s%s.png" % (prefix, number),
+                          zoom=zoom)
+        if persistent.forest_wiki_mode:
+            url = forest_wiki_images.get(
+                _preferences.language, {}).get(number)
+            if url:
+                image = renpy.display.behavior.ImageButton(
+                    image, image, clicked=OpenURL(url), focus_mask=True)
+        return [(renpy.TEXT_DISPLAYABLE, image)]
+
     def forest_inline_graphics(text):
-        return renpy.re.sub(
+        text = renpy.re.sub(
             r"\^g(\d{3})",
             lambda match: "{forest_g=%s:%d}" %
             (match.group(1), persistent.forest_text_size), text)
+        return renpy.re.sub(
+            r"\^a(\d{3})",
+            lambda match: "{forest_a=%s:%d}" %
+            (match.group(1), persistent.forest_text_size), text)
 
     config.self_closing_custom_text_tags["forest_g"] = forest_g_tag
+    config.self_closing_custom_text_tags["forest_a"] = forest_a_tag
 
     def forest_open_game_menu():
         if store.menu_enabled and not store.forest_input_locked:
@@ -866,6 +901,7 @@ init python:
 
     def forest_wiki_plain(text):
         text = renpy.re.sub(r"\^g\d{3}", "", text)
+        text = renpy.re.sub(r"\^a\d{3}", "", text)
         text = renpy.re.sub(r"\^c[ygwk]", "", text)
         text = text.replace("^n", "")
         return renpy.re.sub(r"\^[bisdmw]\d*", "", text)
@@ -1402,9 +1438,10 @@ screen say(who, what, center=False):
             size persistent.forest_text_size
             color "#ffffff"
             slow_cps persistent.forest_text_cps
-            xpos text_indent + 1
+            xpos (0 if center else text_indent + 1)
             ypos 8
-            xsize config.screen_width - text_indent - 1
+            xsize (config.screen_width if center else
+                   config.screen_width - text_indent - 1)
             text_align (0.5 if center else 0.0)
             line_spacing persistent.forest_line_spacing
 
@@ -1898,18 +1935,27 @@ def main(argv: list[str]) -> int:
     language_labels = [(None, language_marker or "Original")]
     language_labels.extend((name, name) for name, _ in language_patches)
     wiki_keywords = {}
+    wiki_images = {}
     base_keywords = read_keywords(root / "keywords.json")
     if base_keywords:
         wiki_keywords[None] = base_keywords
+        links = wiki_image_links(base_keywords)
+        if links:
+            wiki_images[None] = links
     for language, patch in language_patches:
         entries = read_keywords(patch / "keywords.json")
         if entries:
             wiki_keywords[language] = entries
+            links = wiki_image_links(entries)
+            if links:
+                wiki_images[language] = links
     compat = FOREST_COMPAT.replace(
         'define forest_languages = [(None, "Original")]',
         "define forest_languages = %r" % language_labels).replace(
             "define forest_wiki_keywords = {}",
-            "define forest_wiki_keywords = %r" % wiki_keywords)
+            "define forest_wiki_keywords = %r" % wiki_keywords).replace(
+            "define forest_wiki_images = {}",
+            "define forest_wiki_images = %r" % wiki_images)
     (game / "forest_compat.rpy").write_text(compat, encoding="utf-8")
     for folder in ("grpe", "grpo", "grpo_bg", "grpo_bu", "grpo_ci", "grpo_f", "grps"):
         copy_assets(root / folder, "*.png", game / "images" / folder)
