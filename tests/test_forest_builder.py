@@ -415,8 +415,9 @@ def main() -> None:
             language_texts={"english": replacements[source.name]},
             language_insertions={"english": insertions[source.name]},
             language_waits={"english": waits[source.name]})
-        assert "_wait {'english': 40}.get(_preferences.language, 10)" in \
+        assert "if _preferences.language == 'english':\n        _wait 40" in \
             compiled_patch
+        assert "    else:\n        _wait 10" in compiled_patch
         invalid_patch = subtitle_patch.replace(
             first_voice, first_voice + "\n*voice 999 0 0 0", 1)
         (patch_scr / source.name).write_text(invalid_patch, encoding="utf-8")

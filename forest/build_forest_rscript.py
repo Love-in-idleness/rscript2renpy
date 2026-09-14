@@ -520,13 +520,18 @@ def compile_scene(source: Path, language: str | None = None,
                 for patch_language, waits in (language_waits or {}).items()
                 if item.offset in waits
             }
-            value = packed(operands[0])
             if patched_waits:
-                choices = ", ".join(
-                    "%r: %s" % (patch_language, packed(wait))
-                    for patch_language, wait in patched_waits.items())
-                value = "{%s}.get(_preferences.language, %s)" % (choices, value)
-            lines.append("    _wait %s" % value)
+                for index, (patch_language, wait) in enumerate(
+                        patched_waits.items()):
+                    keyword = "if" if index == 0 else "elif"
+                    lines.extend((
+                        "    %s _preferences.language == %r:" %
+                        (keyword, patch_language),
+                        "        _wait %s" % packed(wait)))
+                lines.extend(("    else:",
+                              "        _wait %s" % packed(operands[0])))
+            else:
+                lines.append("    _wait %s" % packed(operands[0]))
         elif opcode in (30, 36):
             values = list(operands)
             # Forest's 2500.tsc contains one mistyped background number. The
