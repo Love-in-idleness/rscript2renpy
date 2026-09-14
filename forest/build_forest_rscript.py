@@ -4,6 +4,7 @@
 from pathlib import Path
 import argparse
 from functools import lru_cache
+import json
 import re
 import shutil
 import sys
@@ -269,6 +270,65 @@ def language_patch_strings(base_scr: Path, patch_scr: Path) -> dict[str, str]:
     return translations
 
 
+def strip_json_comments(text: str) -> str:
+    """Remove // comments without touching // inside JSON strings."""
+    result = []
+    index = 0
+    in_string = escaped = False
+    while index < len(text):
+        char = text[index]
+        if in_string:
+            result.append(char)
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            index += 1
+        elif char == '"':
+            in_string = True
+            result.append(char)
+            index += 1
+        elif char == "/" and index + 1 < len(text) and \
+                text[index + 1] == "/":
+            index += 2
+            while index < len(text) and text[index] not in "\r\n":
+                index += 1
+        else:
+            result.append(char)
+            index += 1
+    return "".join(result)
+
+
+def read_keywords(source: Path) -> list[tuple[str, str, str]]:
+    """Read and validate a Forest patch's commented keywords.json."""
+    if not source.is_file():
+        return []
+    try:
+        data = json.loads(strip_json_comments(
+            source.read_text(encoding="utf-8-sig")))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError("invalid keywords file %s: %s" % (source, error)) \
+            from error
+    if not isinstance(data, list):
+        raise ValueError("%s must contain a JSON array" % source)
+    result = []
+    for index, entry in enumerate(data, 1):
+        if not (isinstance(entry, list) and len(entry) == 3 and
+                all(isinstance(value, str) and value for value in entry)):
+            raise ValueError(
+                "%s entry %d must be three non-empty strings" %
+                (source, index))
+        sentence, url, link_text = entry
+        if link_text not in sentence:
+            raise ValueError(
+                "%s entry %d link text is not in its sentence" %
+                (source, index))
+        result.append((sentence, url, link_text))
+    return result
+
+
 def write_language_patch(base: Path, patch: Path, language: str,
                          game: Path) -> None:
     target = game / "tl" / language
@@ -286,6 +346,9 @@ def write_language_patch(base: Path, patch: Path, language: str,
                                          ("bgm", "bgm"), ("voice", "voice")):
         copy_assets(patch / source_folder, "*.ogg", target / target_folder)
     copy_movies(patch / "mov", target / "mov")
+    keywords = patch / "keywords.json"
+    if keywords.is_file():
+        shutil.copyfile(keywords, target / "keywords.json")
 
 
 def parse_language_options(specs: list[str]) -> tuple[str | None,
@@ -604,8 +667,10 @@ default persistent.forest_line_chars = 19
 default persistent.forest_line_spacing = 7
 default persistent.forest_text_cps = 20
 default persistent.forest_text_font = "fonts/NotoSansCJKjp-Regular.otf"
+default persistent.forest_wiki_mode = False
 default persistent.forest_progress_backup = None
 define forest_languages = [(None, "Original")]
+define forest_wiki_keywords = {}
 
 init python:
     import unicodedata
@@ -689,6 +754,38 @@ init python:
             index = -1 if step > 0 else 0
         persistent.forest_text_font = fonts[(index + step) % len(fonts)]
         renpy.save_persistent()
+
+    def forest_toggle_wiki():
+        persistent.forest_wiki_mode = not persistent.forest_wiki_mode
+        renpy.save_persistent()
+
+    def forest_wiki_plain(text):
+        text = renpy.re.sub(r"\^g\d{3}", "", text)
+        text = renpy.re.sub(r"\^c[ygwk]", "", text)
+        text = text.replace("^n", "")
+        return renpy.re.sub(r"\^[bisdmw]\d*", "", text)
+
+    def forest_prepare_wiki_text(text):
+        if not persistent.forest_wiki_mode:
+            return text
+        entries = forest_wiki_keywords.get(_preferences.language, ())
+        if not entries:
+            return text
+        plain = forest_wiki_plain(text)
+
+        def link_green(match):
+            marked = match.group(1)
+            visible = forest_wiki_plain(marked)
+            for sentence, url, link_text in entries:
+                if visible and sentence in plain and (link_text in visible or
+                                                      visible in link_text):
+                    linked = "{a=%s}{color=#D7FFB3}%s{/color}{/a}" % \
+                        (url, marked)
+                    return "^cg" + linked
+            return match.group(0)
+
+        return renpy.re.sub(
+            r"\^cg(.*?)(?=\^c[ygwk]|$)", link_green, text)
 
     def forest_save_progress():
         persistent.forest_progress_backup = {
@@ -967,7 +1064,7 @@ screen forest_title_preferences():
         ypadding 22
         vbox:
             xfill True
-            spacing 10
+            spacing 6
             text "Text Display":
                 size 26
                 xalign 0.5
@@ -1053,6 +1150,15 @@ screen forest_title_preferences():
                         textbutton label:
                             action Language(language)
                             selected _preferences.language == language
+
+            fixed:
+                xfill True
+                ysize 38
+                text "Wiki Mode" yalign 0.5
+                textbutton ("On" if persistent.forest_wiki_mode else "Off"):
+                    xalign 1.0
+                    yalign 0.5
+                    action Function(forest_toggle_wiki)
 
             text "Persistent Progress" xalign 0.5
             hbox:
@@ -1606,7 +1712,7 @@ def main(argv: list[str]) -> int:
         "        what, center = parse_rscript_text(what)",
         "        store.forest_speaker = None\n"
         "        store.forest_speaker_visible = True\n"
-        "        what, center = parse_rscript_text(what)",
+        "        what, center = parse_rscript_text(what, True)",
         1)
     text_runtime = text_runtime.replace(
         "        if store.jump_back_point is None:",
@@ -1618,7 +1724,7 @@ def main(argv: list[str]) -> int:
         "        what, center = parse_rscript_text(what)",
         "        who  = store.last_spk\n"
         "        store.forest_speaker_visible = True\n"
-        "        what, center = parse_rscript_text(what)",
+        "        what, center = parse_rscript_text(what, True)",
         1)
     text_runtime = text_runtime.replace(
         "        who.do_extend()\n"
@@ -1639,6 +1745,7 @@ def main(argv: list[str]) -> int:
     util_text = util_text.replace(
         "        text = eval(text).rstrip()",
         "        text = renpy.translation.translate_string(eval(text).rstrip())\n"
+        "        text = forest_prepare_wiki_text(text)\n"
         "        speaker = renpy.re.match(r\"^\\^g(\\d{3})\", text)\n"
         "        if speaker:\n"
         "            store.forest_speaker = int(speaker.group(1))\n"
@@ -1646,6 +1753,11 @@ def main(argv: list[str]) -> int:
         "        text = renpy.re.sub(r\"\\^g(\\d{3})\", "
         "lambda match: \"{forest_g=%s:%d}\" % "
         "(match.group(1), persistent.forest_text_size), text)",
+        1)
+    util_text = util_text.replace(
+        '            "y": "#FFDE00", "g": "#D7FFB3",',
+        '            "y": "#FFDE00", "g": ("#D7FFB3" if '
+        'persistent.forest_wiki_mode else "#FFFFFF"),',
         1)
     util_path.write_text(util_text, encoding="utf-8")
     channels_path = game / "audio.rpy"
@@ -1666,9 +1778,19 @@ def main(argv: list[str]) -> int:
     character_path.write_text(character_text, encoding="utf-8")
     language_labels = [(None, language_marker or "Original")]
     language_labels.extend((name, name) for name, _ in language_patches)
+    wiki_keywords = {}
+    base_keywords = read_keywords(root / "keywords.json")
+    if base_keywords:
+        wiki_keywords[None] = base_keywords
+    for language, patch in language_patches:
+        entries = read_keywords(patch / "keywords.json")
+        if entries:
+            wiki_keywords[language] = entries
     compat = FOREST_COMPAT.replace(
         'define forest_languages = [(None, "Original")]',
-        "define forest_languages = %r" % language_labels)
+        "define forest_languages = %r" % language_labels).replace(
+            "define forest_wiki_keywords = {}",
+            "define forest_wiki_keywords = %r" % wiki_keywords)
     (game / "forest_compat.rpy").write_text(compat, encoding="utf-8")
     for folder in ("grpe", "grpo", "grpo_bg", "grpo_bu", "grpo_ci", "grpo_f", "grps"):
         copy_assets(root / folder, "*.png", game / "images" / folder)
@@ -1684,6 +1806,11 @@ def main(argv: list[str]) -> int:
                 obsolete.unlink()
         copy_assets(root / source_folder, "*.ogg", audio_target)
     copy_movies(root / "mov", game / "mov", clear=True)
+    base_keywords_target = game / "keywords.json"
+    if (root / "keywords.json").is_file():
+        shutil.copyfile(root / "keywords.json", base_keywords_target)
+    elif base_keywords_target.exists():
+        base_keywords_target.unlink()
     patch_texts = {}
     patch_insertions = {}
     for language, patch in language_patches:

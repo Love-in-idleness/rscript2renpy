@@ -2,6 +2,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import argparse
+import re
 import sys
 import textwrap
 
@@ -12,8 +13,9 @@ sys.path.insert(0, str(ROOT / "forest"))
 from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS,
                                   compile_credits_scene, compile_scene,
                                   convert_masks, copy_assets, copy_movies,
-                                  language_patch_data, language_patch_strings, menu_text,
-                                  scene_strings)
+                                  language_patch_data, language_patch_strings,
+                                  menu_text, read_keywords, scene_strings,
+                                  strip_json_comments)
 from forest_tsc import read_tsc
 
 
@@ -218,6 +220,16 @@ def main() -> None:
     assert "        text what:\n            id \"what\"" in FOREST_COMPAT
     assert "text forest_hang_punctuation(what" not in FOREST_COMPAT
     assert "forest_hang_punctuation(what, persistent.forest_text_size)" in builder
+    commented_keywords = (
+        '[\n// comment\n["A keyword.", '
+        '"https://example.test/a//b", "keyword"] // trailing\n]')
+    assert "https://example.test/a//b" in strip_json_comments(
+        commented_keywords)
+    with TemporaryDirectory() as temporary:
+        keywords = Path(temporary) / "keywords.json"
+        keywords.write_text(commented_keywords, encoding="utf-8")
+        assert read_keywords(keywords) == [
+            ("A keyword.", "https://example.test/a//b", "keyword")]
     helper_start = FOREST_COMPAT.index("    _forest_hanging_punctuation")
     helper_end = FOREST_COMPAT.index("    def forest_g_tag", helper_start)
     helper_namespace = {}
@@ -228,6 +240,30 @@ def main() -> None:
     assert hang("甲。{/color}", 22) == "甲。{space=-22}{/color}"
     assert hang("Plain text", 22) == "Plain text"
     assert "default persistent.forest_text_cps = 20" in FOREST_COMPAT
+    assert "default persistent.forest_wiki_mode = False" in FOREST_COMPAT
+    assert "def forest_prepare_wiki_text(text):" in FOREST_COMPAT
+    assert 'text "Wiki Mode" yalign 0.5' in FOREST_COMPAT
+    assert "action Function(forest_toggle_wiki)" in FOREST_COMPAT
+    wiki_start = FOREST_COMPAT.index("    def forest_wiki_plain")
+    wiki_end = FOREST_COMPAT.index("    def forest_save_progress", wiki_start)
+    persistent = type("Persistent", (), {"forest_wiki_mode": True})()
+    preferences = type("Preferences", (), {"language": "zh"})()
+    wiki_namespace = {
+        "renpy": type("Renpy", (), {"re": re})(),
+        "persistent": persistent,
+        "_preferences": preferences,
+        "forest_wiki_keywords": {
+            "zh": [("A split keyword.", "https://example.test/wiki",
+                    "split keyword")],
+        },
+    }
+    exec(textwrap.dedent(FOREST_COMPAT[wiki_start:wiki_end]), wiki_namespace)
+    prepare_wiki = wiki_namespace["forest_prepare_wiki_text"]
+    linked = prepare_wiki("A ^cgsplit^cw ^cgkeyword^cw.")
+    assert linked.count("{a=https://example.test/wiki}") == 2
+    assert linked.count("{color=#D7FFB3}") == 2
+    persistent.forest_wiki_mode = False
+    assert prepare_wiki("A ^cgkeyword^cw.") == "A ^cgkeyword^cw."
     assert 'text "[persistent.forest_text_cps]"' in FOREST_COMPAT
     assert "min_width 48" in FOREST_COMPAT
     assert 'forest_adjust_text, "forest_text_cps", -5, 5, 120' in FOREST_COMPAT

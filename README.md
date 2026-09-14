@@ -71,8 +71,9 @@ python3 forest/build_forest_rscript.py 原版资源 RenPy工程 \
 
 补丁目录不是另一份完整游戏，只需按原资源的相对路径放置发生变化的文件；不变的
 文件应当省略。支持的内容包括 `scr/*.tsc`、`grp*/*.png`、
-`wav|bgm|voice/*.ogg` 和 `mov/*.mpg`。例如，英文补丁的 `scr/2100.tsc`
-对应基准资源的 `scr/2100.tsc`，补丁目录不需要包含其余 102 个未修改场景。
+`wav|bgm|voice/*.ogg`、`mov/*.mpg` 和 `keywords.json`。例如，英文补丁的
+`scr/2100.tsc` 对应基准资源的 `scr/2100.tsc`，补丁目录不需要包含其余
+102 个未修改场景。
 
 TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`、`*select`
 与 `*font` 文本，也可以给原版只有语音的段落新增 `*font` 字幕。新增字幕配套的
@@ -80,6 +81,12 @@ TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`
 同一句原文可以因所在位置不同而使用不同译文。为防止翻译补丁意外改变剧情，其他
 指令的新增、删除或重排都会报错，补丁中的跳转、变量及其他游戏逻辑不会取代基准
 脚本。
+
+补丁根目录可放置带 `//` 注释的 `keywords.json`。每项格式为
+`["完整句子", "https://链接", "^cg 与 ^cw 之间的词"]`。生成器会校验并
+原样复制该文件；标题页的 `Wiki Mode` 默认关闭。打开后，只有当前语言中既匹配
+完整句子、又由 `^cg…^cw` 标出的文字才显示为绿色并可点击打开链接；关闭时这些
+文字保持白色。
 
 标题页设置菜单还可调整字号和每行字符数（默认 22/19），并提供持久化
 游戏进度的备份、读取与清除功能；清除进度时保留备份。把 `.ttf`、`.otf`
@@ -181,8 +188,9 @@ verbatim.
 A patch directory contains only converted files that differ from the base
 resources, at the same relative paths; unchanged files should be omitted. It
 may contain `scr/*.tsc`, `grp*/*.png`, `wav|bgm|voice/*.ogg`, and
-`mov/*.mpg`. A patched `scr/2100.tsc`, for example, is compared with the base
-`scr/2100.tsc`; the other unchanged scenarios are not required in the patch.
+`mov/*.mpg`, plus an optional `keywords.json`. A patched `scr/2100.tsc`, for
+example, is compared with the base `scr/2100.tsc`; the other unchanged
+scenarios are not required in the patch.
 
 Command-based TSC patches are aligned by scene and instruction position. They
 may translate existing `*TXT`, `*TXA`, `*select`, and `*font` text, and may add
@@ -202,6 +210,13 @@ CJK JP remains the default.
 The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
 accepts GSC input. Keeping original GSC files beside the TSC files does not
 affect generation.
+
+`keywords.json` may contain `//` comments. Each entry is
+`["complete sentence", "https://URL", "text between ^cg and ^cw"]`.
+The generator validates and copies it unchanged. `Wiki Mode` is off by default;
+when enabled, marked text is green and clickable only when its complete sentence
+also matches the current language's keyword data. When disabled, marked text
+remains white.
 
 The repository carries the original 32x32 Forest cursor as the shared RScript
 cursor. Runtime installation and the Forest generator copy it to

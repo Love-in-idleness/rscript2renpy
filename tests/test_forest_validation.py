@@ -29,6 +29,13 @@ def main() -> None:
         (resources / "scr" / "0000.tsc").write_text(tsc, encoding="utf-8")
         patch_dir = base / "english-patch"
         patch_dir.mkdir()
+        keywords_text = (
+            '[\n'
+            '  // URLs may contain comment-like slashes.\n'
+            '  ["A keyword.", "https://example.test/a//b", "keyword"]\n'
+            ']\n')
+        (patch_dir / "keywords.json").write_text(
+            keywords_text, encoding="utf-8")
         for path in (resources / "grpe" / "9001.png",
                      resources / "bgm" / "Track01.ogg",
                      resources / "wav" / "0001.ogg",
@@ -70,6 +77,9 @@ def main() -> None:
         assert "default persistent.forest_text_size = 22" in compat_text
         assert "default persistent.forest_line_chars = 19" in compat_text
         assert "default persistent.forest_line_spacing = 7" in compat_text
+        assert "default persistent.forest_wiki_mode = False" in compat_text
+        assert "'https://example.test/a//b'" in compat_text
+        assert 'text "Wiki Mode" yalign 0.5' in compat_text
         assert "line_spacing persistent.forest_line_spacing" in compat_text
         assert ('default persistent.forest_text_font = '
                 '"fonts/NotoSansCJKjp-Regular.otf"' in compat_text)
@@ -83,15 +93,22 @@ def main() -> None:
         assert (project / "game" / "tl" / "english" /
                 "forest_strings.rpy").read_text(encoding="utf-8") == \
             "translate english python:\n    pass\n"
+        assert (project / "game" / "tl" / "english" /
+                "keywords.json").read_text(encoding="utf-8") == keywords_text
         text_runtime = (project / "game" / "05_rscript_text.rpy").read_text(
             encoding="utf-8")
         util_runtime = (project / "game" / "01_util.rpy").read_text(
             encoding="utf-8")
         assert "renpy.translation.translate_string(eval(text).rstrip())" in util_runtime
+        assert "text = forest_prepare_wiki_text(text)" in util_runtime
+        assert ('"#D7FFB3" if persistent.forest_wiki_mode else "#FFFFFF"'
+                in util_runtime)
         say_start = text_runtime.index("    def execute_say(o):")
         append_start = text_runtime.index("    def execute_append(o):")
         say_runtime = text_runtime[say_start:append_start]
         append_runtime = text_runtime[append_start:]
+        assert "parse_rscript_text(what, True)" in say_runtime
+        assert "parse_rscript_text(what, True)" in append_runtime
         hanging_call = (
             "renpy.say(who, forest_hang_punctuation(what, "
             "persistent.forest_text_size), interact = True")
