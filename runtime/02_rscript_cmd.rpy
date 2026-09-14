@@ -308,7 +308,7 @@ python early:
 
     def execute_wait(args):
         delay = args.Wait or 10
-        renpy.pause(delay / 10.)
+        renpy.pause(delay / 5.)
 
     renpy.register_statement("_wait", parse = parse_wait, execute = execute_wait, lint = lint_undef)
 

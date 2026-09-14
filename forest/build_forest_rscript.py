@@ -1684,9 +1684,7 @@ def main(argv: list[str]) -> int:
         "        else:\n"
         "            renpy.log(\"Forest: missing voice %s\" % voice_file)")
     audio_text = audio_text.replace('channel = "voice"', 'channel = "rscript_voice"')
-    audio_text = audio_text.replace(
-        'wait_audio("voice")',
-        'wait_audio("rscript_voice", hard = True)')
+    audio_text = audio_text.replace('wait_audio("voice")', 'wait_audio("rscript_voice")')
     audio_text = audio_text.replace(
         "        renpy.music.play(bgm, channel = \"music\", fadein = fadein, loop = True, if_changed = True)",
         "        if renpy.loadable(bgm):\n"
