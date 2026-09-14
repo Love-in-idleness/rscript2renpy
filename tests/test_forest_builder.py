@@ -35,10 +35,22 @@ def main() -> None:
     assert 'replace("        ypos 639", "        ypos 556")' in builder
     inline_graphic = "{forest_g=%s:%d}"
     assert inline_graphic in builder
-    assert builder.index('speaker = renpy.re.match') < builder.index(inline_graphic)
+    assert builder.index('speaker = renpy.re.match') < \
+        builder.index('text = forest_inline_graphics(text)')
     assert 'config.self_closing_custom_text_tags["forest_g"]' in FOREST_COMPAT
     assert 'zoom = int(text_size) / 22.0' in FOREST_COMPAT
     assert 'renpy.TEXT_DISPLAYABLE, image' in FOREST_COMPAT
+    inline_start = FOREST_COMPAT.index("    def forest_inline_graphics")
+    inline_end = FOREST_COMPAT.index(
+        "    config.self_closing_custom_text_tags", inline_start)
+    inline_namespace = {
+        "renpy": argparse.Namespace(re=re),
+        "persistent": argparse.Namespace(forest_text_size=22),
+    }
+    exec(textwrap.dedent(FOREST_COMPAT[inline_start:inline_end]),
+         inline_namespace)
+    assert inline_namespace["forest_inline_graphics"](
+        "A^g715B") == "A{forest_g=715:22}B"
     assert "'label splashscreen:\\n'" in builder
     assert ("'    _movie 2\\n'\n"
             "        '    _movie 1\\n'\n"
@@ -194,13 +206,31 @@ def main() -> None:
     prompt = menu_text(story_tsc.string(first_select.operands[1]))
     assert ("$ jump_back_point = renpy.game.log.current.identifier\n"
             "    $ forest_choice_prompt = "
-            "renpy.translation.translate_string(%r)\n" % prompt in story)
+            "forest_inline_graphics(renpy.translation.translate_string(%r))\n" %
+            prompt in story)
     for number, index in enumerate(first_select.operands[7:9]):
         choice = menu_text(story_tsc.string(index))
         target = first_select.operands[2 + number]
         assert ("%r:\n            $ _r[2] = %d\n"
                 "            jump _2100_L_%06x" %
                 (choice, number, target)) in story
+    patched_menu = compile_scene(
+        story_source,
+        language_texts={"zh": {
+            (first_select.offset, "prompt"):
+                "\u867d\u7136^g725\u5c0f\u59b9\u8fd8\u843d\u5728\u540e\u5934\u2026\u2026\uff1f",
+            (first_select.offset, "choice1"):
+                "\u53eb^g715\u5c0f\u59b9\u5feb\u4e00\u70b9",
+        }})
+    assert ("$ forest_choice_prompt = forest_inline_graphics("
+            "renpy.translation.translate_string({'zh': "
+            "'\u867d\u7136^g725\u5c0f\u59b9\u8fd8\u843d\u5728\u540e\u5934\u2026\u2026\uff1f'}.get("
+            "_preferences.language" in patched_menu)
+    assert ("$ forest_choice_1 = forest_inline_graphics("
+            "renpy.translation.translate_string({'zh': "
+            "'\u53eb^g715\u5c0f\u59b9\u5feb\u4e00\u70b9'}.get("
+            "_preferences.language" in patched_menu)
+    assert "        '[forest_choice_1]':" in patched_menu
     credits = scenes[[p.stem for p in files].index("5000")]
     credits_tsc = read_tsc(files[[p.stem for p in files].index("5000")])
     assert "    _osize 40 25" in credits

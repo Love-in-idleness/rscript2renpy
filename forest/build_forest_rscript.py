@@ -486,7 +486,8 @@ def compile_scene(source: Path, language: str | None = None,
             result = packed(operands[12])
             lines.append("    $ jump_back_point = renpy.game.log.current.identifier")
             lines.append(
-                "    $ forest_choice_prompt = renpy.translation.translate_string(%s)" %
+                "    $ forest_choice_prompt = forest_inline_graphics("
+                "renpy.translation.translate_string(%s))" %
                 prompt)
             choices = []
             for number, index in enumerate(operands[7:7 + count]):
@@ -495,9 +496,12 @@ def compile_scene(source: Path, language: str | None = None,
                 choice = menu_text(tsc.string(index))
                 choice, changed = patch_text_expression(
                     language_texts, item, "choice%d" % number, choice)
-                if changed:
+                if changed or "^g" in choice:
                     variable = "forest_choice_%d" % number
-                    lines.append("    $ %s = %s" % (variable, choice))
+                    lines.append(
+                        "    $ %s = forest_inline_graphics("
+                        "renpy.translation.translate_string(%s))" %
+                        (variable, choice))
                     caption = "[%s]" % variable
                 else:
                     caption = menu_text(tsc.string(index))
@@ -795,6 +799,12 @@ init python:
             return []
         image = Transform("images/grps/gf%s.png" % number, zoom=zoom)
         return [(renpy.TEXT_DISPLAYABLE, image)]
+
+    def forest_inline_graphics(text):
+        return renpy.re.sub(
+            r"\^g(\d{3})",
+            lambda match: "{forest_g=%s:%d}" %
+            (match.group(1), persistent.forest_text_size), text)
 
     config.self_closing_custom_text_tags["forest_g"] = forest_g_tag
 
@@ -1850,9 +1860,7 @@ def main(argv: list[str]) -> int:
         "        if speaker:\n"
         "            store.forest_speaker = int(speaker.group(1))\n"
         "            text = text[speaker.end():]\n"
-        "        text = renpy.re.sub(r\"\\^g(\\d{3})\", "
-        "lambda match: \"{forest_g=%s:%d}\" % "
-        "(match.group(1), persistent.forest_text_size), text)",
+        "        text = forest_inline_graphics(text)",
         1)
     util_text = util_text.replace(
         '            "y": "#FFDE00", "g": "#D7FFB3",',
