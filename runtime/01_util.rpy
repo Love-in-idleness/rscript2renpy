@@ -155,10 +155,8 @@ python early:
         text = text.replace("―", "—")
         text = text.replace("…", "...")
 
-        center = False
-        if "^m" in text:
-            center = True
-            text = text.replace("^m", "")
+        text, center = renpy.re.subn(r"\^m[ \t]*", "", text)
+        center = bool(center)
 
         return text, center
 

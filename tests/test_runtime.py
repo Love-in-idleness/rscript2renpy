@@ -25,6 +25,7 @@ def main() -> None:
     assert r"\^c([ygwk])" in combined
     assert "xmaximum = font_size * 19" in combined
     assert "def parse_rscript_text(text, color_controls = False):" in combined
+    assert 'renpy.re.subn(r"\\^m[ \\t]*", "", text)' in combined
     assert "parse_rscript_text(repr(args.Text), True)" in combined
     line_break_pattern = r"[ \t]*(\^n)([\<\>]?)[ \t]*"
     assert line_break_pattern in combined

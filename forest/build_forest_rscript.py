@@ -1432,18 +1432,28 @@ screen say(who, what, center=False):
                 color "#ffffff"
                 xpos 0
                 ypos 7
-        text what:
-            id "what"
-            font forest_current_font()
-            size persistent.forest_text_size
-            color "#ffffff"
-            slow_cps persistent.forest_text_cps
-            xpos (0 if center else text_indent + 1)
-            ypos 8
-            xsize (config.screen_width if center else
-                   config.screen_width - text_indent - 1)
-            text_align (0.5 if center else 0.0)
-            line_spacing persistent.forest_line_spacing
+        if center:
+            text what:
+                id "what"
+                font forest_current_font()
+                size persistent.forest_text_size
+                color "#ffffff"
+                slow_cps persistent.forest_text_cps
+                ypos 8
+                xalign 0.5
+                text_align 0.5
+                line_spacing persistent.forest_line_spacing
+        else:
+            text what:
+                id "what"
+                font forest_current_font()
+                size persistent.forest_text_size
+                color "#ffffff"
+                slow_cps persistent.forest_text_cps
+                ypos 8
+                xpos text_indent + 1
+                xsize config.screen_width - text_indent - 1
+                line_spacing persistent.forest_line_spacing
 
         use forest_compane
 

@@ -254,7 +254,7 @@ def main() -> None:
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
     assert "def forest_hang_punctuation(text, font_size, line_chars):" in \
         FOREST_COMPAT
-    assert "        text what:\n            id \"what\"" in FOREST_COMPAT
+    assert FOREST_COMPAT.count('                id "what"') == 2
     assert "text forest_hang_punctuation(what" not in FOREST_COMPAT
     assert '"persistent.forest_text_size, persistent.forest_say_line_chars), "' \
         in builder
@@ -330,13 +330,25 @@ def main() -> None:
     assert 'forest_adjust_text, "forest_text_cps", -5, 5, 120' in FOREST_COMPAT
     assert 'forest_adjust_text, "forest_text_cps", 5, 5, 120' in FOREST_COMPAT
     assert "slow_cps persistent.forest_text_cps" in FOREST_COMPAT
-    assert "xpos (0 if center else text_indent + 1)" in FOREST_COMPAT
-    assert "xsize (config.screen_width if center else" in FOREST_COMPAT
-    assert "text_align (0.5 if center else 0.0)" in FOREST_COMPAT
+    say_screen = FOREST_COMPAT[FOREST_COMPAT.index(
+        "screen say(who, what, center=False):"):]
+    assert "        if center:\n            text what:" in say_screen
+    assert "            if center:" not in say_screen
+    assert "xpos config.screen_width / 2" not in FOREST_COMPAT
+    assert "xanchor 0.5" not in FOREST_COMPAT
+    # `^m` must center the whole text block on the game screen and center each
+    # line inside that block. The text is laid out as a tight box, so it has to
+    # be positioned with `xalign`; `xpos`/`xanchor` or a full-width `xsize`
+    # either pin it to the left edge or drop it out of the window entirely.
+    centered = say_screen[say_screen.index("        if center:"):
+                          say_screen.index("        else:")]
+    assert "                xalign 0.5" in centered
+    assert "                text_align 0.5" in centered
+    assert "xpos" not in centered
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
-    assert "xpos (0 if center else text_indent + 1)" in FOREST_COMPAT
-    assert "config.screen_width - text_indent - 1)" in FOREST_COMPAT
+    assert "xpos text_indent + 1" in FOREST_COMPAT
+    assert "xsize config.screen_width - text_indent - 1" in FOREST_COMPAT
     assert "default persistent.forest_say_line_chars = 19" in FOREST_COMPAT
     assert "default persistent.forest_oload_line_chars = 20" in FOREST_COMPAT
     assert "default persistent.forest_line_spacing = 7" in FOREST_COMPAT
@@ -354,7 +366,7 @@ def main() -> None:
             '"fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT)
     assert "def forest_fonts():" in FOREST_COMPAT
     assert "def forest_cycle_font(step):" in FOREST_COMPAT
-    assert FOREST_COMPAT.count("font forest_current_font()") == 4
+    assert FOREST_COMPAT.count("font forest_current_font()") == 5
     assert "forest_save_progress()" in FOREST_COMPAT
     assert "forest_load_progress()" in FOREST_COMPAT
     assert "forest_clear_progress()" in FOREST_COMPAT

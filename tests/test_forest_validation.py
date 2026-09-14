@@ -122,7 +122,10 @@ def main() -> None:
             "interact = True")
         assert hanging_call in say_runtime
         assert hanging_call in append_runtime
-        assert '        text what:\n            id "what"' in compat_text
+        assert '        if center:\n            text what:\n' \
+            '                id "what"' in compat_text
+        assert '        else:\n            text what:\n' \
+            '                id "what"' in compat_text
         assert say_runtime.index("store.forest_speaker_visible = True") < \
             say_runtime.index("renpy.say(") < \
             say_runtime.index("store.forest_speaker_visible = False")
