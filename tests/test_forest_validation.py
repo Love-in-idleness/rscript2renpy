@@ -101,7 +101,7 @@ def main() -> None:
             encoding="utf-8")
         util_runtime = (project / "game" / "01_util.rpy").read_text(
             encoding="utf-8")
-        assert "renpy.pause(delay / 5.)" in command_runtime
+        assert "renpy.pause(delay / 10.)" in command_runtime
         assert "renpy.translation.translate_string(eval(text).rstrip())" in util_runtime
         assert "text = forest_prepare_wiki_text(text)" in util_runtime
         assert ('"#D7FFB3" if persistent.forest_wiki_mode else "#FFFFFF"'

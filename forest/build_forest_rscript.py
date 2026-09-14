@@ -162,9 +162,10 @@ def render_patch_command(tsc, item) -> str:
 
 
 def language_patch_data(base_scr: Path, patch_scr: Path):
-    """Return translated strings and language-only subtitle commands."""
+    """Return translated strings, subtitle insertions, and patched waits."""
     replacements = {}
     insertions = {}
+    wait_overrides = {}
     for patch_source in scenario_sources(patch_scr):
         base_source = base_scr / patch_source.name
         if not base_source.is_file():
@@ -232,7 +233,12 @@ def language_patch_data(base_scr: Path, patch_scr: Path):
                     patch_source)
 
         scene_replacements = {}
+        scene_wait_overrides = {}
         for base_index, patch_index in sorted(pairs):
+            base_item = base_items[base_index]
+            patch_item = patch_items[patch_index]
+            if base_item.opcode == 13 and base_item.operands != patch_item.operands:
+                scene_wait_overrides[base_item.offset] = patch_item.operands[0]
             base = instruction_strings(base_tsc, base_items[base_index])
             patch = instruction_strings(patch_tsc, patch_items[patch_index])
             if base.keys() != patch.keys():
@@ -246,16 +252,18 @@ def language_patch_data(base_scr: Path, patch_scr: Path):
 
         if scene_replacements:
             replacements[patch_source.name] = scene_replacements
+        if scene_wait_overrides:
+            wait_overrides[patch_source.name] = scene_wait_overrides
         if added:
             scene_insertions = insertions.setdefault(patch_source.name, {})
             for _, offset, item in added:
                 scene_insertions.setdefault(offset, []).append(
                     render_patch_command(patch_tsc, item))
-    return replacements, insertions
+    return replacements, insertions, wait_overrides
 
 
 def language_patch_strings(base_scr: Path, patch_scr: Path) -> dict[str, str]:
-    replacements, _ = language_patch_data(base_scr, patch_scr)
+    replacements, _, _ = language_patch_data(base_scr, patch_scr)
     translations = {}
     for source_name, scene_replacements in replacements.items():
         base = scene_strings(base_scr / source_name)
@@ -390,12 +398,15 @@ def patch_text_expression(language_texts, item, kind, default):
 
 def compile_scene(source: Path, language: str | None = None,
                   language_texts=None, language_insertions=None,
+                  language_waits=None,
                   scene_name: str | None = None) -> str:
     if language and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", language):
         raise ValueError("invalid language name: %s" % language)
     if scene_name and not re.fullmatch(r"[A-Za-z0-9_]+", scene_name):
         raise ValueError("invalid scene name: %s" % scene_name)
-    for patch_language in set(language_texts or {}) | set(language_insertions or {}):
+    for patch_language in (set(language_texts or {}) |
+                           set(language_insertions or {}) |
+                           set(language_waits or {})):
         if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", patch_language):
             raise ValueError("invalid language name: %s" % patch_language)
     language_arg = " " + language if language else ""
@@ -503,6 +514,19 @@ def compile_scene(source: Path, language: str | None = None,
             lines.append("    _se_on 0 %s" % args)
         elif opcode == 64:
             lines.append("    _se_off 0 %s" % packed(operands[0]))
+        elif opcode == 13:
+            patched_waits = {
+                patch_language: waits[item.offset]
+                for patch_language, waits in (language_waits or {}).items()
+                if item.offset in waits
+            }
+            value = packed(operands[0])
+            if patched_waits:
+                choices = ", ".join(
+                    "%r: %s" % (patch_language, packed(wait))
+                    for patch_language, wait in patched_waits.items())
+                value = "{%s}.get(_preferences.language, %s)" % (choices, value)
+            lines.append("    _wait %s" % value)
         elif opcode in (30, 36):
             values = list(operands)
             # Forest's 2500.tsc contains one mistyped background number. The
@@ -1813,11 +1837,13 @@ def main(argv: list[str]) -> int:
         base_keywords_target.unlink()
     patch_texts = {}
     patch_insertions = {}
+    patch_waits = {}
     for language, patch in language_patches:
-        replacements, insertions = language_patch_data(root / "scr",
-                                                        patch / "scr")
+        replacements, insertions, waits = language_patch_data(root / "scr",
+                                                               patch / "scr")
         patch_texts[language] = replacements
         patch_insertions[language] = insertions
+        patch_waits[language] = waits
         write_language_patch(root, patch, language, game)
     (game / "options.rpy").write_text(
         'define config.name = "Forest"\n'
@@ -1858,9 +1884,14 @@ def main(argv: list[str]) -> int:
             for language, insertions in patch_insertions.items()
             if source.name in insertions
         }
+        scene_waits = {
+            language: waits[source.name]
+            for language, waits in patch_waits.items()
+            if source.name in waits
+        }
         (scenario / (source.stem + ".rpy")).write_text(
             compile_scene(source, language_marker, scene_texts,
-                          scene_insertions),
+                          scene_insertions, scene_waits),
             encoding="utf-8")
     print("Wrote %s: %d rscript scenes" % (target, len(sources)))
     return 0

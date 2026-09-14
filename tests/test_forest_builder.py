@@ -386,14 +386,15 @@ def main() -> None:
                 first_voice_wait + "\n" + clears + "\n*wait 20", 1)
         subtitle_patch = subtitle_patch.replace(first, '"'.join(changed), 1)
         (patch_scr / source.name).write_text(subtitle_patch, encoding="utf-8")
-        replacements, insertions = language_patch_data(resources / "scr",
-                                                        patch_scr)
+        replacements, insertions, waits = language_patch_data(resources / "scr",
+                                                               patch_scr)
         commands = [command
                     for group in insertions[source.name].values()
                     for command in group]
         assert sum(command.startswith("_oload ") for command in commands) == 5
         assert sum(command.startswith("_cls ") for command in commands) == 5
         assert commands.count("_wait 20") == 1
+        assert waits == {}
         compiled_patch = compile_scene(
             source,
             language_texts={"english": replacements[source.name]},
@@ -402,6 +403,20 @@ def main() -> None:
             compiled_patch
         assert "if _preferences.language == 'english':" in compiled_patch
         assert "_oload 49 175 50 0 0 '^cyAdded subtitle'" in compiled_patch
+        timed_patch = subtitle_patch.replace("*wait 10", "*wait 40", 1)
+        (patch_scr / source.name).write_text(timed_patch, encoding="utf-8")
+        replacements, insertions, waits = language_patch_data(
+            resources / "scr", patch_scr)
+        first_wait = next(item for item in read_tsc(source).instructions()
+                          if item.opcode == 13)
+        assert waits[source.name][first_wait.offset] == 40
+        compiled_patch = compile_scene(
+            source,
+            language_texts={"english": replacements[source.name]},
+            language_insertions={"english": insertions[source.name]},
+            language_waits={"english": waits[source.name]})
+        assert "_wait {'english': 40}.get(_preferences.language, 10)" in \
+            compiled_patch
         invalid_patch = subtitle_patch.replace(
             first_voice, first_voice + "\n*voice 999 0 0 0", 1)
         (patch_scr / source.name).write_text(invalid_patch, encoding="utf-8")
@@ -422,9 +437,9 @@ def main() -> None:
                 "*bgm_on 9 0", "*bgm_on 9 0\n*wait 99", 1)
         (patch_scr / "5000.tsc").write_text(
             patched_credits, encoding="utf-8")
-        replacements, insertions = language_patch_data(
+        replacements, insertions, waits = language_patch_data(
             resources / "scr", patch_scr)
-        assert replacements == {} and insertions == {}
+        assert replacements == {} and insertions == {} and waits == {}
         credits = compile_credits_scene(
             credits_source, None, [("english", patch_root)])
         assert "label _5000:" in credits
