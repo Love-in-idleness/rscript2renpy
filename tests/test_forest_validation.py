@@ -57,7 +57,9 @@ def main() -> None:
             project / "game" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
         gfx_text = (project / "game" / "03_rscript_gfx.rpy").read_text(
             encoding="utf-8")
-        assert "forest_hang_punctuation(text_value, font_size)" in gfx_text
+        assert ("forest_hang_punctuation(\n"
+                "            text_value, font_size, "
+                "persistent.forest_oload_line_chars)" in gfx_text)
         assert "xmaximum = font_size * persistent.forest_oload_line_chars" in gfx_text
         for name in ("android.json", "android-icon_background.png",
                      "android-icon_foreground.png"):
@@ -115,7 +117,8 @@ def main() -> None:
         assert "parse_rscript_text(what, True)" in append_runtime
         hanging_call = (
             "renpy.say(who, forest_hang_punctuation(what, "
-            "persistent.forest_text_size), interact = True")
+            "persistent.forest_text_size, persistent.forest_say_line_chars), "
+            "interact = True")
         assert hanging_call in say_runtime
         assert hanging_call in append_runtime
         assert '        text what:\n            id "what"' in compat_text

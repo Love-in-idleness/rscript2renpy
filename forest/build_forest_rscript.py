@@ -682,7 +682,8 @@ RSCRIPT_OBJECTS = r'''
         text_value, _ = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
         font_size = max(1, font_size * persistent.forest_text_size // 22)
-        text_value = forest_hang_punctuation(text_value, font_size)
+        text_value = forest_hang_punctuation(
+            text_value, font_size, persistent.forest_oload_line_chars)
         text = Text(text_value, font = forest_current_font(),
                     size = font_size, color = "#FFFFFF",
                     xmaximum = font_size * persistent.forest_oload_line_chars)
@@ -767,27 +768,49 @@ init python:
     _forest_hanging_punctuation = frozenset(
         "、。，．！？!?：；;,.…‥—―」』）】》〉〕］｝”’")
 
-    def forest_hang_punctuation(text, font_size):
+    def forest_hang_punctuation(text, font_size, line_chars):
         def hang_line(line):
-            tags = ""
-            while line.endswith("}"):
-                start = line.rfind("{")
+            content_end = len(line)
+            while content_end and line[content_end - 1] == "}":
+                start = line.rfind("{", 0, content_end)
                 if start < 0:
                     break
-                tags = line[start:] + tags
-                line = line[:start]
+                content_end = start
 
-            start = len(line)
-            while start and line[start - 1] in _forest_hanging_punctuation:
-                start -= 1
-            if start == len(line):
-                return line + tags
+            trailing_start = content_end
+            while (trailing_start and
+                   line[trailing_start - 1] in _forest_hanging_punctuation):
+                trailing_start -= 1
 
-            punctuation = line[start:]
-            width = sum(font_size if unicodedata.east_asian_width(char) in "WFA"
-                        else font_size * 0.5 for char in punctuation)
-            return "%s%s{space=-%d}%s" % (
-                line[:start], punctuation, max(1, int(round(width))), tags)
+            width = 0.0
+            limit = font_size * line_chars
+            result = []
+            index = 0
+            while index < len(line):
+                if line[index] == "{":
+                    end = line.find("}", index + 1)
+                    if end >= 0:
+                        result.append(line[index:end + 1])
+                        index = end + 1
+                        continue
+
+                char = line[index]
+                char_width = (font_size if
+                              unicodedata.east_asian_width(char) in "WFA"
+                              else font_size * 0.5)
+                hangs = (char in _forest_hanging_punctuation and
+                         (index >= trailing_start or
+                          width + char_width > limit))
+                result.append(char)
+                if hangs:
+                    result.append("{space=-%d}" %
+                                  max(1, int(round(char_width))))
+                else:
+                    if width + char_width > limit:
+                        width = 0.0
+                    width += char_width
+                index += 1
+            return "".join(result)
 
         return "\n".join(hang_line(line) for line in text.split("\n"))
 
@@ -1758,7 +1781,8 @@ def main(argv: list[str]) -> int:
         "                    xmaximum = font_size * 19)",
         "        font_size = store.object_size.get(layer, gui.text_size)\n"
         "        font_size = max(1, font_size * persistent.forest_text_size // 22)\n"
-        "        text_value = forest_hang_punctuation(text_value, font_size)\n"
+        "        text_value = forest_hang_punctuation(\n"
+        "            text_value, font_size, persistent.forest_oload_line_chars)\n"
         "        text = Text(text_value, font = forest_current_font(),\n"
         "                    size = font_size, color = \"#FFFFFF\",\n"
         "                    xmaximum = font_size * persistent.forest_oload_line_chars)")
@@ -1847,7 +1871,8 @@ def main(argv: list[str]) -> int:
         1)
     text_runtime = text_runtime.replace(
         "renpy.say(who, what, interact = True, show_center = center)",
-        "renpy.say(who, forest_hang_punctuation(what, persistent.forest_text_size), "
+        "renpy.say(who, forest_hang_punctuation(what, "
+        "persistent.forest_text_size, persistent.forest_say_line_chars), "
         "interact = True, show_center = center)")
     text_path.write_text(text_runtime, encoding="utf-8")
     util_path = game / "01_util.rpy"
