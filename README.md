@@ -34,6 +34,14 @@ python3 tools/install_runtime.py /path/to/renpy-project
 该命令会把 17 个运行时模块和通用光标复制到 Ren'Py 工程的 `game/` 目录。除非使用
 `--force`，否则不会覆盖内容不同的已有文件。
 
+### 新游戏移植模板
+
+`port_template/` 是新游戏的半成品模板，负责安装通用运行时、复制已转换资源及
+游戏专用 lowerer 生成的 `scenario/*.rpy`。复制该目录开始新项目；每款游戏只在
+自己的目录实现 TSC lowering、缺失 opcode、文本规则和界面。模板不会调用
+LiarsoftTool，也不会把原始 GSC/WCG/WAV/XFL/LWG 复制进 Ren'Py 工程。完整步骤和
+核对清单见 [`port_template/README.md`](port_template/README.md)。
+
 ### Forest 生成器
 
 项目提供《Forest》专用生成器。先使用 LiarsoftTool 2.1 解包、转换
@@ -153,6 +161,13 @@ python3 -B tests/test_runtime.py
 
 Runtime behavior depends on the source game's CodeX dialect. Unsupported
 opcodes and rendering modes must be implemented and verified per game.
+
+## New-game port template
+
+`port_template/` is a deliberately incomplete starter that installs the shared
+runtime and copies converted assets plus game-specific `scenario/*.rpy` output.
+See [`port_template/README.md`](port_template/README.md) for the workflow and
+per-game verification checklist.
 
 ## Forest generator
 
