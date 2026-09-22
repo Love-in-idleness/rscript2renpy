@@ -91,10 +91,34 @@ COMMANDS = {
     "strcpy": (154, "EE"), "strcat": (155, "EE"),
 }
 
+# Newer CodeX layouts share the TSC grammar but change selected operand widths.
+MODERN_COMMANDS = dict(COMMANDS, **{
+    "jump": (12, "ED"), "gosub": (15, "ED" + "E" * 10),
+    "quake": (23, "EEEE"), "locmode": (38, "EEEE"),
+    "face": (48, "EEE"), "bgm_on": (60, "EEE"),
+    "bgm_off": (61, "EE"), "se": (62, "EE"),
+    "se_on": (63, "EEEE"), "se_off": (64, "EE"),
+    "voice": (66, "DEEE"), "click": (73, "EEE"),
+    "setlink": (75, "EEEEE"), "TXT": (81, "EDEEDDE"),
+    "insub": (200, "D" + "E" * 10),
+})
+RSCRIPT19_COMMANDS = dict(MODERN_COMMANDS, **{
+    "face": (48, "EE"), "se": (62, "E"),
+    "se_on": (63, "EEE"), "se_off": (64, "E"),
+    "facedep": (105, "E"),
+})
+RSCRIPT18_COMMANDS = dict(RSCRIPT19_COMMANDS, locmode=(38, "EEE"))
+for _commands in (MODERN_COMMANDS, RSCRIPT19_COMMANDS, RSCRIPT18_COMMANDS):
+    _commands.update({"faceloc": (101, "EE"), "facedep": (105, "EE"),
+                      "fontsize": (120, "EE"), "numload": (130, "EEEE"),
+                      "numreng": (131, "EEEEE"), "numloc": (134, "EEE"),
+                      "numset": (135, "EEEEE"), "num": (136, "EEE")})
+RSCRIPT19_COMMANDS["facedep"] = RSCRIPT18_COMMANDS["facedep"] = (105, "E")
+
 
 STRING_OPERANDS = {
     14: {1, 7, 8, 9, 10, 11}, 32: {5}, 81: {4, 5}, 82: {4},
-    121: {1}, 150: {1}, 151: {1},
+    15: {1}, 121: {1}, 150: {1}, 151: {1},
 }
 
 
@@ -159,7 +183,7 @@ def _number(token: str, kind: str, line_no: int) -> int:
     return value
 
 
-def read_tsc(path: str | Path) -> ForestTsc:
+def read_tsc(path: str | Path, dialect: str = "forest") -> ForestTsc:
     """Read current LiarsoftTool command TSC; old metadata dumps are rejected."""
     path = Path(path)
     byte_format = None
@@ -204,9 +228,11 @@ def read_tsc(path: str | Path) -> ForestTsc:
             continue
         if not first.startswith("*"):
             raise ValueError(f"{path}: line {line_no}: expected command or label")
-        if byte_format != "legacy-28" or schema != "early":
-            raise ValueError(
-                f"{path}: Forest requires current legacy-28/early command TSC")
+        if dialect == "forest" and (byte_format != "legacy-28" or schema != "early"):
+            raise ValueError(f"{path}: Forest requires current legacy-28/early command TSC")
+        if dialect == "khime" and (byte_format != "modern-36" or schema not in
+                                    ("modern", "rscript19", "rscript18")):
+            raise ValueError(f"{path}: Khime requires current modern-36 command TSC")
         name = first[1:]
         if name == "datablock":
             if len(tokens) < 3:
@@ -227,7 +253,10 @@ def read_tsc(path: str | Path) -> ForestTsc:
             opcode = _number(tokens[1][0], "H", line_no)
             if not opcode & 0xf000:
                 raise ValueError(f"{path}: line {line_no}: invalid VM opcode")
-            kinds = "HH" if opcode & 0xf000 == 0xf000 else "HHH"
+            if dialect == "khime":
+                kinds = "HS" if opcode & 0xf000 == 0xf000 else "HSS"
+            else:
+                kinds = "HH" if opcode & 0xf000 == 0xf000 else "HHH"
             operand_tokens = tokens[2:]
         elif name in ("jz", "jnz", "goto"):
             opcode = {"jz": 3, "jnz": 4, "goto": 5}[name]
@@ -235,7 +264,10 @@ def read_tsc(path: str | Path) -> ForestTsc:
             operand_tokens = tokens[1:]
         else:
             try:
-                opcode, kinds = COMMANDS[name]
+                active = COMMANDS if dialect == "forest" else {
+                    "modern": MODERN_COMMANDS, "rscript19": RSCRIPT19_COMMANDS,
+                    "rscript18": RSCRIPT18_COMMANDS}[schema]
+                opcode, kinds = active[name]
             except KeyError as error:
                 raise ValueError(
                     f"{path}: line {line_no}: unsupported Forest command {name}") from error
@@ -245,9 +277,12 @@ def read_tsc(path: str | Path) -> ForestTsc:
         sources.append((line_no, offset, opcode, kinds, operand_tokens))
         offset += 2 + sum(2 if kind in "HS" else 4 for kind in kinds)
 
-    if byte_format != "legacy-28" or schema != "early":
+    if dialect == "forest" and (byte_format != "legacy-28" or schema != "early"):
         raise ValueError(f"{path}: Forest requires current legacy-28/early command TSC")
-    if not encoding:
+    if dialect == "khime" and (byte_format != "modern-36" or schema not in
+                                ("modern", "rscript19", "rscript18")):
+        raise ValueError(f"{path}: Khime requires current modern-36 command TSC")
+    if not encoding and dialect == "forest":
         raise ValueError(f"{path}: missing TSC text encoding")
 
     strings = [""]
@@ -276,4 +311,4 @@ def read_tsc(path: str | Path) -> ForestTsc:
                                         tuple(operands), size))
 
     return ForestTsc(path, offset, tuple(strings), tuple(data_blocks),
-                     tuple(instructions), encoding)
+                     tuple(instructions), encoding or "CP932")

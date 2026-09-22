@@ -61,19 +61,18 @@ def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> in
     return copied
 
 
-def build(resources: Path, project: Path, force: bool = False) -> tuple[int, int]:
+def build(resources: Path, project: Path, force: bool = False,
+          scenarios: Path | None = None) -> tuple[int, int]:
     resources = resources.resolve()
     project = project.resolve()
     game = project / "game"
-    scenarios = resources / "scenario"
-    if not game.is_dir():
-        raise FileNotFoundError(
-            "create an empty Ren'Py 8 project first; missing: %s" % game)
+    scenarios = scenarios or resources / "scenario"
     if not any(scenarios.glob("*.rpy")):
         raise FileNotFoundError(
             "game-specific TSC lowerer produced no scenario/*.rpy files: %s" %
             scenarios)
 
+    game.mkdir(parents=True, exist_ok=True)
     installed = install(project, force=force)
     copied = 0
     for name, destination in RESOURCE_TARGETS.items():

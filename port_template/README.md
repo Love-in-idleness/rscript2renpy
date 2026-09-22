@@ -22,7 +22,7 @@
    `scenario/`。不要在通用运行时里塞游戏特例。
 3. 按需编辑 `build_port.py` 顶部的 `RESOURCE_TARGETS`；大多数 800×600
    CodeX 游戏不需要修改。
-4. 从 Ren'Py 8 启动器建立一个空工程，再运行：
+4. 运行构建入口；脚本会创建尚不存在的工程目录：
 
    ```bash
    python3 khime/build_port.py /path/to/prepared-resources /path/to/renpy-project

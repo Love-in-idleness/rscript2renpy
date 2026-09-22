@@ -28,8 +28,6 @@ def main() -> None:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(folder.encode("ascii"))
         (resources / "grps" / "ignored.wcg").write_bytes(b"raw")
-        (project / "game").mkdir(parents=True)
-
         runtime_count, copied = build(resources, project)
         assert runtime_count == 19
         assert copied == 7
