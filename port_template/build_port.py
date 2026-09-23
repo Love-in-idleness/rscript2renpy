@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from install_runtime import install  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
+from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
 
 
@@ -70,6 +71,7 @@ def copy_scenarios(source: Path, target: Path, resources: Path,
         destination = target / path.relative_to(source)
         result = flatten_unsupported_effects(path.read_text(encoding="utf-8"),
                                              resources)
+        result = flatten_unsupported_text_controls(result)
         if destination.exists() and destination.read_text(encoding="utf-8") != result and not force:
             raise FileExistsError("refusing to overwrite different file: %s" % destination)
         destination.parent.mkdir(parents=True, exist_ok=True)

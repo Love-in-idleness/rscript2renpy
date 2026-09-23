@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
 from build_port import build  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
+from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
 
 
@@ -26,6 +27,7 @@ def main() -> None:
             "    _effect 101 0\n"
             "    _draw 1 3 30\n"
             "    _oaction 1 7\n"
+            "    _khime_say '^fmHello ^crred ^g001^nnext ^cyyellow'\n"
             "    return\n", encoding="utf-8")
         for folder, filename in (
                 ("grps", "ui/panel.png"),
@@ -50,6 +52,14 @@ def main() -> None:
         assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in scene
         assert "_draw blend mode 3 flattened to 0" in scene
         assert "_oaction action 7 flattened to no-op" in scene
+        assert "unsupported text control ^fm, ^cr, ^g001 flattened to empty" in scene
+        assert "_khime_say 'Hello red ^nnext ^cyyellow'" in scene
+        assert flatten_unsupported_text_controls(scene) == scene
+        expression = "    _say jp {'en': '^a601A', 'zh': '^cg绿'}.get(lang, '^n日本')\n"
+        lowered = flatten_unsupported_text_controls(expression)
+        assert "^a601 flattened to empty" in lowered
+        assert "'en': 'A'" in lowered
+        assert "'^cg绿'" in lowered and "'^n日本'" in lowered
         assert "    pass\n" in scene
         assert flatten_unsupported_effects(scene, resources) == scene
         assert "scene onlayer master" in (project / "game" / "script.rpy").read_text(
@@ -73,6 +83,11 @@ def main() -> None:
         assert (project / "game" / "voice" / "0001.ogg").is_file()
         assert (project / "game" / "wav" / "0002.ogg").is_file()
         assert (project / "game" / "mov" / "0001.mpg").is_file()
+        assert '"mov/%04d.mpg"' in (project / "game" / "03_rscript_gfx.rpy").read_text(
+            encoding="utf-8")
+        keymap = (project / "game" / "keymap.rpy").read_text(encoding="utf-8")
+        assert "game_menu = [ 'K_ESCAPE', 'K_MENU', 'mousedown_3' ]" in keymap
+        assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN', 'mousedown_5' ]" in keymap
         assert not (project / "game" / "images" / "grps" /
                     "ignored.wcg").exists()
 

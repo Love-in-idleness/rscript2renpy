@@ -60,7 +60,9 @@ def main() -> None:
             "        '    return\\n\\n'\n"
             "        'label main_menu:\\n'" in builder)
     assert 'obsolete.suffix.lower() in {".mpg", ".webm"}' in builder
-    assert 'gfx_text.replace(\'"mov/%04d.webm"\', \'"mov/%04d.mpg"\')' in builder
+    assert '"mov/%04d.webm"' not in builder
+    assert '"mov/%04d.mpg"' in (ROOT / "runtime" / "03_rscript_gfx.rpy").read_text(
+        encoding="utf-8")
     shader = (ROOT / "runtime" / "shaders.rpy").read_text(encoding="utf-8")
     for invalid in ("(1 - v)", "== 1)", "== 2)", "== 4)",
                     "vec3(0)", "1 - gl_FragColor.rgb", "(1 - col.",

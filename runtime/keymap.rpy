@@ -8,7 +8,7 @@ init -99:
     screenshot = [ 's', 'alt_K_s', 'alt_shift_K_s' ],
     toggle_afm = [ ],
     toggle_fullscreen = [ 'f', 'alt_K_RETURN', 'alt_K_KP_ENTER', 'K_F11' ],
-    game_menu = [ 'K_ESCAPE', 'K_MENU', 'mouseup_3' ],
+    game_menu = [ 'K_ESCAPE', 'K_MENU', 'mousedown_3' ],
     hide_windows = [ 'mouseup_2', 'h' ],
     launch_editor = [ 'E' ],
     dump_styles = [ ],
@@ -31,7 +31,7 @@ init -99:
     debug_voicing = [ 'alt_shift_K_v', 'meta_shift_K_v' ],
 
 
-    rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN' ],
+    rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN', 'mousedown_5' ],
     dismiss = [ 'mouseup_1', 'mousedown_5', 'K_RETURN', 'K_SPACE', 'K_KP_ENTER', 'K_SELECT' ],
     dismiss_unfocused = [ ],
 
@@ -47,8 +47,8 @@ init -99:
 
     button_ignore = [ 'mousedown_1' ],
     button_select = [ 'mouseup_1', 'K_RETURN', 'K_KP_ENTER', 'K_SELECT' ],
-    button_alternate = [ 'mouseup_3' ],
-    button_alternate_ignore = [ 'mousedown_3' ],
+    button_alternate = [ ],
+    button_alternate_ignore = [ ],
 
 
     input_backspace = [ 'K_BACKSPACE', 'repeat_K_BACKSPACE' ],

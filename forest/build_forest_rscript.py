@@ -1821,7 +1821,6 @@ def main(argv: list[str]) -> int:
     definitions_path.write_text(definitions_text, encoding="utf-8")
     gfx_path = game / "03_rscript_gfx.rpy"
     gfx_text = gfx_path.read_text(encoding="utf-8")
-    gfx_text = gfx_text.replace('"mov/%04d.webm"', '"mov/%04d.mpg"')
     gfx_text = gfx_text.replace(
         "        font_size = store.object_size.get(layer, gui.text_size)\n"
         "        text = Text(text_value, font = gui.text_font,\n"

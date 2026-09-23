@@ -48,9 +48,6 @@ def build_khime(resources: Path, project: Path, force: bool = False) -> int:
             '"bgm/Track%02d.opus"': '"bgm/Track%02d.ogg"',
             '"wav/%04d.opus"': '"wav/%04d.ogg"',
         },
-        "03_rscript_gfx.rpy": {
-            '"mov/%04d.webm"': '"mov/%04d.mpg"',
-        },
         "character.rpy": {
             "        xpos 1191": "        xpos 747",
             "        ypos 639": "        ypos 556",

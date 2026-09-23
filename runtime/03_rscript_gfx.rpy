@@ -523,7 +523,7 @@ python early:
         return args
 
     def execute_movie(args):
-        renpy.movie_cutscene("mov/%04d.webm" % args.MovieNo)
+        renpy.movie_cutscene("mov/%04d.mpg" % args.MovieNo)
 
     renpy.register_statement("_movie", parse = parse_movie, execute = execute_movie, lint = lint_undef)
 

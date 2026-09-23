@@ -44,8 +44,10 @@ def main() -> None:
     assert "elif effect == 2:" in combined
     assert "ef_time = step * wait / 100." in combined
     assert "ef_time = step * wait / 1000." not in combined
-    assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN' ]" in combined
+    assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN', 'mousedown_5' ]" in combined
     assert "dismiss = [ 'mouseup_1', 'mousedown_5'" in combined
+    assert "game_menu = [ 'K_ESCAPE', 'K_MENU', 'mousedown_3' ]" in combined
+    assert '"mov/%04d.mpg"' in combined
     for python2_only in ('basestring', 'ur"', "ur'", '(int, long, float)',
                          'print "'):
         assert python2_only not in combined
