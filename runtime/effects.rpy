@@ -513,11 +513,6 @@ init python:
             _queue_load()
             queue_ef(renpy.with_statement, dissolve)
 
-        elif effect == 19:
-            # ponytail: fade fallback; compare with Khime's original transition.
-            _queue_load()
-            queue_ef(renpy.with_statement, dissolve)
-
         elif effect == 4:
             _queue_load()
             queue_ef(renpy.with_statement, rscript_dither)
