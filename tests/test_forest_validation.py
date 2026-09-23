@@ -84,6 +84,8 @@ def main() -> None:
         assert "default persistent.forest_wiki_mode = False" in compat_text
         assert "'https://example.test/a//b'" in compat_text
         assert 'if _preferences.language in forest_wiki_keywords:' in compat_text
+        assert 'action Function(forest_set_wiki, True)' in compat_text
+        assert 'action Function(forest_set_wiki, False)' in compat_text
         assert 'text "Wiki Mode" yalign 0.5' not in compat_text
         assert "line_spacing persistent.forest_line_spacing" in compat_text
         assert ('default persistent.forest_text_font = '

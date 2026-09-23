@@ -897,8 +897,8 @@ init python:
         persistent.forest_text_font = fonts[(index + step) % len(fonts)]
         renpy.save_persistent()
 
-    def forest_toggle_wiki():
-        persistent.forest_wiki_mode = not persistent.forest_wiki_mode
+    def forest_set_wiki(enabled):
+        persistent.forest_wiki_mode = enabled
         renpy.save_persistent()
 
     def forest_wiki_plain(text):
@@ -1098,22 +1098,43 @@ screen preferences(title_mode=False):
             xpos 234 ypos 215
             xsize 230 ysize 21
 
-        imagebutton:
-            idle "images/grps/confscrn/gef_on_f.png"
-            hover "images/grps/confscrn/gef_on_f.png"
-            selected_idle "images/grps/confscrn/gef_on.png"
-            selected_hover "images/grps/confscrn/gef_on.png"
-            action Preference("transitions", "all")
-            xpos 202 ypos 247
-            activate_sound "wav/0001.ogg"
-        imagebutton:
-            idle "images/grps/confscrn/gef_off_f.png"
-            hover "images/grps/confscrn/gef_off_f.png"
-            selected_idle "images/grps/confscrn/gef_off.png"
-            selected_hover "images/grps/confscrn/gef_off.png"
-            action Preference("transitions", "none")
-            xpos 356 ypos 247
-            activate_sound "wav/0001.ogg"
+        if _preferences.language in forest_wiki_keywords:
+            if not title_mode:
+                imagebutton:
+                    idle "images/grps/confscrn/gef_on_f.png"
+                    hover "images/grps/confscrn/gef_on_f.png"
+                    selected_idle "images/grps/confscrn/gef_on.png"
+                    selected_hover "images/grps/confscrn/gef_on.png"
+                    action Function(forest_set_wiki, True)
+                    selected persistent.forest_wiki_mode
+                    xpos 202 ypos 247
+                    activate_sound "wav/0001.ogg"
+                imagebutton:
+                    idle "images/grps/confscrn/gef_off_f.png"
+                    hover "images/grps/confscrn/gef_off_f.png"
+                    selected_idle "images/grps/confscrn/gef_off.png"
+                    selected_hover "images/grps/confscrn/gef_off.png"
+                    action Function(forest_set_wiki, False)
+                    selected not persistent.forest_wiki_mode
+                    xpos 356 ypos 247
+                    activate_sound "wav/0001.ogg"
+        else:
+            imagebutton:
+                idle "images/grps/confscrn/gef_on_f.png"
+                hover "images/grps/confscrn/gef_on_f.png"
+                selected_idle "images/grps/confscrn/gef_on.png"
+                selected_hover "images/grps/confscrn/gef_on.png"
+                action Preference("transitions", "all")
+                xpos 202 ypos 247
+                activate_sound "wav/0001.ogg"
+            imagebutton:
+                idle "images/grps/confscrn/gef_off_f.png"
+                hover "images/grps/confscrn/gef_off_f.png"
+                selected_idle "images/grps/confscrn/gef_off.png"
+                selected_hover "images/grps/confscrn/gef_off.png"
+                action Preference("transitions", "none")
+                xpos 356 ypos 247
+                activate_sound "wav/0001.ogg"
 
         imagebutton:
             idle "images/grps/confscrn/msp_slw_f.png"
@@ -1170,16 +1191,6 @@ screen preferences(title_mode=False):
                     hover "images/grps/confscrn/load_f.png"
                     action ShowMenu("load")
                     xpos 263 ypos 346
-                    activate_sound "wav/0001.ogg"
-            if _preferences.language in forest_wiki_keywords:
-                textbutton ("维基：开" if persistent.forest_wiki_mode else "维基：关"):
-                    action Function(forest_toggle_wiki)
-                    xpos 378 ypos 346
-                    xsize 112 ysize 21
-                    text_size 18
-                    text_color "#493720"
-                    text_hover_color "#176b72"
-                    text_align 0.5
                     activate_sound "wav/0001.ogg"
             imagebutton:
                 idle "images/grps/confscrn/close.png"
