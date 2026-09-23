@@ -829,10 +829,12 @@ init python:
             zoom = int(text_size) / 22.0
         except (AttributeError, TypeError, ValueError):
             return []
-        prefix = "gg" if persistent.forest_wiki_mode else "gf"
+        wiki_enabled = (persistent.forest_wiki_mode and
+                        _preferences.language in forest_wiki_keywords)
+        prefix = "gg" if wiki_enabled else "gf"
         image = Transform("images/grps/%s%s.png" % (prefix, number),
                           zoom=zoom)
-        if persistent.forest_wiki_mode:
+        if wiki_enabled:
             url = forest_wiki_images.get(
                 _preferences.language, {}).get(number)
             if url:
@@ -1924,7 +1926,8 @@ def main(argv: list[str]) -> int:
     util_text = util_text.replace(
         '            "y": "#FFDE00", "g": "#D7FFB3",',
         '            "y": "#FFDE00", "g": ("#D7FFB3" if '
-        'persistent.forest_wiki_mode else "#FFFFFF"),',
+        '(persistent.forest_wiki_mode and _preferences.language in '
+        'forest_wiki_keywords) else "#FFFFFF"),',
         1)
     util_path.write_text(util_text, encoding="utf-8")
     channels_path = game / "audio.rpy"

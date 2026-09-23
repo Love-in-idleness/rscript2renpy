@@ -109,7 +109,8 @@ def main() -> None:
         assert "renpy.pause(delay / 10.)" in command_runtime
         assert "renpy.translation.translate_string(eval(text).rstrip())" in util_runtime
         assert "text = forest_prepare_wiki_text(text)" in util_runtime
-        assert ('"#D7FFB3" if persistent.forest_wiki_mode else "#FFFFFF"'
+        assert ('"#D7FFB3" if (persistent.forest_wiki_mode and '
+                '_preferences.language in forest_wiki_keywords) else "#FFFFFF"'
                 in util_runtime)
         say_start = text_runtime.index("    def execute_say(o):")
         append_start = text_runtime.index("    def execute_append(o):")

@@ -311,6 +311,7 @@ def main() -> None:
     assert 'action Function(forest_toggle_wiki)' in game_menu
     assert '"维基：开" if persistent.forest_wiki_mode else "维基：关"' in game_menu
     assert 'forest_toggle_wiki' not in title_menu
+    assert 'prefix = "gg" if wiki_enabled else "gf"' in FOREST_COMPAT
     wiki_start = FOREST_COMPAT.index("    def forest_wiki_plain")
     wiki_end = FOREST_COMPAT.index("    def forest_save_progress", wiki_start)
     persistent = type("Persistent", (), {"forest_wiki_mode": True})()
