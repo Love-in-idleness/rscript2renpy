@@ -1169,6 +1169,16 @@ screen preferences(title_mode=False):
                     action ShowMenu("load")
                     xpos 263 ypos 346
                     activate_sound "wav/0001.ogg"
+            if _preferences.language in forest_wiki_keywords:
+                textbutton ("维基：开" if persistent.forest_wiki_mode else "维基：关"):
+                    action Function(forest_toggle_wiki)
+                    xpos 378 ypos 346
+                    xsize 112 ysize 21
+                    text_size 18
+                    text_color "#493720"
+                    text_hover_color "#176b72"
+                    text_align 0.5
+                    activate_sound "wav/0001.ogg"
             imagebutton:
                 idle "images/grps/confscrn/close.png"
                 hover "images/grps/confscrn/close_f.png"
@@ -1306,15 +1316,6 @@ screen forest_title_preferences():
                         textbutton label:
                             action Language(language)
                             selected _preferences.language == language
-
-            fixed:
-                xfill True
-                ysize 38
-                text "Wiki Mode" yalign 0.5
-                textbutton ("On" if persistent.forest_wiki_mode else "Off"):
-                    xalign 1.0
-                    yalign 0.5
-                    action Function(forest_toggle_wiki)
 
             text "Persistent Progress" xalign 0.5
             hbox:

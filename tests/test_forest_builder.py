@@ -303,8 +303,14 @@ def main() -> None:
     assert "default persistent.forest_text_cps = 20" in FOREST_COMPAT
     assert "default persistent.forest_wiki_mode = False" in FOREST_COMPAT
     assert "def forest_prepare_wiki_text(text):" in FOREST_COMPAT
-    assert 'text "Wiki Mode" yalign 0.5' in FOREST_COMPAT
-    assert "action Function(forest_toggle_wiki)" in FOREST_COMPAT
+    game_menu = FOREST_COMPAT.split("screen preferences(title_mode=False):", 1)[1].split(
+        "screen forest_title_preferences():", 1)[0]
+    title_menu = FOREST_COMPAT.split("screen forest_title_preferences():", 1)[1].split(
+        "screen save():", 1)[0]
+    assert 'if _preferences.language in forest_wiki_keywords:' in game_menu
+    assert 'action Function(forest_toggle_wiki)' in game_menu
+    assert '"维基：开" if persistent.forest_wiki_mode else "维基：关"' in game_menu
+    assert 'forest_toggle_wiki' not in title_menu
     wiki_start = FOREST_COMPAT.index("    def forest_wiki_plain")
     wiki_end = FOREST_COMPAT.index("    def forest_save_progress", wiki_start)
     persistent = type("Persistent", (), {"forest_wiki_mode": True})()

@@ -92,7 +92,8 @@ TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`
 
 补丁根目录可放置带 `//` 注释的 `keywords.json`。每项格式为
 `["完整句子", "https://链接", "^cg 与 ^cw 之间的词"]`。生成器会校验并
-原样复制该文件；标题页的 `Wiki Mode` 默认关闭。打开后，只有当前语言中既匹配
+原样复制该文件。Wiki 默认关闭；使用带词条数据的中文补丁时，可在游戏内右键菜单
+切换。打开后，只有当前语言中既匹配
 完整句子、又由 `^cg…^cw` 标出的文字才显示为绿色并可点击打开链接；关闭时这些
 文字保持白色。
 
@@ -228,8 +229,9 @@ affect generation.
 
 `keywords.json` may contain `//` comments. Each entry is
 `["complete sentence", "https://URL", "text between ^cg and ^cw"]`.
-The generator validates and copies it unchanged. `Wiki Mode` is off by default;
-when enabled, marked text is green and clickable only when its complete sentence
+The generator validates and copies it unchanged. Wiki mode is off by default
+and can be toggled from the in-game right-click menu when the active language
+has keyword data. When enabled, marked text is green and clickable only when its complete sentence
 also matches the current language's keyword data. When disabled, marked text
 remains white.
 
