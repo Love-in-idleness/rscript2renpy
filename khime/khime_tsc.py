@@ -73,10 +73,11 @@ def compile_scene(source: Path) -> str:
             lines.append("    _jump %s" % operands[0])
         elif op == 14:
             count = min(values[0], 5)
-            lines.append("    $ khime_choice_prompt = %r" % tsc.string(values[1]))
+            lines.append("    $ khime_choice_prompt = %r" %
+                         tsc.string(values[1]).removeprefix("<01>"))
             lines.append("    menu:")
             for index in range(count):
-                text = tsc.string(values[7 + index])
+                text = tsc.string(values[7 + index]).removeprefix("<01>")
                 lines.extend(("        %r:" % text,
                               "            $ _r[%s] = %d" % (operands[12], index),
                               "            $ khime_choice_prompt = None",

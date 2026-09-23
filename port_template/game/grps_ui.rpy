@@ -163,9 +163,9 @@ screen rscript_choice(items, prompt=None):
                     $ body = question["items"]["body"]
                     $ textpos = question["items"].get("text", (20, 10))
                     add "images/grps/%s/body.png" % prompt_folder xpos body[0] ypos body[1]
-                    text prompt xpos textpos[0] ypos textpos[1] color "#ffffff"
+                    text prompt xpos textpos[0] ypos textpos[1] color "#ffffff" font gui.text_font
             else:
-                text prompt xalign 0.5 color "#ffffff"
+                text prompt xalign 0.5 color "#ffffff" font gui.text_font
         for item in items:
             if item.action is not None:
                 if answer_folder:
@@ -183,7 +183,7 @@ screen rscript_choice(items, prompt=None):
                             xpos body[0]
                             ypos body[1]
                             action item.action
-                        text item.caption xpos textpos[0] ypos textpos[1] color "#ffffff"
+                        text item.caption xpos textpos[0] ypos textpos[1] color "#ffffff" font gui.text_font
                 else:
                     textbutton item.caption action item.action
 

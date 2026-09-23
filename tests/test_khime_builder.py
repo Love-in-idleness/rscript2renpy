@@ -21,6 +21,7 @@ def main() -> None:
         output = compile_scene(source)
         assert output.startswith("# Generated from ")
         assert "label _%s:" % source.stem in output
+        assert "<01>" not in output
     title = compile_scene(next(path for path in sources if path.stem == "0101"))
     assert "_khime_folder 0 'grpo_tp'" in title
     assert "_khime_setclk 41 1 3 0" in title
@@ -32,6 +33,9 @@ def main() -> None:
     assert "_load 1 5043 400 300 19 0" in effect
     credits = compile_scene(next(path for path in sources if path.stem == "1110"))
     assert "_oload 20 400 188 4 0 '^fm企画・シナリオ'" in credits
+    radio = compile_scene(next(path for path in sources if path.stem == "1107"))
+    assert "$ khime_choice_prompt = 'さて'" in radio
+    assert "'僕も降りるか。':" in radio
     masks = compile_scene(next(path for path in sources if path.stem == "1107"))
     assert "_effect 101 0" in masks
     masks = compile_scene(next(path for path in sources if path.stem == "3677"))
