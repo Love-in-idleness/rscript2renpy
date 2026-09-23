@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
 from build_port import build  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
+from grps_layout import collect_layout  # noqa: E402
 
 
 def main() -> None:
@@ -38,7 +39,7 @@ def main() -> None:
         (resources / "grps" / "ignored.wcg").write_bytes(b"raw")
         runtime_count, copied = build(resources, project)
         assert runtime_count == 19
-        assert copied == 7
+        assert copied == 9
         assert (project / "game" / "scenario" / "0000.rpy").is_file()
         scene = (project / "game" / "scenario" / "0000.rpy").read_text(
             encoding="utf-8")
@@ -53,6 +54,11 @@ def main() -> None:
         assert flatten_unsupported_effects(scene, resources) == scene
         assert "scene onlayer master" in (project / "game" / "script.rpy").read_text(
             encoding="utf-8")
+        assert "screen rscript_compane():" in (project / "game" / "grps_ui.rpy").read_text(
+            encoding="utf-8")
+        assert collect_layout(resources) == {}
+        assert "define rscript_grps_layout = {}" in (
+            project / "game" / "grps_layout.rpy").read_text(encoding="utf-8")
         masks = root / "masks" / "grps"
         masks.mkdir(parents=True)
         (masks / "ef16.png").write_bytes(b"mask")
@@ -78,6 +84,22 @@ def main() -> None:
             pass
         else:
             raise AssertionError("different generated files must not be overwritten")
+
+        conf = resources / "grps" / "confscrn"
+        conf.mkdir()
+        (conf / "bg.png").write_bytes(
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x03\x20\x00\x00\x02\x58")
+        try:
+            collect_layout(resources)
+        except ValueError as error:
+            assert ".meta.xml" in str(error)
+        else:
+            raise AssertionError("UI without canvas metadata must fail visibly")
+        (conf / ".meta.xml").write_text(
+            '<Canvas><Width>800</Width><Height>600</Height><Items>'
+            '<Item x="4" y="2" flag="40">bg</Item></Items></Canvas>',
+            encoding="utf-8")
+        assert collect_layout(resources)["confscrn"]["items"]["bg"] == (4, 2, 800, 600)
 
     print("OK: generic port template")
 

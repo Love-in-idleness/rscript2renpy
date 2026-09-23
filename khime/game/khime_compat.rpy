@@ -10,7 +10,8 @@ default khime_click_links = {}
 python early:
     def khime_textbox_background():
         path = "images/grps/tbox%02d/back.png" % store.cur_textbox
-        return path if renpy.loadable(path) else Solid("#000000d0")
+        background = path if renpy.loadable(path) else Solid("#000000d0")
+        return Transform(background, alpha=persistent.rscript_textbox_opacity)
 
     def khime_parse(lex):
         value = lex.rest()
@@ -23,6 +24,8 @@ python early:
         queue_draw(show_window)
         process_draw_queue()
         renpy.say(narrator, text, interact=True, show_center=center)
+        if persistent.rscript_stop_voice_on_advance:
+            renpy.music.stop(channel="voice")
 
     def khime_face(value):
         number = int(eval(value.split()[0]))
@@ -150,77 +153,27 @@ screen khime_click_screen(options):
             action khime_click_action(result, system)
 
 screen say(who, what, center=False):
+    $ textbox = rscript_grps_layout.get("tbox%02d" % cur_textbox, {})
+    $ textpos = textbox.get("items", {}).get("text", (34, 12))
     window:
         id "window"
         background khime_textbox_background()
         xalign 0.5
         yalign 1.0
-        xsize 800
-        ysize 163
+        xsize textbox.get("size", (800, 163))[0]
+        ysize textbox.get("size", (800, 163))[1]
 
         text what:
             id "what"
             font "fonts/NotoSansCJKjp-Regular.otf"
             size 30
             color "#ffffff"
-            xpos 34
-            ypos 12
-            xsize 732
+            xpos textpos[0]
+            ypos textpos[1]
+            xsize textbox.get("size", (800, 163))[0] - textpos[0] - 24
             text_align (0.5 if center else 0.0)
 
+        use rscript_compane
+
 screen choice(items):
-    modal True
-    vbox:
-        xalign 0.5
-        yalign 0.42
-        spacing 8
-        if khime_choice_prompt:
-            text khime_choice_prompt xalign 0.5 color "#ffffff" size 24
-        for item in items:
-            if item.action is not None:
-                textbutton item.caption action item.action
-
-screen game_menu():
-    tag menu
-    modal True
-    frame:
-        xalign 0.5
-        yalign 0.5
-        vbox:
-            spacing 12
-            textbutton "Return" action Return()
-            textbutton "Save" action ShowMenu("save")
-            textbutton "Load" action ShowMenu("load")
-            textbutton "Title" action MainMenu(confirm=False)
-            textbutton "Quit" action Quit(confirm=False)
-
-screen save():
-    tag menu
-    frame:
-        xalign 0.5
-        yalign 0.5
-        vbox:
-            for slot in range(1, 11):
-                textbutton "Save [slot]" action FileSave(slot)
-            textbutton "Back" action ShowMenu("game_menu")
-
-screen load():
-    tag menu
-    frame:
-        xalign 0.5
-        yalign 0.5
-        vbox:
-            for slot in range(1, 11):
-                textbutton "Load [slot]" action FileLoad(slot)
-            textbutton "Back" action ShowMenu("game_menu")
-
-screen preferences():
-    tag menu
-    frame:
-        xalign 0.5
-        yalign 0.5
-        vbox:
-            textbutton "Music" action Preference("music mute", "toggle")
-            textbutton "Sound" action Preference("sound mute", "toggle")
-            textbutton "Voice" action Preference("voice mute", "toggle")
-            textbutton "Back" action Return()
+    use rscript_choice(items, khime_choice_prompt)

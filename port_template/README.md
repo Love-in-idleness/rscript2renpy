@@ -34,6 +34,13 @@
 模板拒绝覆盖内容不同的现有文件。确认要同步模板或运行时更新时才使用
 `--force`。
 
+`grps/confscrn`、`grps/compane`、`grps/savescrn`、`sel_a*`、`sel_q*`、`tbox*` 有 PNG 时还会读取各目录的
+`.meta.xml` 画布尺寸和坐标，生成 `grps_layout.rpy`。共用界面用原图实现设置、
+存读档、选择项和对话控制条；游戏的 `say` screen 需 `use rscript_compane`，
+`choice` screen 可 `use rscript_choice(items, prompt)`。
+缺少坐标元数据会在构建时明确报错，而不是生成位置不明的界面。标题流程和
+选择分支仍由各游戏脚本决定；素材命名或控制语义不同的作品需在专用适配层修改。
+
 ## 效果兼容检查
 
 游戏专用 lowerer 可调用 `effect_compat.flatten_unsupported_effects(rpy, resources, "Game")`；
@@ -61,7 +68,9 @@
 port_template/
 ├── build_port.py          # 通用资源与运行时装配
 ├── effect_compat.py       # 运行时能力与资源遮罩检查
+├── grps_layout.py         # 从复合图元数据提取界面坐标
 ├── game/
+│   ├── grps_ui.rpy        # 共用设置、存档和控制条
 │   └── script.rpy         # 统一入口；可由游戏适配层替换
 └── README.md              # 本清单
 

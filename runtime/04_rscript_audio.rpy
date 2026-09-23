@@ -15,6 +15,7 @@ python early:
         repeat = args.Repeat
         fade   = args.Fade
         pan    = args.Pan
+        store.rscript_last_voice = voice_file
         voice(voice_file)
 
     renpy.register_statement("_voice", parse = parse_voice, execute = execute_voice, lint = lint_undef)

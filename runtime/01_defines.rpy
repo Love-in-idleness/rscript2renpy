@@ -83,6 +83,7 @@ init:
     default persistent.load_page = 1
     default persistent.config_page = 0
     default persistent.widescreen_cg = True
+    default persistent.rscript_stop_voice_on_advance = False
     default persistent.seen_cg = {}
 
 

@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "khime"))
 from khime_tsc import compile_scene  # noqa: E402
 from build_khime_rscript import build_khime  # noqa: E402
+sys.path.insert(0, str(ROOT / "port_template"))
+from grps_layout import collect_layout  # noqa: E402
 
 
 def main() -> None:
@@ -37,6 +39,12 @@ def main() -> None:
     assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in masks
     masks = compile_scene(next(path for path in sources if path.stem == "3677"))
     assert "_update effect 16 flattened to 0 (missing grps/ef16.png)" in masks
+    layout = collect_layout(Path(sys.argv[1]))
+    assert layout["confscrn"]["items"]["bg"][:2] == (0, 0)
+    assert layout["compane"]["items"]["hide"][:2] == (3, 67)
+    assert layout["savescrn"]["items"]["next"][:2] == (412, 551)
+    assert layout["sel_a01"]["items"]["text"][:2] == (55, 17)
+    assert layout["tbox01"]["items"]["text"][:2] == (68, 27)
     with TemporaryDirectory() as temporary:
         resources = Path(temporary) / "resources"
         project = Path(temporary) / "project"

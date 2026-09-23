@@ -47,6 +47,8 @@ python early:
         queue_draw(show_window)
         process_draw_queue()
         renpy.say(who, what, interact = True, show_center = center)
+        if persistent.rscript_stop_voice_on_advance:
+            renpy.music.stop(channel = "voice")
 
         if store.jump_back_point is None:
             store.jump_back_point = renpy.game.log.current.identifier
@@ -87,6 +89,8 @@ python early:
 
         who.do_extend()
         renpy.say(who, what, interact = True, show_center = center)
+        if persistent.rscript_stop_voice_on_advance:
+            renpy.music.stop(channel = "voice")
 
     renpy.register_statement("_append", parse = parse_append, execute = execute_append, lint = lint_undef)
 

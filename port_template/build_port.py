@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from install_runtime import install  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
+from grps_layout import collect_layout  # noqa: E402
 
 
 RESOURCE_TARGETS = {
@@ -87,6 +88,7 @@ def build(resources: Path, project: Path, force: bool = False,
         raise FileNotFoundError(
             "game-specific TSC lowerer produced no scenario/*.rpy files: %s" %
             scenarios)
+    layout = "define rscript_grps_layout = %r\n" % collect_layout(resources)
 
     game.mkdir(parents=True, exist_ok=True)
     installed = install(project, force=force)
@@ -98,6 +100,11 @@ def build(resources: Path, project: Path, force: bool = False,
     for source in sorted((Path(__file__).parent / "game").glob("*.rpy")):
         copy_file(source, game / source.name, force)
         copied += 1
+    destination = game / "grps_layout.rpy"
+    if destination.exists() and destination.read_text(encoding="utf-8") != layout and not force:
+        raise FileExistsError("refusing to overwrite different file: %s" % destination)
+    destination.write_text(layout, encoding="utf-8")
+    copied += 1
     return len(installed), copied
 
 
