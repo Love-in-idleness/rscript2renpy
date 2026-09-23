@@ -66,7 +66,8 @@ def main() -> None:
             assert (project / "game" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
         options = (project / "game" / "options.rpy").read_text(encoding="utf-8")
         assert 'rscript_voice_format = "voice/%04d.ogg"' in options
-        assert "rscript_ctc_x = 747" in options
+        assert "rscript_ctc_x = 729" in options
+        assert 729 + 24 + 8 == 800 - layout["compane"]["size"][0]
         click = (project / "game" / "khime_compat.rpy").read_text(encoding="utf-8")
         assert 'key "game_menu" action ShowMenu("preferences")' in click
         assert 'key "rollback" action Rollback()' in click
