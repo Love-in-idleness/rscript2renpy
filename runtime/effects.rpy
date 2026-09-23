@@ -505,7 +505,16 @@ init python:
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
 
+        elif effect == 2:
+            _queue_load()
+            queue_ef(renpy.with_statement, fast_dissolve)
+
         elif effect == 3:
+            _queue_load()
+            queue_ef(renpy.with_statement, dissolve)
+
+        elif effect == 19:
+            # ponytail: fade fallback; compare with Khime's original transition.
             _queue_load()
             queue_ef(renpy.with_statement, dissolve)
 

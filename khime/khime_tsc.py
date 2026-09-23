@@ -11,7 +11,7 @@ from build_forest_rscript import emit_vm, packed  # noqa: E402
 PASSTHROUGH = {
     10: "hit", 13: "wait", 20: "gload", 23: "quake", 26: "queue",
     27: "action", 28: "update", 30: "load", 36: "cls", 37: "enabl",
-    38: "locmode", 39: "draw", 42: "tbox", 43: "effect", 45: "tone",
+    39: "draw", 42: "tbox", 43: "effect", 45: "tone",
     46: "tonedep", 47: "locgrid", 49: "mode", 52: "stop",
     56: "sysmode", 60: "bgm_on", 61: "bgm_off", 65: "movie",
     66: "voice", 67: "voice_off", 68: "se_wait", 69: "voice_wait",
@@ -24,7 +24,7 @@ KHIME_COMMANDS = {
     48: "face", 101: "faceloc", 105: "facedep", 130: "numload",
     131: "numreng", 134: "numloc", 135: "numset", 136: "num",
     70: "setclk", 71: "setclksys", 72: "resetclk", 73: "click",
-    75: "setlink",
+    75: "setlink", 38: "locmode",
 }
 
 

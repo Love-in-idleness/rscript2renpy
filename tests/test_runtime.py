@@ -41,6 +41,8 @@ def main() -> None:
     assert 'Tile("gui/rscript_dither.svg")' in combined
     assert "im.Tile" not in combined
     assert "elif effect == 4:" in combined
+    assert "elif effect == 2:" in combined
+    assert "elif effect == 19:" in combined
     assert "ef_time = step * wait / 100." in combined
     assert "ef_time = step * wait / 1000." not in combined
     assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN' ]" in combined

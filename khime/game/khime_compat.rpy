@@ -60,6 +60,16 @@ python early:
         else:
             store.folder[layer] = name
 
+    def khime_locmode(value):
+        layer, xmode, ymode = (int(eval(part)) for part in value.split()[:3])
+        anchor = (0.0 if xmode == 0 else 0.5,
+                  0.0 if ymode == 0 else 0.5)
+        if layer == 0:
+            for number in range(100):
+                store.layer_anchor[number] = anchor
+        else:
+            store.layer_anchor[layer] = anchor
+
     def khime_setclk(value, system=False):
         layer, result = (int(eval(part)) for part in value.split()[:2])
         store.khime_click_values[layer] = (result, system)
@@ -115,6 +125,8 @@ python early:
                                  execute=khime_number)
     renpy.register_statement("_khime_folder", parse=khime_parse,
                              execute=khime_folder)
+    renpy.register_statement("_khime_locmode", parse=khime_parse,
+                             execute=khime_locmode)
     renpy.register_statement("_khime_setclk", parse=khime_parse,
                              execute=khime_setclk)
     renpy.register_statement("_khime_setclksys", parse=khime_parse,
