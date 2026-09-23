@@ -145,6 +145,8 @@ screen rscript_compane():
 
 screen rscript_choice(items, prompt=None):
     modal True
+    key "game_menu" action ShowMenu("preferences")
+    key "rollback" action Rollback()
     $ answer_folder = next((name for name in sorted(rscript_grps_layout)
                             if name.startswith("sel_a")), None)
     $ prompt_folder = next((name for name in sorted(rscript_grps_layout)

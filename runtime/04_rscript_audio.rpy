@@ -11,7 +11,7 @@ python early:
 
     def execute_voice(args):
 
-        voice_file = "voice/%05d.opus" % args.VoiceNo
+        voice_file = rscript_voice_format % args.VoiceNo
         repeat = args.Repeat
         fade   = args.Fade
         pan    = args.Pan
@@ -56,7 +56,7 @@ python early:
         return args
 
     def execute_bgm_on(args):
-        bgm = "bgm/Track%02d.opus" % args.BgmNo
+        bgm = rscript_bgm_format % args.BgmNo
         fadein = args.Fade * args.FadeLen / 1000.
 
         renpy.music.play(bgm, channel = "music", fadein = fadein, loop = True, if_changed = True)
@@ -101,7 +101,7 @@ python early:
 
     def execute_se_on(args):
         channel = "se%d" % args.Channel
-        se_file = "wav/%04d.opus" % store.se_queue[args.Channel]
+        se_file = rscript_se_format % store.se_queue[args.Channel]
         se_file = [se_file] * (args.Repeat + 1)
         fade    = args.Fade * 0.5
         pan     = args.Pan / 100

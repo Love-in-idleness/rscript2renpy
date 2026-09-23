@@ -64,8 +64,16 @@ def main() -> None:
         assert flatten_unsupported_effects(scene, resources) == scene
         assert "scene onlayer master" in (project / "game" / "script.rpy").read_text(
             encoding="utf-8")
+        assert "label main_menu:\n    # Returning lets Ren'Py enter start" in (
+            project / "game" / "script.rpy").read_text(encoding="utf-8")
+        assert "    jump start" not in (project / "game" / "script.rpy").read_text(
+            encoding="utf-8")
         assert "screen rscript_compane():" in (project / "game" / "grps_ui.rpy").read_text(
             encoding="utf-8")
+        assert 'key "game_menu" action ShowMenu("preferences")' in (
+            project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
+        assert 'key "rollback" action Rollback()' in (
+            project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert collect_layout(resources) == {}
         assert "define rscript_grps_layout = {}" in (
             project / "game" / "grps_layout.rpy").read_text(encoding="utf-8")

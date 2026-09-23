@@ -1,8 +1,8 @@
 init:
 
     image rscript_ctc:
-        xpos 1191
-        ypos 639
+        xpos rscript_ctc_x
+        ypos rscript_ctc_y
 
         contains:
             "grps wait00 body"

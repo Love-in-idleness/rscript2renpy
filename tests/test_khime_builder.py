@@ -28,17 +28,14 @@ def main() -> None:
     setup = compile_scene(next(path for path in sources if path.stem == "0111"))
     assert "_khime_locmode 0 1 1" in setup
     effect = compile_scene(next(path for path in sources if path.stem == "1102"))
-    assert "# Khime conversion: _cls effect 19 flattened to 0" in effect
-    assert "_cls 1 0" in effect
-    assert "# Khime conversion: _load effect 19 flattened to 0" in effect
-    assert "_load 1 5043 400 300 0 0" in effect
+    assert "_cls 1 19" in effect
+    assert "_load 1 5043 400 300 19 0" in effect
     credits = compile_scene(next(path for path in sources if path.stem == "1110"))
-    assert "# Khime conversion: _oload effect 4 flattened to 0" in credits
-    assert "_oload 20 400 188 0 0 '^fm企画・シナリオ'" in credits
+    assert "_oload 20 400 188 4 0 '^fm企画・シナリオ'" in credits
     masks = compile_scene(next(path for path in sources if path.stem == "1107"))
-    assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in masks
+    assert "_effect 101 0" in masks
     masks = compile_scene(next(path for path in sources if path.stem == "3677"))
-    assert "_update effect 16 flattened to 0 (missing grps/ef16.png)" in masks
+    assert "_update 16 " in masks
     layout = collect_layout(Path(sys.argv[1]))
     assert layout["confscrn"]["items"]["bg"][:2] == (0, 0)
     assert layout["compane"]["items"]["hide"][:2] == (3, 67)
@@ -57,6 +54,23 @@ def main() -> None:
         build_khime(resources, project)
         script = (project / "game" / "script.rpy").read_text(encoding="utf-8")
         assert "scene onlayer master\n    scene black onlayer black" in script
+        credits = (project / "game" / "scenario" / "1110.rpy").read_text(encoding="utf-8")
+        assert "_oload effect 4 flattened to 0" in credits
+        assert "unsupported text control ^fm flattened to empty" in credits
+        for name in ("04_rscript_audio.rpy", "character.rpy", "keymap.rpy",
+                     "03_rscript_gfx.rpy"):
+            assert (project / "game" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
+        options = (project / "game" / "options.rpy").read_text(encoding="utf-8")
+        assert 'rscript_voice_format = "voice/%04d.ogg"' in options
+        assert "rscript_ctc_x = 747" in options
+        click = (project / "game" / "khime_compat.rpy").read_text(encoding="utf-8")
+        assert 'key "game_menu" action ShowMenu("preferences")' in click
+        assert 'key "rollback" action Rollback()' in click
+        keymap = (project / "game" / "keymap.rpy").read_text(encoding="utf-8")
+        assert "'mousedown_3'" in keymap
+        assert "'mousedown_4'" in keymap and "'mousedown_5'" in keymap
+        assert '"mov/%04d.mpg"' in (project / "game" / "03_rscript_gfx.rpy").read_text(
+            encoding="utf-8")
     print("OK: compiled %d Khime TSC files and title click flow" % len(sources))
 
 

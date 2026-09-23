@@ -42,26 +42,6 @@ def build_khime(resources: Path, project: Path, force: bool = False) -> int:
         copy_file(ROOT / "forest" / "fonts" / name,
                   game / "fonts" / name, force)
 
-    substitutions = {
-        "04_rscript_audio.rpy": {
-            '"voice/%05d.opus"': '"voice/%04d.ogg"',
-            '"bgm/Track%02d.opus"': '"bgm/Track%02d.ogg"',
-            '"wav/%04d.opus"': '"wav/%04d.ogg"',
-        },
-        "character.rpy": {
-            "        xpos 1191": "        xpos 747",
-            "        ypos 639": "        ypos 556",
-        },
-    }
-    for name, replacements in substitutions.items():
-        path = game / name
-        text = path.read_text(encoding="utf-8")
-        for original, replacement in replacements.items():
-            if original not in text and replacement not in text:
-                raise ValueError("runtime changed; cannot adapt %s: %s" %
-                                 (name, original))
-            text = text.replace(original, replacement)
-        path.write_text(text, encoding="utf-8")
     print("Wrote %s: %d Khime scenes" % (project, len(scripts)))
     return len(scripts)
 

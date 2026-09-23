@@ -7,7 +7,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "forest"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
 from forest_tsc import E, read_tsc  # noqa: E402
 from build_forest_rscript import emit_vm, packed  # noqa: E402
-from effect_compat import flatten_unsupported_effects  # noqa: E402
 
 
 PASSTHROUGH = {
@@ -132,5 +131,4 @@ def compile_scene(source: Path) -> str:
     if tsc.code_size in targets:
         lines.extend(("", "label %s:" % label(scene, tsc.code_size)))
     lines.append("    return")
-    return flatten_unsupported_effects("\n".join(lines) + "\n",
-                                       source.parent.parent, "Khime")
+    return "\n".join(lines) + "\n"

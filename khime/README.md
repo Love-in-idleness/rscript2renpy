@@ -8,7 +8,9 @@ python3 khime/build_khime_rscript.py \
     /path/to/converted-khime /path/to/new-renpy-project
 ```
 
-输出目录无需预先创建。脚本会编译全部 TSC 场景，并安装共用运行时和资源；
+输出目录无需预先创建。脚本会编译全部 TSC 场景，直接调用 `port_template.build_port`
+安装共用运行时和资源；Khime 的音频命名、提示图坐标和界面指令仅由
+`khime/game/*.rpy` 补充，不在复制后改写共用运行时；
 若目标文件已有不同内容，默认拒绝覆盖，确认重建时可加 `--force`。
 目前没有 `--language` 参数。
 

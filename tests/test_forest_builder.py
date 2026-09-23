@@ -31,8 +31,10 @@ def main() -> None:
     assert 'copy_movies(root / "mov", game / "mov", clear=True)' in builder
     assert "subprocess" not in builder
     assert "ffmpeg" not in builder
-    assert 'replace("        xpos 1191", "        xpos 747")' in builder
-    assert 'replace("        ypos 639", "        ypos 556")' in builder
+    assert 'replace("        xpos 1191", "        xpos 747")' not in builder
+    assert 'replace("        ypos 639", "        ypos 556")' not in builder
+    assert 'rscript_ctc_x = 747' in FOREST_COMPAT
+    assert 'rscript_voice_format = "voice/%04d.ogg"' in FOREST_COMPAT
     inline_graphic = "{forest_g=%s:%d}"
     assert inline_graphic in builder
     assert builder.index('speaker = renpy.re.match') < \

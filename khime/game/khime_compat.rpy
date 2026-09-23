@@ -143,6 +143,8 @@ python early:
 
 screen khime_click_screen(options):
     modal True
+    key "game_menu" action ShowMenu("preferences")
+    key "rollback" action Rollback()
     for result, system, idle_image, hover_image, x, y in options:
         imagebutton:
             idle idle_image

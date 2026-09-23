@@ -17,18 +17,19 @@
 
 ## 开始新移植
 
-1. 复制本目录并改名，例如 `cp -a port_template khime`。
-2. 在新目录实现一个只负责当前游戏的 TSC → RPY lowerer，把结果写到准备目录的
-   `scenario/`。不要在通用运行时里塞游戏特例。
-3. 按需编辑 `build_port.py` 顶部的 `RESOURCE_TARGETS`；大多数 800×600
-   CodeX 游戏不需要修改。
+1. 新建游戏专用目录，不复制 `port_template/` 或 `runtime/`。生成器从
+   `port_template.build_port` 导入 `build`，复用同一套装配和兼容检查。
+2. 在专用目录实现当前游戏的 TSC → RPY lowerer，把结果写到临时
+   `scenario/`，再调用通用 `build(resources, project, scenarios=...)`。
+3. 游戏差异放在专用 `game/*.rpy` 覆盖文件中；音频命名与提示图位置通过
+   `rscript_*_format`、`rscript_ctc_x/y` 配置，不改写安装后的共用文件。
 4. 运行构建入口；脚本会创建尚不存在的工程目录：
 
    ```bash
    python3 port_template/build_port.py /path/to/prepared-resources /path/to/renpy-project
    ```
 
-5. 在游戏目录添加专用的界面、文本规则、标题流程和 runtime 覆盖文件；最后运行
+5. 在游戏目录添加专用的界面、文本规则和标题流程；最后运行
    静态测试及 Ren'Py lint。
 
 模板拒绝覆盖内容不同的现有文件。确认要同步模板或运行时更新时才使用
@@ -43,8 +44,8 @@
 
 ## 效果兼容检查
 
-游戏专用 lowerer 可调用 `effect_compat.flatten_unsupported_effects(rpy, resources, "Game")`；
-通用装配入口也会对每份 `scenario/*.rpy` 再检查一次。`_load`、`_cls`、`_oload`、
+通用装配入口对每份 `scenario/*.rpy` 执行一次效果兼容检查和未知 `^` 文本指令降级。
+`_load`、`_cls`、`_oload`、
 `_gload`、`_update`、`_effect`、移动、闪光、`_zupdate`、对象动作和混合模式中的效果及色彩模式，
 只有运行时支持、且所需 `grps/efNN.png` 或 `grps/esNNN.png` 存在时才原样保留。
 其余（包括无法静态判定的表达式）改为可执行的基础参数，并在 RPY 指令前注释

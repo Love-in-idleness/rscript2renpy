@@ -7,4 +7,5 @@ label start:
     return
 
 label main_menu:
-    jump start
+    # Returning lets Ren'Py enter start in the game context, with rollback enabled.
+    return

@@ -744,7 +744,14 @@ RSCRIPT_OBJECTS = r'''
 '''
 
 
-FOREST_COMPAT = r'''style default:
+FOREST_COMPAT = r'''init -100 python:
+    rscript_voice_format = "voice/%04d.ogg"
+    rscript_bgm_format = "bgm/Track%02d.ogg"
+    rscript_se_format = "wav/%04d.ogg"
+    rscript_ctc_x = 747
+    rscript_ctc_y = 556
+
+style default:
     font "fonts/NotoSansCJKjp-Regular.otf"
 
 style forest_volume_bar is bar:
@@ -1853,9 +1860,6 @@ def main(argv: list[str]) -> int:
         shutil.copyfile(font_source / name, fonts / name)
     audio_path = game / "04_rscript_audio.rpy"
     audio_text = audio_path.read_text(encoding="utf-8")
-    audio_text = audio_text.replace('"bgm/Track%02d.opus"', '"bgm/Track%02d.ogg"')
-    audio_text = audio_text.replace('"wav/%04d.opus"', '"wav/%04d.ogg"')
-    audio_text = audio_text.replace('"voice/%05d.opus"', '"voice/%04d.ogg"')
     audio_text = audio_text.replace(
         "        voice(voice_file)",
         "        if renpy.loadable(voice_file):\n"
@@ -1951,11 +1955,6 @@ def main(argv: list[str]) -> int:
         '    renpy.music.register_channel(name = "rscript_voice", mixer = "voice", tight = True, loop = False)\n'
         '    renpy.music.register_channel(name = "se0"')
     channels_path.write_text(channels_text, encoding="utf-8")
-    character_path = game / "character.rpy"
-    character_text = character_path.read_text(encoding="utf-8")
-    character_text = character_text.replace("        xpos 1191", "        xpos 747")
-    character_text = character_text.replace("        ypos 639", "        ypos 556")
-    character_path.write_text(character_text, encoding="utf-8")
     language_labels = [(None, language_marker or "Original")]
     language_labels.extend((name, name) for name, _ in language_patches)
     wiki_keywords = {}

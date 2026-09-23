@@ -36,6 +36,12 @@ init:
 
     define FRAME = 1 / 60.
 
+    define rscript_voice_format = "voice/%05d.opus"
+    define rscript_bgm_format = "bgm/Track%02d.opus"
+    define rscript_se_format = "wav/%04d.opus"
+    define rscript_ctc_x = 1191
+    define rscript_ctc_y = 639
+
     default in_queue = False
     default draw_queue = []
     default draw_queue_delayed = []
