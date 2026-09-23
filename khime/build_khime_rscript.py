@@ -55,11 +55,6 @@ def build_khime(resources: Path, project: Path, force: bool = False) -> int:
             "        xpos 1191": "        xpos 747",
             "        ypos 639": "        ypos 556",
         },
-        "script.rpy": {
-            "label start:\n    call _0000":
-                "label start:\n    scene onlayer master\n"
-                "    scene black onlayer black\n    call _0000",
-        },
     }
     for name, replacements in substitutions.items():
         path = game / name

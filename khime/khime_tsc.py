@@ -4,8 +4,10 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "forest"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
 from forest_tsc import E, read_tsc  # noqa: E402
 from build_forest_rscript import emit_vm, packed  # noqa: E402
+from effect_compat import flatten_unsupported_effects  # noqa: E402
 
 
 PASSTHROUGH = {
@@ -26,7 +28,6 @@ KHIME_COMMANDS = {
     70: "setclk", 71: "setclksys", 72: "resetclk", 73: "click",
     75: "setlink", 38: "locmode",
 }
-SUPPORTED_IMAGE_EFFECTS = set(range(9)) | {16} | set(range(20, 29))
 
 
 def label(scene: str, offset: int) -> str:
@@ -92,20 +93,8 @@ def compile_scene(source: Path) -> str:
             lines.append("    _data %s %s" %
                          (operands[0], " ".join(map(str, data))))
         elif op == 32:
-            if values[3] != 0:
-                lines.append("    # Khime conversion: _oload effect %s flattened to 0 "
-                             "(not implemented)." % operands[3])
-                operands[3] = "0"
             lines.append("    _oload %s %r" %
                          (" ".join(operands[:5]), tsc.string(values[5])))
-        elif op in (30, 36):
-            effect_index = 4 if op == 30 else 1
-            if values[effect_index] not in SUPPORTED_IMAGE_EFFECTS:
-                lines.append("    # Khime conversion: _%s effect %s flattened to 0 "
-                             "(not implemented)." %
-                             (PASSTHROUGH[op], operands[effect_index]))
-                operands[effect_index] = "0"
-            lines.append("    _%s %s" % (PASSTHROUGH[op], " ".join(operands)))
         elif op == 62:
             pending_se = operands[-1]
         elif op == 63:
@@ -143,4 +132,5 @@ def compile_scene(source: Path) -> str:
     if tsc.code_size in targets:
         lines.extend(("", "label %s:" % label(scene, tsc.code_size)))
     lines.append("    return")
-    return "\n".join(lines) + "\n"
+    return flatten_unsupported_effects("\n".join(lines) + "\n",
+                                       source.parent.parent, "Khime")

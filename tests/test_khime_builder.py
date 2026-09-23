@@ -33,6 +33,10 @@ def main() -> None:
     credits = compile_scene(next(path for path in sources if path.stem == "1110"))
     assert "# Khime conversion: _oload effect 4 flattened to 0" in credits
     assert "_oload 20 400 188 0 0 '^fm企画・シナリオ'" in credits
+    masks = compile_scene(next(path for path in sources if path.stem == "1107"))
+    assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in masks
+    masks = compile_scene(next(path for path in sources if path.stem == "3677"))
+    assert "_update effect 16 flattened to 0 (missing grps/ef16.png)" in masks
     with TemporaryDirectory() as temporary:
         resources = Path(temporary) / "resources"
         project = Path(temporary) / "project"

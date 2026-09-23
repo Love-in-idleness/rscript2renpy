@@ -4,6 +4,9 @@ python early:
 init offset = -150
 init:
 
+    define config.layers = ["debug", "black", "cg", "master", "flash",
+                            "transient", "screens", "overlay"]
+
     define OTHER_TAG = "other"
 
     define IMAGE_LAYER = "master"

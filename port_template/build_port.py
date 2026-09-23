@@ -12,6 +12,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from install_runtime import install  # noqa: E402
+from effect_compat import flatten_unsupported_effects  # noqa: E402
 
 
 RESOURCE_TARGETS = {
@@ -61,6 +62,21 @@ def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> in
     return copied
 
 
+def copy_scenarios(source: Path, target: Path, resources: Path,
+                   force: bool) -> int:
+    copied = 0
+    for path in sorted(source.rglob("*.rpy")):
+        destination = target / path.relative_to(source)
+        result = flatten_unsupported_effects(path.read_text(encoding="utf-8"),
+                                             resources)
+        if destination.exists() and destination.read_text(encoding="utf-8") != result and not force:
+            raise FileExistsError("refusing to overwrite different file: %s" % destination)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(result, encoding="utf-8")
+        copied += 1
+    return copied
+
+
 def build(resources: Path, project: Path, force: bool = False,
           scenarios: Path | None = None) -> tuple[int, int]:
     resources = resources.resolve()
@@ -78,7 +94,7 @@ def build(resources: Path, project: Path, force: bool = False,
     for name, destination in RESOURCE_TARGETS.items():
         copied += copy_tree(resources / name, game / destination,
                             ALLOWED_SUFFIXES[name], force)
-    copied += copy_tree(scenarios, game / "scenario", {".rpy"}, force)
+    copied += copy_scenarios(scenarios, game / "scenario", resources, force)
     for source in sorted((Path(__file__).parent / "game").glob("*.rpy")):
         copy_file(source, game / source.name, force)
         copied += 1

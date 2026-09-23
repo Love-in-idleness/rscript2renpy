@@ -25,7 +25,7 @@
 4. 运行构建入口；脚本会创建尚不存在的工程目录：
 
    ```bash
-   python3 khime/build_port.py /path/to/prepared-resources /path/to/renpy-project
+   python3 port_template/build_port.py /path/to/prepared-resources /path/to/renpy-project
    ```
 
 5. 在游戏目录添加专用的界面、文本规则、标题流程和 runtime 覆盖文件；最后运行
@@ -34,10 +34,20 @@
 模板拒绝覆盖内容不同的现有文件。确认要同步模板或运行时更新时才使用
 `--force`。
 
+## 效果兼容检查
+
+游戏专用 lowerer 可调用 `effect_compat.flatten_unsupported_effects(rpy, resources, "Game")`；
+通用装配入口也会对每份 `scenario/*.rpy` 再检查一次。`_load`、`_cls`、`_oload`、
+`_gload`、`_update`、`_effect`、移动、闪光、`_zupdate`、对象动作和混合模式中的效果及色彩模式，
+只有运行时支持、且所需 `grps/efNN.png` 或 `grps/esNNN.png` 存在时才原样保留。
+其余（包括无法静态判定的表达式）改为可执行的基础参数，并在 RPY 指令前注释
+原值及原因；TSC 输入不改。将来实现新效果时，同步更新 `effect_compat.py`
+的支持范围并重建场景。
+
 ## 每款游戏必须确认
 
 - GSC/TSC schema、编码、入口场景和 `gosub`/`insub` 调用约定
-- 所有 opcode、VM 运算、跳转、选择支和持久化变量均未丢失或扁平化
+- 所有 opcode、VM 运算、跳转、选择支和持久化变量均未丢失；效果的有意扁平化有就地注释
 - `folder` 与图像目录、图层、坐标、缩放、旋转、消失和过渡参数
 - BGM、SE、voice 的文件编号、声道、循环、停止及等待语义
 - `TXT`、`TXA`、`font`、控制符、字数、标点、姓名牌和文本框布局
@@ -50,6 +60,7 @@
 ```text
 port_template/
 ├── build_port.py          # 通用资源与运行时装配
+├── effect_compat.py       # 运行时能力与资源遮罩检查
 ├── game/
 │   └── script.rpy         # 统一入口；可由游戏适配层替换
 └── README.md              # 本清单

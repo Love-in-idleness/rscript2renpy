@@ -2001,9 +2001,7 @@ def main(argv: list[str]) -> int:
         'define config.version = "1.0"\n'
         'define config.has_sound = True\n'
         'define config.has_music = True\n'
-        'define config.has_voice = True\n'
-        'define config.layers = ["debug", "black", "cg", "master", "flash", '
-        '"transient", "screens", "overlay"]\n', encoding="utf-8")
+        'define config.has_voice = True\n', encoding="utf-8")
     (game / "script.rpy").write_text(
         'label splashscreen:\n'
         '    scene onlayer master\n'
