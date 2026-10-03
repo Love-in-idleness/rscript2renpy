@@ -64,14 +64,44 @@ python early:
         # Explicit breaks reset hanging, and nested links retain token order.
         assert lines(shaped("甲乙。\n\n{a=https://example.test}{b}甲乙。{/b}{/a}")[1]) == ["甲乙。", "甲乙。"]
         _, linked = shaped("{a=https://example.test}{color=#0f0}甲乙丙{/color}{/a}")
-        assert "".join(lines(linked)) == "甲乙丙", lines(linked)
+        assert lines(linked) == ["甲乙", "丙"], lines(linked)
         assert linked.hyperlink_targets[1] == "https://example.test"
+        sample = "之后，我俩跑到{color=#D7FFB3}Royal Host餐厅{/color}，就桃色电影\n高谈阔论，一直聊到第二天黎明时分，才在乌鸦的喧闹声中作别。"
+        sample_lines = []
+        for wiki in (False, True):
+            value = sample.replace("{color=#D7FFB3}", "{a=https://example.test}{color=#D7FFB3}").replace("{/color}", "{/color}{/a}") if wiki else sample
+            _, diagnostic = shaped(value, chars=19)
+            sample_lines.append(lines(diagnostic))
+        assert sample_lines[0] == sample_lines[1]
+        assert sample_lines[0] == ["之后，我俩跑到Royal Host餐厅，就桃色电影",
+                                  "高谈阔论，一直聊到第二天黎明时分，才在", "乌鸦的喧闹声中作别。"]
+        assert len(lines(shaped(sample, chars=20)[1])) == 3
+        original_settings = store.rscript_text_settings
+        try:
+            # Forest's default spacing and fixed dialog height: this scene
+            # now fits without changing the panel or discarding its ^n.
+            store.rscript_text_settings = lambda kind, size: (gui.text_font, size, 19, 7)
+            _, forest_sample = shaped(sample, chars=19)
+            assert lines(forest_sample) == sample_lines[0]
+            assert forest_sample.size[1] + 8 <= 138, forest_sample.size
+        finally:
+            store.rscript_text_settings = original_settings
+        for tagged in ("Wi甲乙", "{size=44}Wi甲乙{/size}",
+                       "{font=DejaVuSans.ttf}Wi甲乙{/font}",
+                       "{b}{i}{k=3}Wi甲乙{/k}{/i}{/b}"):
+            plain = shaped(tagged)[1]
+            linked = shaped("{a=https://example.test}" + tagged + "{/a}")[1]
+            assert lines(linked) == lines(plain)
+            assert [g.advance for p in linked.paragraph_glyphs for g in p] == [g.advance for p in plain.paragraph_glyphs for g in p]
+            linked = shaped(tagged.replace("Wi甲乙", "{a=https://example.test}Wi甲乙{/a}"))[1]
+            assert lines(linked) == lines(plain)
+            assert [g.advance for p in linked.paragraph_glyphs for g in p] == [g.advance for p in plain.paragraph_glyphs for g in p]
         image = Null(width=37, height=22)
         _, objects = shaped(builtins.list(("甲", image, "乙")))
         image_glyph = next(g for g in objects.paragraph_glyphs[0]
                            if g.character == 0xfffc)
         assert image_glyph.advance == 37
-        assert lines(objects) == ["甲", "\ufffc", "乙"]
+        assert lines(objects) == ["甲\ufffc", "乙"]
         obj, _ = shaped("甲乙{fast}丙", kind="oload")
         persistent.rscript_oload_line_chars = 1
         obj.refresh_settings()

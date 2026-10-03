@@ -12,6 +12,8 @@ python early:
     _rscript_native_nobreak = getattr(
         renpy.text.text.textsupport.linebreak_nobreak, "rscript_native",
         renpy.text.text.textsupport.linebreak_nobreak)
+    _rscript_native_segment = getattr(renpy.text.text.TextSegment,
+                                     "rscript_native", renpy.text.text.TextSegment)
     _rscript_layout_stack = []
 
     def rscript_text_settings(kind, base_size):
@@ -72,6 +74,25 @@ python early:
             finally:
                 _rscript_layout_stack.pop()
 
+    class RScriptTextSegment(_rscript_native_segment):
+        rscript_native = _rscript_native_segment
+        def take_style(self, style, layout, context=None):
+            # Native hyperlink_text inherits the default font, not the
+            # surrounding text. Wiki links must only add link presentation;
+            # keep the active font/style/tag metrics and typewriter timing.
+            linked = (context == "A hyperlink style" and
+                      _rscript_layout_stack and
+                      isinstance(_rscript_layout_stack[-1][1], RScriptText))
+            if linked:
+                names = ("font", "size", "bold", "italic", "kerning",
+                         "hinting", "antialias", "shaper", "axis",
+                         "instance", "features", "cps")
+                metrics = {name: getattr(self, name) for name in names}
+            super(RScriptTextSegment, self).take_style(style, layout, context)
+            if linked:
+                for name, value in metrics.items():
+                    setattr(self, name, value)
+
     def rscript_linebreak(glyphs):
         _rscript_native_nobreak(glyphs)
         if not _rscript_layout_stack:
@@ -88,6 +109,7 @@ python early:
             glyphs[index].split = 1
 
     renpy.text.text.Layout = RScriptLayout
+    renpy.text.text.TextSegment = RScriptTextSegment
     rscript_linebreak.rscript_native = _rscript_native_nobreak
     renpy.text.text.textsupport.linebreak_nobreak = rscript_linebreak
     renpy.register_sl_displayable("rscript_text", RScriptText, "text",

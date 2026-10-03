@@ -26,7 +26,10 @@ def glyph_breaks(glyphs, limit):
             # An oversized first glyph must still be consumed.
             width += advance
             continue
-        if no_start[index] and not hanging:
+        if not hanging and (width < limit or no_start[index]):
+            # Forest starts a full glyph while its pen position is still
+            # inside the line. It may extend beyond the edge once, just like
+            # a forbidden line-start glyph at the exact edge.
             width += advance
             hanging = True
             continue
@@ -39,7 +42,7 @@ def glyph_breaks(glyphs, limit):
             if width + advance <= limit:
                 width += advance
                 continue
-            if no_start[index]:
+            if width < limit or no_start[index]:
                 width += advance
                 hanging = True
                 continue
