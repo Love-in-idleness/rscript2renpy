@@ -105,8 +105,9 @@ TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`
 游戏进度的备份、读取与清除功能；清除进度时保留备份。把 `.ttf`、`.otf`
 或 `.ttc` 文件放入生成工程的 `game/fonts/` 后，可在同一菜单中循环切换。
 生成器附带 Noto Sans CJK JP Regular、Noto Sans CJK Light 和
-Noto Serif CJK Regular，可在菜单中选择；正文默认使用与 Forest 汉化版
-一致的 SimHei（黑体）。旧默认字体自动迁移一次，其他已选字体保留。
+Noto Serif CJK Regular，可在菜单中选择；正文默认使用 Noto Sans CJK JP Regular，
+其英文实测比 SimHei（黑体）更窄，让本次对照句中的「电影」保持同一行。
+旧 SimHei 默认值自动迁移一次，其他已选字体保留；黑体仍可在菜单中选择。
 SimHei 不是开源字体，来源与权利说明见
 [SimHei-NOTICE.md](forest/fonts/SimHei-NOTICE.md)，静态分析依据见
 [FOREST_FONT_ANALYSIS.md](docs/FOREST_FONT_ANALYSIS.md)。
@@ -235,9 +236,10 @@ The same title settings screen also controls text size, characters per line,
 and persistent-progress backup, restore, and clearing; clearing progress keeps
 the backup. Additional `.ttf`, `.otf`, and `.ttc` files placed in the generated
 project's `game/fonts/` directory can be cycled from the same screen. The default
-body font is SimHei, matching the Chinese Forest executable's requested font.
-The previous default is migrated once; other selected fonts are retained.
-The bundled Noto fonts remain selectable. SimHei is proprietary, not MIT/OFL;
+body font is Noto Sans CJK JP Regular: measured Latin advances are narrower than
+SimHei, keeping the Chinese mixed-language reference sentence on three lines.
+The previous SimHei default is migrated once; other selected fonts are retained.
+SimHei remains selectable but is proprietary, not MIT/OFL;
 see [SimHei-NOTICE.md](forest/fonts/SimHei-NOTICE.md) and the
 [static font analysis](docs/FOREST_FONT_ANALYSIS.md).
 

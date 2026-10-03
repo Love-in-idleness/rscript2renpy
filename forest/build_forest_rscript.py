@@ -772,9 +772,9 @@ default persistent.forest_say_line_chars = 19
 default persistent.forest_oload_line_chars = 20
 default persistent.forest_line_spacing = 7
 default persistent.forest_text_cps = 20
-define forest_default_font = "fonts/simhei.ttf"
+define forest_default_font = "fonts/NotoSansCJKjp-Regular.otf"
 default persistent.forest_text_font = forest_default_font
-default persistent.forest_previous_default_font = "fonts/NotoSansCJKjp-Regular.otf"
+default persistent.forest_previous_default_font = "fonts/simhei.ttf"
 default persistent.forest_wiki_mode = False
 default persistent.forest_progress_backup = None
 define forest_languages = [(None, "Original")]
@@ -1824,7 +1824,7 @@ def main(argv: list[str]) -> int:
         '"DejaVuSans.ttf"', '"fonts/NotoSansCJKjp-Regular.otf"')
     gui_text = re.sub(r"gui\.scale\((-?\d+(?:\.\d+)?)\)", r"\1", gui_text)
     gui_text = re.sub(r"(?m)^define gui\.text_font = .*?$",
-                      'define gui.text_font = "fonts/simhei.ttf"', gui_text)
+                      'define gui.text_font = "fonts/NotoSansCJKjp-Regular.otf"', gui_text)
     gui_path.write_text(gui_text, encoding="utf-8")
     fonts = game / "fonts"
     fonts.mkdir(parents=True, exist_ok=True)

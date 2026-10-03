@@ -347,7 +347,7 @@ def main() -> None:
     assert 'text "Font [forest_font_name()]"' not in FOREST_COMPAT
     assert 'text "[forest_font_name()]"' in FOREST_COMPAT
     assert "default persistent.forest_progress_backup = None" in FOREST_COMPAT
-    assert 'define forest_default_font = "fonts/simhei.ttf"' in FOREST_COMPAT
+    assert 'define forest_default_font = "fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT
     assert 'default persistent.forest_text_font = forest_default_font' in FOREST_COMPAT
     assert "def forest_fonts():" in FOREST_COMPAT
     assert "def forest_cycle_font(step):" in FOREST_COMPAT

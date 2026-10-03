@@ -137,13 +137,29 @@ python early:
             _preferences.language = language
             assert lines(shaped("甲乙。Ж")[1]) == ["甲乙。", "Ж"]
         _preferences.language = None
-        # Validate the new default using native advances, including hinting.
+        # Original Windows font: auto hinting widens two sample letters.
         gui.text_font = "fonts/simhei.ttf"
         _, simhei = shaped("WiRoyal Host甲乙", chars=40)
         gs = simhei.paragraph_glyphs[0]
         assert [g.advance for g in gs[:-2]] == [11, 11, 11, 11, 11, 11,
                                               12, 11, 11, 11, 11, 12]
         assert all(g.advance == 22 for g in gs[-2:])
+        widths = {"NotoSansCJKjp-Regular.otf": 106.703125,
+                  "NotoSansCJK-Light.ttc": 105.796875,
+                  "NotoSerifCJK-Regular.ttc": 114.6875, "simhei.ttf": 112.0}
+        for name, expected_width in widths.items():
+            gui.text_font = "fonts/" + name
+            _, measured = shaped("Royal Host甲", chars=40)
+            advances = [g.advance for g in measured.paragraph_glyphs[0]]
+            assert sum(advances[:-1]) == expected_width, (name, advances)
+            assert advances[-1] == 22
+            _, measured = shaped(sample, chars=19)
+            if name.startswith("NotoSans"):
+                assert lines(measured) == sample_lines[0], (name, lines(measured))
+            else:
+                assert len(lines(measured)) == 4, (name, lines(measured))
+        print("Default Noto Sans 22px / 19 cells:", sample_lines[0])
+        gui.text_font = "fonts/simhei.ttf"
         assert "".join(lines(shaped("甲Я。A")[1])) == "甲Я。A"
         original_settings = store.rscript_text_settings
         try:
