@@ -40,7 +40,7 @@ def main() -> None:
             path.write_bytes(folder.encode("ascii"))
         (resources / "grps" / "ignored.wcg").write_bytes(b"raw")
         runtime_count, copied = build(resources, project)
-        assert runtime_count == 19
+        assert runtime_count == 21
         assert copied == 9
         assert (project / "game" / "scenario" / "0000.rpy").is_file()
         scene = (project / "game" / "scenario" / "0000.rpy").read_text(

@@ -57,9 +57,9 @@ def main() -> None:
             project / "game" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
         gfx_text = (project / "game" / "03_rscript_gfx.rpy").read_text(
             encoding="utf-8")
-        assert ("forest_hang_punctuation(\n"
-                "            text_value, font_size, "
-                "persistent.forest_oload_line_chars)" in gfx_text)
+        assert 'RScriptText(text_value, kind = "oload"' in gfx_text
+        assert (project / "game" / "rscript_wrap.py").is_file()
+        assert (project / "game" / "00_rscript_wrap.rpy").is_file()
         assert ("xmaximum = font_size * persistent.forest_oload_line_chars"
                 not in gfx_text)
         for name in ("android.json", "android-icon_background.png",
@@ -109,7 +109,7 @@ def main() -> None:
         util_runtime = (project / "game" / "01_util.rpy").read_text(
             encoding="utf-8")
         assert "renpy.pause(delay / 10.)" in command_runtime
-        assert "renpy.translation.translate_string(eval(text).rstrip())" in util_runtime
+        assert "renpy.translation.translate_string(eval(text))" in util_runtime
         assert "text = forest_prepare_wiki_text(text)" in util_runtime
         assert ('"#D7FFB3" if (persistent.forest_wiki_mode and '
                 '_preferences.language in forest_wiki_keywords) else "#FFFFFF"'
@@ -120,15 +120,11 @@ def main() -> None:
         append_runtime = text_runtime[append_start:]
         assert "parse_rscript_text(what, True)" in say_runtime
         assert "parse_rscript_text(what, True)" in append_runtime
-        hanging_call = (
-            "renpy.say(who, forest_hang_punctuation(what, "
-            "persistent.forest_text_size, persistent.forest_say_line_chars), "
-            "interact = True")
-        assert hanging_call in say_runtime
-        assert hanging_call in append_runtime
-        assert '        if center:\n            text what:\n' \
+        assert "renpy.say(who, what, interact = True" in say_runtime
+        assert "renpy.say(who, what, interact = True" in append_runtime
+        assert '        if center:\n            rscript_text what:\n' \
             '                id "what"' in compat_text
-        assert '        else:\n            text what:\n' \
+        assert '        else:\n            rscript_text what:\n' \
             '                id "what"' in compat_text
         assert say_runtime.index("store.forest_speaker_visible = True") < \
             say_runtime.index("renpy.say(") < \

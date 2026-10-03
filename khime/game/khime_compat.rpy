@@ -20,12 +20,10 @@ python early:
 
     def khime_say(value):
         raw = eval(value)
-        text, center = parse_rscript_text(repr(raw), True)
-        queue_draw(show_window)
-        process_draw_queue()
-        renpy.say(narrator, text, interact=True, show_center=center)
-        if persistent.rscript_stop_voice_on_advance:
-            renpy.music.stop(channel="voice")
+        execute_say((None, None, repr(raw)))
+
+    def khime_append(value):
+        execute_append((None, repr(eval(value))))
 
     def khime_face(value):
         number = int(eval(value.split()[0]))
@@ -116,7 +114,7 @@ python early:
     renpy.register_statement("_khime_say", parse=khime_parse,
                              execute=khime_say)
     renpy.register_statement("_khime_append", parse=khime_parse,
-                             execute=khime_say)
+                             execute=khime_append)
     renpy.register_statement("_khime_face", parse=khime_parse,
                              execute=khime_face)
     renpy.register_statement("_khime_faceloc", parse=khime_parse,
@@ -165,14 +163,14 @@ screen say(who, what, center=False):
         xsize textbox.get("size", (800, 163))[0]
         ysize textbox.get("size", (800, 163))[1]
 
-        text what:
+        rscript_text what:
             id "what"
             font "fonts/NotoSansCJKjp-Regular.otf"
             size 30
             color "#ffffff"
-            xpos textpos[0]
+            xpos (0.5 if center else textpos[0])
+            xanchor (0.5 if center else 0.0)
             ypos textpos[1]
-            xsize textbox.get("size", (800, 163))[0] - textpos[0] - 24
             text_align (0.5 if center else 0.0)
 
         use rscript_compane

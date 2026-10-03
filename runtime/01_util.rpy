@@ -109,10 +109,7 @@ python early:
         if not text:
             return text
 
-        text = eval(text).rstrip()
-
-
-        text = renpy.re.sub(r"[ \t]*(\^n)([\<\>]?)[ \t]*", r"\1\2", text, flags = renpy.re.UNICODE)
+        text = eval(text)
 
         text = renpy.re.sub(r"\^b(.*?)(\^b|$)", r"{b}\1{/b}", text)
         text = renpy.re.sub(r"\^i(.*?)(\^i|$)", r"{i}\1{/i}", text)
@@ -144,18 +141,12 @@ python early:
 
         text = text.replace(">", "{w}")
 
-        text = text.replace("%",  "%%")
         text = text.replace("[",  "[[")
         text = text.replace("\\{", "{{")
         text = text.replace("\\n", "\n")
         text = text.replace("^n", "\n")
         text = text.replace("/'", "'")
-        text = text.replace("─", "—")
-        text = text.replace("–", "—")
-        text = text.replace("―", "—")
-        text = text.replace("…", "...")
-
-        text, center = renpy.re.subn(r"\^m[ \t]*", "", text)
+        text, center = renpy.re.subn(r"\^m", "", text)
         center = bool(center)
 
         return text, center

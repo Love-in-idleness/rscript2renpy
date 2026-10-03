@@ -691,13 +691,11 @@ RSCRIPT_OBJECTS = r'''
         ypos = args.yLoc * store.layer_y_grid
         anchor = store.layer_anchor.get(layer, (0.0, 0.0))
         tag = "layer%d" % layer
-        text_value, _ = parse_rscript_text(repr(args.Text), True)
+        text_value, center = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
-        font_size = max(1, font_size * persistent.forest_text_size // 22)
-        text_value = forest_hang_punctuation(
-            text_value, font_size, persistent.forest_oload_line_chars)
-        text = Text(text_value, font = forest_current_font(),
-                    size = font_size, color = "#FFFFFF")
+        text = RScriptText(text_value, kind = "oload", base_size = font_size,
+                          font = forest_current_font(), size = font_size,
+                          color = "#FFFFFF", text_align = 0.5 if center else 0.0)
         trans = Transform(
             xpos = xpos,
             ypos = ypos,
@@ -782,49 +780,17 @@ define forest_wiki_keywords = {}
 define forest_wiki_images = {}
 
 init python:
-    import unicodedata
-
-    _forest_hanging_punctuation = frozenset(
-        "、。，．！？!?：；;,.…‥—―」』）】》〉〕］｝”’")
-    _forest_opening_punctuation = frozenset(
-        "（［｛〔〈《「『【〖〘〚“‘〝([{«")
-
-    def forest_hang_punctuation(text, font_size, line_chars):
-        def hang_line(line):
-            width = 0.0
-            limit = font_size * line_chars
-            result = []
-            index = 0
-            while index < len(line):
-                if line[index] == "{":
-                    end = line.find("}", index + 1)
-                    if end >= 0:
-                        result.append(line[index:end + 1])
-                        index = end + 1
-                        continue
-
-                char = line[index]
-                char_width = (font_size if
-                              unicodedata.east_asian_width(char) in "WFA"
-                              else font_size * 0.5)
-                if width and (
-                        (char in _forest_opening_punctuation and
-                         width + char_width >= limit) or
-                        (char not in _forest_hanging_punctuation and
-                         width + char_width > limit)):
-                    result.append("\n")
-                    width = 0.0
-                result.append(char)
-                width += char_width
-                index += 1
-            return "".join(result)
-
-        return "\n".join(hang_line(line) for line in text.split("\n"))
+    def rscript_text_settings(kind, base_size):
+        size = (persistent.forest_text_size if kind == "say" else
+                max(1, base_size * persistent.forest_text_size // 22))
+        return (forest_current_font(), size,
+                getattr(persistent, "forest_%s_line_chars" % kind),
+                persistent.forest_line_spacing)
 
     def forest_g_tag(tag, argument):
         try:
             number, text_size = argument.split(":", 1)
-            zoom = int(text_size) / 22.0
+            zoom = persistent.forest_text_size / 22.0
         except (AttributeError, TypeError, ValueError):
             return []
         image = Transform("images/grps/gf%s.png" % number, zoom=zoom)
@@ -833,7 +799,7 @@ init python:
     def forest_a_tag(tag, argument):
         try:
             number, text_size = argument.split(":", 1)
-            zoom = int(text_size) / 22.0
+            zoom = persistent.forest_text_size / 22.0
         except (AttributeError, TypeError, ValueError):
             return []
         wiki_enabled = (persistent.forest_wiki_mode and
@@ -1454,7 +1420,7 @@ screen say(who, what, center=False):
                 xpos 0
                 ypos 7
         if center:
-            text what:
+            rscript_text what:
                 id "what"
                 font forest_current_font()
                 size persistent.forest_text_size
@@ -1465,7 +1431,7 @@ screen say(who, what, center=False):
                 text_align 0.5
                 line_spacing persistent.forest_line_spacing
         else:
-            text what:
+            rscript_text what:
                 id "what"
                 font forest_current_font()
                 size persistent.forest_text_size
@@ -1473,7 +1439,6 @@ screen say(who, what, center=False):
                 slow_cps persistent.forest_text_cps
                 ypos 8
                 xpos text_indent + 1
-                xsize config.screen_width - text_indent - 1
                 line_spacing persistent.forest_line_spacing
 
         use forest_compane
@@ -1803,7 +1768,7 @@ def main(argv: list[str]) -> int:
     scenario.mkdir(parents=True, exist_ok=True)
     for cache in scenario.glob("*.rpyc"):
         cache.unlink()
-    for source in runtime.glob("*.rpy"):
+    for source in sorted((*runtime.glob("*.rpy"), *runtime.glob("*.py"))):
         if source.name not in {"script.rpy", "build.rpy", "options.rpy"} and not source.name.startswith("unren-"):
             shutil.copyfile(source, game / source.name)
     gui_runtime = game / "gui"
@@ -1829,16 +1794,8 @@ def main(argv: list[str]) -> int:
     gfx_path = game / "03_rscript_gfx.rpy"
     gfx_text = gfx_path.read_text(encoding="utf-8")
     gfx_text = gfx_text.replace(
-        "        font_size = store.object_size.get(layer, gui.text_size)\n"
-        "        text = Text(text_value, font = gui.text_font,\n"
-        "                    size = font_size, color = \"#FFFFFF\",\n"
-        "                    xmaximum = font_size * 19)",
-        "        font_size = store.object_size.get(layer, gui.text_size)\n"
-        "        font_size = max(1, font_size * persistent.forest_text_size // 22)\n"
-        "        text_value = forest_hang_punctuation(\n"
-        "            text_value, font_size, persistent.forest_oload_line_chars)\n"
-        "        text = Text(text_value, font = forest_current_font(),\n"
-        "                    size = font_size, color = \"#FFFFFF\")")
+        "                          font = gui.text_font, size = font_size,",
+        "                          font = forest_current_font(), size = font_size,")
     if "def parse_oload(lex):" not in gfx_text:
         gfx_text = gfx_text.rstrip() + RSCRIPT_OBJECTS
     gfx_path.write_text(gfx_text, encoding="utf-8")
@@ -1893,43 +1850,28 @@ def main(argv: list[str]) -> int:
         "        who = None",
         1)
     text_runtime = text_runtime.replace(
-        "        what, center = parse_rscript_text(what)",
+        "        what, center = parse_rscript_text(what, True)",
         "        store.forest_speaker = None\n"
         "        store.forest_speaker_visible = True\n"
         "        what, center = parse_rscript_text(what, True)",
         1)
     text_runtime = text_runtime.replace(
-        "        if store.jump_back_point is None:",
-        "        store.forest_speaker_visible = False\n\n"
-        "        if store.jump_back_point is None:",
-        1)
-    text_runtime = text_runtime.replace(
         "        who  = store.last_spk\n"
-        "        what, center = parse_rscript_text(what)",
+        "        what, center = parse_rscript_text(what, True)",
         "        who  = store.last_spk\n"
         "        store.forest_speaker_visible = True\n"
         "        what, center = parse_rscript_text(what, True)",
         1)
     text_runtime = text_runtime.replace(
-        "        who.do_extend()\n"
-        "        renpy.say(who, what, interact = True, show_center = center)\n\n"
-        "    renpy.register_statement(\"_append\"",
-        "        who.do_extend()\n"
-        "        renpy.say(who, what, interact = True, show_center = center)\n"
-        "        store.forest_speaker_visible = False\n\n"
-        "    renpy.register_statement(\"_append\"",
-        1)
-    text_runtime = text_runtime.replace(
-        "renpy.say(who, what, interact = True, show_center = center)",
-        "renpy.say(who, forest_hang_punctuation(what, "
-        "persistent.forest_text_size, persistent.forest_say_line_chars), "
-        "interact = True, show_center = center)")
+        "        if persistent.rscript_stop_voice_on_advance:",
+        "        store.forest_speaker_visible = False\n"
+        "        if persistent.rscript_stop_voice_on_advance:")
     text_path.write_text(text_runtime, encoding="utf-8")
     util_path = game / "01_util.rpy"
     util_text = util_path.read_text(encoding="utf-8")
     util_text = util_text.replace(
-        "        text = eval(text).rstrip()",
-        "        text = renpy.translation.translate_string(eval(text).rstrip())\n"
+        "        text = eval(text)",
+        "        text = renpy.translation.translate_string(eval(text))\n"
         "        text = forest_prepare_wiki_text(text)\n"
         "        speaker = renpy.re.match(r\"^\\^g(\\d{3})\", text)\n"
         "        if speaker:\n"

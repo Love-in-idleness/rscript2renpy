@@ -43,11 +43,11 @@ python early:
         ypos = args.yLoc * store.layer_y_grid
         anchor = store.layer_anchor.get(layer, (0.0, 0.0))
         tag = "layer%d" % layer
-        text_value, _ = parse_rscript_text(repr(args.Text), True)
+        text_value, center = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
-        text = Text(text_value, font = gui.text_font,
-                    size = font_size, color = "#FFFFFF",
-                    xmaximum = font_size * 19)
+        text = RScriptText(text_value, kind = "oload", base_size = font_size,
+                          font = gui.text_font, size = font_size,
+                          color = "#FFFFFF", text_align = 0.5 if center else 0.0)
         trans = Transform(
             xpos = xpos,
             ypos = ypos,

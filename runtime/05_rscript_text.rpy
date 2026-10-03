@@ -32,7 +32,7 @@ python early:
             else:
                 who = nvl_narrator
 
-        what, center = parse_rscript_text(what)
+        what, center = parse_rscript_text(what, True)
 
         if "{nw}" in what:
             store.blank_say = True
@@ -69,7 +69,7 @@ python early:
         lang, what = o
 
         who  = store.last_spk
-        what, center = parse_rscript_text(what)
+        what, center = parse_rscript_text(what, True)
 
         if "{nw}" in what:
             store.blank_say = True

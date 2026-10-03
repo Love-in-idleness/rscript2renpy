@@ -41,7 +41,7 @@ def main() -> None:
         builder.index('text = forest_inline_graphics(text)')
     assert 'config.self_closing_custom_text_tags["forest_g"]' in FOREST_COMPAT
     assert 'config.self_closing_custom_text_tags["forest_a"]' in FOREST_COMPAT
-    assert 'zoom = int(text_size) / 22.0' in FOREST_COMPAT
+    assert 'zoom = persistent.forest_text_size / 22.0' in FOREST_COMPAT
     assert 'renpy.TEXT_DISPLAYABLE, image' in FOREST_COMPAT
     inline_start = FOREST_COMPAT.index("    def forest_inline_graphics")
     inline_end = FOREST_COMPAT.index(
@@ -249,19 +249,15 @@ def main() -> None:
     assert "font = forest_current_font()" in RSCRIPT_OBJECTS
     assert "xmaximum = font_size * persistent.forest_oload_line_chars" not in \
         RSCRIPT_OBJECTS
-    assert "persistent.forest_text_size // 22" in RSCRIPT_OBJECTS
+    assert "persistent.forest_text_size // 22" in FOREST_COMPAT
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
-    assert ("forest_hang_punctuation(\n"
-            "            text_value, font_size, "
-            "persistent.forest_oload_line_chars)" in RSCRIPT_OBJECTS)
+    assert 'RScriptText(text_value, kind = "oload"' in RSCRIPT_OBJECTS
     assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in builder
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
-    assert "def forest_hang_punctuation(text, font_size, line_chars):" in \
-        FOREST_COMPAT
+    assert "def rscript_text_settings(kind, base_size):" in FOREST_COMPAT
     assert FOREST_COMPAT.count('                id "what"') == 2
     assert "text forest_hang_punctuation(what" not in FOREST_COMPAT
-    assert '"persistent.forest_text_size, persistent.forest_say_line_chars), "' \
-        in builder
+    assert "forest_hang_punctuation" not in builder
     commented_keywords = (
         '[\n// comment\n["A keyword.", '
         '"https://example.test/a//b", "keyword"] // trailing\n]')
@@ -279,31 +275,6 @@ def main() -> None:
         "601": "https://example.test/page#keeper",
         "603": "https://example.test/page#replay",
     }
-    helper_start = FOREST_COMPAT.index("    _forest_hanging_punctuation")
-    helper_end = FOREST_COMPAT.index("    def forest_g_tag", helper_start)
-    helper_namespace = {}
-    exec("import unicodedata\n" + textwrap.dedent(
-        FOREST_COMPAT[helper_start:helper_end]), helper_namespace)
-    hang = helper_namespace["forest_hang_punctuation"]
-    assert hang("甲" * 19 + "。", 22, 19) == "甲" * 19 + "。"
-    assert hang("甲。{/color}", 22, 19) == "甲。{/color}"
-    assert hang("Plain text", 22, 19) == "Plain text"
-    assert hang("吾会重新唤回那远去的“太一之力”……", 22, 19) == \
-        "吾会重新唤回那远去的“太一之力”……"
-    assert hang("甲" * 19 + "……", 22, 19) == "甲" * 19 + "……"
-    assert hang("甲" * 20, 22, 19) == "甲" * 19 + "\n甲"
-    for opening in "《【「『":
-        assert hang("甲" * 18 + opening + "乙", 22, 19) == \
-            "甲" * 18 + "\n" + opening + "乙"
-    legal = ("因此，本法庭是否适用根据《日本宪法》"
-             "《东京都条例》等一般法律制定的法规、法令，需要根据具体情况决定。")
-    assert hang(legal, 22, 19) == (
-        "因此，本法庭是否适用根据《日本宪法》\n"
-        "《东京都条例》等一般法律制定的法规、法\n"
-        "令，需要根据具体情况决定。")
-    wrapped = "孕育生命，抚养生命，是女子之宿命及责任，亦是天地恒常。"
-    assert hang(wrapped, 22, 19) == wrapped.replace(
-        "责任，", "责任，\n")
     assert "default persistent.forest_text_cps = 20" in FOREST_COMPAT
     assert "default persistent.forest_wiki_mode = False" in FOREST_COMPAT
     assert "def forest_prepare_wiki_text(text):" in FOREST_COMPAT
@@ -346,7 +317,7 @@ def main() -> None:
     assert "slow_cps persistent.forest_text_cps" in FOREST_COMPAT
     say_screen = FOREST_COMPAT[FOREST_COMPAT.index(
         "screen say(who, what, center=False):"):]
-    assert "        if center:\n            text what:" in say_screen
+    assert "        if center:\n            rscript_text what:" in say_screen
     assert "            if center:" not in say_screen
     assert "xpos config.screen_width / 2" not in FOREST_COMPAT
     assert "xanchor 0.5" not in FOREST_COMPAT
@@ -362,7 +333,7 @@ def main() -> None:
     assert ('background Transform("images/grps/tbox01/back.png", '
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
     assert "xpos text_indent + 1" in FOREST_COMPAT
-    assert "xsize config.screen_width - text_indent - 1" in FOREST_COMPAT
+    assert "xsize config.screen_width - text_indent - 1" not in FOREST_COMPAT
     assert "default persistent.forest_say_line_chars = 19" in FOREST_COMPAT
     assert "default persistent.forest_oload_line_chars = 20" in FOREST_COMPAT
     assert "default persistent.forest_line_spacing = 7" in FOREST_COMPAT

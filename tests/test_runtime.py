@@ -2,7 +2,6 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import re
 import sys
 
 
@@ -13,7 +12,7 @@ from install_runtime import install  # noqa: E402
 
 def main() -> None:
     files = sorted((ROOT / "runtime").glob("*.rpy"))
-    assert len(files) == 17
+    assert len(files) == 18
     combined = "\n".join(path.read_text(encoding="utf-8") for path in files)
     for marker in ("class RScriptReg", "renpy.register_statement",
                    "def parse_txcls", "renpy.register_shader"):
@@ -23,14 +22,15 @@ def main() -> None:
     assert '"y": "#FFDE00", "g": "#D7FFB3"' in combined
     assert '"w": "#FFFFFF", "k": "#000000"' in combined
     assert r"\^c([ygwk])" in combined
-    assert "xmaximum = font_size * 19" in combined
+    assert 'RScriptText(text_value, kind = "oload"' in combined
+    assert 'properties["layout"] = "nobreak"' in combined
     assert "def parse_rscript_text(text, color_controls = False):" in combined
-    assert 'renpy.re.subn(r"\\^m[ \\t]*", "", text)' in combined
+    assert 'renpy.re.subn(r"\\^m", "", text)' in combined
     assert "parse_rscript_text(repr(args.Text), True)" in combined
-    line_break_pattern = r"[ \t]*(\^n)([\<\>]?)[ \t]*"
-    assert line_break_pattern in combined
-    assert re.sub(line_break_pattern, r"\1\2", "left^n\u3000right") == \
-        "left^n\u3000right"
+    assert '.rstrip()' not in combined
+    assert 'text.replace(u"…", u"...")' not in combined
+    assert 'text.replace("%",  "%%")' not in combined
+    assert "rscript_wrap.normalize_boundaries" in combined
     assert "{k=-2}" not in combined
     assert '"grps wait00 body"\n            xpos 4\n            ypos 5' in combined
     assert 'config.mouse = {' in combined
@@ -56,12 +56,13 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 19
+        assert len(installed) == 21
+        assert (project / "game" / "rscript_wrap.py").is_file()
         assert all(path.is_file() for path in installed)
         assert (project / "game" / "gui" / "rscript_cursor.png").is_file()
         assert (project / "game" / "gui" / "rscript_dither.svg").is_file()
 
-    print("OK: 17 generic RScript runtime modules")
+    print("OK: 18 generic RScript runtime modules and shared glyph breaker")
 
 
 if __name__ == "__main__":

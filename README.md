@@ -31,8 +31,12 @@ LiarsoftTool 2.1 当前生成的命令式 TSC（`*TXT`、`*load`、标签等）�
 python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
-该命令会把 17 个运行时模块和通用光标复制到 Ren'Py 工程的 `game/` 目录。除非使用
+该命令会把通用运行时（含共享折行器）和光标复制到 Ren'Py 工程的 `game/` 目录。除非使用
 `--force`，否则不会覆盖内容不同的已有文件。
+
+Forest 与 khime 的对话、追加对话、文本对象使用统一中日俄禁则，按最终字体的
+真实字形前进量折行，不按语言切换规则。算法、SDK 衔接、边界示例和验证方式见
+[`docs/TEXT_WRAPPING.md`](docs/TEXT_WRAPPING.md)。
 
 ### 新游戏移植模板
 
@@ -145,9 +149,14 @@ data.
 python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
-The command copies the seventeen runtime modules and shared cursor into the
+The command copies the runtime, shared glyph line breaker, and cursor into the
 project's `game/` directory. Existing different files are not overwritten
 unless `--force` is specified.
+
+Forest and khime use one language-independent kinsoku rule set for dialogue,
+appended dialogue, and text objects, using the final shaped glyph advances.
+Implementation notes, boundary examples, and verification commands are in
+[`docs/TEXT_WRAPPING.md`](docs/TEXT_WRAPPING.md).
 
 These modules provide the register model, custom RScript statements, drawing,
 audio, text, effects, and shaders. A game adapter must still provide its own
