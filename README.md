@@ -105,7 +105,11 @@ TSC 补丁会按场景和指令位置对齐，可以翻译已有 `*TXT`、`*TXA`
 游戏进度的备份、读取与清除功能；清除进度时保留备份。把 `.ttf`、`.otf`
 或 `.ttc` 文件放入生成工程的 `game/fonts/` 后，可在同一菜单中循环切换。
 生成器附带 Noto Sans CJK JP Regular、Noto Sans CJK Light 和
-Noto Serif CJK Regular；默认仍使用 Noto Sans CJK JP Regular。
+Noto Serif CJK Regular，可在菜单中选择；正文默认使用与 Forest 汉化版
+一致的 SimHei（黑体）。旧默认字体自动迁移一次，其他已选字体保留。
+SimHei 不是开源字体，来源与权利说明见
+[SimHei-NOTICE.md](forest/fonts/SimHei-NOTICE.md)，静态分析依据见
+[FOREST_FONT_ANALYSIS.md](docs/FOREST_FONT_ANALYSIS.md)。
 
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
@@ -122,6 +126,7 @@ Noto Serif CJK Regular；默认仍使用 Noto Sans CJK JP Regular。
 
 项目代码采用 [MIT License](LICENSE)。项目附带的 Noto CJK 字体采用
 SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
+SimHei 不适用 MIT/OFL；本项目未取得或验证额外再分发授权。
 
 ---
 
@@ -229,8 +234,12 @@ dumps are intentionally unsupported.
 The same title settings screen also controls text size, characters per line,
 and persistent-progress backup, restore, and clearing; clearing progress keeps
 the backup. Additional `.ttf`, `.otf`, and `.ttc` files placed in the generated
-project's `game/fonts/` directory can be cycled from the same screen; Noto Sans
-CJK JP remains the default.
+project's `game/fonts/` directory can be cycled from the same screen. The default
+body font is SimHei, matching the Chinese Forest executable's requested font.
+The previous default is migrated once; other selected fonts are retained.
+The bundled Noto fonts remain selectable. SimHei is proprietary, not MIT/OFL;
+see [SimHei-NOTICE.md](forest/fonts/SimHei-NOTICE.md) and the
+[static font analysis](docs/FOREST_FONT_ANALYSIS.md).
 
 The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
 accepts GSC input. Keeping original GSC files beside the TSC files does not
@@ -263,6 +272,8 @@ build machine and are never bundled by this repository.
 The bundled Noto Sans CJK JP Regular, Noto Sans CJK Light, and Noto Serif CJK
 Regular fonts are distributed under the SIL Open Font License 1.1 in
 `forest/fonts/NotoSans.txt`.
+SimHei is separately licensed; additional redistribution rights have not been
+obtained or verified by this project.
 
 ## License
 

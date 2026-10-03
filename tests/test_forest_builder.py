@@ -140,7 +140,7 @@ def main() -> None:
         assert not (movie_target / "old.webm").exists()
         assert (movie_target / "0001.mpg").read_bytes() == b"original MPEG"
     for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",
-                 "NotoSerifCJK-Regular.ttc"):
+                 "NotoSerifCJK-Regular.ttc", "simhei.ttf"):
         font = ROOT / "forest" / "fonts" / name
         assert font.is_file() and font.stat().st_size > 1_000_000
     files = sorted((resources / "scr").glob("*.tsc"))
@@ -347,8 +347,8 @@ def main() -> None:
     assert 'text "Font [forest_font_name()]"' not in FOREST_COMPAT
     assert 'text "[forest_font_name()]"' in FOREST_COMPAT
     assert "default persistent.forest_progress_backup = None" in FOREST_COMPAT
-    assert ('default persistent.forest_text_font = '
-            '"fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT)
+    assert 'define forest_default_font = "fonts/simhei.ttf"' in FOREST_COMPAT
+    assert 'default persistent.forest_text_font = forest_default_font' in FOREST_COMPAT
     assert "def forest_fonts():" in FOREST_COMPAT
     assert "def forest_cycle_font(step):" in FOREST_COMPAT
     assert FOREST_COMPAT.count("font forest_current_font()") == 5

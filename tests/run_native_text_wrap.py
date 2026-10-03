@@ -19,6 +19,7 @@ def main():
             shutil.copy2(ROOT / "runtime" / name, game / name)
         shutil.copy2(ROOT / "tests" / "renpy_text_wrap.rpy", game)
         shutil.copy2(ROOT / "forest/fonts/NotoSansCJKjp-Regular.otf", game / "fonts")
+        shutil.copy2(ROOT / "forest/fonts/simhei.ttf", game / "fonts")
         subprocess.run([str(sdk / "renpy.sh"), temporary, "wraptest"], check=True)
 
 

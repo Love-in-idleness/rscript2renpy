@@ -2,6 +2,8 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from textwrap import dedent
+from types import SimpleNamespace
 from unittest.mock import patch
 import sys
 
@@ -71,7 +73,10 @@ def main() -> None:
         gui = project / "game" / "gui.rpy"
         gui_text = gui.read_text(encoding="utf-8")
         assert "gui.init(800, 600)" in gui_text
-        assert '"fonts/NotoSansCJKjp-Regular.otf"' in gui_text
+        assert 'define gui.text_font = "fonts/simhei.ttf"' in gui_text
+        for name in ("simhei.ttf", "SimHei-NOTICE.md"):
+            assert (project / "game" / "fonts" / name).read_bytes() == \
+                (ROOT / "forest" / "fonts" / name).read_bytes()
         assert "gui.scale(" not in gui_text
         compat_text = (project / "game" / "forest_compat.rpy").read_text(
             encoding="utf-8")
@@ -88,8 +93,27 @@ def main() -> None:
         assert 'action Function(forest_set_wiki, False)' in compat_text
         assert 'text "Wiki Mode" yalign 0.5' not in compat_text
         assert "line_spacing persistent.forest_line_spacing" in compat_text
-        assert ('default persistent.forest_text_font = '
-                '"fonts/NotoSansCJKjp-Regular.otf"' in compat_text)
+        assert 'define forest_default_font = "fonts/simhei.ttf"' in compat_text
+        assert 'default persistent.forest_text_font = forest_default_font' in compat_text
+        start = compat_text.index("    def forest_update_default_font():")
+        end = compat_text.index("    config.start_callbacks.append", start)
+        previous_font = "fonts/NotoSansCJKjp-Regular.otf"
+        settings = SimpleNamespace(forest_text_font=previous_font,
+                                   forest_previous_default_font=previous_font)
+        saved = []
+        namespace = dict(persistent=settings, forest_default_font="fonts/simhei.ttf",
+                         renpy=SimpleNamespace(save_persistent=lambda: saved.append(True)))
+        exec(dedent(compat_text[start:end]), namespace)
+        update_font = namespace["forest_update_default_font"]
+        update_font()
+        assert settings.forest_text_font == "fonts/simhei.ttf" and len(saved) == 1
+        settings.forest_text_font = previous_font
+        update_font()
+        assert settings.forest_text_font == previous_font and len(saved) == 1
+        settings.forest_text_font = "fonts/NotoSerifCJK-Regular.ttc"
+        settings.forest_previous_default_font = previous_font
+        update_font()
+        assert settings.forest_text_font == "fonts/NotoSerifCJK-Regular.ttc"
         assert 'textbutton "Previous Font"' in compat_text
         assert 'textbutton "Next Font"' in compat_text
         for old_text in ("原文", "持久化", "戻る", "スキップ", "オート",

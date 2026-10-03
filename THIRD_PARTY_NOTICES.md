@@ -28,6 +28,14 @@ solid-color adaptive-icon layer.
 
 ## Forest fonts
 
+`forest/fonts/simhei.ttf` (SimHei Regular, version 5.04) is included to match
+the font requested by the Chinese Forest executable. Its embedded copyright
+is © Beijing ZhongYi Electronics Co., 1995-2005, All rights reserved. This is
+a proprietary Microsoft-supplied font, not covered by MIT or OFL. This project
+has not obtained or verified additional redistribution rights; attribution
+is not permission to distribute it. See [SimHei-NOTICE.md](forest/fonts/SimHei-NOTICE.md)
+and Microsoft's [font redistribution FAQ](https://learn.microsoft.com/en-us/typography/fonts/font-faq).
+
 The Forest generator includes Noto Sans CJK JP Regular, Noto Sans CJK Light,
 and Noto Serif CJK Regular. These fonts are licensed under the SIL Open Font
 License 1.1; its license text is stored at `forest/fonts/NotoSans.txt`.

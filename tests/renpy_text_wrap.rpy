@@ -137,6 +137,23 @@ python early:
             _preferences.language = language
             assert lines(shaped("甲乙。Ж")[1]) == ["甲乙。", "Ж"]
         _preferences.language = None
+        # Validate the new default using native advances, including hinting.
+        gui.text_font = "fonts/simhei.ttf"
+        _, simhei = shaped("WiRoyal Host甲乙", chars=40)
+        gs = simhei.paragraph_glyphs[0]
+        assert [g.advance for g in gs[:-2]] == [11, 11, 11, 11, 11, 11,
+                                              12, 11, 11, 11, 11, 12]
+        assert all(g.advance == 22 for g in gs[-2:])
+        assert "".join(lines(shaped("甲Я。A")[1])) == "甲Я。A"
+        original_settings = store.rscript_text_settings
+        try:
+            store.rscript_text_settings = lambda kind, size: (gui.text_font, size, 19, 7)
+            _, simhei_sample = shaped(sample, chars=19)
+            assert simhei_sample.size[1] + 8 <= 138, simhei_sample.size
+            print("SimHei 22px / 19 cells:", lines(simhei_sample), simhei_sample.size)
+        finally:
+            store.rscript_text_settings = original_settings
+            gui.text_font = "fonts/NotoSansCJKjp-Regular.otf"
         # Test the actual append executor, not just a preassembled fast tag.
         class Speaker:
             def do_extend(self):

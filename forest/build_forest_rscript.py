@@ -772,7 +772,9 @@ default persistent.forest_say_line_chars = 19
 default persistent.forest_oload_line_chars = 20
 default persistent.forest_line_spacing = 7
 default persistent.forest_text_cps = 20
-default persistent.forest_text_font = "fonts/NotoSansCJKjp-Regular.otf"
+define forest_default_font = "fonts/simhei.ttf"
+default persistent.forest_text_font = forest_default_font
+default persistent.forest_previous_default_font = "fonts/NotoSansCJKjp-Regular.otf"
 default persistent.forest_wiki_mode = False
 default persistent.forest_progress_backup = None
 define forest_languages = [(None, "Original")]
@@ -780,6 +782,16 @@ define forest_wiki_keywords = {}
 define forest_wiki_images = {}
 
 init python:
+    def forest_update_default_font():
+        # Upgrade the old default once; retain other user font choices.
+        if persistent.forest_previous_default_font != forest_default_font:
+            if persistent.forest_text_font == persistent.forest_previous_default_font:
+                persistent.forest_text_font = forest_default_font
+            persistent.forest_previous_default_font = forest_default_font
+            renpy.save_persistent()
+
+    config.start_callbacks.append(forest_update_default_font)
+
     def rscript_text_settings(kind, base_size):
         size = (persistent.forest_text_size if kind == "say" else
                 max(1, base_size * persistent.forest_text_size // 22))
@@ -854,6 +866,8 @@ init python:
         fonts = forest_fonts()
         if persistent.forest_text_font in fonts:
             return persistent.forest_text_font
+        if forest_default_font in fonts:
+            return forest_default_font
         return fonts[0] if fonts else gui.text_font
 
     def forest_font_name():
@@ -1809,11 +1823,14 @@ def main(argv: list[str]) -> int:
     gui_text = gui_text.replace(
         '"DejaVuSans.ttf"', '"fonts/NotoSansCJKjp-Regular.otf"')
     gui_text = re.sub(r"gui\.scale\((-?\d+(?:\.\d+)?)\)", r"\1", gui_text)
+    gui_text = re.sub(r"(?m)^define gui\.text_font = .*?$",
+                      'define gui.text_font = "fonts/simhei.ttf"', gui_text)
     gui_path.write_text(gui_text, encoding="utf-8")
     fonts = game / "fonts"
     fonts.mkdir(parents=True, exist_ok=True)
     for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",
-                 "NotoSerifCJK-Regular.ttc", "NotoSans.txt"):
+                 "NotoSerifCJK-Regular.ttc", "NotoSans.txt", "simhei.ttf",
+                 "SimHei-NOTICE.md"):
         shutil.copyfile(font_source / name, fonts / name)
     audio_path = game / "04_rscript_audio.rpy"
     audio_text = audio_path.read_text(encoding="utf-8")
