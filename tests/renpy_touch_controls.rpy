@@ -112,8 +112,8 @@ python early:
             renpy.screenshot = capture
             renpy.invoke_in_main_thread = lambda fn: fn()
             renpy.notify = notices.append
-            Screenshot()()
-            Screenshot()()
+            rscript_take_screenshot()
+            rscript_take_screenshot()
             assert captured == [config.screenshot_pattern % n for n in (1, 2)], captured
             assert len(notices) == 2
         finally:
@@ -122,7 +122,7 @@ python early:
             renpy.notify = original_notify
 
         # Check the MediaStore transaction; this is NOT an Android JNI/device test.
-        import sys, types, io, shutil
+        import sys, types, io
         class Values(dict):
             def put(self, key, value):
                 self[key] = value
@@ -134,7 +134,7 @@ python early:
                 self.published = False
                 return None if self.failure == "insert" else "content://test/1"
             def openOutputStream(self, uri):
-                self.output = io.BytesIO()
+                self.output = Output()
                 return None if self.failure == "open" else self.output
             def update(self, uri, values, selection, args):
                 assert self.output.closed
@@ -145,54 +145,75 @@ python early:
                 assert uri == "content://test/1"
                 self.deleted = True
         resolver = Resolver()
+        class Output(io.BytesIO):
+            def write(self, data, pass_by_reference=True):
+                assert isinstance(data, bytearray) and not pass_by_reference
+                if resolver.failure == "write":
+                    raise IOError("test write error")
+                return super().write(data)
+            def close(self):
+                if not self.closed:
+                    resolver.data = self.getvalue()
+                super().close()
         version = types.SimpleNamespace(SDK_INT=29)
-        source_streams = []
-        def input_stream(filename):
-            source = open(filename, "rb")
-            source_streams.append(source)
-            return source
-        def copy_stream(source, output):
-            if resolver.failure == "copy":
-                raise IOError("test copy error")
-            shutil.copyfileobj(source, output)
-            return output.tell()
+        data = b"\x89PNG\r\n\x1a\n\x00\x80\xfftest in-memory capture"
         classes = {
             "org.renpy.android.PythonSDLActivity": types.SimpleNamespace(
                 mActivity=types.SimpleNamespace(getContentResolver=lambda: resolver)),
             "android.provider.MediaStore$Images$Media": types.SimpleNamespace(
-                EXTERNAL_CONTENT_URI="content://test", insertImage=lambda *args: "content://legacy/1"),
+                EXTERNAL_CONTENT_URI="content://test"),
             "android.os.Build$VERSION": version,
             "android.content.ContentValues": Values,
             "java.lang.Integer": int,
-            "java.io.FileInputStream": input_stream,
-            "android.os.FileUtils": types.SimpleNamespace(copy=copy_stream),
         }
         old_jnius = sys.modules.get("jnius")
+        old_android = renpy.android
+        old_bytes_capture = renpy.screenshot_to_bytes
         sys.modules["jnius"] = types.SimpleNamespace(autoclass=classes.__getitem__, cast=lambda name, obj: obj)
         try:
-            assert rscript_publish_screenshot(captured[0]) == "content://test/1"
+            assert rscript_publish_screenshot(data, "test.png") == "content://test/1"
+            assert resolver.data == data
             assert resolver.inserted["is_pending"] == 1
             assert resolver.inserted["relative_path"] == "Pictures/RScript"
             assert resolver.published and not resolver.deleted
-            for failure in ("insert", "open", "copy", "update"):
+            for failure in ("insert", "open", "write", "update"):
                 resolver.failure = failure
                 try:
-                    rscript_publish_screenshot(captured[0])
+                    rscript_publish_screenshot(data, "test.png")
                     assert False, failure
                 except IOError:
                     pass
                 assert resolver.deleted == (failure != "insert")
-                assert os.path.isfile(captured[0])
-            assert all(source.closed for source in source_streams)
+                if failure in ("write", "update"):
+                    assert resolver.output.closed
             renpy.notify = notices.append
-            rscript_screenshot_saved(captured[0])
-            assert "Gallery export failed" in notices[-1]
+            renpy.android = True
+            renpy.screenshot_to_bytes = lambda size: data
+            def forbid_disk_capture(filename):
+                raise AssertionError("Android must not call file-based Screenshot")
+            renpy.screenshot = forbid_disk_capture
+            renpy.invoke_in_main_thread = lambda fn: fn()
+            before = set(os.listdir(os.path.join(config.savedir, "screenshots")))
+            rscript_take_screenshot()
+            assert "No image was saved" in notices[-1]
             resolver.failure = None
-            rscript_screenshot_saved(captured[0])
+            rscript_take_screenshot()
             assert "saved to Gallery" in notices[-1]
+            assert resolver.data == data
+            assert before == set(os.listdir(os.path.join(config.savedir, "screenshots")))
+            renpy.screenshot_to_bytes = lambda size: None
+            rscript_take_screenshot()
+            assert "No image was saved" in notices[-1]
             version.SDK_INT = 28
-            assert rscript_publish_screenshot(captured[0]) == "content://legacy/1"
+            assert rscript_publish_screenshot(data, "test.png") == "content://test/1"
+            assert "relative_path" not in resolver.inserted
+            assert "is_pending" not in resolver.inserted
+            assert resolver.data == data
         finally:
+            renpy.android = old_android
+            renpy.screenshot_to_bytes = old_bytes_capture
+            renpy.screenshot = original_capture
+            renpy.invoke_in_main_thread = original_invoke
             renpy.notify = original_notify
             if old_jnius is None:
                 del sys.modules["jnius"]
@@ -206,7 +227,7 @@ label start:
     scene expression Solid("#234567")
     show text "Native screenshot pixel capture test"
     $ renpy.pause(0.2, hard=True)
-    $ Screenshot()()
+    $ rscript_take_screenshot()
     $ renpy.pause(0.5, hard=True)
     python:
         filename = config.screenshot_pattern % 1
@@ -214,7 +235,11 @@ label start:
             assert captured.read(8) == b"\x89PNG\r\n\x1a\n"
         assert os.path.getsize(filename) > 100
         import pygame_sdl2 as pygame
+        import io
         pixels = pygame.image.load(filename)
         assert tuple(pixels.get_at((10, 10)))[:3] == (35, 69, 103)
+        data = renpy.screenshot_to_bytes(None)
+        memory_pixels = pygame.image.load(io.BytesIO(data), "capture.png")
+        assert tuple(memory_pixels.get_at((10, 10)))[:3] == (35, 69, 103)
         print("OK: real renderer -> native Screenshot -> PNG file (%d bytes)" % os.path.getsize(filename))
     $ renpy.quit()

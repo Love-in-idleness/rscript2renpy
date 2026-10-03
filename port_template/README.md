@@ -61,11 +61,12 @@ Auto 使用 Ren'Py 原生自动推进，选中时高亮；若自动推进时间�
 自动推进等 `voice` 或 Forest 的 `rscript_voice` 语音播放结束；不等待循环 BGM。
 点击、滚轮和 Skip 仍可提前推进，不改变脚本 `_wait` 的时间。
 Hide 隐藏界面，点击恢复。
-Screenshot 使用原生截屏动作，保存到游戏存档目录下的
-`screenshots/screenshot0001.png` 等文件，不覆盖已有截图。
-Android 另通过系统 MediaStore 导出到相册（`Pictures/RScript`），并提示保存结果。
+Screenshot 在 Android 使用 Ren'Py 内存截屏，直接将 PNG 写入系统 MediaStore 相册
+（Android 10+ 为 `Pictures/RScript`），不写应用目录，也不保留临时文件或副本。
+文件名包含时间戳，不覆盖已有截图。Android 9 及以下使用系统默认图片目录。
 Android 10+ 不需要存储权限；Android 9 及以下需允许应用存储权限。
-导出失败时保留应用内 PNG 副本并提示，详情记录在日志。桌面仍仅保存到存档目录。
+成功和失败都给出提示；失败时清理本次未完成相册条目，不另存副本，详情记录在日志。
+桌面保持原生截屏，保存到游戏存档目录的 `screenshots/screenshot0001.png` 等文件。
 进入菜单时隐藏控制条；Back、Menu 遵守 `roll_enabled`、`menu_enabled`。
 游戏有额外锁定场景时可覆盖 `rscript_touch_locked()`，Forest 的 5000 场景保留锁定。
 手机返回键仍按菜单键处理，而不是回滚。
