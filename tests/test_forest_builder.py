@@ -374,10 +374,8 @@ def main() -> None:
     assert 'config.game_menu_action = Function(forest_open_game_menu)' in FOREST_COMPAT
     assert 'if store.menu_enabled and not store.forest_input_locked:' in FOREST_COMPAT
     assert "default forest_input_locked = False" in FOREST_COMPAT
-    assert 'textbutton "Back" action Rollback() sensitive not forest_input_locked' in FOREST_COMPAT
-    assert 'textbutton "Hide" action HideInterface()' in FOREST_COMPAT
-    assert 'textbutton "Auto"' not in FOREST_COMPAT
-    assert 'textbutton "Menu" action ShowMenu("preferences") sensitive not forest_input_locked' in FOREST_COMPAT
+    assert 'def rscript_touch_locked():\n        return store.forest_input_locked' in FOREST_COMPAT
+    assert 'screen forest_touch_controls():' not in FOREST_COMPAT
     assert 'screen preferences(title_mode=False):' in FOREST_COMPAT
     assert 'if not title_mode:' in FOREST_COMPAT
     assert 'if store.save_enabled:' in FOREST_COMPAT
@@ -386,10 +384,6 @@ def main() -> None:
     assert save_guard < FOREST_COMPAT.index('action ShowMenu("load")', save_guard)
     assert 'return ShowMenu("preferences")' in FOREST_COMPAT
     assert 'return ShowMenu("forest_title_preferences")' in FOREST_COMPAT
-    assert 'config.overlay_screens.append("forest_touch_controls")' in FOREST_COMPAT
-    assert 'if renpy.variant("touch")' in FOREST_COMPAT
-    assert 'textbutton "Menu" action ShowMenu("preferences")' in FOREST_COMPAT
-    assert 'config.keymap["game_menu"].append("K_AC_BACK")' in FOREST_COMPAT
     assert 'style forest_volume_bar is bar:' in FOREST_COMPAT
     assert FOREST_COMPAT.count('style "forest_volume_bar"') == 3
     assert 'base_bar Null()' not in FOREST_COMPAT

@@ -844,6 +844,9 @@ init python:
         if store.menu_enabled and not store.forest_input_locked:
             renpy.run(ShowMenu("preferences"))
 
+    def rscript_touch_locked():
+        return store.forest_input_locked
+
     def forest_save_json(data):
         data["forest_dt1"] = int(_r[1])
 
@@ -944,46 +947,6 @@ init python:
     config.game_menu_action = Function(forest_open_game_menu)
     config.save_json_callbacks.append(forest_save_json)
     config.say_menu_text_filter = renpy.translation.translate_string
-
-    if "K_AC_BACK" in config.keymap["rollback"]:
-        config.keymap["rollback"].remove("K_AC_BACK")
-    if "K_AC_BACK" not in config.keymap["game_menu"]:
-        config.keymap["game_menu"].append("K_AC_BACK")
-    config.overlay_screens.append("forest_touch_controls")
-
-screen forest_touch_controls():
-    zorder 200
-    if renpy.variant("touch") and not (
-            renpy.get_screen("preferences") or
-            renpy.get_screen("save") or
-            renpy.get_screen("load")):
-        hbox:
-            style_prefix "forest_touch"
-            spacing 2
-            xalign 0.995
-            yalign 0.01
-
-            textbutton "Back" action Rollback() sensitive not forest_input_locked
-            textbutton "Skip" action Skip()
-            textbutton "Hide" action HideInterface()
-            textbutton "Menu" action ShowMenu("preferences") sensitive not forest_input_locked
-
-style forest_touch_button:
-    xminimum 90
-    yminimum 44
-    padding (8, 4)
-    background Solid("#000000a0")
-    hover_background Solid("#586b44d0")
-    insensitive_background Solid("#00000060")
-
-style forest_touch_button_text:
-    font "fonts/NotoSansCJKjp-Regular.otf"
-    size 17
-    color "#ffffff"
-    insensitive_color "#888888"
-    text_align 0.5
-    xalign 0.5
-    yalign 0.5
 
 screen preferences(title_mode=False):
     tag menu
@@ -1785,6 +1748,8 @@ def main(argv: list[str]) -> int:
     for source in sorted((*runtime.glob("*.rpy"), *runtime.glob("*.py"))):
         if source.name not in {"script.rpy", "build.rpy", "options.rpy"} and not source.name.startswith("unren-"):
             shutil.copyfile(source, game / source.name)
+    shutil.copyfile(here / "port_template" / "game" / "touch_controls.rpy",
+                    game / "touch_controls.rpy")
     gui_runtime = game / "gui"
     gui_runtime.mkdir(parents=True, exist_ok=True)
     for name in ("rscript_cursor.png", "rscript_dither.svg"):

@@ -62,6 +62,8 @@ def main() -> None:
         assert 'RScriptText(text_value, kind = "oload"' in gfx_text
         assert (project / "game" / "rscript_wrap.py").is_file()
         assert (project / "game" / "00_rscript_wrap.rpy").is_file()
+        assert (project / "game" / "touch_controls.rpy").read_bytes() == \
+            (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
         assert ("xmaximum = font_size * persistent.forest_oload_line_chars"
                 not in gfx_text)
         for name in ("android.json", "android-icon_background.png",

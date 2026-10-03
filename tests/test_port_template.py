@@ -41,7 +41,9 @@ def main() -> None:
         (resources / "grps" / "ignored.wcg").write_bytes(b"raw")
         runtime_count, copied = build(resources, project)
         assert runtime_count == 21
-        assert copied == 9
+        assert copied == 10
+        assert (project / "game" / "touch_controls.rpy").read_bytes() == \
+            (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
         assert (project / "game" / "scenario" / "0000.rpy").is_file()
         scene = (project / "game" / "scenario" / "0000.rpy").read_text(
             encoding="utf-8")

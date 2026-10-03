@@ -63,6 +63,8 @@ def main() -> None:
                        "grpp", "grps", "bgm", "voice", "wav", "mov"):
             (resources / folder).mkdir()
         build_khime(resources, project)
+        assert (project / "game" / "touch_controls.rpy").read_bytes() == \
+            (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
         script = (project / "game" / "script.rpy").read_text(encoding="utf-8")
         assert "scene onlayer master\n    scene black onlayer black" in script
         credits = (project / "game" / "scenario" / "1110.rpy").read_text(encoding="utf-8")

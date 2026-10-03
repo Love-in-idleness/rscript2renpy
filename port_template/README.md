@@ -52,6 +52,23 @@
 原值及原因；TSC 输入不改。将来实现新效果时，同步更新 `effect_compat.py`
 的支持范围并重建场景。
 
+## Android 触摸控制条
+
+`game/touch_controls.rpy` 是 Forest、Khime 和新移植共用的触摸控制条，
+仅在 touch 模式的游戏画面显示：Back、Skip、Auto、Hide、Screenshot、Menu。
+Auto 使用 Ren'Py 原生自动推进，选中时高亮；Hide 隐藏界面，点击恢复。
+Screenshot 使用原生截屏动作，保存到游戏存档目录下的
+`screenshots/screenshot0001.png` 等文件，不覆盖已有截图。
+进入菜单时隐藏控制条；Back、Menu 遵守 `roll_enabled`、`menu_enabled`。
+游戏有额外锁定场景时可覆盖 `rscript_touch_locked()`，Forest 的 5000 场景保留锁定。
+手机返回键仍按菜单键处理，而不是回滚。
+
+原生动作及路径可用以下无图形测试检查；实际 Android 触摸和截屏画面仍需设备验证：
+
+```bash
+python3 tests/run_touch_controls.py /opt/apps/renpy
+```
+
 ## 每款游戏必须确认
 
 - GSC/TSC schema、编码、入口场景和 `gosub`/`insub` 调用约定
@@ -72,6 +89,7 @@ port_template/
 ├── grps_layout.py         # 从复合图元数据提取界面坐标
 ├── game/
 │   ├── grps_ui.rpy        # 共用设置、存档和控制条
+│   ├── touch_controls.rpy # Android 触摸控制、Auto 与截屏
 │   └── script.rpy         # 统一入口；可由游戏适配层替换
 └── README.md              # 本清单
 
