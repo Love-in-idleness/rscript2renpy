@@ -56,7 +56,11 @@
 
 `game/touch_controls.rpy` 是 Forest、Khime 和新移植共用的触摸控制条，
 仅在 touch 模式的游戏画面显示：Back、Skip、Auto、Hide、Screenshot、Menu。
-Auto 使用 Ren'Py 原生自动推进，选中时高亮；Hide 隐藏界面，点击恢复。
+Auto 使用 Ren'Py 原生自动推进，选中时高亮；若自动推进时间为 0（无限等待），
+点击 Auto 时设为 10 秒/250 字符，否则保留现有设置。此修复也用于原图控制条的 Auto。
+自动推进等 `voice` 或 Forest 的 `rscript_voice` 语音播放结束；不等待循环 BGM。
+点击、滚轮和 Skip 仍可提前推进，不改变脚本 `_wait` 的时间。
+Hide 隐藏界面，点击恢复。
 Screenshot 使用原生截屏动作，保存到游戏存档目录下的
 `screenshots/screenshot0001.png` 等文件，不覆盖已有截图。
 进入菜单时隐藏控制条；Back、Menu 遵守 `roll_enabled`、`menu_enabled`。

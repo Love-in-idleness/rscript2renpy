@@ -40,12 +40,55 @@ python early:
             assert not widget("menu").is_sensitive()
             assert widget("screenshot").is_sensitive()
             store._preferences.afm_enable = False
+            store._preferences.afm_time = 0
+            store._preferences.wait_voice = False
             auto = widget("auto").action
-            assert not auto.get_selected()
-            auto()
-            assert store._preferences.afm_enable and auto.get_selected()
-            auto()
+            assert not renpy.is_selected(auto)
+            renpy.run(auto)
+            assert store._preferences.afm_enable and renpy.is_selected(auto)
+            assert store._preferences.afm_time == 10
+            assert store._preferences.wait_voice
+
+            # Exercise the real native timer, not just the toggle state.
+            import pygame_sdl2 as pygame
+            behavior = renpy.display.behavior.SayBehavior(afm="sample dialogue")
+            event = pygame.event.Event(renpy.display.core.TIMEEVENT, modal=False)
+            old_callback = store.rscript_native_afm_callback
+            old_playing = renpy.music.is_playing
+            playing = set()
+            try:
+                assert config.afm_callback == rscript_auto_ready
+                store.rscript_native_afm_callback = lambda: True
+                renpy.music.is_playing = lambda channel="music": channel in playing
+                assert not renpy.music.channel_defined("rscript_voice")
+                assert behavior.event(event, 0, 0, 0) is None
+                assert behavior.event(event, 0, 0, 100) is True
+                playing.add("voice")
+                assert behavior.event(event, 0, 0, 100) is None
+                playing.clear()
+                renpy.game.context().init_phase = True
+                try:
+                    renpy.music.register_channel("rscript_voice", mixer="voice", loop=False)
+                finally:
+                    renpy.game.context().init_phase = False
+                playing.add("rscript_voice")  # Forest's separate channel.
+                assert behavior.event(event, 0, 0, 100) is None
+                playing.clear()
+                playing.add("music")  # Looping BGM must not block dialogue.
+                assert behavior.event(event, 0, 0, 100) is True
+                store.rscript_native_afm_callback = lambda: False
+                assert behavior.event(event, 0, 0, 100) is None
+                store.rscript_native_afm_callback = lambda: True
+                renpy.run(auto)
+                assert behavior.event(event, 0, 0, 100) is None
+            finally:
+                store.rscript_native_afm_callback = old_callback
+                renpy.music.is_playing = old_playing
             assert not store._preferences.afm_enable
+            store._preferences.afm_time = 7
+            renpy.run(auto)
+            assert store._preferences.afm_time == 7  # Preserve user timing.
+            renpy.run(auto)
             store._menu = True
             assert widget("auto") is None
             store._menu = False
@@ -77,7 +120,7 @@ python early:
             renpy.screenshot = original_capture
             renpy.invoke_in_main_thread = original_invoke
             renpy.notify = original_notify
-        print("OK: touch buttons, menu/scene locks, Auto, native screenshot action and paths")
+        print("OK: touch buttons, locks, Auto timing/voice gate, native screenshot action and paths")
         return False
     renpy.arguments.register_command("touchtest", check_touch_controls)
 

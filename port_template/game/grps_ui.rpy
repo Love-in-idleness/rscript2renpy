@@ -138,7 +138,7 @@ screen rscript_compane():
             use rscript_grps_button("compane", "bak", Rollback())
             use rscript_grps_button("compane", "fow", RollForward())
             use rscript_grps_button("compane", "next", Skip(fast=True))
-            use rscript_grps_button("compane", "auto", Preference("auto-forward", "toggle"))
+            use rscript_grps_button("compane", "auto", [Function(rscript_ensure_auto_delay), Preference("auto-forward", "toggle")])
             use rscript_grps_button("compane", "hide", HideInterface())
             use rscript_grps_button("compane", "voc", Function(rscript_replay_voice),
                                      rscript_last_voice is not None)
