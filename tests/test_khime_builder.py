@@ -63,6 +63,9 @@ def main() -> None:
                        "grpp", "grps", "bgm", "voice", "wav", "mov"):
             (resources / folder).mkdir()
         build_khime(resources, project)
+        notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
+        for name in ("android-presplash.png", "android-downloading.png"):
+            assert (project / name).read_bytes() == notice
         assert (project / "game" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
         script = (project / "game" / "script.rpy").read_text(encoding="utf-8")

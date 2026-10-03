@@ -64,12 +64,15 @@ def main() -> None:
         assert (project / "game" / "00_rscript_wrap.rpy").is_file()
         assert (project / "game" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
-        assert ("xmaximum = font_size * persistent.forest_oload_line_chars"
+        assert ("xmaximum = font_size * persistent.rscript_oload_line_chars"
                 not in gfx_text)
         for name in ("android.json", "android-icon_background.png",
                      "android-icon_foreground.png"):
             assert (project / name).read_bytes() == \
                 (ROOT / "forest" / "android" / name).read_bytes()
+        notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
+        for name in ("android-presplash.png", "android-downloading.png"):
+            assert (project / name).read_bytes() == notice
         assert not (project / "android.keystore").exists()
         assert not (project / "bundle.keystore").exists()
         gui = project / "game" / "gui.rpy"
@@ -78,53 +81,56 @@ def main() -> None:
         assert 'define gui.text_font = "fonts/NotoSansCJKjp-Regular.otf"' in gui_text
         for name in ("simhei.ttf", "SimHei-NOTICE.md"):
             assert (project / "game" / "fonts" / name).read_bytes() == \
-                (ROOT / "forest" / "fonts" / name).read_bytes()
+                (ROOT / "port_template" / "fonts" / name).read_bytes()
         assert "gui.scale(" not in gui_text
         compat_text = (project / "game" / "forest_compat.rpy").read_text(
             encoding="utf-8")
-        assert "define forest_languages = [(None, 'Original'), ('english', 'english')]" in compat_text
+        compat_text += (project / "game" / "text_features.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "language_config.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "00_rscript_wrap.rpy").read_text(encoding="utf-8")
+        assert "    rscript_languages = [(None, 'Original'), ('english', 'english')]" in compat_text
         assert "screen forest_title_preferences():" in compat_text
-        assert "default persistent.forest_text_size = 22" in compat_text
-        assert "default persistent.forest_say_line_chars = 19" in compat_text
-        assert "default persistent.forest_oload_line_chars = 20" in compat_text
-        assert "default persistent.forest_line_spacing = 7" in compat_text
-        assert "default persistent.forest_wiki_mode = False" in compat_text
+        assert "default persistent.rscript_text_size = rscript_base_text_size" in compat_text
+        assert "default persistent.rscript_say_line_chars = 19" in compat_text
+        assert "default persistent.rscript_oload_line_chars = 20" in compat_text
+        assert "default persistent.rscript_line_spacing = 7" in compat_text
+        assert "default persistent.rscript_wiki_mode = False" in compat_text
         assert "'https://example.test/a//b'" in compat_text
-        assert 'if _preferences.language in forest_wiki_keywords:' in compat_text
-        assert 'action Function(forest_set_wiki, True)' in compat_text
-        assert 'action Function(forest_set_wiki, False)' in compat_text
+        assert 'if _preferences.language in rscript_wiki_keywords:' in compat_text
+        assert 'action Function(rscript_set_wiki, True)' in compat_text
+        assert 'action Function(rscript_set_wiki, False)' in compat_text
         assert 'text "Wiki Mode" yalign 0.5' not in compat_text
-        assert "line_spacing persistent.forest_line_spacing" in compat_text
-        assert 'define forest_default_font = "fonts/NotoSansCJKjp-Regular.otf"' in compat_text
-        assert 'default persistent.forest_text_font = forest_default_font' in compat_text
-        start = compat_text.index("    def forest_update_default_font():")
+        assert "line_spacing persistent.rscript_line_spacing" in compat_text
+        assert 'define rscript_default_font = "fonts/NotoSansCJKjp-Regular.otf"' in compat_text
+        assert 'default persistent.rscript_text_font = rscript_default_font' in compat_text
+        start = compat_text.index("    def rscript_update_default_font():")
         end = compat_text.index("    config.start_callbacks.append", start)
         previous_font = "fonts/simhei.ttf"
-        settings = SimpleNamespace(forest_text_font=previous_font,
-                                   forest_previous_default_font=previous_font)
+        settings = SimpleNamespace(rscript_text_font=previous_font,
+                                   rscript_previous_default_font=previous_font)
         saved = []
-        namespace = dict(persistent=settings, forest_default_font="fonts/NotoSansCJKjp-Regular.otf",
+        namespace = dict(persistent=settings, rscript_default_font="fonts/NotoSansCJKjp-Regular.otf",
                          renpy=SimpleNamespace(save_persistent=lambda: saved.append(True)))
         exec(dedent(compat_text[start:end]), namespace)
-        update_font = namespace["forest_update_default_font"]
+        update_font = namespace["rscript_update_default_font"]
         update_font()
-        assert settings.forest_text_font == "fonts/NotoSansCJKjp-Regular.otf" and len(saved) == 1
-        settings.forest_text_font = previous_font
+        assert settings.rscript_text_font == "fonts/NotoSansCJKjp-Regular.otf" and len(saved) == 1
+        settings.rscript_text_font = previous_font
         update_font()
-        assert settings.forest_text_font == previous_font and len(saved) == 1
-        settings.forest_text_font = "fonts/NotoSerifCJK-Regular.ttc"
-        settings.forest_previous_default_font = previous_font
+        assert settings.rscript_text_font == previous_font and len(saved) == 1
+        settings.rscript_text_font = "fonts/NotoSerifCJK-Regular.ttc"
+        settings.rscript_previous_default_font = previous_font
         update_font()
-        assert settings.forest_text_font == "fonts/NotoSerifCJK-Regular.ttc"
+        assert settings.rscript_text_font == "fonts/NotoSerifCJK-Regular.ttc"
         assert 'textbutton "Previous Font"' in compat_text
         assert 'textbutton "Next Font"' in compat_text
         for old_text in ("原文", "持久化", "戻る", "スキップ", "オート",
                          "メニュー", "文本", "字号", "字体", "语言",
                          "返回", "はい", "いいえ"):
             assert old_text not in compat_text
-        assert "default persistent.forest_progress_backup = None" in compat_text
+        assert "default persistent.rscript_progress_backup = None" in compat_text
         assert (project / "game" / "tl" / "english" /
-                "forest_strings.rpy").read_text(encoding="utf-8") == \
+                "rscript_strings.rpy").read_text(encoding="utf-8") == \
             "translate english python:\n    pass\n"
         assert (project / "game" / "tl" / "english" /
                 "keywords.json").read_text(encoding="utf-8") == keywords_text
@@ -135,11 +141,9 @@ def main() -> None:
         util_runtime = (project / "game" / "01_util.rpy").read_text(
             encoding="utf-8")
         assert "renpy.pause(delay / 10.)" in command_runtime
-        assert "renpy.translation.translate_string(eval(text))" in util_runtime
-        assert "text = forest_prepare_wiki_text(text)" in util_runtime
-        assert ('"#D7FFB3" if (persistent.forest_wiki_mode and '
-                '_preferences.language in forest_wiki_keywords) else "#FFFFFF"'
-                in util_runtime)
+        assert "rscript_prepare_text(eval(text))" in util_runtime
+        assert "text = rscript_prepare_wiki_text(text)" in compat_text
+        assert '"g": rscript_green_color()' in util_runtime
         say_start = text_runtime.index("    def execute_say(o):")
         append_start = text_runtime.index("    def execute_append(o):")
         say_runtime = text_runtime[say_start:append_start]
@@ -152,12 +156,12 @@ def main() -> None:
             '                id "what"' in compat_text
         assert '        else:\n            rscript_text what:\n' \
             '                id "what"' in compat_text
-        assert say_runtime.index("store.forest_speaker_visible = True") < \
+        assert say_runtime.index("rscript_dialogue_begin") < \
             say_runtime.index("renpy.say(") < \
-            say_runtime.index("store.forest_speaker_visible = False")
-        assert append_runtime.index("store.forest_speaker_visible = True") < \
+            say_runtime.index("rscript_dialogue_end")
+        assert append_runtime.index("rscript_dialogue_begin") < \
             append_runtime.index("renpy.say(") < \
-            append_runtime.index("store.forest_speaker_visible = False")
+            append_runtime.index("rscript_dialogue_end")
         (resources / "scr" / "0000.tsc").unlink()
         (resources / "scr" / "0000.gsc").write_bytes(b"not accepted")
         try:

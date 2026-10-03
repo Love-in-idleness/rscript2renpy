@@ -10,6 +10,10 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 当前运行时面向 Ren'Py 8（Python 3）；Forest 已使用 `/opt/apps/renpy`
 中的 Ren'Py 8.5 完成生成与 lint 验证。
 
+Forest 和 Khime 共用 `runtime/`、`port_template/`，游戏差异放在各自的
+`game/*.rpy` 覆盖层。字体、文本/语言设置、Wiki、进度备份和安卓控制均由公共层
+维护，详见 [公共模板分层说明](docs/SHARED_TEMPLATE_MIGRATION.md)。
+
 除通用鼠标光标和 Forest Android 应用图标外，本项目不包含游戏剧本、图像、
 音频、视频或可执行文件。
 用户必须从自己合法持有的游戏副本中准备其余资源。
@@ -45,6 +49,8 @@ Forest 与 khime 的对话、追加对话、文本对象使用统一中日俄禁
 自己的目录实现 TSC lowering、缺失 opcode、文本规则和界面。模板不会调用
 LiarsoftTool，也不会把原始 GSC/WCG/WAV/XFL/LWG 复制进 Ren'Py 工程。完整步骤和
 核对清单见 [`port_template/README.md`](port_template/README.md)。
+Forest 与 Khime 构建时会安装通用 Android 启动说明图，包含 GitHub 地址及正版资源
+自行构建提示。
 
 ### Forest 生成器
 
@@ -109,7 +115,7 @@ Noto Serif CJK Regular，可在菜单中选择；正文默认使用 Noto Sans CJ
 其英文实测比 SimHei（黑体）更窄，让本次对照句中的「电影」保持同一行。
 旧 SimHei 默认值自动迁移一次，其他已选字体保留；黑体仍可在菜单中选择。
 SimHei 不是开源字体，来源与权利说明见
-[SimHei-NOTICE.md](forest/fonts/SimHei-NOTICE.md)，静态分析依据见
+[SimHei-NOTICE.md](port_template/fonts/SimHei-NOTICE.md)，静态分析依据见
 [FOREST_FONT_ANALYSIS.md](docs/FOREST_FONT_ANALYSIS.md)。
 
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
@@ -126,7 +132,7 @@ SimHei 不是开源字体，来源与权利说明见
 不会纳入仓库或复制到工程；Ren'Py 会在构建机器上创建或使用本地签名密钥。
 
 项目代码采用 [MIT License](LICENSE)。项目附带的 Noto CJK 字体采用
-SIL Open Font License 1.1，详见 `forest/fonts/NotoSans.txt`。
+SIL Open Font License 1.1，详见 `port_template/fonts/NotoSans.txt`。
 SimHei 不适用 MIT/OFL；本项目未取得或验证额外再分发授权。
 
 ---
@@ -138,6 +144,11 @@ RScript games.
 
 The runtime now targets Ren'Py 8 and Python 3. Forest generation and lint have
 been verified with Ren'Py 8.5.
+
+Forest and Khime now share `runtime/` and `port_template/`; game-specific code
+lives in each game's `game/*.rpy` overlay. Fonts, text/language settings, Wiki
+links, progress backups and Android controls are maintained in the shared base.
+See [the architecture and migration notes](docs/SHARED_TEMPLATE_MIGRATION.md).
 
 This project is maintained and distributed directly from the Git repository.
 No new GitHub Releases or versioned release packages will be published.
@@ -182,6 +193,8 @@ opcodes and rendering modes must be implemented and verified per game.
 
 `port_template/` is a deliberately incomplete starter that installs the shared
 runtime and copies converted assets plus game-specific `scenario/*.rpy` output.
+Forest and Khime builds also install a shared Android loading notice with the
+project URL and an instruction to build from legitimately owned game files.
 See [`port_template/README.md`](port_template/README.md) for the workflow and
 per-game verification checklist.
 
@@ -240,7 +253,7 @@ body font is Noto Sans CJK JP Regular: measured Latin advances are narrower than
 SimHei, keeping the Chinese mixed-language reference sentence on three lines.
 The previous SimHei default is migrated once; other selected fonts are retained.
 SimHei remains selectable but is proprietary, not MIT/OFL;
-see [SimHei-NOTICE.md](forest/fonts/SimHei-NOTICE.md) and the
+see [SimHei-NOTICE.md](port_template/fonts/SimHei-NOTICE.md) and the
 [static font analysis](docs/FOREST_FONT_ANALYSIS.md).
 
 The generator reads only `scr/*.tsc`; it neither invokes LiarsoftTool nor
@@ -273,7 +286,7 @@ build machine and are never bundled by this repository.
 
 The bundled Noto Sans CJK JP Regular, Noto Sans CJK Light, and Noto Serif CJK
 Regular fonts are distributed under the SIL Open Font License 1.1 in
-`forest/fonts/NotoSans.txt`.
+`port_template/fonts/NotoSans.txt`.
 SimHei is separately licensed; additional redistribution rights have not been
 obtained or verified by this project.
 

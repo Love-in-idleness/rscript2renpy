@@ -15,6 +15,7 @@ from install_runtime import install  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
+from port_resources import convert_masks, read_keywords  # noqa: E402
 
 
 RESOURCE_TARGETS = {
@@ -46,6 +47,8 @@ ALLOWED_SUFFIXES = {
 
 
 def copy_file(source: Path, target: Path, force: bool) -> None:
+    if target.exists() and source.samefile(target):
+        return
     if target.exists() and target.read_bytes() != source.read_bytes() and not force:
         raise FileExistsError("refusing to overwrite different file: %s" % target)
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -59,7 +62,10 @@ def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> in
     for path in sorted(item for item in source.rglob("*") if item.is_file()):
         if path.suffix.lower() not in suffixes:
             continue
-        copy_file(path, target / path.relative_to(source), force)
+        relative = path.relative_to(source)
+        if path.suffix.lower() == ".mpg":
+            relative = relative.with_suffix(".mpg")
+        copy_file(path, target / relative, force)
         copied += 1
     return copied
 
@@ -80,34 +86,68 @@ def copy_scenarios(source: Path, target: Path, resources: Path,
     return copied
 
 
-def build(resources: Path, project: Path, force: bool = False,
-          scenarios: Path | None = None) -> tuple[int, int]:
+def install_base(resources: Path, project: Path, force: bool = False,
+                 image_folders: tuple[str, ...] = ()) -> tuple[int, int]:
+    """Install the shared base; a game's overlay is applied only afterwards."""
     resources = resources.resolve()
     project = project.resolve()
     game = project / "game"
-    scenarios = scenarios or resources / "scenario"
-    if not any(scenarios.glob("*.rpy")):
-        raise FileNotFoundError(
-            "game-specific TSC lowerer produced no scenario/*.rpy files: %s" %
-            scenarios)
     layout = "define rscript_grps_layout = %r\n" % collect_layout(resources)
 
     game.mkdir(parents=True, exist_ok=True)
     installed = install(project, force=force)
     copied = 0
+    notice = Path(__file__).parent / "android" / "notice.png"
+    for name in ("android-presplash.png", "android-downloading.png"):
+        copy_file(notice, project / name, force)
+        copied += 1
     for name, destination in RESOURCE_TARGETS.items():
         copied += copy_tree(resources / name, game / destination,
                             ALLOWED_SUFFIXES[name], force)
-    copied += copy_scenarios(scenarios, game / "scenario", resources, force)
+    for name in image_folders:
+        copied += copy_tree(resources / name, game / "images" / name,
+                            {".png"}, force)
+    # Canvas origins are part of the converted resources, not optional artwork.
+    for name in (*RESOURCE_TARGETS, *image_folders):
+        if not name.startswith("grp"):
+            continue
+        for metadata in (resources / name).rglob(".meta.xml"):
+            copy_file(metadata, game / "images" / name /
+                      metadata.relative_to(resources / name), force)
+            copied += 1
+    convert_masks(resources / "grps", game / "images" / "grps")
+    copied += copy_tree(resources / "wav", game / "audio", {".ogg"}, force)
+    keywords = resources / "keywords.json"
+    if keywords.is_file():
+        read_keywords(keywords)  # Validate before enabling clickable links.
+        copy_file(keywords, game / "keywords.json", force)
+        copied += 1
     for source in sorted((Path(__file__).parent / "game").glob("*.rpy")):
         copy_file(source, game / source.name, force)
         copied += 1
+    for source in sorted((Path(__file__).parent / "fonts").iterdir()):
+        if source.is_file():
+            copy_file(source, game / "fonts" / source.name, force)
+            copied += 1
     destination = game / "grps_layout.rpy"
     if destination.exists() and destination.read_text(encoding="utf-8") != layout and not force:
         raise FileExistsError("refusing to overwrite different file: %s" % destination)
     destination.write_text(layout, encoding="utf-8")
     copied += 1
     return len(installed), copied
+
+
+def build(resources: Path, project: Path, force: bool = False,
+          scenarios: Path | None = None) -> tuple[int, int]:
+    scenarios = scenarios or resources / "scenario"
+    if not any(scenarios.glob("*.rpy")):
+        raise FileNotFoundError(
+            "game-specific TSC lowerer produced no scenario/*.rpy files: %s" %
+            scenarios)
+    installed, copied = install_base(resources, project, force)
+    copied += copy_scenarios(scenarios, project / "game" / "scenario",
+                            resources, force)
+    return installed, copied
 
 
 def main(argv: list[str] | None = None) -> int:

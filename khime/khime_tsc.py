@@ -3,10 +3,9 @@
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "forest"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
-from forest_tsc import E, read_tsc  # noqa: E402
-from build_forest_rscript import emit_vm, packed  # noqa: E402
+from rscript_tsc import E, STRING_OPERANDS, read_tsc  # noqa: E402
+from tsc_vm import emit_vm, packed  # noqa: E402
 
 
 PASSTHROUGH = {
@@ -33,9 +32,48 @@ def label(scene: str, offset: int) -> str:
     return "_%s_L_%06x" % (scene, offset)
 
 
-def compile_scene(source: Path) -> str:
+def compile_scene(source: Path, patches=()) -> str:
     tsc = read_tsc(source, "khime")
     items = tsc.instructions()
+    patch_texts = {}
+    for language, directory in patches:
+        path = directory / "scr" / source.name
+        if not path.is_file():
+            continue  # A partial language patch falls back to original text.
+        translated = read_tsc(path, "khime")
+        other = translated.instructions()
+        if (len(other) != len(items) or
+                any((a.opcode, a.kinds) != (b.opcode, b.kinds)
+                    for a, b in zip(items, other))):
+            raise ValueError("%s changes Khime scenario structure" % path)
+        mapping = {}
+        for original, changed in zip(items, other):
+            positions = ((1, *range(7, 7 + min(original.operands[0], 5)))
+                         if original.opcode == 14 else
+                         {81: (4, 5), 82: (4,), 32: (5,)}.get(original.opcode, ()))
+            for index, (a, b) in enumerate(zip(original.operands, changed.operands)):
+                if index in positions:
+                    mapping[(original.offset, index)] = translated.string(b)
+                elif index in STRING_OPERANDS.get(original.opcode, ()):
+                    if tsc.string(a) != translated.string(b):
+                        raise ValueError("%s changes non-text string at %x" %
+                                         (path, original.offset))
+                elif a != b:
+                    raise ValueError("%s changes non-text operand %d at %x" %
+                                     (path, index, original.offset))
+        patch_texts[language] = mapping
+
+    def text(item, index, strip_prefix=False):
+        original = tsc.string(item.operands[index])
+        values = {language: mapping[(item.offset, index)]
+                  for language, mapping in patch_texts.items()
+                  if (item.offset, index) in mapping}
+        if strip_prefix:
+            original = original.removeprefix("<01>")
+            values = {language: value.removeprefix("<01>")
+                      for language, value in values.items()}
+        return ("%r.get(_preferences.language, %r)" % (values, original)
+                if values else repr(original))
     scene = source.stem
     targets = {item.operands[0] for item in items if item.opcode in (3, 4, 5, 200)}
     for item in items:
@@ -73,12 +111,16 @@ def compile_scene(source: Path) -> str:
             lines.append("    _jump %s" % operands[0])
         elif op == 14:
             count = min(values[0], 5)
-            lines.append("    $ khime_choice_prompt = %r" %
-                         tsc.string(values[1]).removeprefix("<01>"))
+            lines.append("    $ khime_choice_prompt = %s" % text(item, 1, True))
+            captions = [text(item, 7 + index, True) for index in range(count)]
+            for index, caption in enumerate(captions):
+                if patch_texts:
+                    lines.append("    $ khime_menu_caption_%d = %s" % (index, caption))
             lines.append("    menu:")
             for index in range(count):
-                text = tsc.string(values[7 + index]).removeprefix("<01>")
-                lines.extend(("        %r:" % text,
+                caption = (repr("[khime_menu_caption_%d]" % index)
+                           if patch_texts else captions[index])
+                lines.extend(("        %s:" % caption,
                               "            $ _r[%s] = %d" % (operands[12], index),
                               "            $ khime_choice_prompt = None",
                               "            jump %s" % label(scene, values[2 + index])))
@@ -93,8 +135,8 @@ def compile_scene(source: Path) -> str:
             lines.append("    _data %s %s" %
                          (operands[0], " ".join(map(str, data))))
         elif op == 32:
-            lines.append("    _oload %s %r" %
-                         (" ".join(operands[:5]), tsc.string(values[5])))
+            lines.append("    _oload %s %s" %
+                         (" ".join(operands[:5]), text(item, 5)))
         elif op == 62:
             pending_se = operands[-1]
         elif op == 63:
@@ -105,13 +147,17 @@ def compile_scene(source: Path) -> str:
         elif op == 64:
             lines.append("    _se_off 0 %s" % operands[-1])
         elif op == 81:
-            raw = ((tsc.string(values[4]) + "：") if tsc.string(values[4])
-                   else "") + tsc.string(values[5])
+            if patches:
+                raw = "((%s + '：') if %s else '') + %s" % (
+                    text(item, 4), text(item, 4), text(item, 5))
+            else:
+                raw = repr(((tsc.string(values[4]) + "：") if tsc.string(values[4])
+                            else "") + tsc.string(values[5]))
             if values[1]:
                 lines.append("    _voice %s 0 0 0" % operands[1])
-            lines.append("    _khime_say %r" % raw)
+            lines.append("    _khime_say %s" % raw)
         elif op == 82:
-            lines.append("    _khime_append %r" % tsc.string(values[4]))
+            lines.append("    _khime_append %s" % text(item, 4))
         elif op == 120:
             lines.append("    _osize %s" % " ".join(operands))
         elif op == 121:

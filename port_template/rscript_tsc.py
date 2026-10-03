@@ -1,4 +1,4 @@
-"""Reader for the current command-based Forest TSC format."""
+"""Shared reader for current command TSC, with explicit game dialect tables."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,7 +17,7 @@ class Instruction:
 
 
 @dataclass(frozen=True)
-class ForestTsc:
+class RScriptTsc:
     path: Path
     code_size: int
     strings: tuple[str, ...]
@@ -183,7 +183,7 @@ def _number(token: str, kind: str, line_no: int) -> int:
     return value
 
 
-def read_tsc(path: str | Path, dialect: str = "forest") -> ForestTsc:
+def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
     """Read current LiarsoftTool command TSC; old metadata dumps are rejected."""
     path = Path(path)
     byte_format = None
@@ -310,5 +310,5 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> ForestTsc:
         instructions.append(Instruction(item_offset, opcode, tuple(kinds),
                                         tuple(operands), size))
 
-    return ForestTsc(path, offset, tuple(strings), tuple(data_blocks),
+    return RScriptTsc(path, offset, tuple(strings), tuple(data_blocks),
                      tuple(instructions), encoding or "CP932")

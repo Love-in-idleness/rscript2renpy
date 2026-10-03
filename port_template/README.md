@@ -1,4 +1,4 @@
-# 通用 RScript 移植半成品模板
+# 通用 RScript 移植模板
 
 这个目录用于开始一款新的 CodeX/RScript → Ren'Py 移植。它只复用已经
 跨游戏成立的部分，不声称自动兼容所有 RScript 方言。
@@ -35,6 +35,10 @@
 模板拒绝覆盖内容不同的现有文件。确认要同步模板或运行时更新时才使用
 `--force`。
 
+模板还会在工程根目录生成 `android-presplash.png` 和
+`android-downloading.png`，替换 Android 构建时默认的 Ren'Py loading 图片。
+两者使用同一张项目说明图，标明 GitHub 地址，并提醒玩家自行使用正版游戏文件构建。
+
 `grps/confscrn`、`grps/compane`、`grps/savescrn`、`sel_a*`、`sel_q*`、`tbox*` 有 PNG 时还会读取各目录的
 `.meta.xml` 画布尺寸和坐标，生成 `grps_layout.rpy`。共用界面用原图实现设置、
 存读档、选择项和对话控制条；游戏的 `say` screen 需 `use rscript_compane`，
@@ -44,6 +48,10 @@
 
 ## 效果兼容检查
 
+Forest 调用同一个 `install_base` 安装公共层，然后应用 `forest/game/*.rpy`
+及专用 lowerer；不再靠字符串替换改写公共运行时。其已逐项适配的参数和语言
+补丁由 Forest lowerer 保留，不再次经过通用的静态降级检查。
+
 通用装配入口对每份 `scenario/*.rpy` 执行一次效果兼容检查和未知 `^` 文本指令降级。
 `_load`、`_cls`、`_oload`、
 `_gload`、`_update`、`_effect`、移动、闪光、`_zupdate`、对象动作和混合模式中的效果及色彩模式，
@@ -52,13 +60,24 @@
 原值及原因；TSC 输入不改。将来实现新效果时，同步更新 `effect_compat.py`
 的支持范围并重建场景。
 
+## 公共文本、语言与进度设置
+
+`game/text_features.rpy` 提供 `rscript_text_preferences`，可调整字体、字号、
+对话/对象每行字数、行距、速度；并切换语言、Wiki、备份/恢复/清除持久化进度。
+共有设置名为 `persistent.rscript_*`，游戏通过 `rscript_base_text_size`、
+`rscript_inline_base_size`、`rscript_use_speaker_images` 配置差异。
+`^gNNN`、`^aNNN` 使用公共内联标签，Wiki 图片链接由适配层提供数字到 URL 的映射。
+字体、GUI、语言资源安装不再引用 `forest/`。
+语音通道、缺失音频检查及持久化寄存器落盘已进入公共运行时。
+详细分层、移植边界和测试命令见 [分层说明](../docs/SHARED_TEMPLATE_MIGRATION.md)。
+
 ## Android 触摸控制条
 
 `game/touch_controls.rpy` 是 Forest、Khime 和新移植共用的触摸控制条，
 仅在 touch 模式的游戏画面显示：Back、Skip、Auto、Hide、Screenshot、Menu。
 Auto 使用 Ren'Py 原生自动推进，选中时高亮；若自动推进时间为 0（无限等待），
 点击 Auto 时设为 10 秒/250 字符，否则保留现有设置。此修复也用于原图控制条的 Auto。
-自动推进等 `voice` 或 Forest 的 `rscript_voice` 语音播放结束；不等待循环 BGM。
+自动推进等 `voice` 或公共 `rscript_voice` 语音播放结束；不等待循环 BGM。
 点击、滚轮和 Skip 仍可提前推进，不改变脚本 `_wait` 的时间。
 Hide 隐藏界面，点击恢复。
 Screenshot 在 Android 使用 Ren'Py 内存截屏，直接将 PNG 写入系统 MediaStore 相册
@@ -94,6 +113,7 @@ python3 tests/run_touch_controls.py /opt/apps/renpy --capture  # 真实桌面像
 ```text
 port_template/
 ├── build_port.py          # 通用资源与运行时装配
+├── android/notice.png     # Android 启动和下载阶段共用说明图
 ├── effect_compat.py       # 运行时能力与资源遮罩检查
 ├── grps_layout.py         # 从复合图元数据提取界面坐标
 ├── game/

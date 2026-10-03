@@ -41,7 +41,10 @@ def main() -> None:
         (resources / "grps" / "ignored.wcg").write_bytes(b"raw")
         runtime_count, copied = build(resources, project)
         assert runtime_count == 21
-        assert copied == 10
+        assert copied >= 12
+        notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
+        for name in ("android-presplash.png", "android-downloading.png"):
+            assert (project / name).read_bytes() == notice
         assert (project / "game" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
         assert (project / "game" / "scenario" / "0000.rpy").is_file()
@@ -54,13 +57,13 @@ def main() -> None:
         assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in scene
         assert "_draw blend mode 3 flattened to 0" in scene
         assert "_oaction action 7 flattened to no-op" in scene
-        assert "unsupported text control ^fm, ^cr, ^g001 flattened to empty" in scene
-        assert "_khime_say 'Hello red ^nnext ^cyyellow'" in scene
+        assert "unsupported text control ^fm, ^cr flattened to empty" in scene
+        assert "_khime_say 'Hello red ^g001^nnext ^cyyellow'" in scene
         assert flatten_unsupported_text_controls(scene) == scene
         expression = "    _say jp {'en': '^a601A', 'zh': '^cg绿'}.get(lang, '^n日本')\n"
         lowered = flatten_unsupported_text_controls(expression)
-        assert "^a601 flattened to empty" in lowered
-        assert "'en': 'A'" in lowered
+        assert "^a601 flattened to empty" not in lowered
+        assert "'en': '^a601A'" in lowered
         assert "'^cg绿'" in lowered and "'^n日本'" in lowered
         assert "    pass\n" in scene
         assert flatten_unsupported_effects(scene, resources) == scene
@@ -76,7 +79,7 @@ def main() -> None:
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert 'key "rollback" action Rollback()' in (
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
-        assert 'text item.caption xpos textpos[0] ypos textpos[1] color "#ffffff" font gui.text_font' in (
+        assert 'text rscript_menu_text(item.caption) xpos textpos[0] ypos textpos[1] color "#ffffff" font rscript_current_font()' in (
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert collect_layout(resources) == {}
         assert "define rscript_grps_layout = {}" in (

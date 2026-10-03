@@ -95,9 +95,22 @@ python early:
             return "{size=-%d}%s{/size}" % (-size * 10, text)
         return "{size=+%d}%s{/size}" % (size * 10, text)
 
+    # The port template can replace these hooks; a bare runtime remains usable.
+    def rscript_prepare_text(text):
+        return renpy.translation.translate_string(text)
+
+    def rscript_green_color():
+        return "#D7FFB3"
+
+    def rscript_dialogue_begin(append=False):
+        pass
+
+    def rscript_dialogue_end():
+        pass
+
     def color_change(match):
         color = {
-            "y": "#FFDE00", "g": "#D7FFB3",
+            "y": "#FFDE00", "g": rscript_green_color(),
             "w": "#FFFFFF", "k": "#000000",
         }[match.group(1)]
         return "{color=%s}%s{/color}" % (color, match.group(2))
@@ -109,7 +122,7 @@ python early:
         if not text:
             return text
 
-        text = eval(text)
+        text = rscript_prepare_text(eval(text))
 
         text = renpy.re.sub(r"\^b(.*?)(\^b|$)", r"{b}\1{/b}", text)
         text = renpy.re.sub(r"\^i(.*?)(\^i|$)", r"{i}\1{/i}", text)

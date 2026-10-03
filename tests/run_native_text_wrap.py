@@ -20,7 +20,7 @@ def main():
         shutil.copy2(ROOT / "tests" / "renpy_text_wrap.rpy", game)
         for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",
                      "NotoSerifCJK-Regular.ttc", "simhei.ttf"):
-            shutil.copy2(ROOT / "forest/fonts" / name, game / "fonts")
+            shutil.copy2(ROOT / "port_template/fonts" / name, game / "fonts")
         subprocess.run([str(sdk / "renpy.sh"), temporary, "wraptest"], check=True)
 
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="930" height="580" viewBox="0 0 930 580">
+  <rect width="930" height="580" fill="#121916"/>
+  <rect x="72" y="67" width="7" height="89" rx="3" fill="#8dcc9e"/>
+  <text x="105" y="109" fill="#f4f3e9" font-family="Noto Sans CJK JP" font-size="54" font-weight="700">rscript2renpy</text>
+  <text x="106" y="150" fill="#b9d0be" font-family="Noto Sans CJK JP" font-size="23">CodeX RScript → Ren'Py 开源移植工具</text>
+  <text x="854" y="78" text-anchor="end" fill="#8dcc9e" font-family="Noto Sans CJK JP" font-size="18">启动中</text>
+  <line x1="72" y1="190" x2="858" y2="190" stroke="#44604b" stroke-width="2"/>
+  <rect x="72" y="221" width="786" height="245" rx="16" fill="#1c2a22" stroke="#365744" stroke-width="2"/>
+  <text x="108" y="296" fill="#f4f3e9" font-family="Noto Sans CJK JP" font-size="33">请使用自己持有的正版游戏文件，</text>
+  <text x="108" y="346" fill="#f4f3e9" font-family="Noto Sans CJK JP" font-size="33">按照项目说明自行构建游戏。</text>
+  <text x="108" y="418" fill="#b9d0be" font-family="Noto Sans CJK JP" font-size="24">本项目不提供游戏本体或原版素材。</text>
+  <text x="73" y="508" fill="#8dcc9e" font-family="Noto Sans CJK JP" font-size="20">源码与构建说明</text>
+  <text x="73" y="545" fill="#f4f3e9" font-family="Noto Sans CJK JP" font-size="23">https://github.com/Love-in-idleness/rscript2renpy</text>
+</svg>

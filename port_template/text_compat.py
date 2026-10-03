@@ -7,7 +7,7 @@ import tokenize
 
 
 CONTROL = re.compile(r"\^(?:[agdsw]\d+|[cf][A-Za-z]|[A-Za-z])")
-SUPPORTED = re.compile(r"\^(?:[binm]|[dw]\d+|s\d|c[ygwk])\Z")
+SUPPORTED = re.compile(r"\^(?:[binm]|[dw]\d+|s\d|[ag]\d{3}|c[ygwk])\Z")
 TEXT_COMMANDS = {"_say", "_oload", "_khime_say", "_khime_append"}
 
 

@@ -10,13 +10,19 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
-from build_forest_rscript import (FOREST_COMPAT, RSCRIPT_OBJECTS,
+from build_forest_rscript import (FOREST_COMPAT,
                                   compile_credits_scene, compile_scene,
                                   convert_masks, copy_assets, copy_movies,
                                   language_patch_data, language_patch_strings,
                                   menu_text, read_keywords, scene_strings,
                                   strip_json_comments, wiki_image_links)
-from forest_tsc import read_tsc
+from rscript_tsc import read_tsc
+
+
+# Check the assembled shared base plus the game overlay, not an embedded copy.
+FOREST_COMPAT += (ROOT / "port_template/game/text_features.rpy").read_text(encoding="utf-8")
+FOREST_COMPAT += (ROOT / "runtime/00_rscript_wrap.rpy").read_text(encoding="utf-8")
+RSCRIPT_OBJECTS = (ROOT / "runtime/03_rscript_gfx.rpy").read_text(encoding="utf-8")
 
 
 def main() -> None:
@@ -25,43 +31,40 @@ def main() -> None:
     resources = parser.parse_args().resources.resolve()
     builder_path = ROOT / "forest" / "build_forest_rscript.py"
     builder = builder_path.read_text(encoding="utf-8")
-    assert '"                renpy.save_persistent()")' in builder
-    assert 'not source.name.startswith("unren-")' in builder
-    assert 'game.glob("unren-*.rpy*")' in builder
-    assert 'copy_movies(root / "mov", game / "mov", clear=True)' in builder
+    assert "renpy.save_persistent()" in (ROOT / "runtime/01_defines.rpy").read_text()
+    assert "install_base(root, target" in builder
+    assert "audio_text.replace" not in builder
     assert "subprocess" not in builder
     assert "ffmpeg" not in builder
     assert 'replace("        xpos 1191", "        xpos 747")' not in builder
     assert 'replace("        ypos 639", "        ypos 556")' not in builder
     assert 'rscript_ctc_x = 747' in FOREST_COMPAT
     assert 'rscript_voice_format = "voice/%04d.ogg"' in FOREST_COMPAT
-    inline_graphic = "{forest_g=%s:%d}"
-    assert inline_graphic in builder
-    assert builder.index('speaker = renpy.re.match') < \
-        builder.index('text = forest_inline_graphics(text)')
-    assert 'config.self_closing_custom_text_tags["forest_g"]' in FOREST_COMPAT
-    assert 'config.self_closing_custom_text_tags["forest_a"]' in FOREST_COMPAT
-    assert 'zoom = persistent.forest_text_size / 22.0' in FOREST_COMPAT
+    inline_graphic = "{rscript_g=%s:%d}"
+    assert inline_graphic in FOREST_COMPAT
+    assert FOREST_COMPAT.index('speaker = renpy.re.match') < \
+        FOREST_COMPAT.index('return rscript_inline_graphics(text)')
+    assert 'config.self_closing_custom_text_tags["rscript_g"]' in FOREST_COMPAT
+    assert 'config.self_closing_custom_text_tags["rscript_a"]' in FOREST_COMPAT
+    assert 'zoom = persistent.rscript_text_size / float(rscript_inline_base_size)' in FOREST_COMPAT
     assert 'renpy.TEXT_DISPLAYABLE, image' in FOREST_COMPAT
-    inline_start = FOREST_COMPAT.index("    def forest_inline_graphics")
+    inline_start = FOREST_COMPAT.index("    def rscript_inline_graphics")
     inline_end = FOREST_COMPAT.index(
         "    config.self_closing_custom_text_tags", inline_start)
     inline_namespace = {
         "renpy": argparse.Namespace(re=re),
-        "persistent": argparse.Namespace(forest_text_size=22),
+        "persistent": argparse.Namespace(rscript_text_size=22),
     }
     exec(textwrap.dedent(FOREST_COMPAT[inline_start:inline_end]),
          inline_namespace)
-    assert inline_namespace["forest_inline_graphics"](
-        "A^g715B") == "A{forest_g=715:22}B"
-    assert inline_namespace["forest_inline_graphics"](
-        "A^a601B") == "A{forest_a=601:22}B"
-    assert "'label splashscreen:\\n'" in builder
-    assert ("'    _movie 2\\n'\n"
-            "        '    _movie 1\\n'\n"
-            "        '    return\\n\\n'\n"
-            "        'label main_menu:\\n'" in builder)
-    assert 'obsolete.suffix.lower() in {".mpg", ".webm"}' in builder
+    assert inline_namespace["rscript_inline_graphics"](
+        "A^g715B") == "A{rscript_g=715:22}B"
+    assert inline_namespace["rscript_inline_graphics"](
+        "A^a601B") == "A{rscript_a=601:22}B"
+    entry = (ROOT / "forest/game/script.rpy").read_text()
+    assert "label splashscreen:" in entry
+    assert "    _movie 2\n    _movie 1\n    return" in entry
+    assert 'obsolete.suffix.lower() in {".mpg", ".webm"}' in (ROOT / "port_template/port_resources.py").read_text()
     assert '"mov/%04d.webm"' not in builder
     assert '"mov/%04d.mpg"' in (ROOT / "runtime" / "03_rscript_gfx.rpy").read_text(
         encoding="utf-8")
@@ -114,8 +117,8 @@ def main() -> None:
     assert "rotate_layer(args.Layer)" in gfx
     assert "def parse_oload(lex):" in RSCRIPT_OBJECTS
     assert "rotate_layer(args.Layer)" in RSCRIPT_OBJECTS
-    assert 'if "def parse_oload(lex):" not in gfx_text:' in builder
-    assert 'if "    default object_size = {}" not in definitions_text:' in builder
+    assert 'gfx_text.replace' not in builder
+    assert 'default object_size = {}' in definitions
     with TemporaryDirectory() as temporary:
         target = Path(temporary)
         convert_masks(resources / "grps", target)
@@ -141,7 +144,7 @@ def main() -> None:
         assert (movie_target / "0001.mpg").read_bytes() == b"original MPEG"
     for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",
                  "NotoSerifCJK-Regular.ttc", "simhei.ttf"):
-        font = ROOT / "forest" / "fonts" / name
+        font = ROOT / "port_template" / "fonts" / name
         assert font.is_file() and font.stat().st_size > 1_000_000
     files = sorted((resources / "scr").glob("*.tsc"))
     scenes = [compile_scene(path) for path in files]
@@ -165,10 +168,10 @@ def main() -> None:
     title = scenes[[p.stem for p in files].index("0001")]
     assert "_forest_click 0 0" in title
     assert 'font "fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT
-    assert 'renpy.music.play(voice_file, channel = \\"rscript_voice\\"' in builder
-    assert 'store.forest_last_voice = voice_file' in builder
-    assert "who = None" in builder
-    assert '"rscript_dither.svg"' in builder
+    assert 'channel = "rscript_voice"' in (ROOT / "runtime/04_rscript_audio.rpy").read_text()
+    assert "store.rscript_last_voice = voice_file" in (ROOT / "runtime/04_rscript_audio.rpy").read_text()
+    assert "rscript_dialogue_begin()" in (ROOT / "runtime/05_rscript_text.rpy").read_text()
+    assert (ROOT / "runtime/gui/rscript_dither.svg").is_file()
     assert "_load 11 1001 515 267 4 0" in title
     assert "_se 0 1\n    _se_on 0 1 0 0" in title
     assert "_forest_folder 0 'grpo'" in scenes[[p.stem for p in files].index("0000")]
@@ -213,7 +216,7 @@ def main() -> None:
     prompt = menu_text(story_tsc.string(first_select.operands[1]))
     assert ("$ jump_back_point = renpy.game.log.current.identifier\n"
             "    $ forest_choice_prompt = "
-            "forest_inline_graphics(renpy.translation.translate_string(%r))\n" %
+            "rscript_inline_graphics(renpy.translation.translate_string(%r))\n" %
             prompt in story)
     for number, index in enumerate(first_select.operands[7:9]):
         choice = menu_text(story_tsc.string(index))
@@ -229,11 +232,11 @@ def main() -> None:
             (first_select.offset, "choice1"):
                 "\u53eb^g715\u5c0f\u59b9\u5feb\u4e00\u70b9",
         }})
-    assert ("$ forest_choice_prompt = forest_inline_graphics("
+    assert ("$ forest_choice_prompt = rscript_inline_graphics("
             "renpy.translation.translate_string({'zh': "
             "'\u867d\u7136^g725\u5c0f\u59b9\u8fd8\u843d\u5728\u540e\u5934\u2026\u2026\uff1f'}.get("
             "_preferences.language" in patched_menu)
-    assert ("$ forest_choice_1 = forest_inline_graphics("
+    assert ("$ forest_choice_1 = rscript_inline_graphics("
             "renpy.translation.translate_string({'zh': "
             "'\u53eb^g715\u5c0f\u59b9\u5feb\u4e00\u70b9'}.get("
             "_preferences.language" in patched_menu)
@@ -246,10 +249,10 @@ def main() -> None:
                        if item.opcode == 32 and item.operands[0] == 40)
     assert "    _oload 40 400 270 0 0 %r" % credit_text in credits
     assert 'color = "#FFFFFF"' in RSCRIPT_OBJECTS
-    assert "font = forest_current_font()" in RSCRIPT_OBJECTS
-    assert "xmaximum = font_size * persistent.forest_oload_line_chars" not in \
+    assert "font = gui.text_font" in RSCRIPT_OBJECTS
+    assert "xmaximum = font_size * persistent.rscript_oload_line_chars" not in \
         RSCRIPT_OBJECTS
-    assert "persistent.forest_text_size // 22" in FOREST_COMPAT
+    assert "persistent.rscript_text_size // rscript_base_text_size" in FOREST_COMPAT
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
     assert 'RScriptText(text_value, kind = "oload"' in RSCRIPT_OBJECTS
     assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in builder
@@ -275,46 +278,46 @@ def main() -> None:
         "601": "https://example.test/page#keeper",
         "603": "https://example.test/page#replay",
     }
-    assert "default persistent.forest_text_cps = 20" in FOREST_COMPAT
-    assert "default persistent.forest_wiki_mode = False" in FOREST_COMPAT
-    assert "def forest_prepare_wiki_text(text):" in FOREST_COMPAT
+    assert "default persistent.rscript_text_cps = 20" in FOREST_COMPAT
+    assert "default persistent.rscript_wiki_mode = False" in FOREST_COMPAT
+    assert "def rscript_prepare_wiki_text(text):" in FOREST_COMPAT
     game_menu = FOREST_COMPAT.split("screen preferences(title_mode=False):", 1)[1].split(
         "screen forest_title_preferences():", 1)[0]
     title_menu = FOREST_COMPAT.split("screen forest_title_preferences():", 1)[1].split(
         "screen save():", 1)[0]
-    assert 'if _preferences.language in forest_wiki_keywords:' in game_menu
-    assert 'action Function(forest_set_wiki, True)' in game_menu
-    assert 'action Function(forest_set_wiki, False)' in game_menu
-    assert 'selected persistent.forest_wiki_mode' in game_menu
-    assert 'selected not persistent.forest_wiki_mode' in game_menu
+    assert 'if _preferences.language in rscript_wiki_keywords:' in game_menu
+    assert 'action Function(rscript_set_wiki, True)' in game_menu
+    assert 'action Function(rscript_set_wiki, False)' in game_menu
+    assert 'selected persistent.rscript_wiki_mode' in game_menu
+    assert 'selected not persistent.rscript_wiki_mode' in game_menu
     assert 'textbutton ("维基' not in game_menu
-    assert 'forest_set_wiki' not in title_menu
+    assert 'rscript_set_wiki' not in title_menu
     assert 'prefix = "gg" if wiki_enabled else "gf"' in FOREST_COMPAT
-    wiki_start = FOREST_COMPAT.index("    def forest_wiki_plain")
-    wiki_end = FOREST_COMPAT.index("    def forest_save_progress", wiki_start)
-    persistent = type("Persistent", (), {"forest_wiki_mode": True})()
+    wiki_start = FOREST_COMPAT.index("    def rscript_wiki_plain")
+    wiki_end = FOREST_COMPAT.index("    def rscript_save_progress", wiki_start)
+    persistent = type("Persistent", (), {"rscript_wiki_mode": True})()
     preferences = type("Preferences", (), {"language": "zh"})()
     wiki_namespace = {
         "renpy": type("Renpy", (), {"re": re})(),
         "persistent": persistent,
         "_preferences": preferences,
-        "forest_wiki_keywords": {
+        "rscript_wiki_keywords": {
             "zh": [("A split keyword.", "https://example.test/wiki",
                     "split keyword")],
         },
     }
     exec(textwrap.dedent(FOREST_COMPAT[wiki_start:wiki_end]), wiki_namespace)
-    prepare_wiki = wiki_namespace["forest_prepare_wiki_text"]
+    prepare_wiki = wiki_namespace["rscript_prepare_wiki_text"]
     linked = prepare_wiki("A ^cgsplit^cw ^cgkeyword^cw.")
     assert linked.count("{a=https://example.test/wiki}") == 2
     assert linked.count("{color=#D7FFB3}") == 2
-    persistent.forest_wiki_mode = False
+    persistent.rscript_wiki_mode = False
     assert prepare_wiki("A ^cgkeyword^cw.") == "A ^cgkeyword^cw."
-    assert 'text "[persistent.forest_text_cps]"' in FOREST_COMPAT
+    assert 'text "[persistent.rscript_text_cps]"' in FOREST_COMPAT
     assert "min_width 48" in FOREST_COMPAT
-    assert 'forest_adjust_text, "forest_text_cps", -5, 5, 120' in FOREST_COMPAT
-    assert 'forest_adjust_text, "forest_text_cps", 5, 5, 120' in FOREST_COMPAT
-    assert "slow_cps persistent.forest_text_cps" in FOREST_COMPAT
+    assert 'rscript_adjust_text, "rscript_text_cps", -5, 5, 120' in FOREST_COMPAT
+    assert 'rscript_adjust_text, "rscript_text_cps", 5, 5, 120' in FOREST_COMPAT
+    assert "slow_cps persistent.rscript_text_cps" in FOREST_COMPAT
     say_screen = FOREST_COMPAT[FOREST_COMPAT.index(
         "screen say(who, what, center=False):"):]
     assert "        if center:\n            rscript_text what:" in say_screen
@@ -334,32 +337,32 @@ def main() -> None:
             'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
     assert "xpos text_indent + 1" in FOREST_COMPAT
     assert "xsize config.screen_width - text_indent - 1" not in FOREST_COMPAT
-    assert "default persistent.forest_say_line_chars = 19" in FOREST_COMPAT
-    assert "default persistent.forest_oload_line_chars = 20" in FOREST_COMPAT
-    assert "default persistent.forest_line_spacing = 7" in FOREST_COMPAT
-    assert "line_spacing persistent.forest_line_spacing" in FOREST_COMPAT
+    assert "default persistent.rscript_say_line_chars = 19" in FOREST_COMPAT
+    assert "default persistent.rscript_oload_line_chars = 20" in FOREST_COMPAT
+    assert "default persistent.rscript_line_spacing = 7" in FOREST_COMPAT
+    assert "line_spacing persistent.rscript_line_spacing" in FOREST_COMPAT
     assert 'text "Line Spacing" yalign 0.5' in FOREST_COMPAT
-    assert ('forest_adjust_text, "forest_line_spacing", -1, -10, 30' in
+    assert ('rscript_adjust_text, "rscript_line_spacing", -1, -10, 30' in
             FOREST_COMPAT)
     assert "screen forest_title_preferences():" in FOREST_COMPAT
     assert 'background Solid("#080808e8")' in FOREST_COMPAT
     assert "xsize 640" in FOREST_COMPAT
-    assert 'text "Font [forest_font_name()]"' not in FOREST_COMPAT
-    assert 'text "[forest_font_name()]"' in FOREST_COMPAT
-    assert "default persistent.forest_progress_backup = None" in FOREST_COMPAT
-    assert 'define forest_default_font = "fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT
-    assert 'default persistent.forest_text_font = forest_default_font' in FOREST_COMPAT
-    assert "def forest_fonts():" in FOREST_COMPAT
-    assert "def forest_cycle_font(step):" in FOREST_COMPAT
-    assert FOREST_COMPAT.count("font forest_current_font()") == 5
-    assert "forest_save_progress()" in FOREST_COMPAT
-    assert "forest_load_progress()" in FOREST_COMPAT
-    assert "forest_clear_progress()" in FOREST_COMPAT
+    assert 'text "Font [rscript_font_name()]"' not in FOREST_COMPAT
+    assert 'text "[rscript_font_name()]"' in FOREST_COMPAT
+    assert "default persistent.rscript_progress_backup = None" in FOREST_COMPAT
+    assert 'define rscript_default_font = "fonts/NotoSansCJKjp-Regular.otf"' in FOREST_COMPAT
+    assert 'default persistent.rscript_text_font = rscript_default_font' in FOREST_COMPAT
+    assert "def rscript_fonts():" in FOREST_COMPAT
+    assert "def rscript_cycle_font(step):" in FOREST_COMPAT
+    assert FOREST_COMPAT.count("font rscript_current_font()") == 5
+    assert "rscript_save_progress()" in FOREST_COMPAT
+    assert "rscript_load_progress()" in FOREST_COMPAT
+    assert "rscript_clear_progress()" in FOREST_COMPAT
     assert 'return ShowMenu("forest_title_preferences")' in FOREST_COMPAT
-    assert '"images/grps/gf%03d.png" % forest_speaker' in FOREST_COMPAT
-    assert "default forest_speaker_visible = False" in FOREST_COMPAT
-    assert "if forest_speaker_visible and forest_speaker is not None:" in FOREST_COMPAT
-    assert "elif forest_speaker_visible and who:" in FOREST_COMPAT
+    assert '"images/grps/gf%03d.png" % rscript_speaker' in FOREST_COMPAT
+    assert "default rscript_speaker_visible = False" in FOREST_COMPAT
+    assert "if rscript_speaker_visible and rscript_speaker is not None:" in FOREST_COMPAT
+    assert "elif rscript_speaker_visible and who:" in FOREST_COMPAT
     assert 'screen forest_compane():' in FOREST_COMPAT
     assert 'use forest_compane' in FOREST_COMPAT
     assert 'xpos 606\n            ypos 120' in FOREST_COMPAT
@@ -368,11 +371,11 @@ def main() -> None:
     assert 'action Rollback()' in FOREST_COMPAT
     assert 'action RollForward()' in FOREST_COMPAT
     assert 'action Skip(fast=True)' in FOREST_COMPAT
-    assert 'action Function(forest_replay_voice)' in FOREST_COMPAT
+    assert 'action Function(rscript_replay_voice)' in FOREST_COMPAT
     assert 'insensitive "images/grps/compane/voc_off.png"' in FOREST_COMPAT
     assert 'action HideInterface()' in FOREST_COMPAT
-    assert 'config.game_menu_action = Function(forest_open_game_menu)' in FOREST_COMPAT
-    assert 'if store.menu_enabled and not store.forest_input_locked:' in FOREST_COMPAT
+    assert 'config.game_menu_action = Function(rscript_open_game_menu)' in FOREST_COMPAT
+    assert 'if store.menu_enabled and not rscript_touch_locked():' in FOREST_COMPAT
     assert "default forest_input_locked = False" in FOREST_COMPAT
     assert 'def rscript_touch_locked():\n        return store.forest_input_locked' in FOREST_COMPAT
     assert 'screen forest_touch_controls():' not in FOREST_COMPAT
@@ -410,8 +413,8 @@ def main() -> None:
         assert cursor.getbbox() is not None
     assert ('execute=execute_forest_setclksys, lint=lint_undef)'
             in FOREST_COMPAT)
-    assert "'label main_menu:\\n'" in builder
-    assert "'define config.version = \"1.0\"\\n'" in builder
+    assert "label main_menu:" in entry
+    assert 'define config.version = "1.0"' in (ROOT / "forest/game/options.rpy").read_text()
     with TemporaryDirectory() as temporary:
         patch_scr = Path(temporary) / "scr"
         patch_scr.mkdir()

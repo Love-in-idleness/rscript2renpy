@@ -19,7 +19,7 @@ def main() -> None:
         assert marker in combined
     assert "xalign gui.dialogue_text_xalign\n            xpos gui.dialogue_xpos" not in combined
     assert 'lang = lex.word()' in combined
-    assert '"y": "#FFDE00", "g": "#D7FFB3"' in combined
+    assert '"y": "#FFDE00", "g": rscript_green_color()' in combined
     assert '"w": "#FFFFFF", "k": "#000000"' in combined
     assert r"\^c([ygwk])" in combined
     assert 'RScriptText(text_value, kind = "oload"' in combined

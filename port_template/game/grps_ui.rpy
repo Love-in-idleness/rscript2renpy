@@ -7,7 +7,8 @@ init python:
 
     def rscript_replay_voice():
         if store.rscript_last_voice:
-            renpy.music.play(store.rscript_last_voice, channel="voice")
+            renpy.music.play(store.rscript_last_voice, channel="rscript_voice",
+                             loop=False, if_changed=False)
 
 screen rscript_grps_button(folder, name, button_action, enabled=True):
     $ items = rscript_grps_layout.get(folder, {}).get("items", {})
@@ -35,6 +36,10 @@ screen preferences():
     modal True
     key "game_menu" action Return()
     $ layout = rscript_grps_layout.get("confscrn")
+    textbutton "Text Settings":
+        xalign 0.5
+        yalign 0.97
+        action ShowMenu("rscript_text_preferences")
     if layout and "bg" in layout["items"]:
         fixed:
             xysize layout["size"]
@@ -86,8 +91,8 @@ screen preferences():
                         ysize track[3]
                         bar_invert prefix == "auto"
 
-            use rscript_grps_button("confscrn", "save", ShowMenu("save"))
-            use rscript_grps_button("confscrn", "load", ShowMenu("load"))
+            use rscript_grps_button("confscrn", "save", ShowMenu("save"), save_enabled)
+            use rscript_grps_button("confscrn", "load", ShowMenu("load"), save_enabled)
             use rscript_grps_button("confscrn", "title", MainMenu(confirm=False))
             use rscript_grps_button("confscrn", "exit", Quit(confirm=True))
             use rscript_grps_button("confscrn", "close", Return())
@@ -163,9 +168,9 @@ screen rscript_choice(items, prompt=None):
                     $ body = question["items"]["body"]
                     $ textpos = question["items"].get("text", (20, 10))
                     add "images/grps/%s/body.png" % prompt_folder xpos body[0] ypos body[1]
-                    text prompt xpos textpos[0] ypos textpos[1] color "#ffffff" font gui.text_font
+                    text rscript_menu_text(prompt) xpos textpos[0] ypos textpos[1] color "#ffffff" font rscript_current_font()
             else:
-                text prompt xalign 0.5 color "#ffffff" font gui.text_font
+                text rscript_menu_text(prompt) xalign 0.5 color "#ffffff" font rscript_current_font()
         for item in items:
             if item.action is not None:
                 if answer_folder:
@@ -183,9 +188,9 @@ screen rscript_choice(items, prompt=None):
                             xpos body[0]
                             ypos body[1]
                             action item.action
-                        text item.caption xpos textpos[0] ypos textpos[1] color "#ffffff" font gui.text_font
+                        text rscript_menu_text(item.caption) xpos textpos[0] ypos textpos[1] color "#ffffff" font rscript_current_font()
                 else:
-                    textbutton item.caption action item.action
+                    textbutton rscript_menu_text(item.caption) action item.action text_font rscript_current_font()
 
 screen save():
     tag menu

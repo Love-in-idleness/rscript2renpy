@@ -1,5 +1,5 @@
 default persistent.rscript_say_line_chars = 19
-default persistent.rscript_oload_line_chars = 19
+default persistent.rscript_oload_line_chars = 20
 
 python early:
     import rscript_wrap
@@ -40,7 +40,7 @@ python early:
             base = self.rscript_base_size or self.style.size
             settings = rscript_text_settings(self.rscript_kind, base)
             signature = (settings, _preferences.language,
-                         getattr(persistent, "forest_wiki_mode", False))
+                         getattr(persistent, "rscript_wiki_mode", False))
             if signature != self.rscript_settings:
                 self.rscript_settings = signature
                 font, size, chars, spacing = settings

@@ -119,6 +119,7 @@ init python:
                 store._reg[key] = value
             else:
                 persistent._reg[key] = value
+                renpy.save_persistent()
 
         def __contains__(self, key):
             key, val = eval_key(key)

@@ -6,7 +6,12 @@ python early:
 
     def parse_say(lex):
         lang = lex.word()
-        who = lex.match(r"(.*?)：")
+        # A colon inside a quoted body is not a speaker delimiter.
+        # Match the raw Python literal, not lex.string(): the latter collapses
+        # spaces and rewrites escapes. The delimiter must be outside quotes.
+        who = lex.match(r'''(?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|[A-Za-z_][A-Za-z0-9_]*)(?=\s*：)''')
+        if who is not None:
+            lex.match(r"\s*：")
 
         what = lex.rest()
         return lang, who, what
@@ -32,6 +37,7 @@ python early:
             else:
                 who = nvl_narrator
 
+        rscript_dialogue_begin()
         what, center = parse_rscript_text(what, True)
 
         if "{nw}" in what:
@@ -47,8 +53,10 @@ python early:
         queue_draw(show_window)
         process_draw_queue()
         renpy.say(who, what, interact = True, show_center = center)
+        rscript_dialogue_end()
         if persistent.rscript_stop_voice_on_advance:
             renpy.music.stop(channel = "voice")
+            renpy.music.stop(channel = "rscript_voice")
 
         if store.jump_back_point is None:
             store.jump_back_point = renpy.game.log.current.identifier
@@ -69,6 +77,7 @@ python early:
         lang, what = o
 
         who  = store.last_spk
+        rscript_dialogue_begin(append=True)
         what, center = parse_rscript_text(what, True)
 
         if "{nw}" in what:
@@ -89,8 +98,10 @@ python early:
 
         who.do_extend()
         renpy.say(who, what, interact = True, show_center = center)
+        rscript_dialogue_end()
         if persistent.rscript_stop_voice_on_advance:
             renpy.music.stop(channel = "voice")
+            renpy.music.stop(channel = "rscript_voice")
 
     renpy.register_statement("_append", parse = parse_append, execute = execute_append, lint = lint_undef)
 

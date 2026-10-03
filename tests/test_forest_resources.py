@@ -7,8 +7,8 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "forest"))
-from forest_tsc import read_tsc  # noqa: E402
+sys.path.insert(0, str(ROOT / "port_template"))
+from rscript_tsc import read_tsc  # noqa: E402
 
 
 def main() -> None:

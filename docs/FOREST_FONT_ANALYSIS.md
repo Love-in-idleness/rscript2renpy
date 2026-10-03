@@ -27,10 +27,10 @@ SHA-256：`94ab25e356d24d9a816ba7bcee6cb30fd6d0f664bbdbc24c000346b2f1b4bda9`。
 
 ## 仓库默认字体
 
-仓库的 `forest/fonts/simhei.ttf` 来自本机
+仓库的 `port_template/fonts/simhei.ttf` 来自本机
 `/usr/share/fonts/truetype/winfonts/simhei.ttf`，不是 EXE 内嵌字体。
 其字体族为 SimHei，Regular，版本 5.04，哈希与许可状态见
-[SimHei-NOTICE.md](../forest/fonts/SimHei-NOTICE.md)。
+[SimHei-NOTICE.md](../port_template/fonts/SimHei-NOTICE.md)。
 
 此文件每 em 为 256 单位，常用拉丁字母及 ASCII 空格前进量为 128，
 汉字为 256；22px 下未 hinting 的理论前进量为 11px / 22px，

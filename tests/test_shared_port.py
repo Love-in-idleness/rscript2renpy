@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Build disposable Forest/Khime bases and exercise native shared features."""
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import shutil
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "forest"))
+sys.path.insert(0, str(ROOT / "khime"))
+from build_forest_rscript import main as build_forest
+from build_khime_rscript import build_khime
+from khime_tsc import compile_scene
+
+
+def main():
+    with TemporaryDirectory(prefix="rscript-shared-") as temporary:
+        temporary = Path(temporary)
+        for name in ("Forest", "Khime"):
+            resources = temporary / (name + "-resources")
+            folders = ("scr", "grpe", "grpf", "grpo", "grpo_bg", "grpo_bu",
+                       "grpo_ci", "grpo_f", "grpo_ex", "grpo_tp", "grpp",
+                       "grps", "bgm", "voice", "wav", "mov")
+            for folder in folders:
+                (resources / folder).mkdir(parents=True)
+            header = (";@gsc-byte-format legacy-28\n;@gsc-schema early\n"
+                      if name == "Forest" else
+                      ";@gsc-byte-format modern-36\n;@gsc-schema modern\n")
+            script = resources / "scr/0000.tsc"
+            header += ";@gsc-text-encoding CP932\n"
+            script.write_text(header + "*end\n", encoding="utf-8")
+            for asset in ("grpe/9001.png", "grps/gf707.png"):
+                shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", resources / asset)
+            for asset in ("bgm/Track01.ogg", "wav/0001.ogg", "voice/0001.ogg",
+                          "mov/0001.mpg", "mov/0002.mpg"):
+                (resources / asset).write_bytes(b"unused fixture")
+            project = temporary / name
+            if name == "Forest":
+                build_forest(["build_forest_rscript.py", str(resources), str(project)])
+            else:
+                patch = temporary / "translation"
+                (patch / "scr").mkdir(parents=True)
+                text = ('*font 20 400 200 0 0 "overlay"\n'
+                        '*TXT 0 0 0 0 "Alice" "body" 0\n'
+                        '*TXA 0 0 0 0 "append" 0\n'
+                        '*select 1 "question" END END END END END "answer" "" "" "" "" 0 0 0\n'
+                        ':END\n*end\n')
+                script.write_text(header + text, encoding="utf-8")
+                (patch / "scr/0000.tsc").write_text(
+                    header + text.replace('"body"', '"译文"').replace('"overlay"', '"字幕"')
+                    .replace('"append"', '"追加"').replace('"answer"', '"选项"'), encoding="utf-8")
+                translated = compile_scene(script, patches=[("zh", patch)])
+                for word in ("译文", "字幕", "追加", "选项"):
+                    assert word in translated
+                assert "khime_menu_caption_0" in translated
+                build_khime(resources, project, languages=["jp", "zh=" + str(patch)])
+                assert "('zh', 'zh')" in (project / "game/language_config.rpy").read_text()
+                assert (project / "game/tl/zh/rscript_strings.rpy").is_file()
+                (patch / "scr/0000.tsc").write_text(
+                    header + text.replace("*font 20", "*font 21"), encoding="utf-8")
+                try:
+                    compile_scene(script, patches=[("zh", patch)])
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError("Khime must not silently flatten non-text patch changes")
+            for filename in ("text_features.rpy", "touch_controls.rpy", "gui.rpy"):
+                assert (project / "game" / filename).read_bytes() == \
+                    (ROOT / "port_template/game" / filename).read_bytes()
+            for source in (ROOT / "runtime").glob("*.rpy"):
+                assert (project / "game" / source.name).read_bytes() == source.read_bytes()
+            if len(sys.argv) > 1:
+                shutil.copy2(ROOT / "tests/renpy_shared_features.rpy",
+                             project / "game/shared_features_test.rpy")
+                subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), str(project),
+                                "sharedporttest", "--savedir", str(project / "test-saves")], check=True)
+    print("OK: both ports install identical shared runtime/templates; Khime text-only language patch")
+
+
+if __name__ == "__main__":
+    main()

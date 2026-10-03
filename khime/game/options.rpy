@@ -6,6 +6,8 @@ define config.has_music = True
 define config.has_voice = True
 
 init -100 python:
+    rscript_base_text_size = 30
+    rscript_inline_base_size = 30
     rscript_voice_format = "voice/%04d.ogg"
     rscript_bgm_format = "bgm/Track%02d.ogg"
     rscript_se_format = "wav/%04d.ogg"

@@ -1,6 +1,7 @@
 __pycache__/
 .pytest_cache/
 .vscode/
+.port-check/
 *.pyc
 *.rpyc
 task.txt

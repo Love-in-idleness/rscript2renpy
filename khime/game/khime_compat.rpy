@@ -108,7 +108,8 @@ python early:
         if result == 2:
             return ShowMenu("load")
         if result == 3:
-            return ShowMenu("preferences")
+            return ShowMenu("preferences" if store.menu_enabled else
+                            "rscript_text_preferences")
         return Return(result)
 
     renpy.register_statement("_khime_say", parse=khime_parse,
@@ -165,8 +166,10 @@ screen say(who, what, center=False):
 
         rscript_text what:
             id "what"
-            font "fonts/NotoSansCJKjp-Regular.otf"
-            size 30
+            font rscript_current_font()
+            size persistent.rscript_text_size
+            slow_cps persistent.rscript_text_cps
+            line_spacing persistent.rscript_line_spacing
             color "#ffffff"
             xpos (0.5 if center else textpos[0])
             xanchor (0.5 if center else 0.0)
