@@ -34,6 +34,65 @@ init -1 python:
     config.screenshot_pattern = os.path.join(
         config.savedir, "screenshots", "screenshot%04d.png")
 
+    def rscript_publish_screenshot(filename):
+        from jnius import autoclass, cast
+        activity = autoclass("org.renpy.android.PythonSDLActivity").mActivity
+        resolver = activity.getContentResolver()
+        images = autoclass("android.provider.MediaStore$Images$Media")
+        name = os.path.basename(filename)
+        if autoclass("android.os.Build$VERSION").SDK_INT < 29:
+            # Android <=9 needs the legacy storage permission granted by OS.
+            uri = images.insertImage(resolver, filename, name, "RScript screenshot")
+            if not uri:
+                raise IOError("Gallery rejected screenshot (check storage permission)")
+            return str(uri)
+
+        values = autoclass("android.content.ContentValues")()
+        integer = autoclass("java.lang.Integer")
+        values.put("_display_name", name)
+        values.put("mime_type", "image/png")
+        values.put("relative_path", "Pictures/RScript")
+        values.put("is_pending", integer(1))
+        uri = resolver.insert(images.EXTERNAL_CONTENT_URI, values)
+        if uri is None:
+            raise IOError("Gallery rejected screenshot")
+        try:
+            output = resolver.openOutputStream(uri)
+            if output is None:
+                raise IOError("Cannot open gallery output stream")
+            try:
+                source = autoclass("java.io.FileInputStream")(filename)
+                try:
+                    autoclass("android.os.FileUtils").copy(
+                        cast("java.io.InputStream", source),
+                        cast("java.io.OutputStream", output))
+                finally:
+                    source.close()
+            finally:
+                output.close()
+            values.clear()
+            values.put("is_pending", integer(0))
+            if resolver.update(uri, values, None, None) != 1:
+                raise IOError("Cannot publish gallery screenshot")
+        except Exception:
+            # Remove only this failed pending entry; keep the app's PNG copy.
+            resolver.delete(uri, None, None)
+            raise
+        return str(uri)
+
+    def rscript_screenshot_saved(filename):
+        try:
+            uri = rscript_publish_screenshot(filename)
+        except Exception as error:
+            renpy.log("RScript screenshot gallery export failed: %r" % error)
+            renpy.notify("Gallery export failed. Screenshot saved in app files: %s" % filename)
+        else:
+            renpy.log("RScript screenshot saved to gallery: %s" % uri)
+            renpy.notify("Screenshot saved to Gallery / Pictures / RScript.")
+
+    if renpy.android:
+        config.screenshot_callback = rscript_screenshot_saved
+
 screen rscript_touch_controls():
     zorder 200
     if renpy.variant("touch") and not _menu:

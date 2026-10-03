@@ -120,9 +120,101 @@ python early:
             renpy.screenshot = original_capture
             renpy.invoke_in_main_thread = original_invoke
             renpy.notify = original_notify
-        print("OK: touch buttons, locks, Auto timing/voice gate, native screenshot action and paths")
+
+        # Check the MediaStore transaction; this is NOT an Android JNI/device test.
+        import sys, types, io, shutil
+        class Values(dict):
+            def put(self, key, value):
+                self[key] = value
+        class Resolver:
+            failure = None
+            def insert(self, collection, values):
+                self.inserted = dict(values)
+                self.deleted = False
+                self.published = False
+                return None if self.failure == "insert" else "content://test/1"
+            def openOutputStream(self, uri):
+                self.output = io.BytesIO()
+                return None if self.failure == "open" else self.output
+            def update(self, uri, values, selection, args):
+                assert self.output.closed
+                assert values == {"is_pending": 0}
+                self.published = True
+                return 0 if self.failure == "update" else 1
+            def delete(self, uri, selection, args):
+                assert uri == "content://test/1"
+                self.deleted = True
+        resolver = Resolver()
+        version = types.SimpleNamespace(SDK_INT=29)
+        source_streams = []
+        def input_stream(filename):
+            source = open(filename, "rb")
+            source_streams.append(source)
+            return source
+        def copy_stream(source, output):
+            if resolver.failure == "copy":
+                raise IOError("test copy error")
+            shutil.copyfileobj(source, output)
+            return output.tell()
+        classes = {
+            "org.renpy.android.PythonSDLActivity": types.SimpleNamespace(
+                mActivity=types.SimpleNamespace(getContentResolver=lambda: resolver)),
+            "android.provider.MediaStore$Images$Media": types.SimpleNamespace(
+                EXTERNAL_CONTENT_URI="content://test", insertImage=lambda *args: "content://legacy/1"),
+            "android.os.Build$VERSION": version,
+            "android.content.ContentValues": Values,
+            "java.lang.Integer": int,
+            "java.io.FileInputStream": input_stream,
+            "android.os.FileUtils": types.SimpleNamespace(copy=copy_stream),
+        }
+        old_jnius = sys.modules.get("jnius")
+        sys.modules["jnius"] = types.SimpleNamespace(autoclass=classes.__getitem__, cast=lambda name, obj: obj)
+        try:
+            assert rscript_publish_screenshot(captured[0]) == "content://test/1"
+            assert resolver.inserted["is_pending"] == 1
+            assert resolver.inserted["relative_path"] == "Pictures/RScript"
+            assert resolver.published and not resolver.deleted
+            for failure in ("insert", "open", "copy", "update"):
+                resolver.failure = failure
+                try:
+                    rscript_publish_screenshot(captured[0])
+                    assert False, failure
+                except IOError:
+                    pass
+                assert resolver.deleted == (failure != "insert")
+                assert os.path.isfile(captured[0])
+            assert all(source.closed for source in source_streams)
+            renpy.notify = notices.append
+            rscript_screenshot_saved(captured[0])
+            assert "Gallery export failed" in notices[-1]
+            resolver.failure = None
+            rscript_screenshot_saved(captured[0])
+            assert "saved to Gallery" in notices[-1]
+            version.SDK_INT = 28
+            assert rscript_publish_screenshot(captured[0]) == "content://legacy/1"
+        finally:
+            renpy.notify = original_notify
+            if old_jnius is None:
+                del sys.modules["jnius"]
+            else:
+                sys.modules["jnius"] = old_jnius
+        print("OK: touch/Auto, screenshot action/paths, gallery transaction/cleanup/notifications")
         return False
     renpy.arguments.register_command("touchtest", check_touch_controls)
 
 label start:
-    return
+    scene expression Solid("#234567")
+    show text "Native screenshot pixel capture test"
+    $ renpy.pause(0.2, hard=True)
+    $ Screenshot()()
+    $ renpy.pause(0.5, hard=True)
+    python:
+        filename = config.screenshot_pattern % 1
+        with open(filename, "rb") as captured:
+            assert captured.read(8) == b"\x89PNG\r\n\x1a\n"
+        assert os.path.getsize(filename) > 100
+        import pygame_sdl2 as pygame
+        pixels = pygame.image.load(filename)
+        assert tuple(pixels.get_at((10, 10)))[:3] == (35, 69, 103)
+        print("OK: real renderer -> native Screenshot -> PNG file (%d bytes)" % os.path.getsize(filename))
+    $ renpy.quit()
