@@ -5,6 +5,11 @@ default rscript_last_voice = None
 init python:
     config.game_menu_action = ShowMenu("preferences")
 
+    def rscript_save_json(data):
+        data["rscript_dt1"] = int(store._r[1])
+
+    config.save_json_callbacks.append(rscript_save_json)
+
     def rscript_replay_voice():
         if store.rscript_last_voice:
             renpy.music.play(store.rscript_last_voice, channel="rscript_voice",
@@ -225,16 +230,24 @@ screen rscript_file_slots(mode):
                         background None
                         hover_background Solid("#ffffff20")
                         action slot_action
-                        add FileScreenshot(slot):
-                            xpos 4
-                            ypos 4
-                            xsize 92
-                            ysize item[3] - 8
-                        text FileTime(slot, "%Y/%m/%d %H:%M"):
-                            xpos 101
-                            yalign 0.5
-                            color "#ffffff"
-                            size 15
+                        $ dt1 = FileJson(slot, key="rscript_dt1")
+                        $ dt1_image = ("images/grps/dt1_%04d.png" % dt1
+                                       if isinstance(dt1, int) and dt1 > 0 else None)
+                        if dt1_image and renpy.loadable(dt1_image):
+                            add dt1_image
+                        elif FileLoadable(slot):
+                            add FileScreenshot(slot):
+                                xpos 4
+                                ypos 4
+                                xsize 92
+                                ysize item[3] - 8
+                        if FileLoadable(slot):
+                            text FileTime(slot, "%Y/%m/%d %H:%M"):
+                                xalign 0.98
+                                yalign 0.98
+                                color "#ffffff"
+                                size 12
+                                outlines [(1, "#000000", 0, 0)]
             use rscript_grps_button("savescrn", "prev",
                                      FilePagePrevious(max=10, wrap=True))
             use rscript_grps_button("savescrn", "next",

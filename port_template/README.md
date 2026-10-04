@@ -43,6 +43,7 @@
 `.meta.xml` 画布尺寸和坐标，生成 `grps_layout.rpy`。共用界面用原图实现设置、
 存读档、选择项和对话控制条；游戏的 `say` screen 需 `use rscript_compane`，
 `choice` screen 可 `use rscript_choice(items, prompt)`。
+存档时会将 `_r[1]` 记入存档元数据；若存在 `grps/dt1_NNNN.png`，存读档页按此编号显示原游戏章节图，旧存档或缺图时才回退到 Ren'Py 截图。
 缺少坐标元数据会在构建时明确报错，而不是生成位置不明的界面。标题流程和
 选择分支仍由各游戏脚本决定；素材命名或控制语义不同的作品需在专用适配层修改。
 

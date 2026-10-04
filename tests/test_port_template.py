@@ -75,6 +75,10 @@ def main() -> None:
             encoding="utf-8")
         assert "screen rscript_compane():" in (project / "game" / "grps_ui.rpy").read_text(
             encoding="utf-8")
+        save_ui = (project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
+        assert 'data["rscript_dt1"] = int(store._r[1])' in save_ui
+        assert 'FileJson(slot, key="rscript_dt1")' in save_ui
+        assert 'images/grps/dt1_%04d.png' in save_ui
         assert 'key "game_menu" action ShowMenu("preferences")' in (
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert 'key "rollback" action Rollback()' in (
