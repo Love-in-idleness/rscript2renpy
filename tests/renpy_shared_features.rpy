@@ -79,6 +79,30 @@ python early:
         # Update native screens to catch missing variables/properties and
         # verify the same controls exist in both games (lint does not do this).
         renpy.display.screen.prepare_screens()
+        # Inspect real native actions: rev targets the recorded choice,
+        # while bak remains a one-step rollback. No player progress is changed.
+        previous_point = store.jump_back_point
+        try:
+            for point in (None, 12345):
+                store.jump_back_point = point
+                renpy.show_screen("rscript_compane")
+                panel = renpy.get_screen("rscript_compane")
+                panel.update()
+                actions = []
+                def collect_actions(displayable):
+                    if isinstance(displayable, renpy.display.behavior.Button):
+                        actions.append(displayable.action)
+                panel.visit_all(collect_actions)
+                assert len(actions) == 2, actions
+                assert sum(isinstance(action, Rollback) for action in actions) == 1
+                targets = [action.identifier for action in actions
+                           if isinstance(action, RollbackToIdentifier)]
+                assert targets == ([] if point is None else [point]), targets
+                if point is None:
+                    assert any(isinstance(action, NullAction) for action in actions)
+                renpy.hide_screen("rscript_compane")
+        finally:
+            store.jump_back_point = previous_point
         renpy.show_screen("rscript_text_preferences")
         screen = renpy.get_screen("rscript_text_preferences")
         screen.update()

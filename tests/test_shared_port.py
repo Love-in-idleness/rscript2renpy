@@ -32,6 +32,14 @@ def main():
             script.write_text(header + "*end\n", encoding="utf-8")
             for asset in ("grpe/9001.png", "grps/gf707.png"):
                 shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", resources / asset)
+            panel = resources / "grps/compane"
+            panel.mkdir()
+            for button in ("rev", "bak"):
+                shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", panel / (button + ".png"))
+            (panel / ".meta.xml").write_text(
+                '<Canvas><Width>64</Width><Height>32</Height><Items>'
+                '<Item x="0" y="0">rev</Item><Item x="32" y="0">bak</Item>'
+                '</Items></Canvas>', encoding="utf-8")
             for asset in ("bgm/Track01.ogg", "wav/0001.ogg", "voice/0001.ogg",
                           "mov/0001.mpg", "mov/0002.mpg"):
                 (resources / asset).write_bytes(b"unused fixture")

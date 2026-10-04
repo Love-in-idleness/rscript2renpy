@@ -144,7 +144,10 @@ screen rscript_compane():
                         ypos track[1]
                         xsize track[2]
                         ysize track[3]
-            use rscript_grps_button("compane", "rev", Rollback())
+            use rscript_grps_button("compane", "rev",
+                                     If(jump_back_point is not None,
+                                        RollbackToIdentifier(jump_back_point), NullAction()),
+                                     jump_back_point is not None)
             use rscript_grps_button("compane", "bak", Rollback())
             use rscript_grps_button("compane", "fow", RollForward())
             use rscript_grps_button("compane", "next", Skip(fast=True))
