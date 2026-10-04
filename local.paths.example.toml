@@ -1,0 +1,27 @@
+# 复制为 local.paths.toml 并填写本机绝对路径；该文件只供工作流读取，
+# 不会自动改变生成器的命令行参数。空字符串表示尚未配置。
+[tools]
+renpy_sdk = ""
+liarsofttool_repo = ""
+liarsofttool_cli = ""
+
+[outputs]
+renpy_root = ""
+
+[forest]
+resources = ""
+project = ""
+base_language = "jp"
+
+[forest.patches]
+zh = ""
+en = ""
+ru = ""
+
+[khime]
+resources = ""
+project = ""
+base_language = "jp"
+
+[khime.patches]
+zh = ""

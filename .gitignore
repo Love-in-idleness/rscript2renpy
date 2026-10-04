@@ -2,6 +2,8 @@ __pycache__/
 .pytest_cache/
 .vscode/
 .port-check/
+local.paths.toml
+.codex/config.toml
 *.pyc
 *.rpyc
 task.txt
