@@ -1,9 +1,12 @@
 # 复制为 local.paths.toml 并填写本机绝对路径；该文件只供工作流读取，
 # 不会自动改变生成器的命令行参数。空字符串表示尚未配置。
 [tools]
+rscript2renpy_repo = ""
 renpy_sdk = ""
 liarsofttool_repo = ""
+liarsofttool_build = ""
 liarsofttool_cli = ""
+liarsofttool_gui = ""
 
 [outputs]
 renpy_root = ""

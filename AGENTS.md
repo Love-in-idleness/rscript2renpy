@@ -7,6 +7,7 @@
 - 本机路径集中在被 Git 忽略的 `local.paths.toml`。使用前检查路径存在及资源格式；配置记录位置，不证明资源已完整转换。
 - 路径配置格式见 `local.paths.example.toml`，读取方式与权限加载说明见 `docs/LOCAL_WORKFLOW.md`。
 - 项目级 Codex 权限在 `.codex/config.toml`；保存配置不代表当前聊天已重新加载权限。
+- 跨仓库修改前阅读 LiarsoftTool 的 `AGENTS.md`。资源转换、GSC/TSC 格式与编码归 LiarsoftTool；Ren'Py lowering、模板与运行时归本仓库。输出契约改变时验证两侧，不能只修改消费者绕过上游错误。
 
 ## 修改归属
 
