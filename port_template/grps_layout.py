@@ -24,6 +24,8 @@ def collect_layout(resources: Path) -> dict:
         canvas = ET.parse(metadata).getroot()
         items = {}
         for item in canvas.findall("./Items/Item"):
+            if item.get("empty") == "1":
+                continue
             name = (item.text or "").strip()
             image = source / (name + ".png")
             if not image.is_file():

@@ -134,6 +134,13 @@ def main() -> None:
             '<Item x="4" y="2" flag="40">bg</Item></Items></Canvas>',
             encoding="utf-8")
         assert collect_layout(resources)["confscrn"]["items"]["bg"] == (4, 2, 800, 600)
+        (conf / ".meta.xml").write_text(
+            '<Canvas><Width>800</Width><Height>600</Height><Items>'
+            '<Item x="4" y="2" flag="40">bg</Item>'
+            '<Item x="0" y="0" flag="8" empty="1">bg</Item>'
+            '</Items></Canvas>', encoding="utf-8")
+        assert collect_layout(resources)["confscrn"]["items"]["bg"] == (4, 2, 800, 600), \
+            "metadata-only LWG entry must not override its same-named image"
 
     print("OK: generic port template")
 
