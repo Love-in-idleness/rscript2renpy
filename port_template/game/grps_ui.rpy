@@ -8,7 +8,7 @@ init python:
     rscript_previous_menu_arguments = config.menu_arguments_callback
 
     def rscript_menu_arguments(*args, **kwargs):
-        # Khime lowers choices to native menu statements, not _prompt.
+        # Both game lowerers emit native menus; record the actual menu statement.
         if not renpy.predicting():
             store.jump_back_point = renpy.game.log.current.identifier
         if rscript_previous_menu_arguments is not None:
@@ -16,6 +16,10 @@ init python:
         return args, kwargs
 
     config.menu_arguments_callback = rscript_menu_arguments
+
+    def rscript_rev_action(enabled=True):
+        # The native action also disables expired or missing rollback targets.
+        return RollbackToIdentifier(store.jump_back_point if enabled else None)
 
     def rscript_save_json(data):
         data["rscript_dt1"] = int(store._r[1])
@@ -156,10 +160,7 @@ screen rscript_compane():
                         ypos track[1]
                         xsize track[2]
                         ysize track[3]
-            use rscript_grps_button("compane", "rev",
-                                     If(jump_back_point is not None,
-                                        RollbackToIdentifier(jump_back_point), NullAction()),
-                                     jump_back_point is not None)
+            use rscript_grps_button("compane", "rev", rscript_rev_action(), enabled=None)
             use rscript_grps_button("compane", "bak", Rollback())
             use rscript_grps_button("compane", "fow", RollForward())
             use rscript_grps_button("compane", "next", Skip(fast=True))

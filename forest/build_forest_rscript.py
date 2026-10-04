@@ -354,7 +354,6 @@ def compile_scene(source: Path, language: str | None = None,
             prompt, _ = patch_text_expression(
                 language_texts, item, "prompt", prompt)
             result = packed(operands[12])
-            lines.append("    $ jump_back_point = renpy.game.log.current.identifier")
             lines.append(
                 "    $ forest_choice_prompt = rscript_inline_graphics("
                 "renpy.translation.translate_string(%s))" %

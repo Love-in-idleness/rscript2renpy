@@ -97,9 +97,11 @@ python early:
                 assert sum(isinstance(action, Rollback) for action in actions) == 1
                 targets = [action.identifier for action in actions
                            if isinstance(action, RollbackToIdentifier)]
-                assert targets == ([] if point is None else [point]), targets
+                assert targets == [point], targets
                 if point is None:
-                    assert any(isinstance(action, NullAction) for action in actions)
+                    assert not any(action.get_sensitive() for action in actions
+                                   if isinstance(action, RollbackToIdentifier))
+                assert rscript_rev_action(False).identifier is None
                 renpy.hide_screen("rscript_compane")
         finally:
             store.jump_back_point = previous_point

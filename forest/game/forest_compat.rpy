@@ -402,8 +402,7 @@ screen forest_compane():
                 idle "images/grps/compane/rev.png"
                 hover "images/grps/compane/rev_f.png"
                 selected_idle "images/grps/compane/rev.png"
-                action If(jump_back_point, RollbackToIdentifier(jump_back_point), NullAction())
-                sensitive jump_back_point is not None and not forest_input_locked
+                action rscript_rev_action(not forest_input_locked)
                 xpos 88
                 ypos 2
                 focus_mask True

@@ -38,9 +38,26 @@ def main():
             panel.mkdir()
             for button in ("rev", "bak"):
                 shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", panel / (button + ".png"))
+            for button in ("bg", "slide", "slide_f", "rev_f", "bak_f", "fow", "fow_f",
+                           "next", "next_f", "voc", "voc_f", "voc_off", "hide", "hide_f"):
+                shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", panel / (button + ".png"))
             (panel / ".meta.xml").write_text(
                 '<Canvas><Width>64</Width><Height>32</Height><Items>'
                 '<Item x="0" y="0">rev</Item><Item x="32" y="0">bak</Item>'
+                '</Items></Canvas>', encoding="utf-8")
+            textbox = resources / "grps/tbox01"
+            textbox.mkdir()
+            shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", textbox / "back.png")
+            (textbox / ".meta.xml").write_text(
+                '<Canvas><Width>800</Width><Height>138</Height><Items>'
+                '<Item x="0" y="0">back</Item></Items></Canvas>', encoding="utf-8")
+            answer = resources / "grps/sel_a00"
+            answer.mkdir()
+            for image in ("body", "body_f"):
+                shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", answer / (image + ".png"))
+            (answer / ".meta.xml").write_text(
+                '<Canvas><Width>505</Width><Height>82</Height><Items>'
+                '<Item x="0" y="0">body</Item><Item x="0" y="0">body_f</Item>'
                 '</Items></Canvas>', encoding="utf-8")
             for asset in ("bgm/Track01.ogg", "wav/0001.ogg", "voice/0001.ogg",
                           "mov/0001.mpg", "mov/0002.mpg"):
@@ -85,28 +102,29 @@ def main():
                              project / "game/shared_features_test.rpy")
                 subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), str(project),
                                 "sharedporttest", "--savedir", str(project / "test-saves")], check=True)
-                if name == "Khime":
-                    shutil.copy2(ROOT / "tests/renpy_rev_controls.rpy",
-                                 project / "game/scenario/0000.rpy")
-                    command = [str(Path(sys.argv[1]) / "renpy.sh"), str(project),
-                               "run", "--savedir", str(project / "test-saves")]
-                    environment = os.environ | {"RENPY_PERFORMANCE_TEST": "0",
-                                                "SDL_AUDIODRIVER": "dummy"}
-                    if shutil.which("xvfb-run"):
-                        command = ["xvfb-run", "-a", *command]
-                        environment["SDL_VIDEODRIVER"] = "x11"
-                    with subprocess.Popen(command, env=environment, stdout=subprocess.PIPE,
-                                          stderr=subprocess.STDOUT, text=True,
-                                          start_new_session=True) as process:
-                        try:
-                            output, _ = process.communicate(timeout=45)
-                        except subprocess.TimeoutExpired:
-                            os.killpg(process.pid, signal.SIGKILL)
-                            output, _ = process.communicate()
-                            raise AssertionError("rev test timed out: " + output[-4000:])
-                    assert process.returncode == 0, output[-4000:]
-                    assert "OK: native menu updates rev target" in output, output[-4000:]
-                    print("OK: native menu updates rev target and rev returns to latest choice")
+                shutil.copy2(ROOT / "tests/renpy_rev_controls.rpy",
+                             project / "game/scenario/0000.rpy")
+                command = [str(Path(sys.argv[1]) / "renpy.sh"), str(project),
+                           "run", "--savedir", str(project / "test-saves")]
+                environment = os.environ | {"RENPY_PERFORMANCE_TEST": "0",
+                                            "RENPY_SKIP_SPLASHSCREEN": "1",
+                                            "RENPY_SKIP_MAIN_MENU": "1",
+                                            "SDL_AUDIODRIVER": "dummy"}
+                if shutil.which("xvfb-run"):
+                    command = ["xvfb-run", "-a", *command]
+                    environment["SDL_VIDEODRIVER"] = "x11"
+                with subprocess.Popen(command, env=environment, stdout=subprocess.PIPE,
+                                      stderr=subprocess.STDOUT, text=True,
+                                      start_new_session=True) as process:
+                    try:
+                        output, _ = process.communicate(timeout=45)
+                    except subprocess.TimeoutExpired:
+                        os.killpg(process.pid, signal.SIGKILL)
+                        output, _ = process.communicate()
+                        raise AssertionError("rev test timed out: " + output[-4000:])
+                assert process.returncode == 0, output[-4000:]
+                assert "OK: native menu updates rev target" in output, output[-4000:]
+                print("OK: rev returns to latest choice: " + name)
     print("OK: both ports install identical shared runtime/templates; Khime text-only language patch")
 
 

@@ -159,8 +159,7 @@ def main() -> None:
     assert compiled.count("    _osize ") == 52
     assert "unlifted opcode 0x0053" not in compiled
     assert "unlifted opcode 0x0063" not in compiled
-    assert compiled.count("    menu:\n") == compiled.count(
-        "    $ jump_back_point = renpy.game.log.current.identifier\n")
+    assert "$ jump_back_point =" not in compiled
     assert "label _2100:" in scenes[[p.stem for p in files].index("2100")]
     assert all("label _" in scene and "forest_run" not in scene for scene in scenes)
     assert "_say japanese" not in compiled
@@ -214,8 +213,7 @@ def main() -> None:
     first_select = next(item for item in story_tsc.instructions()
                         if item.opcode == 14)
     prompt = menu_text(story_tsc.string(first_select.operands[1]))
-    assert ("$ jump_back_point = renpy.game.log.current.identifier\n"
-            "    $ forest_choice_prompt = "
+    assert ("$ forest_choice_prompt = "
             "rscript_inline_graphics(renpy.translation.translate_string(%r))\n" %
             prompt in story)
     for number, index in enumerate(first_select.operands[7:9]):

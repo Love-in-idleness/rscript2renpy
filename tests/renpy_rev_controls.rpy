@@ -1,17 +1,20 @@
-# Automated gameplay regression, only installed in a disposable Khime fixture.
+# Automated gameplay regression, only installed in disposable port fixtures.
 init 100 python:
     def rev_test_exception(info):
         print("".join(info.format()))
         renpy.quit(status=1)
     config.exception_handler = rev_test_exception
-    config.auto_choice_delay = 0.05
     config.autosave_on_choice = False
-    config.overlay_screens.append("rev_test_driver")
     renpy.session["rev_test_stage"] = "dismiss"
 
     def rev_test_advance():
         screen = renpy.get_screen("say")
         if screen is None:
+            choice = renpy.get_screen("choice")
+            if choice is not None:
+                action = next(item.action for item in choice.scope["items"]
+                              if item.action is not None)
+                renpy.end_interaction(action())
             return
         if renpy.session["rev_test_stage"] == "rollback":
             actions = []
@@ -24,16 +27,17 @@ init 100 python:
             action = actions[0]
             assert action.identifier == renpy.session["rev_test_target"]
             assert action.get_sensitive(), "latest choice is not rollback-accessible"
+            assert not rscript_rev_action(False).get_sensitive()
             renpy.session["rev_test_stage"] = "returned"
             action()
             raise AssertionError("rev did not initiate rollback")
         assert renpy.session["rev_test_stage"] != "returned", "rev passed the latest choice"
         renpy.end_interaction(True)
 
-define rev_test_narrator = Character(None, ctc=None)
+    # The periodic callback is not blocked by Forest's modal choice screen.
+    config.periodic_callback = rev_test_advance
 
-screen rev_test_driver():
-    timer 0.05 repeat True action Function(rev_test_advance)
+define rev_test_narrator = Character(None, ctc=None)
 
 label _0000:
     rev_test_narrator "Before first choice."

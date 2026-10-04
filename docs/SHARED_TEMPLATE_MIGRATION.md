@@ -33,6 +33,9 @@ khime/game/                 Khime 专用人脸、坐标、点击指令及界面�
 
 Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 保留专属
 剧本降级器和补丁对齐；通用功能只在 `runtime/`、`port_template/` 修改。
+两款游戏的原生选项统一由 `config.menu_arguments_callback` 记录选择点，
+`rev` 统一使用公共 `rscript_rev_action()` 返回最近的选择点；缺失或过期的
+目标由原生动作禁用。Forest 仅保留控制条布局和输入锁定，不再在剧本中重复记录。
 原生运行时安装器 `tools/install_runtime.py` 仍可以单独使用；模板钩子未安装时
 保留普通文本颜色和文本设置的默认实现。
 
