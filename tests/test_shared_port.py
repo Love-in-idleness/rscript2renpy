@@ -2,7 +2,9 @@
 """Build disposable Forest/Khime bases and exercise native shared features."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import os
 import shutil
+import signal
 import subprocess
 import sys
 
@@ -83,6 +85,28 @@ def main():
                              project / "game/shared_features_test.rpy")
                 subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), str(project),
                                 "sharedporttest", "--savedir", str(project / "test-saves")], check=True)
+                if name == "Khime":
+                    shutil.copy2(ROOT / "tests/renpy_rev_controls.rpy",
+                                 project / "game/scenario/0000.rpy")
+                    command = [str(Path(sys.argv[1]) / "renpy.sh"), str(project),
+                               "run", "--savedir", str(project / "test-saves")]
+                    environment = os.environ | {"RENPY_PERFORMANCE_TEST": "0",
+                                                "SDL_AUDIODRIVER": "dummy"}
+                    if shutil.which("xvfb-run"):
+                        command = ["xvfb-run", "-a", *command]
+                        environment["SDL_VIDEODRIVER"] = "x11"
+                    with subprocess.Popen(command, env=environment, stdout=subprocess.PIPE,
+                                          stderr=subprocess.STDOUT, text=True,
+                                          start_new_session=True) as process:
+                        try:
+                            output, _ = process.communicate(timeout=45)
+                        except subprocess.TimeoutExpired:
+                            os.killpg(process.pid, signal.SIGKILL)
+                            output, _ = process.communicate()
+                            raise AssertionError("rev test timed out: " + output[-4000:])
+                    assert process.returncode == 0, output[-4000:]
+                    assert "OK: native menu updates rev target" in output, output[-4000:]
+                    print("OK: native menu updates rev target and rev returns to latest choice")
     print("OK: both ports install identical shared runtime/templates; Khime text-only language patch")
 
 

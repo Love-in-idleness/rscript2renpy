@@ -5,6 +5,18 @@ default rscript_last_voice = None
 init python:
     config.game_menu_action = ShowMenu("preferences")
 
+    rscript_previous_menu_arguments = config.menu_arguments_callback
+
+    def rscript_menu_arguments(*args, **kwargs):
+        # Khime lowers choices to native menu statements, not _prompt.
+        if not renpy.predicting():
+            store.jump_back_point = renpy.game.log.current.identifier
+        if rscript_previous_menu_arguments is not None:
+            return rscript_previous_menu_arguments(*args, **kwargs)
+        return args, kwargs
+
+    config.menu_arguments_callback = rscript_menu_arguments
+
     def rscript_save_json(data):
         data["rscript_dt1"] = int(store._r[1])
 
