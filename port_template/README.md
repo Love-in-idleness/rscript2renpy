@@ -14,6 +14,8 @@
 - 游戏专用 lowerer 生成的 `scenario/**/*.rpy`
 
 原始 GSC、WCG、WAV、XFL 和 LWG 不会复制进 Ren'Py 工程。
+语言补丁的 `grp*` 目录还可包含 CodeX 32 位 BMP；模板会还原其反向透明度，
+转换为 `tl/<语言>/images/` 下的 PNG，同名 BMP 优先于补丁 PNG。
 
 ## 开始新移植
 

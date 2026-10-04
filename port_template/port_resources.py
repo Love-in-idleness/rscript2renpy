@@ -4,7 +4,8 @@ from pathlib import Path
 import json
 import re
 import shutil
-from PIL import Image
+import struct
+from PIL import Image, ImageOps
 
 IMAGE_FOLDERS = ("grpe", "grpf", "grpo", "grpo_bg", "grpo_bu", "grpo_ci",
                  "grpo_f", "grpo_ex", "grpo_tp", "grpp", "grps")
@@ -29,6 +30,7 @@ def copy_language_assets(patch: Path, language: str, game: Path) -> None:
         "translate %s python:\n    pass\n" % language, encoding="utf-8")
     for folder in IMAGE_FOLDERS:
         copy_assets(patch / folder, "*.png", target / "images" / folder)
+        convert_bmp_assets(patch / folder, target / "images" / folder)
         copy_assets(patch / folder, ".meta.xml", target / "images" / folder)
     convert_masks(patch / "grps", target / "images" / "grps")
     for source, destination in (("wav", "wav"), ("wav", "audio"),
@@ -138,6 +140,29 @@ def convert_masks(source: Path, target: Path) -> None:
         output.parent.mkdir(parents=True, exist_ok=True)
         with Image.open(asset) as image:
             image.save(output, "PNG")
+
+
+def convert_bmp_assets(source: Path, target: Path) -> None:
+    if not source.is_dir():
+        return
+    for asset in sorted(source.rglob("*")):
+        if not asset.is_file() or asset.suffix.lower() != ".bmp":
+            continue
+        data = asset.read_bytes()
+        if (len(data) < 54 or data[:2] != b"BM" or
+                struct.unpack_from("<H", data, 28)[0] != 32 or
+                struct.unpack_from("<I", data, 30)[0] != 0 or
+                struct.unpack_from("<i", data, 22)[0] <= 0):
+            raise ValueError("unsupported CodeX patch BMP: %s" % asset)
+        with Image.open(asset) as bmp:
+            offset = struct.unpack_from("<I", data, 10)[0]
+            image = Image.frombytes("RGBA", bmp.size, data[offset:],
+                                    "raw", "BGRA", 0, -1)
+        # CodeX stores inverse alpha in the fourth byte of these BMPs.
+        image.putalpha(ImageOps.invert(image.getchannel("A")))
+        output = (target / asset.relative_to(source)).with_suffix(".png")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        image.save(output, "PNG")
 
 
 def copy_movies(source: Path, target: Path, clear: bool = False) -> None:

@@ -71,11 +71,14 @@ def main() -> None:
             b"BM" + struct.pack("<IHHI", 62, 0, 0, 54) +
             struct.pack("<IiiHHIIiiII", 40, 2, 1, 1, 32, 0, 8, 0, 0, 0, 0) +
             b"\x00\x00\x00\xff\x00\xff\x00\x00")
+        (patch / "grpe").mkdir()
+        shutil.copy2(patch / "grpo_tp" / "9001.bmp", patch / "grpe" / "9001.bmp")
         build_khime(resources, project, languages=["jp", "zh=%s" % patch])
-        with Image.open(project / "game" / "tl" / "zh" / "images" /
-                        "grpo_tp" / "9001.png") as title:
-            assert title.getpixel((0, 0)) == (0, 0, 0, 0)
-            assert title.getpixel((1, 0)) == (0, 255, 0, 255)
+        for folder in ("grpe", "grpo_tp"):
+            with Image.open(project / "game" / "tl" / "zh" / "images" /
+                            folder / "9001.png") as translated:
+                assert translated.getpixel((0, 0)) == (0, 0, 0, 0)
+                assert translated.getpixel((1, 0)) == (0, 255, 0, 255)
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):
             assert (project / name).read_bytes() == notice

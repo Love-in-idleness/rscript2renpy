@@ -4,10 +4,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import argparse
-import struct
 import sys
-
-from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
@@ -15,28 +12,6 @@ from build_port import build, copy_file  # noqa: E402
 from port_resources import (parse_language_options, read_keywords,
                             copy_language_assets, write_language_config)  # noqa: E402
 from khime_tsc import compile_scene  # noqa: E402
-
-
-def copy_khime_bmp_titles(patch: Path, target: Path) -> None:
-    source_dir = patch / "grpo_tp"
-    if not source_dir.is_dir():
-        return
-    for source in sorted(source_dir.iterdir()):
-        if not source.is_file() or source.suffix.lower() != ".bmp":
-            continue
-        data = source.read_bytes()
-        if (len(data) < 54 or data[:2] != b"BM" or
-                struct.unpack_from("<H", data, 28)[0] != 32 or
-                struct.unpack_from("<I", data, 30)[0] != 0 or
-                struct.unpack_from("<i", data, 22)[0] <= 0):
-            raise ValueError("unsupported Khime title BMP: %s" % source)
-        with Image.open(source) as bmp:
-            offset = struct.unpack_from("<I", data, 10)[0]
-            image = Image.frombytes("RGBA", bmp.size, data[offset:],
-                                    "raw", "BGRA", 0, -1)
-        image.putalpha(ImageOps.invert(image.getchannel("A")))
-        target.mkdir(parents=True, exist_ok=True)
-        image.save(target / (source.stem + ".png"), "PNG")
 
 
 def build_khime(resources: Path, project: Path, force: bool = False,
@@ -68,7 +43,6 @@ def build_khime(resources: Path, project: Path, force: bool = False,
     keywords = {None: read_keywords(resources / "keywords.json")}
     for language, patch in patches:
         copy_language_assets(patch, language, game)
-        copy_khime_bmp_titles(patch, game / "tl" / language / "images" / "grpo_tp")
         keywords[language] = read_keywords(patch / "keywords.json")
     write_language_config(game, [(None, marker or "Original")] +
                           [(name, name) for name, _ in patches],
