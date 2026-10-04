@@ -4,7 +4,10 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import shutil
+import struct
 import sys
+
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "khime"))
@@ -62,7 +65,17 @@ def main() -> None:
         for folder in ("grpe", "grpf", "grpo", "grpo_ex", "grpo_tp",
                        "grpp", "grps", "bgm", "voice", "wav", "mov"):
             (resources / folder).mkdir()
-        build_khime(resources, project)
+        patch = Path(temporary) / "patch"
+        (patch / "grpo_tp").mkdir(parents=True)
+        (patch / "grpo_tp" / "9001.bmp").write_bytes(
+            b"BM" + struct.pack("<IHHI", 62, 0, 0, 54) +
+            struct.pack("<IiiHHIIiiII", 40, 2, 1, 1, 32, 0, 8, 0, 0, 0, 0) +
+            b"\x00\x00\x00\xff\x00\xff\x00\x00")
+        build_khime(resources, project, languages=["jp", "zh=%s" % patch])
+        with Image.open(project / "game" / "tl" / "zh" / "images" /
+                        "grpo_tp" / "9001.png") as title:
+            assert title.getpixel((0, 0)) == (0, 0, 0, 0)
+            assert title.getpixel((1, 0)) == (0, 255, 0, 255)
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):
             assert (project / name).read_bytes() == notice

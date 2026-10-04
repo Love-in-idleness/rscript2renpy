@@ -15,6 +15,8 @@ python3 khime/build_khime_rscript.py \
 支持 `--language jp` 设置原版标签，以及 `--language zh=/path/to/patch`
 添加语言补丁。补丁目录可只含修改的 `scr/*.tsc` 和转换后的图像、音频、
 `keywords.json`。Khime 当前要求对应场景保持指令和非文本参数不变；
+补丁的 `grpo_tp/*.bmp` 会按 Khime 的反向透明度格式转换为语言专用 PNG，
+用于替换标题等图像。
 可翻译对话、追加文本、文本对象、选项和问题，缺少的场景使用原版。
 Forest 翻译组新增字幕及 5000 整体替换仍由 Forest 专属 lowerer 处理。
 
