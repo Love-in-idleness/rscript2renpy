@@ -9,15 +9,15 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import install_base  # noqa: E402
+from build_port import install_base, copy_file, write_scenario  # noqa: E402
 from port_resources import (copy_assets, convert_masks, copy_movies,
                             parse_language_options, read_keywords,
                             strip_json_comments, write_language_config,
                             copy_language_assets)  # noqa: E402
 
-from rscript_tsc import E, STRING_OPERANDS, read_tsc
+from rscript_tsc import E, read_tsc
 from tsc_vm import emit_vm, packed
-from tsc_patches import (scenario_sources,
+from tsc_patches import (scenario_sources, menu_text,
                          instruction_strings as shared_instruction_strings,
                          scene_strings as shared_scene_strings,
                          language_patch_data as shared_language_patch_data)
@@ -42,7 +42,6 @@ COMMANDS = {
     96: "texsize", 97: "texfont", 98: "texmode", 99: "texindent", 100: "waitloc",
     103: "waitlod", 104: "waitcol", 120: "osize", 121: "folder", 132: "numenable",
 }
-PATCH_INSERT_OPCODES = {13, 32, 36}
 PATCH_OVERRIDE_OPCODES = set(COMMANDS) - {
     12, 15, 16, 30, 32, 36, 62, 63, 64, 121,
 }
@@ -50,13 +49,6 @@ PATCH_OVERRIDE_OPCODES = set(COMMANDS) - {
 
 def scene_label(scene: str, offset: int) -> str:
     return "_%s_L_%06x" % (scene, offset)
-
-
-def menu_text(value: str) -> str:
-    asset = re.fullmatch(r"<@(\d+)>", value)
-    if asset:
-        return "forest_asset_%s" % asset.group(1)
-    return re.sub(r"<@(\d+)>", lambda match: "[_r[%s]]" % match.group(1), value)
 
 
 def instruction_strings(tsc, item):
@@ -397,8 +389,6 @@ def main(argv: list[str]) -> int:
                  image_folders=("grpo_bg", "grpo_bu", "grpo_ci", "grpo_f"))
     scenario = game / "scenario"
     scenario.mkdir(parents=True, exist_ok=True)
-    for cache in scenario.glob("*.rpyc"):
-        cache.unlink()
     for name in ("android.json", "android-icon_background.png",
                  "android-icon_foreground.png"):
         shutil.copyfile(android_source / name, target / name)
@@ -421,7 +411,7 @@ def main(argv: list[str]) -> int:
                 wiki_images[language] = links
     write_language_config(game, language_labels, wiki_keywords, wiki_images)
     for overlay in (Path(__file__).parent / "game").glob("*.rpy"):
-        shutil.copyfile(overlay, game / overlay.name)
+        copy_file(overlay, game / overlay.name, force=True)
     patch_texts = {}
     patch_insertions = {}
     patch_operands = {}
@@ -437,7 +427,8 @@ def main(argv: list[str]) -> int:
         if source.name == "5000.tsc":
             content = compile_credits_scene(
                 source, language_marker, language_patches)
-            (scenario / "5000.rpy").write_text(content, encoding="utf-8")
+            write_scenario(content, scenario / "5000.rpy", root,
+                           force=True, preserve_dynamic=True)
             continue
         scene_texts = {
             language: replacements[source.name]
@@ -454,10 +445,10 @@ def main(argv: list[str]) -> int:
             for language, overrides in patch_operands.items()
             if source.name in overrides
         }
-        (scenario / (source.stem + ".rpy")).write_text(
-            compile_scene(source, language_marker, scene_texts,
-                          scene_insertions, scene_operands),
-            encoding="utf-8")
+        write_scenario(compile_scene(source, language_marker, scene_texts,
+                                     scene_insertions, scene_operands),
+                       scenario / (source.stem + ".rpy"), root,
+                       force=True, preserve_dynamic=True)
     print("Wrote %s: %d rscript scenes" % (target, len(sources)))
     return 0
 

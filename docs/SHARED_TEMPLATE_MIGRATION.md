@@ -7,6 +7,7 @@
 runtime/                    RScript 指令、寄存器、图层/效果、文本度量、语音
 port_template/
   rscript_tsc.py, tsc_vm.py  当前 TSC 解析及表达式/VM 公共部分
+  tsc_patches.py             文字补丁对齐、字幕/等待/清除插入、参数覆盖校验
   build_port.py             install_base + 场景装配/兼容检查
   port_resources.py         图像/元数据/遮罩/原始 MPG/语言资源/keywords.json
   fonts/, android/          共用字体及 Android 启动说明
@@ -14,9 +15,10 @@ port_template/
     gui.rpy                 共用 800×600 GUI
     text_features.rpy       字体、字号、字数、行距、速度、语言、Wiki、进度备份
     grps_ui.rpy             元数据驱动的设置、选项、存读档、对话控制条
+    ui_features.rpy          对话/姓名牌、点击系统动作、旧存档和透明度迁移
     touch_controls.rpy      Back / Skip / Auto / Hide / Screenshot / Menu
-forest/game/                Forest 专用界面/标题/存档插图/点击指令/偏好迁移
-khime/game/                 Khime 专用人脸、坐标、点击指令及界面布局
+forest/game/                Forest 布局策略、旧指令别名、偏好迁移、5000 锁定
+khime/game/                 Khime 人脸、方言适配、布局策略及旧指令别名
 ```
 
 ## 公共能力及游戏差异
@@ -25,14 +27,14 @@ khime/game/                 Khime 专用人脸、坐标、点击指令及界面�
 | --- | --- | --- |
 | 文本 | 实际字形前进量禁则、追加文本、对象、`^n/^b/^i/^s/^d/^w/^c/^g/^a/^m` | 游戏专用 TSC 方言和文本操作数 |
 | 文本设置 | 字体、字号、对话/对象字数、行距、速度、语言、进度备份 | Forest 默认 22px，Khime 默认 30px；对话 19、对象 20 字宽 |
-| Wiki | `keywords.json`、绿色链接、内联 `gf/gg` 图片标签 | Forest 的 601/603 图像链接映射及原图 WIKI 行 |
+| Wiki | `keywords.json`、绿色链接、内联 `gf/gg` 图片标签、原图 WIKI 行 | Forest 的 601/603 图像链接映射 |
 | 语音 | `rscript_voice`、重播、停止/等待、Auto 等语音、SE 999 循环 | 文件编号格式及 TSC 语音操作数 |
-| GUI | 字体、确认框、通用文本设置及原图菜单组件 | Forest 原图菜单、dt1 存档图和姓名牌布局；Khime 人脸和原图坐标 |
+| GUI | 原图设置、dt1 存读档、图片选项、点击区域、对话/姓名牌和控制条 | 各游戏的坐标、配色、状态图策略及 Khime 人脸 |
 | Android | 触摸控制、原生 Auto、直接写系统相册、启动说明 | 应用名称、图标、RAPT 配置及锁定场景 |
-| 剧本 | 解析器、VM 和装配 | Forest 新增字幕/等待补丁、5000 整体替换、启动视频；Khime 方言 |
+| 剧本 | 解析器、VM、补丁对齐、字幕插入、装配/兼容检查、编译缓存失效、启动视频机制 | Forest 5000 整体替换、视频顺序；各游戏方言/参数允许列表 |
 
 Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 保留专属
-剧本降级器和补丁对齐；通用功能只在 `runtime/`、`port_template/` 修改。
+剧本降级器和参数策略；补丁对齐、界面与点击行为只在公共层维护。
 两款游戏的原生选项统一由 `config.menu_arguments_callback` 记录选择点，
 `rev` 统一使用公共 `rscript_rev_action()` 返回最近的选择点；缺失或过期的
 目标由原生动作禁用。Forest 仅保留控制条布局和输入锁定，不再在剧本中重复记录。
@@ -40,8 +42,9 @@ Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 保留�
 保留普通文本颜色和文本设置的默认实现。
 
 Forest 的旧 `persistent.forest_*` 字体/文本/Wiki/备份设置会一次性迁移到
-`persistent.rscript_*`。寄存器进度和存档插图键仍使用原来的字段，未更换存档目录，
-未清除玩家存档。旧游戏存档的跨版本回滚兼容性仍需实际游玩确认。
+`persistent.rscript_*`；旧 `textbox_opacity` 单独迁移到公共透明度字段。
+新存档使用 `rscript_dt1`，读取时兼容旧 `forest_dt1`，缺图才回退截图。
+寄存器进度和存档目录不变，未清除玩家存档；跨版本回滚仍需实际游玩确认。
 
 ## 构建和语言补丁
 
@@ -57,12 +60,14 @@ python3 khime/build_khime_rscript.py /path/to/khime /path/to/Khime \
 Khime 默认拒绝覆盖不同内容的文件，重建需明确加 `--force`。Forest 保留原入口的
 覆盖行为，重建现有项目之前请备份生成文件和手工补丁。
 
-Khime 补丁可以仅提供部分场景。对话、追加、对象和选项可翻译，指令序列与
-非文本参数必须不变；不支持 Forest 那种新增字幕/等待的结构补丁，会明确报错。
+两款补丁都可以仅提供部分场景。对话、追加、对象和选项可翻译，
+允许新增字幕及配套等待/清除；重定位跳转，但不允许插入或修改剧情逻辑。
+非文本参数覆盖由各 lowerer 的允许列表约束；Khime 没有整体替换场景机制。
 图像、音频、视频、元数据和 Wiki 词典的语言资源由公共层复制。
 
-当前只有 Forest 完成了专用效果的逐项适配。Khime 及新移植使用公共效果检查，
-保留其降级注释。这里没有把两款游戏的专用 opcode 强行视为同一语义。
+两款生成器都使用公共场景写入/兼容检查并清理对应 `.rpyc`。
+Forest 保留已确认的动态效果表达式，并注释交由运行时验证；
+Khime/新移植默认降级无法静态判定的效果。这里没有把方言 opcode 强行视为同一语义。
 
 ## 验证
 

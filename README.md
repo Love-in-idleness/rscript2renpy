@@ -45,8 +45,8 @@ Forest 与 khime 的对话、追加对话、文本对象使用统一中日俄禁
 ### 新游戏移植模板
 
 `port_template/` 是新游戏的半成品模板，负责安装通用运行时、复制已转换资源及
-游戏专用 lowerer 生成的 `scenario/*.rpy`。复制该目录开始新项目；每款游戏只在
-自己的目录实现 TSC lowering、缺失 opcode、文本规则和界面。模板不会调用
+游戏专用 lowerer 生成的 `scenario/*.rpy`。新项目引用该模板，不复制维护另一套；每款游戏只在
+自己的目录实现 TSC lowering、方言及专用行为。模板不会调用
 LiarsoftTool，也不会把原始 GSC/WCG/WAV/XFL/LWG 复制进 Ren'Py 工程。完整步骤和
 核对清单见 [`port_template/README.md`](port_template/README.md)。
 Forest 与 Khime 构建时会安装通用 Android 启动说明图，包含 GitHub 地址及正版资源

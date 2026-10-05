@@ -470,7 +470,11 @@ python early:
         return args
 
     def execute_folder(args):
-        store.folder[args.Layer] = args.Folder
+        if args.Layer == 0 and store.rscript_folder_zero_all:
+            for layer in range(100):
+                store.folder[layer] = args.Folder
+        else:
+            store.folder[args.Layer] = args.Folder
 
     renpy.register_statement("_folder", parse = parse_folder, execute = execute_folder, lint = lint_undef)
 

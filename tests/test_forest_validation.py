@@ -88,6 +88,8 @@ def main() -> None:
         compat_text += (project / "game" / "text_features.rpy").read_text(encoding="utf-8")
         compat_text += (project / "game" / "language_config.rpy").read_text(encoding="utf-8")
         compat_text += (project / "game" / "00_rscript_wrap.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "ui_features.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert "    rscript_languages = [(None, 'Original'), ('english', 'english')]" in compat_text
         assert "screen forest_title_preferences():" in compat_text
         assert "default persistent.rscript_text_size = rscript_base_text_size" in compat_text
@@ -97,8 +99,8 @@ def main() -> None:
         assert "default persistent.rscript_wiki_mode = False" in compat_text
         assert "'https://example.test/a//b'" in compat_text
         assert 'if _preferences.language in rscript_wiki_keywords:' in compat_text
-        assert 'action Function(rscript_set_wiki, True)' in compat_text
-        assert 'action Function(rscript_set_wiki, False)' in compat_text
+        assert 'Function(rscript_set_wiki, True)' in compat_text
+        assert 'Function(rscript_set_wiki, False)' in compat_text
         assert 'text "Wiki Mode" yalign 0.5' not in compat_text
         assert "line_spacing persistent.rscript_line_spacing" in compat_text
         assert 'define rscript_default_font = "fonts/NotoSansCJKjp-Regular.otf"' in compat_text

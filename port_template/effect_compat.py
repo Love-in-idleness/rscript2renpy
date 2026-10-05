@@ -55,14 +55,17 @@ def _supported(command: str, field: str, value: int,
             return False, "not implemented"
         mask = ("ef%02d.png" if command == "_update" else "es%03d.png") % value
         relative = Path("grps") / mask
-        found = any((resources / prefix / relative).is_file()
-                    for prefix in (Path(), Path("images")))
+        # install_base converts source .msk masks to these PNG names.
+        found = any((resources / prefix / candidate).is_file()
+                    for prefix in (Path(), Path("images"))
+                    for candidate in (relative, relative.with_suffix(".msk")))
         return found, "missing %s" % relative
     raise ValueError("unlisted effect command: %s" % command)
 
 
 def flatten_unsupported_effects(text: str, resources: Path,
-                                label: str = "RScript") -> str:
+                                label: str = "RScript",
+                                preserve_dynamic: bool = False) -> str:
     """Return RPY with unsupported literal or dynamic effects made safe."""
     output = []
     for line in text.splitlines(keepends=True):
@@ -85,6 +88,13 @@ def flatten_unsupported_effects(text: str, resources: Path,
             try:
                 value = int(original, 0)
             except ValueError:
+                if preserve_dynamic:
+                    # Established dialects retain their runtime-selected effects.
+                    comments.append("%s# %s conversion: %s %s %s preserved "
+                                    "for runtime validation.%s" %
+                                    (indent, label, command, field, original,
+                                     newline or "\n"))
+                    continue
                 supported, reason = False, "not statically supported"
             else:
                 supported, reason = _supported(command, field, value, resources)

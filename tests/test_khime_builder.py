@@ -96,12 +96,13 @@ def main() -> None:
         assert 'rscript_voice_format = "voice/%04d.ogg"' in options
         assert "rscript_ctc_x = 729" in options
         assert 729 + 24 + 8 == 800 - layout["compane"]["size"][0]
-        click = (project / "game" / "khime_compat.rpy").read_text(encoding="utf-8")
-        assert 'key "game_menu" action ShowMenu("preferences")' in click
+        click = (project / "game" / "ui_features.rpy").read_text(encoding="utf-8")
+        assert 'key "game_menu" action Function(rscript_open_game_menu)' in click
         assert 'key "rollback" action Rollback()' in click
         assert "rscript_text what:" in click
-        assert "xpos (0.5 if center else textpos[0])" in click
-        assert "execute_append((None, repr(eval(value))))" in click
+        assert "xalign 0.5" in click and "text_align 0.5" in click
+        assert "execute_append((None, repr(eval(value))))" in (
+            project / "game" / "khime_compat.rpy").read_text(encoding="utf-8")
         keymap = (project / "game" / "keymap.rpy").read_text(encoding="utf-8")
         assert "'mousedown_3'" in keymap
         assert "'mousedown_4'" in keymap and "'mousedown_5'" in keymap

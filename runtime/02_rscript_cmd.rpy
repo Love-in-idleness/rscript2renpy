@@ -398,7 +398,23 @@ python early:
         return (lex.rest(),)
 
     def execute_click(o):
-        pass
+        options = []
+        for layer, (value, system) in sorted(store.rscript_click_values.items()):
+            if layer not in store.rscript_click_links or layer not in store.layer_info:
+                continue
+            hover, x, y = store.rscript_click_links[layer]
+            folder = store.folder.get(layer, store.folder.get(0))
+            if not folder:
+                continue
+            if store.rscript_click_grid:
+                x *= store.layer_x_grid
+                y *= store.layer_y_grid
+            options.append((value, system, store.layer_info[layer],
+                            "%s %04d" % (folder, hover), x, y))
+        if not options:
+            raise Exception("RScript click has no active image regions")
+        store._r[0] = renpy.call_screen("rscript_click_screen", options=options)
+        execute_resetclk(None)
 
     renpy.register_statement("_click", parse = parse_click, execute = execute_click, lint = lint_undef)
 
@@ -408,17 +424,20 @@ python early:
         return (lex.rest(),)
 
     def execute_resetclk(o):
-        pass
+        store.rscript_click_values.clear()
+        store.rscript_click_links.clear()
 
     renpy.register_statement("_resetclk", parse = parse_resetclk, execute = execute_resetclk, lint = lint_undef)
 
 
 
     def parse_setclk(lex):
-        return (lex.rest(),)
+        args = rscript_arguments(lex, ["Layer", "Value", "Mode", "Unknown"])
+        lex.expect_eol()
+        return args
 
     def execute_setclk(o):
-        pass
+        store.rscript_click_values[o.Layer] = (o.Value, False)
 
     renpy.register_statement("_setclk", parse = parse_setclk, execute = execute_setclk, lint = lint_undef)
 
@@ -435,20 +454,29 @@ python early:
 
 
     def parse_setclksys(lex):
-        return (lex.rest(),)
+        return parse_setclk(lex)
 
     def execute_setclksys(o):
-        pass
+        store.rscript_click_values[o.Layer] = (o.Value, True)
 
     renpy.register_statement("_setclksys", parse = parse_setclksys, execute = execute_setclksys, lint = lint_undef)
 
 
 
     def parse_setlink(lex):
-        return (lex.rest(),)
+        args = rscript_arguments(lex, ["Layer", "HoverCG", "xLoc", "yLoc", "Unknown"])
+        lex.expect_eol()
+        return args
 
     def execute_setlink(o):
-        pass
+        store.rscript_click_links[o.Layer] = (o.HoverCG, o.xLoc, o.yLoc)
 
     renpy.register_statement("_setlink", parse = parse_setlink, execute = execute_setlink, lint = lint_undef)
+
+    def register_rscript_ui_aliases(prefix):
+        # Keep generated scripts and existing saves using the old names valid.
+        for name in ("folder", "setclk", "setclksys", "setlink", "resetclk", "click", "autoreset"):
+            renpy.register_statement("_" + prefix + "_" + name,
+                parse=globals()["parse_" + name],
+                execute=globals()["execute_" + name], lint=lint_undef)
 # Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc

@@ -52,6 +52,10 @@ init:
     default jump_back_point = None
 
     default folder = {}
+    define rscript_folder_zero_all = False
+    define rscript_click_grid = False
+    default rscript_click_values = {}
+    default rscript_click_links = {}
     default layer_zorder = {}
     default layer_enabled = {}
     default layer_info = {}

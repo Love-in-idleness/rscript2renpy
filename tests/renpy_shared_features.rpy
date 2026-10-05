@@ -9,6 +9,57 @@ python early:
         renpy.notify = lambda text: None
         persistent.rscript_text_size = rscript_base_text_size
         persistent.rscript_text_font = rscript_default_font
+        renpy.run(rscript_preference_action("text speed", 75))
+        assert persistent.rscript_text_cps == 75
+        assert rscript_preference_action("text speed", 75).get_selected()
+        renpy.run(rscript_preference_action("text speed", 0))
+        assert persistent.rscript_text_cps == 0
+        persistent.rscript_text_cps = 20
+        # The new migration must run even if the previous Forest font migration ran.
+        persistent.rscript_opacity_migrated = False
+        persistent.textbox_opacity = 0.4
+        rscript_migrate_ui_preferences()
+        assert persistent.rscript_textbox_opacity == 0.4
+        persistent.textbox_opacity = 0.9
+        rscript_migrate_ui_preferences()
+        assert persistent.rscript_textbox_opacity == 0.4
+        persistent.rscript_textbox_opacity = 1.0
+        lex = renpy.lexer.Lexer([("shared-test", 1, "20 3 0 0", [])])
+        lex.advance()
+        execute_setclksys(parse_setclksys(lex))
+        lex = renpy.lexer.Lexer([("shared-test", 1, "20 707 12 34", [])])
+        lex.advance()
+        execute_setlink(parse_setlink(lex))
+        assert rscript_click_values[20] == (3, True)
+        assert rscript_click_links[20] == (707, 12, 34)
+        old_screen = renpy.call_screen
+        old_folder, old_info = dict(store.folder), dict(store.layer_info)
+        old_grid = (layer_x_grid, layer_y_grid)
+        captured = []
+        try:
+            store.folder[20] = "grpo"
+            store.layer_info[20] = "idle image"
+            store.layer_x_grid, store.layer_y_grid = 2, 3
+            renpy.call_screen = lambda name, **kwargs: (captured.append((name, kwargs)), 9)[1]
+            execute_click(None)
+            assert store._r[0] == 9
+            assert not rscript_click_values and not rscript_click_links
+            point = captured[0][1]["options"][0]
+            assert point[:4] == (3, True, "idle image", "grpo 0707")
+            assert point[4:] == ((24, 102) if rscript_click_grid else (12, 34))
+            from types import SimpleNamespace
+            execute_folder(SimpleNamespace(Layer=0, Folder="grpo_tp"))
+            assert all(store.folder[number] == "grpo_tp" for number in range(100))
+        finally:
+            renpy.call_screen = old_screen
+            store.folder, store.layer_info = old_folder, old_info
+            store.layer_x_grid, store.layer_y_grid = old_grid
+        old_json = store.FileJson
+        try:
+            store.FileJson = lambda slot, key: 707 if key == "forest_dt1" else None
+            assert rscript_slot_image(1) is None  # Missing dt1 does not try to load a missing image.
+        finally:
+            store.FileJson = old_json
         for raw in ("甲：乙", " 甲   乙 ", "\u3000甲\u00a0乙 ", "^n ^n甲…— "):
             lex = renpy.lexer.Lexer([("shared-test", 1, "jp " + repr(raw), [])])
             lex.advance()

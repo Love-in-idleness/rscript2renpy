@@ -11,7 +11,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from install_runtime import install  # noqa: E402
+from install_runtime import install, clear_script_cache  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
@@ -53,6 +53,7 @@ def copy_file(source: Path, target: Path, force: bool) -> None:
         raise FileExistsError("refusing to overwrite different file: %s" % target)
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
+    clear_script_cache(target)
 
 
 def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> int:
@@ -70,18 +71,24 @@ def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> in
     return copied
 
 
+def write_scenario(content: str, destination: Path, resources: Path,
+                   force: bool = False, preserve_dynamic: bool = False) -> None:
+    result = flatten_unsupported_effects(content, resources,
+                                         preserve_dynamic=preserve_dynamic)
+    result = flatten_unsupported_text_controls(result)
+    if destination.exists() and destination.read_text(encoding="utf-8") != result and not force:
+        raise FileExistsError("refusing to overwrite different file: %s" % destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(result, encoding="utf-8")
+    clear_script_cache(destination)
+
+
 def copy_scenarios(source: Path, target: Path, resources: Path,
                    force: bool) -> int:
     copied = 0
     for path in sorted(source.rglob("*.rpy")):
         destination = target / path.relative_to(source)
-        result = flatten_unsupported_effects(path.read_text(encoding="utf-8"),
-                                             resources)
-        result = flatten_unsupported_text_controls(result)
-        if destination.exists() and destination.read_text(encoding="utf-8") != result and not force:
-            raise FileExistsError("refusing to overwrite different file: %s" % destination)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text(result, encoding="utf-8")
+        write_scenario(path.read_text(encoding="utf-8"), destination, resources, force)
         copied += 1
     return copied
 

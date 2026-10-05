@@ -6,9 +6,9 @@ import re
 import tokenize
 
 
-CONTROL = re.compile(r"\^(?:[agdsw]\d+|[cf][A-Za-z]|[A-Za-z])")
-SUPPORTED = re.compile(r"\^(?:[binm]|[dw]\d+|s\d|[ag]\d{3}|c[ygwk])\Z")
-TEXT_COMMANDS = {"_say", "_oload", "_khime_say", "_khime_append"}
+CONTROL = re.compile(r"\^(?:[ag][0-9]{3}|s[0-9]|[agdsw][0-9]+|[cf][A-Za-z]|[A-Za-z])")
+SUPPORTED = re.compile(r"\^(?:[binm]|[dw][0-9]+|s[0-9]|[ag][0-9]{3}|c[ygwk])\Z")
+TEXT_COMMANDS = {"_say", "_append", "_oload", "_khime_say", "_khime_append"}
 
 
 def flatten_unsupported_text_controls(text: str) -> str:

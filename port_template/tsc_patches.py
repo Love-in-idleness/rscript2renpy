@@ -10,6 +10,13 @@ from tsc_vm import packed
 PATCH_INSERT_OPCODES = {13, 32, 36}
 
 
+def menu_text(value: str) -> str:
+    asset = re.fullmatch(r"<@(\d+)>", value)
+    if asset:
+        return "rscript_asset_%s" % asset.group(1)
+    return re.sub(r"<@(\d+)>", lambda match: "[_r[%s]]" % match.group(1), value)
+
+
 def scenario_sources(folder: Path) -> list[Path]:
     """Return current command-based TSC scripts in a resource directory."""
     if not folder.is_dir():
@@ -82,13 +89,21 @@ def render_patch_command(tsc, item) -> str:
 def changed_instruction_parameters(base_tsc, patch_tsc, base_item, patch_item,
                                    patch_to_base_offsets) -> bool:
     """Whether aligned commands differ outside translatable strings."""
+    text_positions = {81: {4, 5}, 82: {4}, 32: {5}}.get(base_item.opcode, set())
+    if base_item.opcode == 14:
+        text_positions = {1, *range(7, 7 + min(base_item.operands[0], 5))}
     for index, (base, patch) in enumerate(zip(base_item.operands,
                                                patch_item.operands)):
         if index in STRING_OPERANDS.get(base_item.opcode, set()):
+            if index not in text_positions and base_tsc.string(base) != patch_tsc.string(patch):
+                return True
             continue
-        target = (base_item.opcode in (3, 4, 5, 200) or
+        if (base_item.opcode == 14 and 2 + min(base_item.operands[0], 5) <= index < 7):
+            continue  # Unused choice destinations carry no branch semantics.
+        target = (base_item.opcode in (3, 4, 5) or
+                  (base_item.opcode == 200 and index == 0) or
                   (base_item.opcode == 14 and
-                   2 <= index < 7))
+                   2 <= index < 2 + min(base_item.operands[0], 5)))
         if target:
             patch = patch_to_base_offsets.get(patch, ("unmapped", patch))
         elif base_item.opcode == 18 and index == 1:
@@ -216,4 +231,3 @@ def language_patch_data(base_scr: Path, patch_scr: Path, *, dialect=None,
                 scene_insertions.setdefault(offset, []).append(
                     render_patch_command(patch_tsc, item))
     return replacements, insertions, operand_overrides
-

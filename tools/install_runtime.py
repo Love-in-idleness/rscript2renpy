@@ -11,6 +11,9 @@ import shutil
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "runtime"
 
+def clear_script_cache(path: Path) -> None:
+    if path.suffix == ".rpy":
+        path.with_suffix(".rpyc").unlink(missing_ok=True)
 
 def install(project: Path, force: bool = False) -> list[Path]:
     game = project / "game"
@@ -24,6 +27,7 @@ def install(project: Path, force: bool = False) -> list[Path]:
             raise FileExistsError("refusing to overwrite different file: %s" % target)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
+        clear_script_cache(target)
         installed.append(target)
     return installed
 

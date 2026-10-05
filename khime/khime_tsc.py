@@ -6,7 +6,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
 from rscript_tsc import E, STRING_OPERANDS, read_tsc  # noqa: E402
 from tsc_vm import emit_vm, packed  # noqa: E402
-from tsc_patches import language_patch_data, instruction_strings  # noqa: E402
+from tsc_patches import language_patch_data, instruction_strings, menu_text  # noqa: E402
 
 
 PASSTHROUGH = {
@@ -46,6 +46,7 @@ def compile_scene(source: Path, patches=()) -> str:
         texts, additions, overrides = language_patch_data(
             source.parent, directory / "scr", dialect="khime",
             override_opcodes=set(PASSTHROUGH) - {20, 65},
+            menu_transform=menu_text,
             source_names={source.name})
         patch_texts[language] = texts.get(source.name, {})
         patch_insertions[language] = additions.get(source.name, {})
@@ -53,6 +54,8 @@ def compile_scene(source: Path, patches=()) -> str:
 
     def text(item, index, strip_prefix=False):
         original = tsc.string(item.operands[index])
+        if item.opcode == 14:
+            original = menu_text(original)
         kind = ({14: {1: "prompt"}, 32: {5: "oload"},
                  82: {4: "append"}}.get(item.opcode, {}).get(index)
                 or "choice%d" % (index - 7))

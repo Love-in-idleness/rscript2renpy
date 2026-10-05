@@ -3,8 +3,6 @@ default persistent.rscript_textbox_opacity = 1.0
 default rscript_last_voice = None
 
 init python:
-    config.game_menu_action = ShowMenu("preferences")
-
     rscript_previous_menu_arguments = config.menu_arguments_callback
 
     def rscript_menu_arguments(*args, **kwargs):
@@ -31,7 +29,7 @@ init python:
             renpy.music.play(store.rscript_last_voice, channel="rscript_voice",
                              loop=False, if_changed=False)
 
-screen rscript_grps_button(folder, name, button_action, enabled=True):
+screen rscript_grps_button(folder, name, button_action, enabled=True, selected=None):
     $ items = rscript_grps_layout.get(folder, {}).get("items", {})
     $ item = items.get(name)
     if item:
@@ -42,17 +40,30 @@ screen rscript_grps_button(folder, name, button_action, enabled=True):
         $ focused_display = Transform(focused_image,
                                       xoffset=focused[0] - item[0],
                                       yoffset=focused[1] - item[1])
+        $ plain_selected = (folder in rscript_ui.get("selected_plain_folders", ()) and (name.startswith(("scm_", "msp_", "msk_")) or name.endswith(("_on", "_off"))))
+        $ disabled_name = name + ("_off" if name + "_off" in items else "_c")
+        $ disabled_image = ("images/grps/%s/%s.png" % (folder, disabled_name)
+                            if disabled_name in items else idle_image)
         imagebutton:
-            idle idle_image
+            idle (focused_display if plain_selected else idle_image)
             hover focused_display
-            selected_idle focused_display
-            selected_hover focused_display
+            selected_idle (idle_image if plain_selected else focused_display)
+            selected_hover (idle_image if plain_selected else focused_display)
+            insensitive disabled_image
+            selected selected
+            activate_sound rscript_ui.get("activate_sound", {}).get(folder)
             xpos item[0]
             ypos item[1]
             sensitive enabled
             action button_action
 
-screen preferences():
+style rscript_volume_bar is bar:
+    left_bar Solid("#00000000")
+    right_bar Solid("#00000000")
+    hover_left_bar Solid("#00000000")
+    hover_right_bar Solid("#00000000")
+
+screen preferences(title_mode=False):
     tag menu
     modal True
     key "game_menu" action Return()
@@ -78,15 +89,22 @@ screen preferences():
                     ("sef_off", "sound mute", "enable"),
                     ("voc_on", "voice mute", "disable"),
                     ("voc_off", "voice mute", "enable"),
-                    ("gef_on", "transitions", "all"),
-                    ("gef_off", "transitions", "none"),
                     ("msp_slw", "text speed", 25),
                     ("msp_nom", "text speed", 75),
                     ("msp_now", "text speed", 0),
                     ("msk_on", "skip", "all"),
                     ("msk_off", "skip", "seen")):
                 use rscript_grps_button("confscrn", name,
-                                         Preference(setting, value))
+                                         rscript_preference_action(setting, value))
+            if _preferences.language in rscript_wiki_keywords:
+                if not title_mode:
+                    use rscript_grps_button("confscrn", "gef_on",
+                        Function(rscript_set_wiki, True), selected=persistent.rscript_wiki_mode)
+                    use rscript_grps_button("confscrn", "gef_off",
+                        Function(rscript_set_wiki, False), selected=not persistent.rscript_wiki_mode)
+            else:
+                use rscript_grps_button("confscrn", "gef_on", Preference("transitions", "all"))
+                use rscript_grps_button("confscrn", "gef_off", Preference("transitions", "none"))
             use rscript_grps_button("confscrn", "vocst_on",
                                      SetField(persistent, "rscript_stop_voice_on_advance", True))
             use rscript_grps_button("confscrn", "vocst_off",
@@ -100,6 +118,7 @@ screen preferences():
                 $ thumb = layout["items"].get(prefix + "_vol")
                 if track and thumb:
                     bar:
+                        style "rscript_volume_bar"
                         value Preference(setting)
                         base_bar Solid("#00000000")
                         thumb "images/grps/confscrn/%s_vol.png" % prefix
@@ -112,11 +131,13 @@ screen preferences():
                         ysize track[3]
                         bar_invert prefix == "auto"
 
-            use rscript_grps_button("confscrn", "save", ShowMenu("save"), save_enabled)
-            use rscript_grps_button("confscrn", "load", ShowMenu("load"), save_enabled)
+            if not title_mode:
+                use rscript_grps_button("confscrn", "save", ShowMenu("save"), save_enabled)
+                use rscript_grps_button("confscrn", "load", ShowMenu("load"), save_enabled)
             use rscript_grps_button("confscrn", "title", MainMenu(confirm=False))
-            use rscript_grps_button("confscrn", "exit", Quit(confirm=True))
-            use rscript_grps_button("confscrn", "close", Return())
+            if not title_mode:
+                use rscript_grps_button("confscrn", "exit", Quit(confirm=rscript_ui.get("quit_confirm", True)))
+                use rscript_grps_button("confscrn", "close", Return())
     else:
         frame:
             xalign 0.5
@@ -131,22 +152,25 @@ screen preferences():
 
 screen rscript_compane():
     $ layout = rscript_grps_layout.get("compane")
-    if layout:
+    if layout and not (rscript_ui.get("compane_hide_auto", False) and _preferences.afm_enable):
         fixed:
             xysize layout["size"]
             xalign 1.0
             yalign 1.0
             $ items = layout["items"]
-            if "bg" in items:
+            if "bg" in items and not rscript_ui.get("compane_bar_background", False):
                 $ bg = items["bg"]
                 add "images/grps/compane/bg.png" xpos bg[0] ypos bg[1]
-            $ track = items.get("slide_lev")
+            $ track = rscript_ui.get("compane_track", items.get("slide_lev"))
             if track and "slide" in items:
                 if track[3] > track[2]:
                     vbar:
                         value FieldValue(persistent, "rscript_textbox_opacity", range=1.0)
-                        base_bar Solid("#00000000")
+                        base_bar ("images/grps/compane/bg.png" if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
                         thumb "images/grps/compane/slide.png"
+                        hover_thumb ("images/grps/compane/slide_f.png" if "slide_f" in items else "images/grps/compane/slide.png")
+                        thumb_offset (2 if rscript_ui.get("compane_bar_background", False) else 0)
+                        bar_invert rscript_ui.get("compane_invert", False)
                         xpos track[0]
                         ypos track[1]
                         xsize track[2]
@@ -154,14 +178,17 @@ screen rscript_compane():
                 else:
                     bar:
                         value FieldValue(persistent, "rscript_textbox_opacity", range=1.0)
-                        base_bar Solid("#00000000")
+                        base_bar ("images/grps/compane/bg.png" if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
                         thumb "images/grps/compane/slide.png"
+                        hover_thumb ("images/grps/compane/slide_f.png" if "slide_f" in items else "images/grps/compane/slide.png")
+                        thumb_offset (2 if rscript_ui.get("compane_bar_background", False) else 0)
+                        bar_invert rscript_ui.get("compane_invert", False)
                         xpos track[0]
                         ypos track[1]
                         xsize track[2]
                         ysize track[3]
-            use rscript_grps_button("compane", "rev", rscript_rev_action(), enabled=None)
-            use rscript_grps_button("compane", "bak", Rollback())
+            use rscript_grps_button("compane", "rev", rscript_rev_action(not rscript_touch_locked()), enabled=None)
+            use rscript_grps_button("compane", "bak", Rollback(), enabled=roll_enabled and not rscript_touch_locked())
             use rscript_grps_button("compane", "fow", RollForward())
             use rscript_grps_button("compane", "next", Skip(fast=True))
             use rscript_grps_button("compane", "auto", [Function(rscript_ensure_auto_delay), Preference("auto-forward", "toggle")])
@@ -171,7 +198,7 @@ screen rscript_compane():
 
 screen rscript_choice(items, prompt=None):
     modal True
-    key "game_menu" action ShowMenu("preferences")
+    key "game_menu" action Function(rscript_open_game_menu)
     key "rollback" action Rollback()
     $ answer_folder = next((name for name in sorted(rscript_grps_layout)
                             if name.startswith("sel_a")), None)
@@ -179,37 +206,57 @@ screen rscript_choice(items, prompt=None):
                             if name.startswith("sel_q")), None)
     vbox:
         xalign 0.5
-        yalign 0.42
-        spacing 4
+        yalign rscript_ui.get("choice_yalign", 0.42)
+        spacing rscript_ui.get("choice_spacing", 4)
         if prompt:
             if prompt_folder:
                 $ question = rscript_grps_layout[prompt_folder]
                 fixed:
-                    xysize question["size"]
+                    xysize rscript_ui.get("prompt_size", question["size"])
                     $ body = question["items"]["body"]
-                    $ textpos = question["items"].get("text", (20, 10))
-                    add "images/grps/%s/body.png" % prompt_folder xpos body[0] ypos body[1]
-                    text rscript_menu_text(prompt) xpos textpos[0] ypos textpos[1] color "#ffffff" font rscript_current_font()
+                    $ textpos = rscript_ui.get("prompt_text_pos", question["items"].get("text", (20, 10)))
+                    add "images/grps/%s/body.png" % prompt_folder:
+                        xpos (0 if rscript_ui.get("choice_center_art", False) else body[0])
+                        ypos (0 if rscript_ui.get("choice_center_art", False) else body[1])
+                    text rscript_menu_text(prompt):
+                        xpos textpos[0]
+                        ypos rscript_ui.get("prompt_text_yalign", textpos[1])
+                        yanchor rscript_ui.get("prompt_text_yalign", 0.0)
+                        color rscript_ui.get("prompt_text_color", "#ffffff")
+                        font rscript_current_font()
+                        size rscript_ui.get("prompt_text_size", gui.text_size)
             else:
                 text rscript_menu_text(prompt) xalign 0.5 color "#ffffff" font rscript_current_font()
         for item in items:
             if item.action is not None:
-                if answer_folder:
-                    $ answer = rscript_grps_layout[answer_folder]
+                $ asset = rscript_choice_asset(item.caption)
+                $ selected_folder = "sel_a%02d" % asset if asset is not None else answer_folder
+                if selected_folder:
+                    $ answer = rscript_grps_layout[selected_folder]
                     fixed:
-                        xysize answer["size"]
+                        xysize rscript_ui.get("choice_size", answer["size"])
                         $ body = answer["items"]["body"]
-                        $ textpos = answer["items"].get("text", (20, 10))
+                        $ textpos = rscript_ui.get("choice_text_pos", answer["items"].get("text", (20, 10)))
                         imagebutton:
-                            idle "images/grps/%s/body.png" % answer_folder
-                            hover ("images/grps/%s/body_f.png" % answer_folder
+                            idle "images/grps/%s/body.png" % selected_folder
+                            hover ("images/grps/%s/body_f.png" % selected_folder
                                    if "body_f" in answer["items"] else
-                                   "images/grps/%s/body.png" % answer_folder)
+                                   "images/grps/%s/body.png" % selected_folder)
                             focus_mask True
-                            xpos body[0]
-                            ypos body[1]
+                            xpos (0.5 if rscript_ui.get("choice_center_art", False) else body[0])
+                            ypos (0.5 if rscript_ui.get("choice_center_art", False) else body[1])
+                            xanchor (0.5 if rscript_ui.get("choice_center_art", False) else 0.0)
+                            yanchor (0.5 if rscript_ui.get("choice_center_art", False) else 0.0)
                             action item.action
-                        text rscript_menu_text(item.caption) xpos textpos[0] ypos textpos[1] color "#ffffff" font rscript_current_font()
+                        if asset is None:
+                            text rscript_menu_text(item.caption):
+                                xpos textpos[0]
+                                ypos rscript_ui.get("choice_text_yalign", textpos[1])
+                                yanchor rscript_ui.get("choice_text_yalign", 0.0)
+                                color "#ffffff"
+                                font rscript_current_font()
+                                size rscript_ui.get("choice_text_size", gui.text_size)
+                                outlines rscript_ui.get("choice_outlines", [])
                 else:
                     textbutton rscript_menu_text(item.caption) action item.action text_font rscript_current_font()
 
@@ -241,15 +288,13 @@ screen rscript_file_slots(mode):
                     button:
                         xpos item[0]
                         ypos item[1]
-                        xsize item[2]
-                        ysize item[3]
+                        xsize rscript_ui.get("slot_size", item[2:])[0]
+                        ysize rscript_ui.get("slot_size", item[2:])[1]
                         background None
                         hover_background Solid("#ffffff20")
                         action slot_action
-                        $ dt1 = FileJson(slot, key="rscript_dt1")
-                        $ dt1_image = ("images/grps/dt1_%04d.png" % dt1
-                                       if isinstance(dt1, int) and dt1 > 0 else None)
-                        if dt1_image and renpy.loadable(dt1_image):
+                        $ dt1_image = rscript_slot_image(slot)
+                        if dt1_image:
                             add dt1_image
                         elif FileLoadable(slot):
                             add FileScreenshot(slot):
@@ -259,18 +304,29 @@ screen rscript_file_slots(mode):
                                 ysize item[3] - 8
                         if FileLoadable(slot):
                             text FileTime(slot, "%Y/%m/%d %H:%M"):
-                                xalign 0.98
-                                yalign 0.98
-                                color "#ffffff"
+                                xpos rscript_ui.get("slot_date_pos", (0.98, 0.98))[0]
+                                ypos rscript_ui.get("slot_date_pos", (0.98, 0.98))[1]
+                                xanchor (0.0 if "slot_date_pos" in rscript_ui else 0.98)
+                                yanchor (0.0 if "slot_date_pos" in rscript_ui else 0.98)
+                                color rscript_ui.get("slot_date_color", "#ffffff")
                                 size 12
-                                outlines [(1, "#000000", 0, 0)]
+                                outlines ([] if "slot_date_pos" in rscript_ui else [(1, "#000000", 0, 0)])
             use rscript_grps_button("savescrn", "prev",
-                                     FilePagePrevious(max=10, wrap=True))
+                                     FilePagePrevious(max=10, wrap=True, auto=False, quick=False))
             use rscript_grps_button("savescrn", "next",
-                                     FilePageNext(max=10, wrap=True))
+                                     FilePageNext(max=10, wrap=True, auto=False, quick=False))
             if "number" in items:
                 $ number = items["number"]
-                text FileCurrentPage() xpos number[0] ypos number[1] color "#ffffff"
+                $ page = FileCurrentPage()
+                $ page_number = int(page) if page.isdigit() else 1
+                $ page_image = "images/grps/nonbl/%d.png" % page_number
+                if renpy.loadable(page_image):
+                    fixed:
+                        pos number[:2]
+                        xysize number[2:]
+                        add page_image xalign 0.5 yalign 0.5
+                else:
+                    text page xpos number[0] ypos number[1] color "#ffffff"
             use rscript_grps_button("savescrn", "exit", Return())
     else:
         frame:

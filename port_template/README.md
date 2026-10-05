@@ -43,7 +43,7 @@
 
 `grps/confscrn`、`grps/compane`、`grps/savescrn`、`sel_a*`、`sel_q*`、`tbox*` 有 PNG 时还会读取各目录的
 `.meta.xml` 画布尺寸和坐标，生成 `grps_layout.rpy`。共用界面用原图实现设置、
-存读档、选择项和对话控制条；游戏的 `say` screen 需 `use rscript_compane`，
+存读档、选择项、对话/姓名牌和控制条；默认 `say` screen 已在公共层，
 `choice` screen 可 `use rscript_choice(items, prompt)`。
 存档时会将 `_r[1]` 记入存档元数据；若存在 `grps/dt1_NNNN.png`，存读档页按此编号显示原游戏章节图，旧存档或缺图时才回退到 Ren'Py 截图。
 缺少坐标元数据会在构建时明确报错，而不是生成位置不明的界面。标题流程和
@@ -51,9 +51,10 @@
 
 ## 效果兼容检查
 
-Forest 调用同一个 `install_base` 安装公共层，然后应用 `forest/game/*.rpy`
-及专用 lowerer；不再靠字符串替换改写公共运行时。其已逐项适配的参数和语言
-补丁由 Forest lowerer 保留，不再次经过通用的静态降级检查。
+Forest 调用 `install_base` 安装公共层，再用公共 `write_scenario` 写入剧本；
+Khime 通过 `build` 调用同一写入机制。写入运行时、界面和剧本时清理对应
+`.rpyc`，不删除存档。Forest 的已适配动态效果用 `preserve_dynamic=True`
+保留，并就地注释交由运行时验证；未实现的常量效果仍统一降级。
 
 通用装配入口对每份 `scenario/*.rpy` 执行一次效果兼容检查和未知 `^` 文本指令降级。
 `_load`、`_cls`、`_oload`、
@@ -62,6 +63,23 @@ Forest 调用同一个 `install_base` 安装公共层，然后应用 `forest/gam
 其余（包括无法静态判定的表达式）改为可执行的基础参数，并在 RPY 指令前注释
 原值及原因；TSC 输入不改。将来实现新效果时，同步更新 `effect_compat.py`
 的支持范围并重建场景。
+
+## 公共 UI 和字幕补丁
+
+`game/ui_features.rpy` 提供对话/姓名牌、标题文字设置及点击系统动作，
+`game/grps_ui.rpy` 提供原图设置、图片选项、dt1 存读档及控制条。
+适配层只在后续 init 更新 `rscript_ui` 的实际布局/状态图差异；
+字幕速度与透明度统一使用 `persistent.rscript_*`，兼容旧 Forest 存档插图键。
+指定 `rscript_boot_movies` 即可按顺序在 splashscreen 播放原始 MPG，
+返回标题不重新播放；默认没有启动视频。
+`rscript_folder_zero_all` 和 `rscript_click_grid` 声明方言的全层目录与网格坐标语义。
+图片选项通过 `rscript_asset_NNN` 读取寄存器并选择 `sel_aNN/body.png`，
+公共层继续识别旧 `forest_asset_NNN`。
+
+`tsc_patches.language_patch_data` 在显式方言下对齐原文与补丁，
+允许新增 `font` 及配套 `wait/cls`，重定位分支；拒绝新增剧情逻辑。
+调用者明确传入可覆盖的 opcode，不自动放宽非文本参数校验。
+按语言整体替换场景仍是 Forest 5000 的专用行为。
 
 ## 公共文本、语言与进度设置
 

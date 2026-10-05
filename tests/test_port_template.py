@@ -65,6 +65,8 @@ def main() -> None:
         assert "^a601 flattened to empty" not in lowered
         assert "'en': '^a601A'" in lowered
         assert "'^cg绿'" in lowered and "'^n日本'" in lowered
+        numeric_body = "    _say '^g999１２３^g001123^a601２^s12'\n"
+        assert flatten_unsupported_text_controls(numeric_body) == numeric_body
         assert "    pass\n" in scene
         assert flatten_unsupported_effects(scene, resources) == scene
         assert "scene onlayer master" in (project / "game" / "script.rpy").read_text(
@@ -76,14 +78,15 @@ def main() -> None:
         assert "screen rscript_compane():" in (project / "game" / "grps_ui.rpy").read_text(
             encoding="utf-8")
         save_ui = (project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
+        save_ui += (project / "game" / "ui_features.rpy").read_text(encoding="utf-8")
         assert 'data["rscript_dt1"] = int(store._r[1])' in save_ui
         assert 'FileJson(slot, key="rscript_dt1")' in save_ui
         assert 'images/grps/dt1_%04d.png' in save_ui
-        assert 'key "game_menu" action ShowMenu("preferences")' in (
+        assert 'key "game_menu" action Function(rscript_open_game_menu)' in (
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert 'key "rollback" action Rollback()' in (
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
-        assert 'text rscript_menu_text(item.caption) xpos textpos[0] ypos textpos[1] color "#ffffff" font rscript_current_font()' in (
+        assert 'text rscript_menu_text(item.caption):' in (
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert collect_layout(resources) == {}
         assert "define rscript_grps_layout = {}" in (
@@ -96,6 +99,14 @@ def main() -> None:
         dynamic = flatten_unsupported_effects("    _load 1 2 3 4 _r[9] 0\n",
                                                resources)
         assert "effect _r[9] flattened to 0 (not statically supported)" in dynamic
+        preserved = flatten_unsupported_effects("    _load 1 2 3 4 _r[9] 0\n",
+                                                 resources, preserve_dynamic=True)
+        assert "_load 1 2 3 4 _r[9] 0" in preserved
+        assert "preserved for runtime validation" in preserved
+        assert "flattened" not in preserved
+        (masks / "ef11.msk").write_bytes(b"converted by install_base")
+        assert flatten_unsupported_effects("    _update 11 10 10\n",
+                                           root / "masks") == "    _update 11 10 10\n"
         assert (project / "game" / "images" / "grps" / "ui" /
                 "panel.png").is_file()
         assert (project / "game" / "bgm" / "Track01.ogg").is_file()
@@ -111,6 +122,10 @@ def main() -> None:
                     "ignored.wcg").exists()
 
         changed = project / "game" / "scenario" / "0000.rpy"
+        cache = changed.with_suffix(".rpyc")
+        cache.write_bytes(b"obsolete cache")
+        build(resources, project, force=True)
+        assert not cache.exists()
         changed.write_text("user edit\n", encoding="utf-8")
         try:
             build(resources, project)

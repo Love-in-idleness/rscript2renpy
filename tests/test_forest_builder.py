@@ -22,6 +22,9 @@ from rscript_tsc import read_tsc
 # Check the assembled shared base plus the game overlay, not an embedded copy.
 FOREST_COMPAT += (ROOT / "port_template/game/text_features.rpy").read_text(encoding="utf-8")
 FOREST_COMPAT += (ROOT / "runtime/00_rscript_wrap.rpy").read_text(encoding="utf-8")
+FOREST_COMPAT += (ROOT / "port_template/game/ui_features.rpy").read_text(encoding="utf-8")
+FOREST_COMPAT += (ROOT / "port_template/game/grps_ui.rpy").read_text(encoding="utf-8")
+FOREST_COMPAT += (ROOT / "runtime/02_rscript_cmd.rpy").read_text(encoding="utf-8")
 RSCRIPT_OBJECTS = (ROOT / "runtime/03_rscript_gfx.rpy").read_text(encoding="utf-8")
 
 
@@ -61,9 +64,10 @@ def main() -> None:
         "A^g715B") == "A{rscript_g=715:22}B"
     assert inline_namespace["rscript_inline_graphics"](
         "A^a601B") == "A{rscript_a=601:22}B"
-    entry = (ROOT / "forest/game/script.rpy").read_text()
+    entry = (ROOT / "port_template/game/script.rpy").read_text()
     assert "label splashscreen:" in entry
-    assert "    _movie 2\n    _movie 1\n    return" in entry
+    assert "for number in rscript_boot_movies:" in entry
+    assert "rscript_boot_movies = (2, 1)" in FOREST_COMPAT
     assert 'obsolete.suffix.lower() in {".mpg", ".webm"}' in (ROOT / "port_template/port_resources.py").read_text()
     assert '"mov/%04d.webm"' not in builder
     assert '"mov/%04d.mpg"' in (ROOT / "runtime" / "03_rscript_gfx.rpy").read_text(
@@ -174,7 +178,7 @@ def main() -> None:
     assert "_load 11 1001 515 267 4 0" in title
     assert "_se 0 1\n    _se_on 0 1 0 0" in title
     assert "_forest_folder 0 'grpo'" in scenes[[p.stem for p in files].index("0000")]
-    assert "'forest_asset_3501':" in scenes[[p.stem for p in files].index("1000")]
+    assert "'rscript_asset_3501':" in scenes[[p.stem for p in files].index("1000")]
     assert "__forest_asset_" not in compiled
     story = scenes[[p.stem for p in files].index("2100")]
     story_source = files[[p.stem for p in files].index("2100")]
@@ -282,12 +286,12 @@ def main() -> None:
     game_menu = FOREST_COMPAT.split("screen preferences(title_mode=False):", 1)[1].split(
         "screen forest_title_preferences():", 1)[0]
     title_menu = FOREST_COMPAT.split("screen forest_title_preferences():", 1)[1].split(
-        "screen save():", 1)[0]
+        "screen choice(items):", 1)[0]
     assert 'if _preferences.language in rscript_wiki_keywords:' in game_menu
-    assert 'action Function(rscript_set_wiki, True)' in game_menu
-    assert 'action Function(rscript_set_wiki, False)' in game_menu
-    assert 'selected persistent.rscript_wiki_mode' in game_menu
-    assert 'selected not persistent.rscript_wiki_mode' in game_menu
+    assert 'Function(rscript_set_wiki, True)' in game_menu
+    assert 'Function(rscript_set_wiki, False)' in game_menu
+    assert 'selected=persistent.rscript_wiki_mode' in game_menu
+    assert 'selected=not persistent.rscript_wiki_mode' in game_menu
     assert 'textbutton ("维基' not in game_menu
     assert 'rscript_set_wiki' not in title_menu
     assert 'prefix = "gg" if wiki_enabled else "gf"' in FOREST_COMPAT
@@ -321,7 +325,6 @@ def main() -> None:
     assert "        if center:\n            rscript_text what:" in say_screen
     assert "            if center:" not in say_screen
     assert "xpos config.screen_width / 2" not in FOREST_COMPAT
-    assert "xanchor 0.5" not in FOREST_COMPAT
     # `^m` must center the whole text block on the game screen and center each
     # line inside that block. The text is laid out as a tight box, so it has to
     # be positioned with `xalign`; `xpos`/`xanchor` or a full-width `xsize`
@@ -331,9 +334,9 @@ def main() -> None:
     assert "                xalign 0.5" in centered
     assert "                text_align 0.5" in centered
     assert "xpos" not in centered
-    assert ('background Transform("images/grps/tbox01/back.png", '
-            'alpha=persistent.textbox_opacity)' in FOREST_COMPAT)
-    assert "xpos text_indent + 1" in FOREST_COMPAT
+    assert "background rscript_textbox_background()" in FOREST_COMPAT
+    assert "alpha=persistent.rscript_textbox_opacity" in FOREST_COMPAT
+    assert "textpos = (text_indent + 1, 8)" in FOREST_COMPAT
     assert "xsize config.screen_width - text_indent - 1" not in FOREST_COMPAT
     assert "default persistent.rscript_say_line_chars = 19" in FOREST_COMPAT
     assert "default persistent.rscript_oload_line_chars = 20" in FOREST_COMPAT
@@ -352,65 +355,39 @@ def main() -> None:
     assert 'default persistent.rscript_text_font = rscript_default_font' in FOREST_COMPAT
     assert "def rscript_fonts():" in FOREST_COMPAT
     assert "def rscript_cycle_font(step):" in FOREST_COMPAT
-    assert FOREST_COMPAT.count("font rscript_current_font()") == 5
+    assert FOREST_COMPAT.count("font rscript_current_font()") >= 5
     assert "rscript_save_progress()" in FOREST_COMPAT
     assert "rscript_load_progress()" in FOREST_COMPAT
     assert "rscript_clear_progress()" in FOREST_COMPAT
-    assert 'return ShowMenu("forest_title_preferences")' in FOREST_COMPAT
+    assert "rscript_title_preferences" in FOREST_COMPAT
     assert '"images/grps/gf%03d.png" % rscript_speaker' in FOREST_COMPAT
     assert "default rscript_speaker_visible = False" in FOREST_COMPAT
     assert "if rscript_speaker_visible and rscript_speaker is not None:" in FOREST_COMPAT
     assert "elif rscript_speaker_visible and who:" in FOREST_COMPAT
-    assert 'screen forest_compane():' in FOREST_COMPAT
-    assert 'use forest_compane' in FOREST_COMPAT
-    assert 'xpos 606\n            ypos 120' in FOREST_COMPAT
-    assert 'base_bar "images/grps/compane/bg.png"' in FOREST_COMPAT
-    assert 'value FieldValue(persistent, "textbox_opacity", range=1.0)' in FOREST_COMPAT
-    assert 'action Rollback()' in FOREST_COMPAT
-    assert 'action RollForward()' in FOREST_COMPAT
-    assert 'action Skip(fast=True)' in FOREST_COMPAT
-    assert 'action Function(rscript_replay_voice)' in FOREST_COMPAT
-    assert 'insensitive "images/grps/compane/voc_off.png"' in FOREST_COMPAT
-    assert 'action HideInterface()' in FOREST_COMPAT
-    assert 'config.game_menu_action = Function(rscript_open_game_menu)' in FOREST_COMPAT
-    assert 'if store.menu_enabled and not rscript_touch_locked():' in FOREST_COMPAT
+    assert "use rscript_compane" in FOREST_COMPAT
+    assert '"compane_track": (4, 2, 75, 14)' in FOREST_COMPAT
+    assert 'FieldValue(persistent, "rscript_textbox_opacity", range=1.0)' in FOREST_COMPAT
     assert "default forest_input_locked = False" in FOREST_COMPAT
     assert 'def rscript_touch_locked():\n        return store.forest_input_locked' in FOREST_COMPAT
-    assert 'screen forest_touch_controls():' not in FOREST_COMPAT
+    assert 'config.game_menu_action = Function(rscript_open_game_menu)' in FOREST_COMPAT
+    assert 'if store.menu_enabled and not rscript_touch_locked():' in FOREST_COMPAT
     assert 'screen preferences(title_mode=False):' in FOREST_COMPAT
     assert 'if not title_mode:' in FOREST_COMPAT
-    assert 'if store.save_enabled:' in FOREST_COMPAT
-    save_guard = FOREST_COMPAT.index('if store.save_enabled:')
-    assert save_guard < FOREST_COMPAT.index('action ShowMenu("save")', save_guard)
-    assert save_guard < FOREST_COMPAT.index('action ShowMenu("load")', save_guard)
-    assert 'return ShowMenu("preferences")' in FOREST_COMPAT
-    assert 'return ShowMenu("forest_title_preferences")' in FOREST_COMPAT
-    assert 'style forest_volume_bar is bar:' in FOREST_COMPAT
-    assert FOREST_COMPAT.count('style "forest_volume_bar"') == 3
-    assert 'base_bar Null()' not in FOREST_COMPAT
-    assert 'confscrn/bgm_lev.png' not in FOREST_COMPAT
-    assert 'confscrn/voc_lev.png' not in FOREST_COMPAT
-    assert 'confscrn/sef_lev.png' not in FOREST_COMPAT
+    assert 'ShowMenu("save"), save_enabled' in FOREST_COMPAT
+    assert 'ShowMenu("load"), save_enabled' in FOREST_COMPAT
+    assert 'style rscript_volume_bar is bar:' in FOREST_COMPAT
     assert '"images/grps/nonbl/%d.png" % page_number' in FOREST_COMPAT
-    assert 'text FileCurrentPage()' not in FOREST_COMPAT
-    assert 'screen save():' in FOREST_COMPAT and 'screen load():' in FOREST_COMPAT
-    assert 'data["forest_dt1"] = int(_r[1])' in FOREST_COMPAT
+    assert 'data["rscript_dt1"] = int(store._r[1])' in FOREST_COMPAT
     assert 'FileJson(slot, key="forest_dt1")' in FOREST_COMPAT
     assert 'images/grps/dt1_%04d.png' in FOREST_COMPAT
-    assert 'FileScreenshot' not in FOREST_COMPAT
-    assert ('idle "images/grps/confscrn/bgm_on_f.png"\n'
-            '            hover "images/grps/confscrn/bgm_on_f.png"\n'
-            '            selected_idle "images/grps/confscrn/bgm_on.png"'
-            in FOREST_COMPAT)
-    assert 'return ShowMenu("load")' in FOREST_COMPAT
-    assert 'return Quit(confirm=True)' in FOREST_COMPAT
+    assert 'FileScreenshot' in FOREST_COMPAT
+    assert '"selected_plain_folders": ("confscrn",)' in FOREST_COMPAT
+    assert 'register_rscript_ui_aliases("forest")' in FOREST_COMPAT
     assert '"gui/rscript_cursor.png", 0, 0' in (
         ROOT / "runtime" / "cursor.rpy").read_text(encoding="utf-8")
     with Image.open(ROOT / "runtime" / "gui" / "rscript_cursor.png") as cursor:
         assert cursor.format == "PNG" and cursor.size == (32, 32)
         assert cursor.getbbox() is not None
-    assert ('execute=execute_forest_setclksys, lint=lint_undef)'
-            in FOREST_COMPAT)
     assert "label main_menu:" in entry
     assert 'define config.version = "1.0"' in (ROOT / "forest/game/options.rpy").read_text()
     with TemporaryDirectory() as temporary:
