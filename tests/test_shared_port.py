@@ -112,8 +112,6 @@ def main():
                              project / "game/shared_features_test.rpy")
                 subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), str(project),
                                 "sharedporttest", "--savedir", str(project / "test-saves")], check=True)
-                shutil.copy2(ROOT / "tests/renpy_rev_controls.rpy",
-                             project / "game/scenario/0000.rpy")
                 command = [str(Path(sys.argv[1]) / "renpy.sh"), str(project),
                            "run", "--savedir", str(project / "test-saves")]
                 environment = os.environ | {"RENPY_PERFORMANCE_TEST": "0",
@@ -123,18 +121,23 @@ def main():
                 if shutil.which("xvfb-run"):
                     command = ["xvfb-run", "-a", *command]
                     environment["SDL_VIDEODRIVER"] = "x11"
-                with subprocess.Popen(command, env=environment, stdout=subprocess.PIPE,
-                                      stderr=subprocess.STDOUT, text=True,
-                                      start_new_session=True) as process:
-                    try:
-                        output, _ = process.communicate(timeout=45)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(process.pid, signal.SIGKILL)
-                        output, _ = process.communicate()
-                        raise AssertionError("rev test timed out: " + output[-4000:])
-                assert process.returncode == 0, output[-4000:]
-                assert "OK: native menu updates rev target" in output, output[-4000:]
-                print("OK: rev returns to latest choice: " + name)
+                for driver, marker in (("renpy_rev_controls", "OK: native menu updates rev target"),
+                                       ("renpy_effects", "OK: native object effects")):
+                    shutil.copy2(ROOT / "tests" / (driver + ".rpy"),
+                                 project / "game/scenario/0000.rpy")
+                    (project / "game/scenario/0000.rpyc").unlink(missing_ok=True)
+                    with subprocess.Popen(command, env=environment, stdout=subprocess.PIPE,
+                                          stderr=subprocess.STDOUT, text=True,
+                                          start_new_session=True) as process:
+                        try:
+                            output, _ = process.communicate(timeout=45)
+                        except subprocess.TimeoutExpired:
+                            os.killpg(process.pid, signal.SIGKILL)
+                            output, _ = process.communicate()
+                            raise AssertionError(driver + " timed out: " + output[-4000:])
+                    assert process.returncode == 0, output[-4000:]
+                    assert marker in output, output[-4000:]
+                    print(marker + ": " + name)
     print("OK: both ports install shared runtime/templates and subtitle patch alignment")
 
 

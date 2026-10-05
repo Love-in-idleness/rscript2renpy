@@ -57,6 +57,7 @@ transform dissolve_zoom_out(xpos, ypos, anchor):
     easein_cubic 0.5 alpha 0.0 zoom 1.25
 
 define fast_dissolve = Dissolve(.2)
+define rscript_slow_dissolve = Dissolve(2.0)
 define rscript_dither = ImageDissolve(
     Tile("gui/rscript_dither.svg"), 0.5, ramplen = 8)
 
@@ -65,6 +66,16 @@ transform oload_fade:
     linear 0.2 alpha 1.0
     on hide:
         linear 0.2 alpha 0.0
+
+transform rscript_white_in:
+    shader "rscript.white"
+    u_rscript_white 1.0
+    linear 1.0 u_rscript_white 0.0
+
+transform rscript_white_out:
+    shader "rscript.white"
+    u_rscript_white 0.0
+    linear 1.0 u_rscript_white 1.0
 
 
 
@@ -415,7 +426,7 @@ transform grayscale(img):
 
 init python:
 
-    def loadcls(layer, effect, cg = None, xpos = 0, ypos = 0, color = 0, clear = False):
+    def loadcls(layer, effect, cg = None, xpos = 0, ypos = 0, color = 0, clear = False, displayable = None):
 
         anchor = layer_anchor.get(layer, (0.0, 0.0))
 
@@ -449,10 +460,11 @@ init python:
 
         def _queue_load():
             if not clear:
-                img = "%s %04d" % (folder[layer], cg)
+                img = displayable if displayable is not None else "%s %04d" % (folder[layer], cg)
                 store.layer_info[layer] = img
                 store.layer_pos[layer] = (xpos or 0, ypos or 0)
-                queue_draw(renpy.show, img, at_list = at_list, zorder = zorder, tag = tag, layer = IMAGE_LAYER)
+                queue_draw(renpy.show, tag, what = renpy.displayable(img),
+                           at_list = at_list, zorder = zorder, layer = IMAGE_LAYER)
 
 
             elif layer == 0:
@@ -484,6 +496,8 @@ init python:
 
 
         if effect == 0:
+            if displayable is not None:
+                at_list.append(oload_fade)
             _queue_load()
 
 
@@ -499,8 +513,8 @@ init python:
             elif layer in store.layer_info:
                 img = store.layer_info.pop(layer)
                 store.layer_pos.pop(layer, None)
-                queue_draw(renpy.show, img, at_list = [trans, rscript_zoom_out],
-                           tag = tag, layer = IMAGE_LAYER)
+                queue_draw(renpy.show, tag, what = renpy.displayable(img),
+                           at_list = [trans, rscript_zoom_out], layer = IMAGE_LAYER)
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
@@ -537,6 +551,30 @@ init python:
             _queue_load()
             queue_ef(renpy.with_statement, moveinright)
 
+        elif effect == 10:
+            _queue_load()
+            queue_ef(renpy.with_statement, moveoutbottom if clear else moveinbottom)
+
+        elif effect == 15:
+            # Khime 0x40771d / 0x408485: white RGB fade, alpha step 16.
+            if not clear:
+                at_list.append(rscript_white_in)
+                _queue_load()
+                queue_ef_pause(1.0)
+            elif layer in store.layer_info:
+                img = store.layer_info.pop(layer)
+                store.layer_pos.pop(layer, None)
+                queue_draw(renpy.show, tag, what = renpy.displayable(img),
+                           at_list = [trans, rscript_white_out],
+                           zorder = zorder, layer = IMAGE_LAYER)
+                queue_ef_pause(1.0)
+                queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
+
+        elif effect == 19:
+            # Alpha step 8 versus effect 3's 32: four times the fade duration.
+            _queue_load()
+            queue_ef(renpy.with_statement, rscript_slow_dissolve)
+
 
         elif effect == 16:
 
@@ -556,7 +594,7 @@ init python:
                 queue_ef_pause(0.5)
 
             elif layer in store.layer_info:
-                queue_draw(renpy.show, store.layer_info[layer], at_list = [ef], tag = tag, layer = IMAGE_LAYER)
+                queue_draw(renpy.show, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [ef], layer = IMAGE_LAYER)
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
@@ -575,7 +613,7 @@ init python:
                 queue_ef_pause(0.5)
 
             elif layer in store.layer_info:
-                queue_draw(renpy.show, store.layer_info[layer], at_list = [ef], tag = tag, layer = IMAGE_LAYER)
+                queue_draw(renpy.show, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [ef], layer = IMAGE_LAYER)
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
@@ -592,17 +630,18 @@ init python:
                 center = 1
 
             if not clear:
-                ef = ef("%s %04d" % (folder[layer], cg), xpos, ypos, anchor, color, center)
+                img = displayable if displayable is not None else "%s %04d" % (folder[layer], cg)
+                ef = ef(img, xpos, ypos, anchor, color, center)
 
                 at_list = [ef]
                 _queue_load()
                 queue_ef_pause(0.5)
-                queue_draw_delayed(renpy.show, store.layer_info[layer], at_list = [trans], tag = tag, layer = IMAGE_LAYER)
+                queue_draw_delayed(renpy.show, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [trans], layer = IMAGE_LAYER)
 
             elif layer in store.layer_info:
                 ef = ef(store.layer_info[layer], xpos, ypos, anchor, color, center)
 
-                queue_draw(renpy.show, store.layer_info[layer], at_list = [ef], tag = tag, layer = IMAGE_LAYER)
+                queue_draw(renpy.show, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [ef], layer = IMAGE_LAYER)
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
@@ -615,14 +654,17 @@ init python:
             elif layer in store.layer_info:
                 img = store.layer_info.pop(layer)
                 store.layer_pos.pop(layer, None)
-                queue_draw(renpy.show, img, at_list = [trans, rotate_zoom_out],
-                           tag = tag, layer = IMAGE_LAYER)
+                queue_draw(renpy.show, tag, what = renpy.displayable(img),
+                           at_list = [trans, rotate_zoom_out], layer = IMAGE_LAYER)
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
         else:
             raise Exception("Unhandled load/clear effect %d" % effect)
 
+        if clear:
+            store.layer_info.pop(layer, None)
+            store.layer_pos.pop(layer, None)
         process_draw_queue()
 
 
@@ -636,11 +678,11 @@ init python:
         tag = "layer%d" % layer
         stable = Transform(xpos = xpos, ypos = ypos, anchor = anchor)
 
-        queue_draw(renpy.show, img, at_list = [stable, rotate_clockwise],
-                   tag = tag, layer = IMAGE_LAYER)
+        queue_draw(renpy.show, tag, what = renpy.displayable(img),
+                   at_list = [stable, rotate_clockwise], layer = IMAGE_LAYER)
         queue_ef_pause(0.5)
-        queue_draw_extra_delayed(renpy.show, img, at_list = [stable],
-                                 tag = tag, layer = IMAGE_LAYER)
+        queue_draw_extra_delayed(renpy.show, tag, what = renpy.displayable(img),
+                                 at_list = [stable], layer = IMAGE_LAYER)
         process_draw_queue()
 
 
@@ -711,10 +753,10 @@ init python:
             ef = afterimage(start, ef)
 
 
-        queue_draw(renpy.show, img, at_list = [ef], tag = tag, layer = layer_name)
+        queue_draw(renpy.show, tag, what = renpy.displayable(img), at_list = [ef], layer = layer_name)
         if effect > 0:
             queue_ef_pause(dur)
-        queue_draw_extra_delayed(renpy.show, img, at_list = [trans], tag = tag, layer = layer_name)
+        queue_draw_extra_delayed(renpy.show, tag, what = renpy.displayable(img), at_list = [trans], layer = layer_name)
         process_draw_queue()
 
 

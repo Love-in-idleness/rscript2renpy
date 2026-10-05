@@ -88,7 +88,8 @@ def main() -> None:
     gfx = (ROOT / "runtime" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
     assert "args.Colormode in [0, 1, 2, 3, 4, 5, 6]" in gfx
     assert "store.layer_info[CG_LAYER] = shown_img" in gfx
-    assert "at_list = [trans, oload_fade]" in gfx
+    assert "color = args.Colormode, displayable = text)" in gfx
+    assert "at_list.append(oload_fade)" in (ROOT / "runtime/effects.rpy").read_text()
     util = (ROOT / "runtime" / "01_util.rpy").read_text(encoding="utf-8")
     assert "def speed_change(match):" in util
     assert "def size_change(match):" in util
@@ -376,7 +377,8 @@ def main() -> None:
     assert 'ShowMenu("save"), save_enabled' in FOREST_COMPAT
     assert 'ShowMenu("load"), save_enabled' in FOREST_COMPAT
     assert 'style rscript_volume_bar is bar:' in FOREST_COMPAT
-    assert '"images/grps/nonbl/%d.png" % page_number' in FOREST_COMPAT
+    assert '"images/grps/nonbl/%d.png" % number' in FOREST_COMPAT
+    assert 'renpy.loadable("images/grps/nonbl/0.png")' in FOREST_COMPAT
     assert 'data["rscript_dt1"] = int(store._r[1])' in FOREST_COMPAT
     assert 'FileJson(slot, key="forest_dt1")' in FOREST_COMPAT
     assert 'images/grps/dt1_%04d.png' in FOREST_COMPAT

@@ -25,7 +25,7 @@ COUNTS = {
     "_gmove": 4, "_flash": 2, "_zupdate": 2,
     "_draw": 3, "_oaction": 2,
 }
-LOAD_EFFECTS = set(range(9)) | {16} | set(range(20, 29))
+LOAD_EFFECTS = set(range(9)) | {10, 15, 16, 19} | set(range(20, 29))
 MOVE_EFFECTS = {0, 1, 2, 3, 7, 8, 9, 10}
 
 
@@ -37,10 +37,8 @@ def _supported(command: str, field: str, value: int,
         return value in (0, 1, 2), "not implemented"
     if command == "_oaction":
         return value == 4, "not implemented"
-    if command in ("_load", "_cls"):
+    if command in ("_load", "_cls", "_oload"):
         return value in LOAD_EFFECTS, "not implemented"
-    if command == "_oload":
-        return value == 0, "not implemented"
     if command in ("_move", "_movi", "_gmove"):
         effect = value - 100 if value > 100 else value
         return effect in MOVE_EFFECTS, "not implemented"
@@ -59,6 +57,12 @@ def _supported(command: str, field: str, value: int,
         found = any((resources / prefix / candidate).is_file()
                     for prefix in (Path(), Path("images"))
                     for candidate in (relative, relative.with_suffix(".msk")))
+        if not found and command == "_effect":
+            # Image registration lowercases tags, not actual resource filenames.
+            found = any(path.name.lower() == mask
+                        for prefix in (Path(), Path("images"))
+                        for path in (resources / prefix / "grps").glob("*")
+                        if path.is_file())
         return found, "missing %s" % relative
     raise ValueError("unlisted effect command: %s" % command)
 

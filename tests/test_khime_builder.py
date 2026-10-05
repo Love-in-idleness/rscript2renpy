@@ -87,7 +87,8 @@ def main() -> None:
         script = (project / "game" / "script.rpy").read_text(encoding="utf-8")
         assert "scene onlayer master\n    scene black onlayer black" in script
         credits = (project / "game" / "scenario" / "1110.rpy").read_text(encoding="utf-8")
-        assert "_oload effect 4 flattened to 0" in credits
+        assert "_oload effect 4 flattened to 0" not in credits
+        assert "_oload 20 400 188 4 0" in credits
         assert "unsupported text control ^fm flattened to empty" in credits
         for name in ("04_rscript_audio.rpy", "character.rpy", "keymap.rpy",
                      "03_rscript_gfx.rpy", "00_rscript_wrap.rpy", "rscript_wrap.py"):

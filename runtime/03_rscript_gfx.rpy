@@ -35,33 +35,15 @@ python early:
         return args
 
     def execute_oload(args):
-        if args.Effect != 0:
-            raise Exception("Unhandled object load effect %d" % args.Effect)
-
         layer = args.Layer
-        xpos = args.xLoc * store.layer_x_grid
-        ypos = args.yLoc * store.layer_y_grid
-        anchor = store.layer_anchor.get(layer, (0.0, 0.0))
-        tag = "layer%d" % layer
         text_value, center = parse_rscript_text(repr(args.Text), True)
         font_size = store.object_size.get(layer, gui.text_size)
         text = RScriptText(text_value, kind = "oload", base_size = font_size,
                           font = gui.text_font, size = font_size,
                           color = "#FFFFFF", text_align = 0.5 if center else 0.0)
-        trans = Transform(
-            xpos = xpos,
-            ypos = ypos,
-            anchor = anchor,
-            shader = "rscript.colormode",
-            u_colormode = args.Colormode,
-        )
-
-        store.layer_info[layer] = text
-        store.layer_pos[layer] = (xpos, ypos)
-        queue_draw(renpy.show, tag, what = text, at_list = [trans, oload_fade],
-                   zorder = store.layer_zorder.get(layer, layer * 2),
-                   layer = IMAGE_LAYER)
-        process_draw_queue()
+        # RScript's font and load handlers share the object effect dispatcher.
+        loadcls(layer, args.Effect, xpos = args.xLoc, ypos = args.yLoc,
+                color = args.Colormode, displayable = text)
 
     renpy.register_statement("_oload", parse = parse_oload, execute = execute_oload, lint = lint_undef)
 
@@ -390,7 +372,11 @@ python early:
 
         elif args.EffectNo >= 11:
             img = "grps es%03d" % args.EffectNo
-            at_list = [Transform(shader = "rscript.effect", u_effectmode = args.Mode)]
+            if args.Mode == 1:
+                at_list = [Transform(shader = "rscript.effect_invert",
+                                     blend = "rscript_invert")]
+            else:
+                at_list = [Transform(shader = "rscript.effect", u_effectmode = args.Mode)]
             renpy.show(img, zorder = store.effect_zorder, tag = EFFECT_TAG, layer = IMAGE_LAYER, at_list = at_list)
             renpy.pause(1. / 120.)
 

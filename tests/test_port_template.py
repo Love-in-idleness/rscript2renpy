@@ -50,9 +50,10 @@ def main() -> None:
         assert (project / "game" / "scenario" / "0000.rpy").is_file()
         scene = (project / "game" / "scenario" / "0000.rpy").read_text(
             encoding="utf-8")
-        assert "_oload effect 4 flattened to 0" in scene
-        assert "_oload 1 2 3 0 0 'text with spaces'" in scene
-        assert "_load effect 19 flattened to 0" in scene
+        assert "_oload 1 2 3 4 0 'text with spaces'" in scene
+        assert "_load 1 2 3 4 19 0" in scene
+        assert "_oload effect 4 flattened" not in scene
+        assert "_load effect 19 flattened" not in scene
         assert "_update effect 16 flattened to 0 (missing grps/ef16.png)" in scene
         assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in scene
         assert "_draw blend mode 3 flattened to 0" in scene
@@ -107,6 +108,16 @@ def main() -> None:
         (masks / "ef11.msk").write_bytes(b"converted by install_base")
         assert flatten_unsupported_effects("    _update 11 10 10\n",
                                            root / "masks") == "    _update 11 10 10\n"
+        (masks / "ES101.PNG").write_bytes(b"mask")
+        assert flatten_unsupported_effects("    _effect 101 1\n",
+                                           root / "masks") == "    _effect 101 1\n"
+        for effect in (2, 3, 4, 10, 15, 19):
+            source = ("    _load 1 2 3 4 %d 0\n"
+                      "    _oload 20 30 40 %d 0 'object'\n"
+                      "    _cls 20 %d\n") % (effect, effect, effect)
+            assert flatten_unsupported_effects(source, resources) == source
+        assert "effect 99 flattened" in flatten_unsupported_effects(
+            "    _oload 20 30 40 99 0 'unknown'\n", resources)
         assert (project / "game" / "images" / "grps" / "ui" /
                 "panel.png").is_file()
         assert (project / "game" / "bgm" / "Track01.ogg").is_file()

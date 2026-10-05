@@ -145,6 +145,10 @@ init python:
 vec4 color_to_alpha(vec4 src, vec3 col) {
   float alpha1, alpha2, alpha3, alpha4;
 
+  if (src.a <= 0.0) {
+    return vec4(0.0);
+  }
+
   alpha4 = src.a;
 
   // Ren'Py uses premultiplied alpha, so we need to
@@ -195,4 +199,21 @@ vec4 color_to_alpha(vec4 src, vec3 col) {
 gl_FragColor = color_to_alpha(gl_FragColor, vec3(0.5));
     """
   )
+
+    # Khime renderer 0x67 inverts destination RGB where the mask's red is zero.
+    from renpy.uguu import GL_FUNC_ADD, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA
+    config.gl_blend_func["rscript_invert"] = (
+        GL_FUNC_ADD, 0x0307, GL_ONE_MINUS_SRC_ALPHA,  # GL_ONE_MINUS_DST_COLOR
+        GL_FUNC_ADD, GL_ZERO, GL_ONE)
+    renpy.register_shader("rscript.effect_invert",
+        fragment_1200 = """
+float a = gl_FragColor.a * (1.0 - step(0.5 / 255.0, gl_FragColor.r));
+gl_FragColor = vec4(a);
+""")
+
+    renpy.register_shader("rscript.white",
+        variables = "uniform float u_rscript_white;",
+        fragment_1200 = """
+gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(gl_FragColor.a), u_rscript_white);
+""")
 # Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc
