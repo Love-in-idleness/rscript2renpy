@@ -58,6 +58,16 @@ init python:
                 return path
         return None
 
+    def rscript_page_image(page):
+        if not page.isdigit():
+            return None
+        number = int(page)
+        # Khime names page artwork 0..9 (displaying 1..10); Forest uses 1..10.
+        if renpy.loadable("images/grps/nonbl/0.png"):
+            number -= 1
+        path = "images/grps/nonbl/%d.png" % number
+        return path if renpy.loadable(path) else None
+
     def rscript_preference_action(setting, value):
         if setting == "text speed":
             return SetField(persistent, "rscript_text_cps", value)

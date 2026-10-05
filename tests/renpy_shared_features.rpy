@@ -60,6 +60,19 @@ python early:
             assert rscript_slot_image(1) is None  # Missing dt1 does not try to load a missing image.
         finally:
             store.FileJson = old_json
+        old_loadable = renpy.loadable
+        try:
+            for first in (0, 1):
+                images = {"images/grps/nonbl/%d.png" % number
+                          for number in range(first, first + 10)}
+                renpy.loadable = lambda path: path in images
+                for page in range(1, 11):
+                    assert rscript_page_image(str(page)) == (
+                        "images/grps/nonbl/%d.png" % (page - 1 + first))
+                assert rscript_page_image("auto") is None
+                assert rscript_page_image("11") is None
+        finally:
+            renpy.loadable = old_loadable
         for raw in ("甲：乙", " 甲   乙 ", "\u3000甲\u00a0乙 ", "^n ^n甲…— "):
             lex = renpy.lexer.Lexer([("shared-test", 1, "jp " + repr(raw), [])])
             lex.advance()

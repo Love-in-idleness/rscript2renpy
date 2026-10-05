@@ -318,9 +318,8 @@ screen rscript_file_slots(mode):
             if "number" in items:
                 $ number = items["number"]
                 $ page = FileCurrentPage()
-                $ page_number = int(page) if page.isdigit() else 1
-                $ page_image = "images/grps/nonbl/%d.png" % page_number
-                if renpy.loadable(page_image):
+                $ page_image = rscript_page_image(page)
+                if page_image:
                     fixed:
                         pos number[:2]
                         xysize number[2:]
