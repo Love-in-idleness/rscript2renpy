@@ -91,8 +91,8 @@ def main() -> None:
     assert "color = args.Colormode, displayable = text)" in gfx
     assert "at_list.append(oload_fade)" in (ROOT / "runtime/effects.rpy").read_text()
     util = (ROOT / "runtime" / "01_util.rpy").read_text(encoding="utf-8")
-    assert "def speed_change(match):" in util
-    assert "def size_change(match):" in util
+    assert "def rscript_style_controls(text, color_controls):" in util
+    assert 'active["size"] = "{size=%+d}" % delta' in util
     assert "store.effect_pause = max(store.effect_pause, dur)" in util
     effects = (ROOT / "runtime" / "effects.rpy").read_text(encoding="utf-8")
     assert "if layer not in store.layer_info:" in effects

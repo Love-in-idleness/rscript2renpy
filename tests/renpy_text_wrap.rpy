@@ -29,6 +29,29 @@ python early:
                     current += chr(g.character)
                 result.append(current)
             return result
+        original_faces = getattr(store, "rscript_text_fonts", None)
+        try:
+            store.rscript_text_fonts = {"m": "fonts/NotoSerifCJK-Regular.ttc",
+                                        "g": "fonts/NotoSansCJKjp-Regular.otf"}
+            parsed, centered = parse_rscript_text(
+                repr("^FM甲^CR乙^B丙^FG丁^I戊^CW己^B庚^I辛^V-0129^N^M壬"), True)
+            assert centered and "{font=fonts/NotoSerifCJK-Regular.ttc}" in parsed
+            assert "{color=#B73333}" in parsed
+            assert lines(shaped(parsed, chars=100)[1]) == ["甲乙丙丁戊己庚辛－０１２９", "壬"]
+            plain, _ = parse_rscript_text(repr("^CR甲^CW乙"), False)
+            assert plain == "甲乙"
+            for raw in ("^d0^fm甲^cr乙^fg丙^cw丁", "^s2甲^fm乙^cr丙^s1丁",
+                        "^b甲^i乙^b丙^i丁", "^d3甲>^fm乙^cr丙<"):
+                parsed, _ = parse_rscript_text(repr(raw), True)
+                expected = "甲乙丙丁" if raw.endswith("丁") else "甲乙丙"
+                assert "".join(lines(shaped(parsed, chars=100)[1])) == expected
+                if raw.endswith("<"):
+                    assert parsed.endswith("{nw}")
+        finally:
+            if original_faces is None:
+                del store.rscript_text_fonts
+            else:
+                store.rscript_text_fonts = original_faces
         text, layout = shaped("甲乙。！")
         assert lines(layout) == ["甲乙。", "！"], lines(layout)
         assert layout.size[0] >= 66  # overflow glyph is not clipped

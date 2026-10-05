@@ -95,6 +95,22 @@ python early:
         assert rscript_current_font() != rscript_default_font
         persistent.rscript_text_font = rscript_default_font
 
+        # Confirmed Khime controls are handled through the same shared parser.
+        assert rscript_green_color() == ("#7FDFA5" if not rscript_use_speaker_images else "#FFFFFF")
+        for control, color in (("CR", "#B73333"), ("CB", "#2020FF"),
+                               ("CS", "#79F1F2"), ("CP", "#F8B1EF"),
+                               ("CV", "#C187F6"), ("CO", "#FAA25A")):
+            parsed, _ = parse_rscript_text(repr("^" + control + "甲^CW乙"), True)
+            assert "{color=" + color + "}" in parsed and "^" not in parsed
+            plain, _ = parse_rscript_text(repr("^" + control + "甲^CW乙"), False)
+            assert plain == "甲乙"
+        parsed, centered = parse_rscript_text(repr("^FM甲^CR乙^FG丙^CW丁^V-0129^N^M戊"), True)
+        assert centered and "－０１２９" in parsed and "^" not in parsed
+        assert "{font=" in parsed
+        if not rscript_use_speaker_images:
+            assert "{font=fonts/simhei.ttf}" in parsed
+        assert "^G707" not in rscript_menu_text("^G707选项")
+
         try:
             persistent._reg = {7001: 3}
             persistent.seen_cg = {"0001": True}

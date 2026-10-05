@@ -21,7 +21,7 @@ def main() -> None:
     assert 'lang = lex.word()' in combined
     assert '"y": "#FFDE00", "g": rscript_green_color()' in combined
     assert '"w": "#FFFFFF", "k": "#000000"' in combined
-    assert r"\^c([ygwk])" in combined
+    assert r"\^c([bgkopsrvwy])" in combined
     assert 'RScriptText(text_value, kind = "oload"' in combined
     assert 'properties["layout"] = "nobreak"' in combined
     assert "def parse_rscript_text(text, color_controls = False):" in combined

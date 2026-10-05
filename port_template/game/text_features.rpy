@@ -24,13 +24,15 @@ init python:
         text = renpy.translation.translate_string(text)
         text = rscript_prepare_wiki_text(text)
         if rscript_use_speaker_images:
-            speaker = renpy.re.match(r"^\^g(\d{3})", text)
+            speaker = renpy.re.match(r"^\^g(\d{3})", text, flags=renpy.re.I)
             if speaker:
                 store.rscript_speaker = int(speaker.group(1))
                 text = text[speaker.end():]
         return rscript_inline_graphics(text)
 
     def rscript_green_color():
+        if _preferences.language not in rscript_wiki_keywords:
+            return getattr(store, "rscript_text_colors", {}).get("g", "#FFFFFF")
         return ("#D7FFB3" if persistent.rscript_wiki_mode and
                 _preferences.language in rscript_wiki_keywords else "#FFFFFF")
 
@@ -108,11 +110,11 @@ init python:
         text = renpy.re.sub(
             r"\^g(\d{3})",
             lambda match: "{rscript_g=%s:%d}" %
-            (match.group(1), persistent.rscript_text_size), text)
+            (match.group(1), persistent.rscript_text_size), text, flags=renpy.re.I)
         return renpy.re.sub(
             r"\^a(\d{3})",
             lambda match: "{rscript_a=%s:%d}" %
-            (match.group(1), persistent.rscript_text_size), text)
+            (match.group(1), persistent.rscript_text_size), text, flags=renpy.re.I)
 
     config.self_closing_custom_text_tags["rscript_g"] = rscript_g_tag
     config.self_closing_custom_text_tags["rscript_a"] = rscript_a_tag
@@ -156,7 +158,7 @@ init python:
     def rscript_wiki_plain(text):
         text = renpy.re.sub(r"\^g\d{3}", "", text)
         text = renpy.re.sub(r"\^a\d{3}", "", text)
-        text = renpy.re.sub(r"\^c[ygwk]", "", text)
+        text = renpy.re.sub(r"\^c[bgkopsrvwy]|\^f[mg]", "", text, flags=renpy.re.I)
         text = text.replace("^n", "")
         return renpy.re.sub(r"\^[bisdmw]\d*", "", text)
 

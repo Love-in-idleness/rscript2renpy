@@ -27,7 +27,7 @@ def main() -> None:
             "    _effect 101 0\n"
             "    _draw 1 3 30\n"
             "    _oaction 1 7\n"
-            "    _khime_say '^fmHello ^crred ^g001^nnext ^cyyellow'\n"
+            "    _khime_say '^fmHello ^crred ^g001^nnext ^cyyellow ^fzunknown ^q'\n"
             "    return\n", encoding="utf-8")
         for folder, filename in (
                 ("grps", "ui/panel.png"),
@@ -58,8 +58,10 @@ def main() -> None:
         assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in scene
         assert "_draw blend mode 3 flattened to 0" in scene
         assert "_oaction action 7 flattened to no-op" in scene
-        assert "unsupported text control ^fm, ^cr flattened to empty" in scene
-        assert "_khime_say 'Hello red ^g001^nnext ^cyyellow'" in scene
+        assert "unsupported text control ^fz, ^q flattened to empty" in scene
+        assert "_khime_say '^fmHello ^crred ^g001^nnext ^cyyellow unknown '" in scene
+        controls = "    _oload 1 0 0 0 0 '^FM^CRred^FG^CW ^CB^CS^CP^CV^CO ^V-123^N'\n"
+        assert flatten_unsupported_text_controls(controls) == controls
         assert flatten_unsupported_text_controls(scene) == scene
         expression = "    _say jp {'en': '^a601A', 'zh': '^cg绿'}.get(lang, '^n日本')\n"
         lowered = flatten_unsupported_text_controls(expression)

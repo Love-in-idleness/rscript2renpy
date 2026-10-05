@@ -143,7 +143,8 @@ def main() -> None:
         util_runtime = (project / "game" / "01_util.rpy").read_text(
             encoding="utf-8")
         assert "renpy.pause(delay / 10.)" in command_runtime
-        assert "rscript_prepare_text(eval(text))" in util_runtime
+        assert "text = eval(text)" in util_runtime
+        assert "text = rscript_prepare_text(text)" in util_runtime
         assert "text = rscript_prepare_wiki_text(text)" in compat_text
         assert '"g": rscript_green_color()' in util_runtime
         say_start = text_runtime.index("    def execute_say(o):")

@@ -5,6 +5,11 @@ default khime_face_y = 273
 default khime_face_depth = 1
 default khime_number_state = {}
 
+# KhimeDL_CHS.exe 0x44132d: native green. The patched font names at
+# 0x46e194 and 0x46d110 both decode to SimHei (黑体).
+define rscript_text_colors = {"g": "#7FDFA5"}
+define rscript_text_fonts = {"m": "fonts/simhei.ttf", "g": "fonts/simhei.ttf"}
+
 python early:
     def khime_parse(lex):
         value = lex.rest()

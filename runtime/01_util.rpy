@@ -78,29 +78,12 @@ python early:
 
         return args
 
-    def speed_change(match):
-        speed = int(match.group(1)[2:])
-        text = match.group(2)
-        if speed == 1 or text == u"^n":
-            return text
-        cps = "0" if speed == 0 else "*%0.2f" % (1.0 / speed)
-        return "{cps=%s}%s{/cps}" % (cps, text)
-
-    def size_change(match):
-        size = int(match.group(1)[2:]) - 1
-        text = match.group(2)
-        if size == 0:
-            return text
-        if size < 0:
-            return "{size=-%d}%s{/size}" % (-size * 10, text)
-        return "{size=+%d}%s{/size}" % (size * 10, text)
-
     # The port template can replace these hooks; a bare runtime remains usable.
     def rscript_prepare_text(text):
         return renpy.translation.translate_string(text)
 
     def rscript_green_color():
-        return "#D7FFB3"
+        return getattr(store, "rscript_text_colors", {}).get("g", "#D7FFB3")
 
     def rscript_dialogue_begin(append=False):
         pass
@@ -108,12 +91,62 @@ python early:
     def rscript_dialogue_end():
         pass
 
-    def color_change(match):
-        color = {
+    def rscript_text_palette():
+        colors = {
             "y": "#FFDE00", "g": rscript_green_color(),
             "w": "#FFFFFF", "k": "#000000",
-        }[match.group(1)]
-        return "{color=%s}%s{/color}" % (color, match.group(2))
+            "r": "#B73333", "b": "#2020FF", "s": "#79F1F2",
+            "p": "#F8B1EF", "v": "#C187F6", "o": "#FAA25A",
+        }
+        colors.update(getattr(store, "rscript_text_colors", {}))
+        colors["g"] = rscript_green_color()
+        return colors
+
+    def rscript_style_controls(text, color_controls):
+        # Close/reopen the active native tags on a change, avoiding crossed
+        # font/color/bold spans. Every say/append/object/menu uses this parser.
+        colors = rscript_text_palette()
+        active = {}
+        output = []
+        end = 0
+        for match in renpy.re.finditer(
+                r"\^([bi])|\^f([mg])|\^c([bgkopsrvwy])|\^s([0-9])|\^d([0-9]+)|([<>])", text):
+            output.append(text[end:match.start()])
+            output.extend("{/%s}" % tag for tag in reversed(active))
+            toggle, face, color, size, speed, boundary = match.groups()
+            if toggle:
+                if toggle in active:
+                    del active[toggle]
+                else:
+                    active[toggle] = "{%s}" % toggle
+            elif face:
+                font = getattr(store, "rscript_text_fonts", {}).get(face, gui.text_font)
+                if not renpy.loadable(font):
+                    font = gui.text_font
+                active["font"] = "{font=%s}" % font
+            elif color and color_controls:
+                active["color"] = "{color=%s}" % colors[color]
+            elif size is not None:
+                delta = (int(size) - 1) * 10
+                if delta:
+                    active["size"] = "{size=%+d}" % delta
+                else:
+                    active.pop("size", None)
+            elif speed is not None:
+                speed = int(speed)
+                if speed == 1:
+                    active.pop("cps", None)
+                else:
+                    active["cps"] = "{cps=%s}" % ("0" if speed == 0 else "*%0.2f" % (1.0 / speed))
+            elif boundary:
+                active.pop("cps", None)
+            output.extend(active.values())
+            if boundary:
+                output.append(boundary)
+            end = match.end()
+        output.append(text[end:])
+        output.extend("{/%s}" % tag for tag in reversed(active))
+        return "".join(output)
 
 
 
@@ -122,35 +155,25 @@ python early:
         if not text:
             return text
 
-        text = rscript_prepare_text(eval(text))
+        text = eval(text)
+        # Both switch tables in Khime accept upper/lowercase controls.
+        text = renpy.re.sub(
+            r"\^(?:[ag][0-9]{3}|[cf][a-z]|[binm]|[dw][0-9]+|s[0-9]|v[-0-9]+)",
+            lambda match: match.group().lower(), text, flags=renpy.re.I)
+        text = rscript_prepare_text(text)
 
-        text = renpy.re.sub(r"\^b(.*?)(\^b|$)", r"{b}\1{/b}", text)
-        text = renpy.re.sub(r"\^i(.*?)(\^i|$)", r"{i}\1{/i}", text)
-
-        text = renpy.re.sub(r"(\^s\d)(.*?)(?=\^s|$)", size_change, text)
-        text = renpy.re.sub(r"\^d\d+([<>]|$)", r"\1", text)
-        text = renpy.re.sub(r"(\^d\d+)(.*?)(?=\^d|[<>]|$)", speed_change, text)
-        text = renpy.re.sub(r"\^w(\d+)", lambda m: "{w=%f}" % (int(m.group(1)) / 10.), text)
-        if color_controls:
-            text = renpy.re.sub(r"\^c([ygwk])(.*?)(?=\^c[ygwk]|$)", color_change, text)
-        else:
-            text = renpy.re.sub(r"\^c[ygwk]", "", text)
-
-
+        no_wait = text.endswith(("<", ">"))
         if text.endswith("<"):
-            text = text[:-1] + "{nw}"
+            text = text[:-1]
+        text = renpy.re.sub(r"\^w(\d+)", lambda m: "{w=%f}" % (int(m.group(1)) / 10.), text)
+        text = rscript_style_controls(text, color_controls)
+        text = renpy.re.sub(r"\^v([-0-9]+)",
+                           lambda match: "".join(chr(ord(ch) + 0xfee0)
+                                                for ch in match.group(1)), text)
 
 
-
-
-
-
-
-
-
-
-        elif text.endswith(">"):
-            text = text + "{nw}"
+        if no_wait:
+            text += "{nw}"
 
         text = text.replace(">", "{w}")
 
