@@ -3,7 +3,6 @@
 
 from pathlib import Path
 import argparse
-from functools import lru_cache
 import re
 import shutil
 import sys
@@ -18,6 +17,10 @@ from port_resources import (copy_assets, convert_masks, copy_movies,
 
 from rscript_tsc import E, STRING_OPERANDS, read_tsc
 from tsc_vm import emit_vm, packed
+from tsc_patches import (scenario_sources,
+                         instruction_strings as shared_instruction_strings,
+                         scene_strings as shared_scene_strings,
+                         language_patch_data as shared_language_patch_data)
 
 
 COMMANDS = {
@@ -56,204 +59,18 @@ def menu_text(value: str) -> str:
     return re.sub(r"<@(\d+)>", lambda match: "[_r[%s]]" % match.group(1), value)
 
 
-def scenario_sources(folder: Path) -> list[Path]:
-    """Return current command-based TSC scripts in a resource directory."""
-    if not folder.is_dir():
-        return []
-    return sorted(source for source in folder.iterdir()
-                  if source.is_file() and source.suffix.lower() == ".tsc")
+def instruction_strings(tsc, item):
+    return shared_instruction_strings(tsc, item, menu_text)
 
 
-def instruction_strings(tsc, item) -> dict[str, str]:
-    """Return the translatable strings carried by one instruction."""
-    result = {}
-    opcode, operands = item.opcode, item.operands
-    if opcode == 14:
-        result["prompt"] = menu_text(tsc.string(operands[1]))
-        for number, index in enumerate(operands[7:7 + min(operands[0], 5)]):
-            if index < len(tsc.strings):
-                result["choice%d" % number] = menu_text(tsc.string(index))
-    elif opcode == 81:
-        name, text = tsc.string(operands[4]), tsc.string(operands[5])
-        if re.fullmatch(r"(?:\^c[ygwk])+", name):
-            name = ""
-        result["say"] = (name + "：" if name else "") + text
-    elif opcode == 82:
-        result["append"] = tsc.string(operands[4])
-    elif opcode == 32:
-        result["oload"] = tsc.string(operands[5])
-    return result
+def scene_strings(source):
+    return shared_scene_strings(source, menu_transform=menu_text)
 
 
-def scene_strings(source: Path) -> dict[tuple[int, str], str]:
-    """Return strings that a language patch may replace, keyed by command."""
-    tsc = read_tsc(source)
-    return {(item.offset, kind): value
-            for item in tsc.instructions()
-            for kind, value in instruction_strings(tsc, item).items()}
-
-
-def align_insertable_segment(base, patch):
-    """Match existing wait/font/cls commands and leave patch additions."""
-    @lru_cache(maxsize=None)
-    def align(base_index, patch_index):
-        if base_index == len(base):
-            return ()
-        if patch_index == len(patch):
-            return None
-        if base[base_index].opcode == patch[patch_index].opcode:
-            rest = align(base_index + 1, patch_index + 1)
-            if rest is not None:
-                return ((base_index, patch_index),) + rest
-        return align(base_index, patch_index + 1)
-
-    result = align(0, 0)
-    if result is None:
-        raise ValueError("language patch removes an existing display command")
-    return result
-
-
-def render_patch_command(tsc, item) -> str:
-    if item.opcode == 13:
-        return "_wait %s" % packed(item.operands[0])
-    if item.opcode == 32:
-        args = " ".join(packed(value) for value in item.operands[:5])
-        return "_oload %s %r" % (args, tsc.string(item.operands[5]))
-    if item.opcode == 36:
-        args = " ".join(packed(value) for value in item.operands)
-        return "_cls %s" % args
-    raise ValueError("unsupported language-patch insertion")
-
-
-def changed_instruction_parameters(base_tsc, patch_tsc, base_item, patch_item,
-                                   patch_to_base_offsets) -> bool:
-    """Whether aligned commands differ outside translatable strings."""
-    for index, (base, patch) in enumerate(zip(base_item.operands,
-                                               patch_item.operands)):
-        if index in STRING_OPERANDS.get(base_item.opcode, set()):
-            continue
-        target = (base_item.opcode in (3, 4, 5) or
-                  (base_item.opcode == 14 and
-                   2 <= index < 2 + min(base_item.operands[0], 5)))
-        if target:
-            patch = patch_to_base_offsets.get(patch, ("unmapped", patch))
-        elif base_item.opcode == 18 and index == 1:
-            base, patch = base_tsc.data(base), patch_tsc.data(patch)
-        if base != patch:
-            return True
-    return False
-
-
-def language_patch_data(base_scr: Path, patch_scr: Path):
-    """Return translated strings, subtitle insertions, and operand overrides."""
-    replacements = {}
-    insertions = {}
-    operand_overrides = {}
-    for patch_source in scenario_sources(patch_scr):
-        base_source = base_scr / patch_source.name
-        if not base_source.is_file():
-            raise FileNotFoundError(
-                "%s has no matching base scenario" % patch_source)
-        if patch_source.name == "5000.tsc":
-            continue
-        base_tsc, patch_tsc = read_tsc(base_source), read_tsc(patch_source)
-        base_items = base_tsc.instructions()
-        patch_items = patch_tsc.instructions()
-        base_fixed = [(index, item) for index, item in enumerate(base_items)
-                      if item.opcode not in PATCH_INSERT_OPCODES]
-        patch_fixed = [(index, item) for index, item in enumerate(patch_items)
-                       if item.opcode not in PATCH_INSERT_OPCODES]
-        if [item.opcode for _, item in base_fixed] != \
-                [item.opcode for _, item in patch_fixed]:
-            raise ValueError(
-                "%s changes scenario structure; language patches may only "
-                "replace text and add subtitle display commands" % patch_source)
-
-        pairs = []
-        added = []
-        base_previous = patch_previous = -1
-        for fixed_index in range(len(base_fixed) + 1):
-            base_next = (base_fixed[fixed_index][0]
-                         if fixed_index < len(base_fixed) else len(base_items))
-            patch_next = (patch_fixed[fixed_index][0]
-                          if fixed_index < len(patch_fixed) else len(patch_items))
-            base_segment = base_items[base_previous + 1:base_next]
-            patch_segment = patch_items[patch_previous + 1:patch_next]
-            try:
-                matched = align_insertable_segment(base_segment, patch_segment)
-            except ValueError as error:
-                raise ValueError("%s: %s" % (patch_source, error)) from error
-            matched_patch = {patch_index for _, patch_index in matched}
-            for base_index, patch_index in matched:
-                pairs.append((base_previous + 1 + base_index,
-                              patch_previous + 1 + patch_index))
-            for patch_index, item in enumerate(patch_segment):
-                if patch_index in matched_patch:
-                    continue
-                next_match = next((base_index for base_index, matched_index in matched
-                                   if matched_index > patch_index),
-                                  len(base_segment))
-                base_index = base_previous + 1 + next_match
-                offset = (base_items[base_index].offset
-                          if base_index < len(base_items) else base_tsc.code_size)
-                added.append((patch_previous + 1 + patch_index, offset, item))
-            if fixed_index < len(base_fixed):
-                pairs.append((base_next, patch_next))
-                base_previous, patch_previous = base_next, patch_next
-
-        added.sort()
-        added_fonts = {item.operands[0] for _, _, item in added
-                       if item.opcode == 32}
-        for _, _, item in added:
-            if item.opcode == 36 and (item.operands[0] not in added_fonts or
-                                      item.operands[1] != 0):
-                raise ValueError(
-                    "%s adds a clear command unrelated to an added subtitle" %
-                    patch_source)
-            if item.opcode == 13 and not added_fonts:
-                raise ValueError(
-                    "%s adds a wait command without an added subtitle" %
-                    patch_source)
-
-        patch_to_base_offsets = {
-            patch_items[patch_index].offset: base_items[base_index].offset
-            for base_index, patch_index in pairs
-        }
-        patch_to_base_offsets[patch_tsc.code_size] = base_tsc.code_size
-        scene_replacements = {}
-        scene_operand_overrides = {}
-        for base_index, patch_index in sorted(pairs):
-            base_item = base_items[base_index]
-            patch_item = patch_items[patch_index]
-            if changed_instruction_parameters(
-                    base_tsc, patch_tsc, base_item, patch_item,
-                    patch_to_base_offsets):
-                if base_item.opcode not in PATCH_OVERRIDE_OPCODES:
-                    raise ValueError(
-                        "%s changes unsupported parameters for opcode %d" %
-                        (patch_source, base_item.opcode))
-                scene_operand_overrides[base_item.offset] = patch_item.operands
-            base = instruction_strings(base_tsc, base_items[base_index])
-            patch = instruction_strings(patch_tsc, patch_items[patch_index])
-            if base.keys() != patch.keys():
-                raise ValueError("%s changes translatable command structure" %
-                                 patch_source)
-            for kind, old in base.items():
-                new = patch[kind]
-                if old == new:
-                    continue
-                scene_replacements[(base_items[base_index].offset, kind)] = new
-
-        if scene_replacements:
-            replacements[patch_source.name] = scene_replacements
-        if scene_operand_overrides:
-            operand_overrides[patch_source.name] = scene_operand_overrides
-        if added:
-            scene_insertions = insertions.setdefault(patch_source.name, {})
-            for _, offset, item in added:
-                scene_insertions.setdefault(offset, []).append(
-                    render_patch_command(patch_tsc, item))
-    return replacements, insertions, operand_overrides
+def language_patch_data(base_scr, patch_scr):
+    return shared_language_patch_data(
+        base_scr, patch_scr, excluded_scenes={"5000.tsc"},
+        override_opcodes=PATCH_OVERRIDE_OPCODES, menu_transform=menu_text)
 
 
 def language_patch_strings(base_scr: Path, patch_scr: Path) -> dict[str, str]:

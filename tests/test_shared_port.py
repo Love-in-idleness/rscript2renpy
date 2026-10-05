@@ -81,6 +81,16 @@ def main():
                 for word in ("译文", "字幕", "追加", "选项"):
                     assert word in translated
                 assert "khime_menu_caption_0" in translated
+                (patch / "scr/0000.tsc").write_text(
+                    header + text.replace('*TXT', '*wait 7\n*font 21 400 220 0 0 "added subtitle"\n*cls 21 0\n*TXT'),
+                    encoding="utf-8")
+                subtitles = compile_scene(script, patches=[("zh", patch)])
+                assert "added subtitle" in subtitles and "_wait 7" in subtitles
+                assert "_cls 21 0" in subtitles
+                assert "if _preferences.language == 'zh':" in subtitles
+                (patch / "scr/0000.tsc").write_text(
+                    header + text.replace('"body"', '"译文"').replace('"overlay"', '"字幕"')
+                    .replace('"append"', '"追加"').replace('"answer"', '"选项"'), encoding="utf-8")
                 build_khime(resources, project, languages=["jp", "zh=" + str(patch)])
                 assert "('zh', 'zh')" in (project / "game/language_config.rpy").read_text()
                 assert (project / "game/tl/zh/rscript_strings.rpy").is_file()
@@ -125,7 +135,7 @@ def main():
                 assert process.returncode == 0, output[-4000:]
                 assert "OK: native menu updates rev target" in output, output[-4000:]
                 print("OK: rev returns to latest choice: " + name)
-    print("OK: both ports install identical shared runtime/templates; Khime text-only language patch")
+    print("OK: both ports install shared runtime/templates and subtitle patch alignment")
 
 
 if __name__ == "__main__":

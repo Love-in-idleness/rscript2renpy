@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
 from rscript_tsc import E, STRING_OPERANDS, read_tsc  # noqa: E402
 from tsc_vm import emit_vm, packed  # noqa: E402
+from tsc_patches import language_patch_data, instruction_strings  # noqa: E402
 
 
 PASSTHROUGH = {
@@ -36,38 +37,28 @@ def compile_scene(source: Path, patches=()) -> str:
     tsc = read_tsc(source, "khime")
     items = tsc.instructions()
     patch_texts = {}
+    patch_insertions = {}
+    patch_operands = {}
     for language, directory in patches:
         path = directory / "scr" / source.name
         if not path.is_file():
             continue  # A partial language patch falls back to original text.
-        translated = read_tsc(path, "khime")
-        other = translated.instructions()
-        if (len(other) != len(items) or
-                any((a.opcode, a.kinds) != (b.opcode, b.kinds)
-                    for a, b in zip(items, other))):
-            raise ValueError("%s changes Khime scenario structure" % path)
-        mapping = {}
-        for original, changed in zip(items, other):
-            positions = ((1, *range(7, 7 + min(original.operands[0], 5)))
-                         if original.opcode == 14 else
-                         {81: (4, 5), 82: (4,), 32: (5,)}.get(original.opcode, ()))
-            for index, (a, b) in enumerate(zip(original.operands, changed.operands)):
-                if index in positions:
-                    mapping[(original.offset, index)] = translated.string(b)
-                elif index in STRING_OPERANDS.get(original.opcode, ()):
-                    if tsc.string(a) != translated.string(b):
-                        raise ValueError("%s changes non-text string at %x" %
-                                         (path, original.offset))
-                elif a != b:
-                    raise ValueError("%s changes non-text operand %d at %x" %
-                                     (path, index, original.offset))
-        patch_texts[language] = mapping
+        texts, additions, overrides = language_patch_data(
+            source.parent, directory / "scr", dialect="khime",
+            override_opcodes=set(PASSTHROUGH) - {20, 65},
+            source_names={source.name})
+        patch_texts[language] = texts.get(source.name, {})
+        patch_insertions[language] = additions.get(source.name, {})
+        patch_operands[language] = overrides.get(source.name, {})
 
     def text(item, index, strip_prefix=False):
         original = tsc.string(item.operands[index])
-        values = {language: mapping[(item.offset, index)]
+        kind = ({14: {1: "prompt"}, 32: {5: "oload"},
+                 82: {4: "append"}}.get(item.opcode, {}).get(index)
+                or "choice%d" % (index - 7))
+        values = {language: mapping[(item.offset, kind)]
                   for language, mapping in patch_texts.items()
-                  if (item.offset, index) in mapping}
+                  if (item.offset, kind) in mapping}
         if strip_prefix:
             original = original.removeprefix("<01>")
             values = {language: value.removeprefix("<01>")
@@ -89,6 +80,10 @@ def compile_scene(source: Path, patches=()) -> str:
     temps = {}
     pending_se = None
     for item in items:
+        for language, additions in patch_insertions.items():
+            if item.offset in additions:
+                lines.append("    if _preferences.language == %r:" % language)
+                lines.extend("        " + command for command in additions[item.offset])
         if item.offset in targets:
             lines.extend(("", "label %s:" % label(scene, item.offset)))
         op, values = item.opcode, item.operands
@@ -147,12 +142,12 @@ def compile_scene(source: Path, patches=()) -> str:
         elif op == 64:
             lines.append("    _se_off 0 %s" % operands[-1])
         elif op == 81:
-            if patches:
-                raw = "((%s + '：') if %s else '') + %s" % (
-                    text(item, 4), text(item, 4), text(item, 5))
-            else:
-                raw = repr(((tsc.string(values[4]) + "：") if tsc.string(values[4])
-                            else "") + tsc.string(values[5]))
+            original = instruction_strings(tsc, item)["say"]
+            translated = {language: mapping[(item.offset, "say")]
+                          for language, mapping in patch_texts.items()
+                          if (item.offset, "say") in mapping}
+            raw = ("%r.get(_preferences.language, %r)" % (translated, original)
+                   if translated else repr(original))
             if values[1]:
                 lines.append("    _voice %s 0 0 0" % operands[1])
             lines.append("    _khime_say %s" % raw)
@@ -170,11 +165,26 @@ def compile_scene(source: Path, patches=()) -> str:
             lines.append("    _khime_%s %s" %
                          (KHIME_COMMANDS[op], " ".join(operands)))
         elif op in PASSTHROUGH:
-            lines.append("    _%s%s" %
-                         (PASSTHROUGH[op], " " + " ".join(operands)
-                          if operands else ""))
+            def statement(parameters):
+                args = [packed(value) if kind == E else str(value)
+                        for kind, value in zip(item.kinds, parameters)]
+                return "_%s%s" % (PASSTHROUGH[op], " " + " ".join(args) if args else "")
+            overrides = {language: mapping[item.offset]
+                         for language, mapping in patch_operands.items()
+                         if item.offset in mapping}
+            for index, (language, parameters) in enumerate(overrides.items()):
+                lines.extend(("    %s _preferences.language == %r:" %
+                              ("if" if index == 0 else "elif", language),
+                              "        " + statement(parameters)))
+            if overrides:
+                lines.append("    else:")
+            lines.append(("        " if overrides else "    ") + statement(values))
         else:
             raise ValueError("%s: unsupported opcode 0x%04x" % (source, op))
+    for language, additions in patch_insertions.items():
+        if tsc.code_size in additions:
+            lines.append("    if _preferences.language == %r:" % language)
+            lines.extend("        " + command for command in additions[tsc.code_size])
     if tsc.code_size in targets:
         lines.extend(("", "label %s:" % label(scene, tsc.code_size)))
     lines.append("    return")
