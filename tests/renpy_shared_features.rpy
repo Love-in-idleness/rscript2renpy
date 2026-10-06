@@ -8,6 +8,30 @@ python early:
                   "rscript_oload_line_chars", "rscript_line_spacing")
         defaults = (22, 19, 20, 7) if rscript_use_speaker_images else (29, 21, 20, -5)
         assert tuple(getattr(persistent, field) for field in fields) == defaults
+        language = _preferences.language
+        try:
+            for expression in ("'^cw８月１１日・月曜日'", "''",
+                               "{'zh': '^cw８月１１日·星期一'}.get(_preferences.language, '^cw８月１１日・月曜日')"):
+                lex = renpy.lexer.Lexer([("oload-check", 1, "1 625 550 0 0 " + expression, [])])
+                lex.advance()
+                args = parse_oload(lex)
+                assert args["Text"] == expression
+                assert (args.Layer, args.xLoc, args.yLoc, args.Effect, args.Colormode) == (1, 625, 550, 0, 0)
+                for selected in (None, "zh"):
+                    _preferences.language = selected
+                    assert args.Text == eval(expression)
+            for line, message in (("1 625 550 0", "missing _oload Colormode"),
+                                  ("1 625 550 0 0", "missing _oload Text")):
+                try:
+                    lex = renpy.lexer.Lexer([("oload-check", 1, line, [])])
+                    lex.advance()
+                    parse_oload(lex)
+                except Exception as error:
+                    assert message in str(error), error
+                else:
+                    raise AssertionError("Missing _oload operand accepted: " + line)
+        finally:
+            _preferences.language = language
         # Native persistent defaults must survive reset and retain user choices.
         for values in ((None,) * 4, (31, 23, 24, -3)):
             for field, value in zip(fields, values):

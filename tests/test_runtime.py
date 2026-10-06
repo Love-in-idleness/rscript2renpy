@@ -23,6 +23,8 @@ def main() -> None:
     assert '"w": "#FFFFFF", "k": "#000000"' in combined
     assert r"\^c([bgkopsrvwy])" in combined
     assert 'RScriptText(text_value, kind = "oload"' in combined
+    assert 'args["Text"] = lex.rest()' in combined
+    assert 'args[name] = lex.match(r"\\S+")' in combined
     assert 'properties["layout"] = "nobreak"' in combined
     assert "def parse_rscript_text(text, color_controls = False):" in combined
     assert 'renpy.re.subn(r"\\^m", "", text)' in combined

@@ -29,8 +29,15 @@ python early:
 
     def parse_oload(lex):
         args = RScriptArguments()
-        for name in ("Layer", "xLoc", "yLoc", "Effect", "Colormode", "Text"):
-            args[name] = lex.simple_expression()
+        # Five whitespace-delimited operands, then the complete Python text
+        # expression (language dictionaries/calls can contain spaces).
+        for name in ("Layer", "xLoc", "yLoc", "Effect", "Colormode"):
+            args[name] = lex.match(r"\S+")
+            if args[name] is None:
+                lex.error("missing _oload %s" % name)
+        args["Text"] = lex.rest()
+        if not args["Text"]:
+            lex.error("missing _oload Text")
         lex.expect_eol()
         return args
 
