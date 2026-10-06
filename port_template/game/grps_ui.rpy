@@ -129,7 +129,8 @@ screen preferences(title_mode=False):
                         ypos track[1]
                         xsize track[2]
                         ysize track[3]
-                        bar_invert prefix == "auto"
+                        # AFM is a delay: left is fast, right is slow.
+                        bar_invert False
 
             if not title_mode:
                 use rscript_grps_button("confscrn", "save", ShowMenu("save"), save_enabled)

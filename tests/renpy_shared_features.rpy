@@ -159,6 +159,22 @@ python early:
         # Update native screens to catch missing variables/properties and
         # verify the same controls exist in both games (lint does not do this).
         renpy.display.screen.prepare_screens()
+        old_afm_time = _preferences.afm_time
+        renpy.show_screen("preferences")
+        preference_screen = renpy.get_screen("preferences")
+        preference_screen.update()
+        auto_bars = []
+        preference_screen.visit_all(lambda d: auto_bars.append(d)
+                                    if isinstance(d, renpy.display.behavior.Bar) else None)
+        assert len(auto_bars) == 1
+        auto_bar = auto_bars[0]
+        assert not auto_bar.style.bar_invert
+        auto_bar.adjustment.change(5)
+        fast_delay = _preferences.afm_time
+        auto_bar.adjustment.change(20)
+        assert 0 < fast_delay < _preferences.afm_time
+        _preferences.afm_time = old_afm_time
+        renpy.hide_screen("preferences")
         # <NN> chooses the requested skin for both prompts and answers, without
         # discarding translated text or disturbing Forest image-only choices.
         assert rscript_menu_panel("<01> 甲<02>乙 ", "sel_a") == ("sel_a01", " 甲<02>乙 ")
