@@ -84,7 +84,8 @@ Khime 通过 `build` 调用同一写入机制。写入运行时、界面和剧�
 ## 公共文本、语言与进度设置
 
 `game/text_features.rpy` 提供 `rscript_text_preferences`，可调整字体、字号、
-对话/对象每行字数、行距、速度；并切换语言、Wiki、备份/恢复/清除持久化进度。
+对话/对象每行字数、行距；并切换语言、Wiki、备份/恢复/清除持久化进度。
+文字显示速度通过游戏内右键菜单的原图控件调整，标题文字面板不再提供速度入口。
 共有设置名为 `persistent.rscript_*`，游戏通过 `rscript_base_text_size`、
 `rscript_inline_base_size`、`rscript_use_speaker_images` 配置差异。
 `^gNNN`、`^aNNN` 使用公共内联标签，Wiki 图片链接由适配层提供数字到 URL 的映射。

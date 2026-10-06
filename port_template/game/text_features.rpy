@@ -289,21 +289,6 @@ screen rscript_text_preferences(wiki=True):
                         rscript_adjust_text, "rscript_line_spacing", -1, -10, 30)
                     textbutton "+" action Function(
                         rscript_adjust_text, "rscript_line_spacing", 1, -10, 30)
-            fixed:
-                xfill True
-                ysize 34
-                text "Text Speed" yalign 0.5
-                hbox:
-                    xalign 1.0
-                    yalign 0.5
-                    spacing 10
-                    text "[persistent.rscript_text_cps]":
-                        min_width 48
-                        text_align 0.5
-                    textbutton "-" action Function(
-                        rscript_adjust_text, "rscript_text_cps", -5, 5, 120)
-                    textbutton "+" action Function(
-                        rscript_adjust_text, "rscript_text_cps", 5, 5, 120)
             vbox:
                 xfill True
                 spacing 4

@@ -240,10 +240,14 @@ python early:
         screen = renpy.get_screen("rscript_text_preferences")
         screen.update()
         captions = []
+        texts = []
         def collect(displayable):
             if isinstance(displayable, renpy.display.behavior.Button):
                 captions.append("".join(displayable.child.text))
+            if isinstance(displayable, renpy.text.text.Text):
+                texts.append("".join(displayable.text))
         screen.visit_all(collect)
+        assert "Text Speed" not in texts, texts
         for caption in ("Previous Font", "Next Font", "Save Backup",
                         "Load Backup", "Clear Progress", "Back"):
             assert caption in captions, captions

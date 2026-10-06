@@ -316,10 +316,12 @@ def main() -> None:
     assert linked.count("{color=#D7FFB3}") == 2
     persistent.rscript_wiki_mode = False
     assert prepare_wiki("A ^cgkeyword^cw.") == "A ^cgkeyword^cw."
-    assert 'text "[persistent.rscript_text_cps]"' in FOREST_COMPAT
+    assert 'text "Text Speed"' not in FOREST_COMPAT
+    assert 'text "[persistent.rscript_text_cps]"' not in FOREST_COMPAT
     assert "min_width 48" in FOREST_COMPAT
-    assert 'rscript_adjust_text, "rscript_text_cps", -5, 5, 120' in FOREST_COMPAT
-    assert 'rscript_adjust_text, "rscript_text_cps", 5, 5, 120' in FOREST_COMPAT
+    assert '("msp_slw", "text speed", 25)' in FOREST_COMPAT
+    assert '("msp_nom", "text speed", 75)' in FOREST_COMPAT
+    assert '("msp_now", "text speed", 0)' in FOREST_COMPAT
     assert "slow_cps persistent.rscript_text_cps" in FOREST_COMPAT
     say_screen = FOREST_COMPAT[FOREST_COMPAT.index(
         "screen say(who, what, center=False):"):]

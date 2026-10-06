@@ -13,7 +13,7 @@ port_template/
   fonts/, android/          共用字体及 Android 启动说明
   game/
     gui.rpy                 共用 800×600 GUI
-    text_features.rpy       字体、字号、字数、行距、速度、语言、Wiki、进度备份
+    text_features.rpy       字体、字号、字数、行距、语言、Wiki、进度备份
     grps_ui.rpy             元数据驱动的设置、选项、存读档、对话控制条
     ui_features.rpy          对话/姓名牌、点击系统动作、旧存档和透明度迁移
     touch_controls.rpy      Back / Skip / Auto / Hide / Screenshot / Menu
@@ -32,6 +32,8 @@ khime/game/                 Khime 人脸、方言适配、布局策略及旧指�
 | GUI | 原图设置、dt1 存读档、图片选项、点击区域、对话/姓名牌和控制条 | 各游戏的坐标、配色、状态图策略及 Khime 人脸 |
 | Android | 触摸控制、原生 Auto、直接写系统相册、启动说明 | 应用名称、图标、RAPT 配置及锁定场景 |
 | 剧本 | 解析器、VM、补丁对齐、字幕插入、装配/兼容检查、编译缓存失效、启动视频机制 | Forest 5000 整体替换、视频顺序；各游戏方言/参数允许列表 |
+
+文字显示速度只在游戏内右键原图菜单调整，标题文字设置面板不提供速度入口。
 
 Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 保留专属
 剧本降级器和参数策略；补丁对齐、界面与点击行为只在公共层维护。
