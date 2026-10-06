@@ -106,6 +106,12 @@ def main() -> None:
                      "03_rscript_gfx.rpy", "00_rscript_wrap.rpy", "rscript_wrap.py"):
             assert (project / "game" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
         options = (project / "game" / "options.rpy").read_text(encoding="utf-8")
+        assert "init offset = -130" in options
+        assert "default persistent.rscript_text_size = 29" in options
+        assert "default persistent.rscript_say_line_chars = 21" in options
+        assert "default persistent.rscript_line_spacing = -5" in options
+        assert "rscript_base_text_size = 29" in options
+        assert "rscript_inline_base_size = 29" in options
         assert 'rscript_voice_format = "voice/%04d.ogg"' in options
         assert "rscript_ctc_x = 729" in options
         assert 729 + 24 + 8 == 800 - layout["compane"]["size"][0]

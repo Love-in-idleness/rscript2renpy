@@ -3,6 +3,19 @@ python early:
     def check_shared_port_features():
         renpy.execute_default_statement(True)
         renpy.game.context().init_phase = False
+        fields = ("rscript_text_size", "rscript_say_line_chars",
+                  "rscript_oload_line_chars", "rscript_line_spacing")
+        defaults = (22, 19, 20, 7) if rscript_use_speaker_images else (29, 21, 20, -5)
+        assert tuple(getattr(persistent, field) for field in fields) == defaults
+        # Native persistent defaults must survive reset and retain user choices.
+        for values in ((None,) * 4, (31, 23, 24, -3)):
+            for field, value in zip(fields, values):
+                setattr(persistent, field, value)
+            renpy.execute_default_statement(False)
+            assert tuple(getattr(persistent, field) for field in fields) == (
+                defaults if values[0] is None else values)
+        for field, value in zip(fields, defaults):
+            setattr(persistent, field, value)
         original_save = renpy.save_persistent
         original_notify = renpy.notify
         renpy.save_persistent = lambda: None

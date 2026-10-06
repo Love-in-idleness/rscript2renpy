@@ -12,6 +12,7 @@ python3 khime/build_khime_rscript.py \
 安装共用运行时和资源；Khime 的音频命名、提示图坐标和界面指令仅由
 `khime/game/*.rpy` 补充，不在复制后改写共用运行时；
 若目标文件已有不同内容，默认拒绝覆盖，确认重建时可加 `--force`。
+Khime 默认字号 29、对话每行 21 字、叠加文本每行 20 字、行距 −5；已有玩家设置保留。
 支持 `--language jp` 设置原版标签，以及 `--language zh=/path/to/patch`
 添加语言补丁。补丁目录可只含修改的 `scr/*.tsc` 和转换后的图像、音频、
 `keywords.json`。公共补丁对齐允许新增字幕及配套等待/清除，并校验跳转重定位；
