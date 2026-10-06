@@ -15,11 +15,19 @@ init python:
 
     config.start_callbacks.append(rscript_migrate_ui_preferences)
 
+    def rscript_main_menu_action():
+        return Confirm("Return to the main menu? Unsaved progress will be lost.",
+                       MainMenu(confirm=False))
+
+    def rscript_quit_action():
+        return Confirm("Quit the game? Unsaved progress will be lost.",
+                       Quit(confirm=False))
+
     def rscript_system_action(value, system=True):
         if not system:
             return Return(value)
         if value == 0:
-            return Quit(confirm=rscript_ui.get("quit_confirm", True))
+            return rscript_quit_action()
         if value == 1:
             return ShowMenu("save")
         if value == 2:

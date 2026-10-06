@@ -213,6 +213,48 @@ python early:
         assert 0 < fast_delay < _preferences.afm_time
         _preferences.afm_time = old_afm_time
         renpy.hide_screen("preferences")
+        # Exercise the image menu and fallback menu, including cancellation.
+        # Translatable strings must not turn these English dialogs Japanese.
+        menu_prompts = ("Return to the main menu? Unsaved progress will be lost.",
+                        "Quit the game? Unsaved progress will be lost.")
+        original_layout = store.rscript_grps_layout
+        original_language = _preferences.language
+        translators = renpy.game.script.translator.strings
+        fixture_language = "confirmation_fixture"
+        assert fixture_language not in translators
+        translators[fixture_language].translations.update(
+            {text: "翻訳" for text in menu_prompts + ("Yes", "No")})
+        try:
+            _preferences.language = fixture_language
+            assert renpy.translation.translate_string("Yes") == "翻訳"
+            for menu_layout in (original_layout, {}):
+                store.rscript_grps_layout = menu_layout
+                renpy.show_screen("preferences")
+                preference_screen = renpy.get_screen("preferences")
+                preference_screen.update()
+                confirmations = []
+                preference_screen.visit_all(lambda d: confirmations.append(d.action)
+                    if isinstance(d, renpy.display.behavior.Button)
+                    and isinstance(d.action, Confirm) else None)
+                assert tuple(action.prompt for action in confirmations) == menu_prompts
+                for action, destination in zip(confirmations, (MainMenu, Quit)):
+                    assert isinstance(action.yes, destination) and action.yes.confirm is False
+                    renpy.run(action)
+                    dialog = renpy.get_screen("confirm")
+                    dialog.update()
+                    dialog_texts = []
+                    dialog.visit_all(lambda d: dialog_texts.append("".join(d.text))
+                        if isinstance(d, renpy.text.text.Text) else None)
+                    assert dialog_texts == [action.prompt, "Yes", "No"], dialog_texts
+                    renpy.run(dialog.scope["no_action"])
+                    assert renpy.get_screen("confirm") is None
+                    assert renpy.get_screen("preferences") is preference_screen
+                renpy.hide_screen("preferences")
+            assert isinstance(rscript_system_action(0), Confirm)
+        finally:
+            store.rscript_grps_layout = original_layout
+            _preferences.language = original_language
+            del translators[fixture_language]
         # <NN> chooses the requested skin for both prompts and answers, without
         # discarding translated text or disturbing Forest image-only choices.
         assert rscript_menu_panel("<01> 甲<02>乙 ", "sel_a") == ("sel_a01", " 甲<02>乙 ")

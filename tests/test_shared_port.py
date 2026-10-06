@@ -36,12 +36,14 @@ def main():
                 shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", resources / asset)
             conf = resources / "grps/confscrn"
             conf.mkdir()
-            for image in ("bg", "auto_lev", "auto_vol"):
+            for image in ("bg", "auto_lev", "auto_vol", "title", "exit"):
                 shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", conf / (image + ".png"))
             (conf / ".meta.xml").write_text(
                 '<Canvas><Width>800</Width><Height>600</Height><Items>'
                 '<Item x="0" y="0">bg</Item><Item x="100" y="100">auto_lev</Item>'
-                '<Item x="100" y="100">auto_vol</Item></Items></Canvas>', encoding="utf-8")
+                '<Item x="100" y="100">auto_vol</Item>'
+                '<Item x="200" y="400">title</Item>'
+                '<Item x="400" y="400">exit</Item></Items></Canvas>', encoding="utf-8")
             panel = resources / "grps/compane"
             panel.mkdir()
             for button in ("rev", "bak"):

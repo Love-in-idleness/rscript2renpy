@@ -81,7 +81,7 @@ init -100 python:
     rscript_folder_zero_all = True
 
 init python:
-    rscript_ui.update({"quit_confirm": False, "textbox_size": (800, 163)})
+    rscript_ui.update({"textbox_size": (800, 163)})
 
 screen choice(items):
     use rscript_choice(items, khime_choice_prompt)

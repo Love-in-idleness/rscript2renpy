@@ -352,11 +352,12 @@ screen confirm(message, yes_action, no_action):
         vbox:
             spacing 20
             text message:
+                substitute False
                 xalign 0.5
                 text_align 0.5
                 color "#ffffff"
             hbox:
                 xalign 0.5
                 spacing 50
-                textbutton "Yes" action yes_action
-                textbutton "No" action no_action
+                textbutton "Yes" action yes_action substitute False
+                textbutton "No" action no_action substitute False

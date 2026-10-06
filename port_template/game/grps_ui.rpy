@@ -135,9 +135,9 @@ screen preferences(title_mode=False):
             if not title_mode:
                 use rscript_grps_button("confscrn", "save", ShowMenu("save"), save_enabled)
                 use rscript_grps_button("confscrn", "load", ShowMenu("load"), save_enabled)
-            use rscript_grps_button("confscrn", "title", MainMenu(confirm=False))
+            use rscript_grps_button("confscrn", "title", rscript_main_menu_action())
             if not title_mode:
-                use rscript_grps_button("confscrn", "exit", Quit(confirm=rscript_ui.get("quit_confirm", True)))
+                use rscript_grps_button("confscrn", "exit", rscript_quit_action())
                 use rscript_grps_button("confscrn", "close", Return())
     else:
         frame:
@@ -149,6 +149,8 @@ screen preferences(title_mode=False):
                 textbutton "Voice" action Preference("voice mute", "toggle")
                 textbutton "Save" action ShowMenu("save")
                 textbutton "Load" action ShowMenu("load")
+                textbutton "Main Menu" action rscript_main_menu_action()
+                textbutton "Quit" action rscript_quit_action()
                 textbutton "Back" action Return()
 
 screen rscript_compane():
