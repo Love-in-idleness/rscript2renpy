@@ -47,6 +47,25 @@ init python:
         path = "images/grps/sel_a%02d/body.png" % number
         return number if renpy.loadable(path) else None
 
+    def rscript_menu_panel(caption, prefix):
+        # KhimeDL_CHS.exe 0x410bb6 / 0x4133e8: <NN> selects a skin,
+        # with the remainder drawn as text; it is not an image-only choice.
+        caption = renpy.substitute(caption)
+        marker = renpy.re.match(r"<([ \t]*-?[0-9]+)>", caption)
+        if marker:
+            number = int(marker.group(1)) & 0xffff
+            caption = caption[marker.end():]
+        else:
+            number = rscript_choice_asset(caption) if prefix == "sel_a" else None
+            if number is not None:
+                caption = ""
+        folder = "%s%02d" % (prefix, number if number is not None else 0)
+        if folder not in rscript_grps_layout:
+            folder = prefix  # Native fallback is the unnumbered archive.
+        if "body" not in rscript_grps_layout.get(folder, {}).get("items", {}):
+            folder = None
+        return folder, caption
+
     def rscript_slot_image(slot):
         # Keep existing Forest saves readable; all new saves use the shared key.
         number = FileJson(slot, key="rscript_dt1")

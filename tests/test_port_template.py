@@ -89,7 +89,7 @@ def main() -> None:
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert 'key "rollback" action Rollback()' in (
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
-        assert 'text rscript_menu_text(item.caption):' in (
+        assert 'text rscript_menu_text(caption):' in (
             project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert collect_layout(resources) == {}
         assert "define rscript_grps_layout = {}" in (

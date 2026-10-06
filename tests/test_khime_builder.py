@@ -24,7 +24,13 @@ def main() -> None:
         output = compile_scene(source)
         assert output.startswith("# Generated from ")
         assert "label _%s:" % source.stem in output
-        assert "<01>" not in output
+        tsc = read_tsc(source, "khime")
+        for item in tsc.instructions():
+            if item.opcode == 14:
+                for index in (item.operands[1], *item.operands[7:7 + min(item.operands[0], 5)]):
+                    caption = tsc.string(index)
+                    if caption.startswith("<01>"):
+                        assert repr(caption) in output, (source, caption)
     title = compile_scene(next(path for path in sources if path.stem == "0101"))
     assert "_khime_folder 0 'grpo_tp'" in title
     assert "_khime_setclk 41 1 3 0" in title
@@ -44,8 +50,8 @@ def main() -> None:
     radio_tsc = read_tsc(radio_source, "khime")
     select = next(item for item in radio_tsc.instructions() if item.opcode == 14)
     # Preserve source text; do not require one particular localization.
-    assert "$ khime_choice_prompt = %r" % radio_tsc.string(select.operands[1]).removeprefix("<01>") in radio
-    assert "%r:" % radio_tsc.string(select.operands[7]).removeprefix("<01>") in radio
+    assert "$ khime_choice_prompt = %r" % radio_tsc.string(select.operands[1]) in radio
+    assert "%r:" % radio_tsc.string(select.operands[7]) in radio
     masks = compile_scene(next(path for path in sources if path.stem == "1107"))
     assert "_effect 101 0" in masks
     masks = compile_scene(next(path for path in sources if path.stem == "3677"))

@@ -200,15 +200,12 @@ screen rscript_choice(items, prompt=None):
     modal True
     key "game_menu" action Function(rscript_open_game_menu)
     key "rollback" action Rollback()
-    $ answer_folder = next((name for name in sorted(rscript_grps_layout)
-                            if name.startswith("sel_a")), None)
-    $ prompt_folder = next((name for name in sorted(rscript_grps_layout)
-                            if name.startswith("sel_q")), None)
     vbox:
         xalign 0.5
         yalign rscript_ui.get("choice_yalign", 0.42)
         spacing rscript_ui.get("choice_spacing", 4)
         if prompt:
+            $ prompt_folder, prompt_text = rscript_menu_panel(prompt, "sel_q")
             if prompt_folder:
                 $ question = rscript_grps_layout[prompt_folder]
                 fixed:
@@ -218,7 +215,7 @@ screen rscript_choice(items, prompt=None):
                     add "images/grps/%s/body.png" % prompt_folder:
                         xpos (0 if rscript_ui.get("choice_center_art", False) else body[0])
                         ypos (0 if rscript_ui.get("choice_center_art", False) else body[1])
-                    text rscript_menu_text(prompt):
+                    text rscript_menu_text(prompt_text):
                         xpos textpos[0]
                         ypos rscript_ui.get("prompt_text_yalign", textpos[1])
                         yanchor rscript_ui.get("prompt_text_yalign", 0.0)
@@ -226,11 +223,10 @@ screen rscript_choice(items, prompt=None):
                         font rscript_current_font()
                         size rscript_ui.get("prompt_text_size", gui.text_size)
             else:
-                text rscript_menu_text(prompt) xalign 0.5 color "#ffffff" font rscript_current_font()
+                text rscript_menu_text(prompt_text) xalign 0.5 color "#ffffff" font rscript_current_font()
         for item in items:
             if item.action is not None:
-                $ asset = rscript_choice_asset(item.caption)
-                $ selected_folder = "sel_a%02d" % asset if asset is not None else answer_folder
+                $ selected_folder, caption = rscript_menu_panel(item.caption, "sel_a")
                 if selected_folder:
                     $ answer = rscript_grps_layout[selected_folder]
                     fixed:
@@ -248,8 +244,8 @@ screen rscript_choice(items, prompt=None):
                             xanchor (0.5 if rscript_ui.get("choice_center_art", False) else 0.0)
                             yanchor (0.5 if rscript_ui.get("choice_center_art", False) else 0.0)
                             action item.action
-                        if asset is None:
-                            text rscript_menu_text(item.caption):
+                        if caption:
+                            text rscript_menu_text(caption):
                                 xpos textpos[0]
                                 ypos rscript_ui.get("choice_text_yalign", textpos[1])
                                 yanchor rscript_ui.get("choice_text_yalign", 0.0)
@@ -258,7 +254,7 @@ screen rscript_choice(items, prompt=None):
                                 size rscript_ui.get("choice_text_size", gui.text_size)
                                 outlines rscript_ui.get("choice_outlines", [])
                 else:
-                    textbutton rscript_menu_text(item.caption) action item.action text_font rscript_current_font()
+                    textbutton rscript_menu_text(caption) action item.action text_font rscript_current_font()
 
 screen save():
     tag menu

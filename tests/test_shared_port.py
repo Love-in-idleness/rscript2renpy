@@ -59,6 +59,15 @@ def main():
                 '<Canvas><Width>505</Width><Height>82</Height><Items>'
                 '<Item x="0" y="0">body</Item><Item x="0" y="0">body_f</Item>'
                 '</Items></Canvas>', encoding="utf-8")
+            for folder in ("sel_a01", "sel_a02", "sel_a", "sel_q00", "sel_q01"):
+                skin = resources / "grps" / folder
+                skin.mkdir()
+                for image in ("body", "body_f", "text"):
+                    shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", skin / (image + ".png"))
+                (skin / ".meta.xml").write_text(
+                    '<Canvas><Width>505</Width><Height>82</Height><Items>'
+                    '<Item x="0" y="0">body</Item><Item x="0" y="0">body_f</Item>'
+                    '<Item x="10" y="4">text</Item></Items></Canvas>', encoding="utf-8")
             for asset in ("bgm/Track01.ogg", "wav/0001.ogg", "voice/0001.ogg",
                           "mov/0001.mpg", "mov/0002.mpg"):
                 (resources / asset).write_bytes(b"unused fixture")
@@ -71,16 +80,17 @@ def main():
                 text = ('*font 20 400 200 0 0 "overlay"\n'
                         '*TXT 0 0 0 0 "Alice" "body" 0\n'
                         '*TXA 0 0 0 0 "append" 0\n'
-                        '*select 1 "question" END END END END END "answer" "" "" "" "" 0 0 0\n'
+                        '*select 1 "<01>question" END END END END END "<01>answer" "" "" "" "" 0 0 0\n'
                         ':END\n*end\n')
                 script.write_text(header + text, encoding="utf-8")
                 (patch / "scr/0000.tsc").write_text(
                     header + text.replace('"body"', '"译文"').replace('"overlay"', '"字幕"')
-                    .replace('"append"', '"追加"').replace('"answer"', '"选项"'), encoding="utf-8")
+                    .replace('"append"', '"追加"').replace('"<01>answer"', '"<02>选项"'), encoding="utf-8")
                 translated = compile_scene(script, patches=[("zh", patch)])
                 for word in ("译文", "字幕", "追加", "选项"):
                     assert word in translated
                 assert "khime_menu_caption_0" in translated
+                assert "<01>answer" in translated and "<02>选项" in translated
                 (patch / "scr/0000.tsc").write_text(
                     header + text.replace('*TXT', '*wait 7\n*font 21 400 220 0 0 "added subtitle"\n*cls 21 0\n*TXT'),
                     encoding="utf-8")
@@ -90,7 +100,7 @@ def main():
                 assert "if _preferences.language == 'zh':" in subtitles
                 (patch / "scr/0000.tsc").write_text(
                     header + text.replace('"body"', '"译文"').replace('"overlay"', '"字幕"')
-                    .replace('"append"', '"追加"').replace('"answer"', '"选项"'), encoding="utf-8")
+                    .replace('"append"', '"追加"').replace('"<01>answer"', '"<02>选项"'), encoding="utf-8")
                 build_khime(resources, project, languages=["jp", "zh=" + str(patch)])
                 assert "('zh', 'zh')" in (project / "game/language_config.rpy").read_text()
                 assert (project / "game/tl/zh/rscript_strings.rpy").is_file()

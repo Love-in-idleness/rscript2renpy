@@ -159,6 +159,41 @@ python early:
         # Update native screens to catch missing variables/properties and
         # verify the same controls exist in both games (lint does not do this).
         renpy.display.screen.prepare_screens()
+        # <NN> chooses the requested skin for both prompts and answers, without
+        # discarding translated text or disturbing Forest image-only choices.
+        assert rscript_menu_panel("<01> 甲<02>乙 ", "sel_a") == ("sel_a01", " 甲<02>乙 ")
+        assert rscript_menu_panel("<02>选项", "sel_a") == ("sel_a02", "选项")
+        assert rscript_menu_panel("<01>问题", "sel_q") == ("sel_q01", "问题")
+        assert rscript_menu_panel("甲<01>乙", "sel_a") == ("sel_a00", "甲<01>乙")
+        assert rscript_menu_panel("<bad>甲", "sel_a") == ("sel_a00", "<bad>甲")
+        assert rscript_menu_panel("<99>甲", "sel_a") == ("sel_a", "甲")
+        assert rscript_menu_panel("<99>甲", "sel_q") == (None, "甲")
+        store._r[5] = 2
+        assert rscript_menu_panel("rscript_asset_5", "sel_a") == ("sel_a02", "")
+        if rscript_use_speaker_images:
+            assert rscript_menu_panel("2", "sel_a") == ("sel_a02", "")
+        store.shared_skin_caption = "<02>译文"
+        assert rscript_menu_panel("[shared_skin_caption]", "sel_a") == ("sel_a02", "译文")
+        renpy.show_screen("rscript_choice", prompt="<01>问题",
+                          items=[SimpleNamespace(caption="[shared_skin_caption]", action=Return(7))])
+        skin_screen = renpy.get_screen("rscript_choice")
+        skin_screen.update()
+        skin_texts, skin_images, skin_actions = [], [], []
+        def collect_skin(displayable):
+            if isinstance(displayable, renpy.text.text.Text):
+                skin_texts.append("".join(displayable.text))
+            if isinstance(displayable, renpy.display.im.Image):
+                skin_images.append(displayable.filename)
+            if isinstance(displayable, renpy.display.behavior.Button):
+                skin_actions.append(displayable.action)
+        skin_screen.visit_all(collect_skin)
+        assert "问题" in skin_texts and "译文" in skin_texts, skin_texts
+        assert not any("<01>" in text or "<02>" in text for text in skin_texts)
+        assert "images/grps/sel_q01/body.png" in skin_images, skin_images
+        assert "images/grps/sel_a02/body.png" in skin_images, skin_images
+        assert "images/grps/sel_a00/body.png" not in skin_images, skin_images
+        assert len(skin_actions) == 1 and skin_actions[0].value == 7, skin_actions
+        renpy.hide_screen("rscript_choice")
         # Inspect real native actions: rev targets the recorded choice,
         # while bak remains a one-step rollback. No player progress is changed.
         previous_point = store.jump_back_point

@@ -52,7 +52,7 @@ def compile_scene(source: Path, patches=()) -> str:
         patch_insertions[language] = additions.get(source.name, {})
         patch_operands[language] = overrides.get(source.name, {})
 
-    def text(item, index, strip_prefix=False):
+    def text(item, index):
         original = tsc.string(item.operands[index])
         if item.opcode == 14:
             original = menu_text(original)
@@ -62,10 +62,6 @@ def compile_scene(source: Path, patches=()) -> str:
         values = {language: mapping[(item.offset, kind)]
                   for language, mapping in patch_texts.items()
                   if (item.offset, kind) in mapping}
-        if strip_prefix:
-            original = original.removeprefix("<01>")
-            values = {language: value.removeprefix("<01>")
-                      for language, value in values.items()}
         return ("%r.get(_preferences.language, %r)" % (values, original)
                 if values else repr(original))
     scene = source.stem
@@ -109,8 +105,8 @@ def compile_scene(source: Path, patches=()) -> str:
             lines.append("    _jump %s" % operands[0])
         elif op == 14:
             count = min(values[0], 5)
-            lines.append("    $ khime_choice_prompt = %s" % text(item, 1, True))
-            captions = [text(item, 7 + index, True) for index in range(count)]
+            lines.append("    $ khime_choice_prompt = %s" % text(item, 1))
+            captions = [text(item, 7 + index) for index in range(count)]
             for index, caption in enumerate(captions):
                 if patch_texts:
                     lines.append("    $ khime_menu_caption_%d = %s" % (index, caption))
