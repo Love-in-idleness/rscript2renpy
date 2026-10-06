@@ -7,6 +7,11 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 图像、音频、文字、特效和着色器支持；具体游戏仍需单独提供适配层、资源
 命名规则和转换后的剧本。
 
+开始新移植时可用独立的只读工具检查 `RsInit.tcf`、CFG 优先级和初始化线索：
+`python3 tools/inspect_rscript_init.py /path/to/resources --encoding cp932`。
+工具不依赖或运行 EXE／DLL，不改变资源布局或生成器；缺少配置文件的游戏仍可移植。
+已知键、混合编码和引擎证据边界见 [RScript 初始化参考](docs/RSCRIPT_INITIALIZATION.md)。
+
 当前运行时面向 Ren'Py 8（Python 3）；Forest 已使用 `/opt/apps/renpy`
 中的 Ren'Py 8.5 完成生成与 lint 验证。
 
@@ -143,6 +148,12 @@ SimHei 不适用 MIT/OFL；本项目未取得或验证额外再分发授权。
 
 Reusable Ren'Py runtime for scripts lowered from Liar-soft/raiL-soft CodeX
 RScript games.
+
+For new ports, `python3 tools/inspect_rscript_init.py /path/to/resources --encoding cp932`
+produces a read-only initialization report. It does not use EXE/DLL files or change
+builders/assets; games without external configuration are not rejected.
+See [the initialization reference](docs/RSCRIPT_INITIALIZATION.md) for known keys,
+mixed encodings and version-specific evidence limits.
 
 The runtime now targets Ren'Py 8 and Python 3. Forest generation and lint have
 been verified with Ren'Py 8.5.
