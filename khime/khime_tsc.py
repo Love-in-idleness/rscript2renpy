@@ -100,7 +100,9 @@ def compile_scene(source: Path, patches=()) -> str:
         elif op == 5:
             lines.append("    jump %s" % label(scene, values[0]))
         elif op == 8:
-            lines.append("    return")
+            # KhimeDL_CHS.exe 0x41fe3c -> 0x420e66 exits the interpreter,
+            # not a gosub frame (opcode 16). Do not resume the caller's story.
+            lines.append("    _end")
         elif op == 12:
             lines.append("    _jump %s" % operands[0])
         elif op == 14:

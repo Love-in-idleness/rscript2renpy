@@ -25,6 +25,8 @@ def main() -> None:
         assert output.startswith("# Generated from ")
         assert "label _%s:" % source.stem in output
         tsc = read_tsc(source, "khime")
+        assert output.count("    _end\n") == sum(
+            item.opcode == 8 for item in tsc.instructions()), source
         for item in tsc.instructions():
             if item.opcode == 14:
                 for index in (item.operands[1], *item.operands[7:7 + min(item.operands[0], 5)]):
@@ -56,6 +58,9 @@ def main() -> None:
     assert "_effect 101 0" in masks
     masks = compile_scene(next(path for path in sources if path.stem == "3677"))
     assert "_update 16 " in masks
+    assert "_jump 3673" in masks and "_return 0" in masks
+    ending = compile_scene(next(path for path in sources if path.stem == "3661"))
+    assert "label _3661_L_000112:\n    _end\n" in ending
     layout = collect_layout(Path(sys.argv[1]))
     assert layout["confscrn"]["items"]["bg"][:2] == (0, 0)
     assert layout["compane"]["items"]["hide"][:2] == (3, 67)

@@ -133,11 +133,14 @@ def main():
                     environment["SDL_VIDEODRIVER"] = "x11"
                 for driver, marker in (("renpy_rev_controls", "OK: native menu updates rev target"),
                                        ("renpy_effects", "OK: native object effects"),
-                                       ("renpy_registers", "OK: native bounded register reset")):
+                                       ("renpy_registers", "OK: native bounded register reset"),
+                                       ("renpy_end", "OK: native end discards nested story calls")):
                     shutil.copy2(ROOT / "tests" / (driver + ".rpy"),
                                  project / "game/scenario/0000.rpy")
                     (project / "game/scenario/0000.rpyc").unlink(missing_ok=True)
-                    with subprocess.Popen(command, env=environment, stdout=subprocess.PIPE,
+                    driver_environment = (environment | {"RENPY_SKIP_SPLASHSCREEN": ""}
+                                          if driver == "renpy_end" else environment)
+                    with subprocess.Popen(command, env=driver_environment, stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT, text=True,
                                           start_new_session=True) as process:
                         try:
