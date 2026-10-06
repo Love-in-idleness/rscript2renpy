@@ -103,6 +103,8 @@ init python:
     from collections import defaultdict
 
     class RScriptReg:
+        _persistent_dirty = False
+
         def get(self, key, default = 0):
             key, val = eval_key(key)
             if val is not None:
@@ -123,7 +125,13 @@ init python:
                 store._reg[key] = value
             else:
                 persistent._reg[key] = value
+                RScriptReg._persistent_dirty = True
+
+        @classmethod
+        def flush_persistent(cls):
+            if cls._persistent_dirty:
                 renpy.save_persistent()
+                cls._persistent_dirty = False
 
         def __contains__(self, key):
             key, val = eval_key(key)
@@ -132,6 +140,10 @@ init python:
         def update(self, data):
             for key in data:
                 self[key] = data[key]
+
+    # Batch register writes until the next interaction, including menus/pauses.
+    # Ren'Py also saves persistent data on normal exit without an interaction.
+    config.start_interact_callbacks.append(RScriptReg.flush_persistent)
 
     def eval_key(key):
         if isinstance(key, str):

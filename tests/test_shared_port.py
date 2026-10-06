@@ -122,7 +122,8 @@ def main():
                     command = ["xvfb-run", "-a", *command]
                     environment["SDL_VIDEODRIVER"] = "x11"
                 for driver, marker in (("renpy_rev_controls", "OK: native menu updates rev target"),
-                                       ("renpy_effects", "OK: native object effects")):
+                                       ("renpy_effects", "OK: native object effects"),
+                                       ("renpy_registers", "OK: native bounded register reset")):
                     shutil.copy2(ROOT / "tests" / (driver + ".rpy"),
                                  project / "game/scenario/0000.rpy")
                     (project / "game/scenario/0000.rpyc").unlink(missing_ok=True)
