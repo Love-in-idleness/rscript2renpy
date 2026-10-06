@@ -51,6 +51,9 @@ def build_khime(resources: Path, project: Path, force: bool = False,
         build(resources, project, force=force, scenarios=scenario)
 
     game = project / "game"
+    assets = Path(__file__).parent / "assets"
+    copy_file(assets / "icon.ico", project / "icon.ico", force)
+    copy_file(assets / "icon.png", game / "icon.png", force)
     for source in (Path(__file__).parent / "game").glob("*.rpy"):
         copy_file(source, game / source.name, force)
     keywords = {None: read_keywords(resources / "keywords.json")}

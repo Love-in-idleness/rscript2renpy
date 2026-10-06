@@ -14,8 +14,8 @@ Forest 和 Khime 共用 `runtime/`、`port_template/`，游戏差异放在各自
 `game/*.rpy` 覆盖层。字体、文本/语言设置、Wiki、进度备份和安卓控制均由公共层
 维护，详见 [公共模板分层说明](docs/SHARED_TEMPLATE_MIGRATION.md)。
 
-除通用鼠标光标和 Forest Android 应用图标外，本项目不包含游戏剧本、图像、
-音频、视频或可执行文件。
+除通用鼠标光标、Forest Android 应用图标和 Khime 应用图标外，本项目不包含
+游戏剧本、图像、音频、视频或可执行文件。
 用户必须从自己合法持有的游戏副本中准备其余资源。
 
 本项目只维护并推送 Git 仓库源码，不再发布新的 GitHub Release 或版本包。
@@ -155,8 +155,8 @@ No new GitHub Releases or versioned release packages will be published.
 Runtime behavior depends on the source game's CodeX dialect, so each new game
 still requires verification.
 
-Apart from the shared mouse cursor and Forest Android application icon, this
-repository contains engine-side support only. It does not contain game
+Apart from the shared mouse cursor, Forest Android application icon and Khime
+application icon, this repository contains engine-side support only. It does not contain game
 scripts, other images, audio, movies, executables, or other proprietary game
 data.
 

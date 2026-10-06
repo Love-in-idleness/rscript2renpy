@@ -85,6 +85,12 @@ def main() -> None:
         (patch / "grpe").mkdir()
         shutil.copy2(patch / "grpo_tp" / "9001.bmp", patch / "grpe" / "9001.bmp")
         build_khime(resources, project, languages=["jp", "zh=%s" % patch])
+        assert (project / "icon.ico").read_bytes() == (ROOT / "khime/assets/icon.ico").read_bytes()
+        assert (project / "game/icon.png").read_bytes() == (ROOT / "khime/assets/icon.png").read_bytes()
+        with Image.open(ROOT / "khime/assets/icon.ico") as original, \
+                Image.open(project / "game/icon.png") as window_icon:
+            assert original.size == window_icon.size == (32, 32)
+            assert original.convert("RGBA").tobytes() == window_icon.convert("RGBA").tobytes()
         for folder in ("grpe", "grpo_tp"):
             with Image.open(project / "game" / "tl" / "zh" / "images" /
                             folder / "9001.png") as translated:
@@ -106,6 +112,7 @@ def main() -> None:
                      "03_rscript_gfx.rpy", "00_rscript_wrap.rpy", "rscript_wrap.py"):
             assert (project / "game" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
         options = (project / "game" / "options.rpy").read_text(encoding="utf-8")
+        assert 'define config.window_icon = "icon.png"' in options
         assert "init offset = -130" in options
         assert "default persistent.rscript_text_size = 29" in options
         assert "default persistent.rscript_say_line_chars = 21" in options

@@ -26,6 +26,15 @@ This image is not covered by this repository's MIT license; all rights remain
 with its original copyright holder. The accompanying background image is a
 solid-color adaptive-icon layer.
 
+## Khime application icon
+
+`khime/assets/icon.ico` is the original Khime (*Kusarihime*) application icon
+supplied as `KhimeKusaritop_s/1.ico`. `khime/assets/icon.png` is a pixel-identical
+PNG copy for the Ren'Py window. The Khime generator copies these assets to
+`icon.ico` and `game/icon.png` in the generated project. These images are not
+covered by this repository's MIT license; all rights remain with the original
+copyright holder. Attribution does not establish redistribution permission.
+
 ## Forest fonts
 
 `port_template/fonts/simhei.ttf` (SimHei Regular, version 5.04) is included to match
