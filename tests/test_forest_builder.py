@@ -339,7 +339,7 @@ def main() -> None:
     assert "xpos" not in centered
     assert "background rscript_textbox_background()" in FOREST_COMPAT
     assert "alpha=persistent.rscript_textbox_opacity" in FOREST_COMPAT
-    assert "textpos = (text_indent + 1, 8)" in FOREST_COMPAT
+    assert "textpos = (absolute(text_indent + 1), 8)" in FOREST_COMPAT
     assert "xsize config.screen_width - text_indent - 1" not in FOREST_COMPAT
     assert "default persistent.rscript_say_line_chars = 19" in FOREST_COMPAT
     assert "default persistent.rscript_oload_line_chars = 20" in FOREST_COMPAT
@@ -363,7 +363,7 @@ def main() -> None:
     assert "rscript_load_progress()" in FOREST_COMPAT
     assert "rscript_clear_progress()" in FOREST_COMPAT
     assert "rscript_title_preferences" in FOREST_COMPAT
-    assert '"images/grps/gf%03d.png" % rscript_speaker' in FOREST_COMPAT
+    assert 'rscript_text_image_path("gf%03d" % rscript_speaker)' in FOREST_COMPAT
     assert "default rscript_speaker_visible = False" in FOREST_COMPAT
     assert "if rscript_speaker_visible and rscript_speaker is not None:" in FOREST_COMPAT
     assert "elif rscript_speaker_visible and who:" in FOREST_COMPAT
@@ -393,7 +393,7 @@ def main() -> None:
         assert cursor.format == "PNG" and cursor.size == (32, 32)
         assert cursor.getbbox() is not None
     assert "label main_menu:" in entry
-    assert 'define config.version = "1.0"' in (ROOT / "forest/game/options.rpy").read_text()
+    assert "config.version" not in (ROOT / "forest/game/options.rpy").read_text()
     with TemporaryDirectory() as temporary:
         patch_scr = Path(temporary) / "scr"
         patch_scr.mkdir()

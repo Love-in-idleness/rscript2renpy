@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+import json
 from tempfile import TemporaryDirectory
 import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import build  # noqa: E402
+from build_port import build, install_version  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
@@ -41,6 +42,14 @@ def main() -> None:
         (resources / "grps" / "ignored.wcg").write_bytes(b"raw")
         runtime_count, copied = build(resources, project)
         assert runtime_count == 21
+        assert (project / "game/port_version.rpy").read_text() == \
+            'define config.version = "1.2"\n'
+        android = {"version": "0.1", "numeric_version": 200,
+                   "package": "test.keep.package", "permissions": ["VIBRATE"]}
+        (project / "android.json").write_text(json.dumps(android))
+        install_version(project)
+        android["version"] = "1.2"
+        assert json.loads((project / "android.json").read_text()) == android
         assert copied >= 12
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):

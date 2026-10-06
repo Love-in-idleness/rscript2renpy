@@ -35,6 +35,10 @@ PNG copy for the Ren'Py window. The Khime generator copies these assets to
 covered by this repository's MIT license; all rights remain with the original
 copyright holder. Attribution does not establish redistribution permission.
 
+`khime/android/android-icon_foreground.png` is a nearest-neighbor scaled copy
+of the same icon on a transparent adaptive-icon canvas; the accompanying
+background is solid black. The foreground has the same copyright restrictions.
+
 ## Forest fonts
 
 `port_template/fonts/simhei.ttf` (SimHei Regular, version 5.04) is included to match

@@ -127,8 +127,10 @@ SimHei 不是开源字体，来源与权利说明见
 生成器还需要 Python 3 和 Pillow。Forest 的原始 MPG 会直接复制到工程，
 不会重新编码。生成器只读取用户指定的资源目录，不会查找、下载或修改已安装的游戏。
 
-生成器会同时写入 Forest 已验证的 Ren'Py Android 配置和自适应图标，包括
-横屏方向、包名与版本。签名用的 `android.keystore` 和 `bundle.keystore`
+两款生成器会同时写入 Ren'Py Android 配置和各自的自适应图标，包括
+横屏方向、包名与版本。PC／Android 版本统一由通用模板 `port_template/build_port.py`
+中的 `PORT_VERSION` 管理，当前为 `1.2`；安卓版本代码最低为 `12`，保留已有更高值。
+这不代表已完成安卓打包或实机验证。签名用的 `android.keystore` 和 `bundle.keystore`
 不会纳入仓库或复制到工程；Ren'Py 会在构建机器上创建或使用本地签名密钥。
 
 项目代码采用 [MIT License](LICENSE)。项目附带的 Noto CJK 字体采用

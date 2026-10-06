@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import shutil
 import sys
@@ -16,6 +17,41 @@ from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
 from port_resources import convert_masks, read_keywords  # noqa: E402
+
+
+PORT_VERSION = "1.2"
+ANDROID_VERSION_CODE = 12
+
+
+def install_version(project: Path, force: bool = False) -> None:
+    destination = project / "game/port_version.rpy"
+    content = 'define config.version = "%s"\n' % PORT_VERSION
+    if destination.exists() and destination.read_text(encoding="utf-8") != content and not force:
+        raise FileExistsError("refusing to overwrite different file: %s" % destination)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(content, encoding="utf-8")
+    clear_script_cache(destination)
+    android = project / "android.json"
+    if android.is_file():
+        settings = json.loads(android.read_text(encoding="utf-8"))
+        settings["version"] = PORT_VERSION
+        settings["numeric_version"] = max(int(settings.get("numeric_version", 1)),
+                                          ANDROID_VERSION_CODE)
+        android.write_text(json.dumps(settings, indent=4, ensure_ascii=False) + "\n",
+                           encoding="utf-8")
+
+
+def install_android(source: Path, project: Path, force: bool = False) -> None:
+    destination = project / "android.json"
+    settings = json.loads((source / "android.json").read_text(encoding="utf-8"))
+    if destination.is_file():
+        # Retain local package/signing/build settings; only versions are shared.
+        settings.update(json.loads(destination.read_text(encoding="utf-8")))
+    destination.write_text(json.dumps(settings, indent=4, ensure_ascii=False) + "\n",
+                           encoding="utf-8")
+    install_version(project, force)
+    for name in ("android-icon_background.png", "android-icon_foreground.png"):
+        copy_file(source / name, project / name, force)
 
 
 RESOURCE_TARGETS = {
@@ -102,6 +138,7 @@ def install_base(resources: Path, project: Path, force: bool = False,
     layout = "define rscript_grps_layout = %r\n" % collect_layout(resources)
 
     game.mkdir(parents=True, exist_ok=True)
+    install_version(project, force)
     installed = install(project, force=force)
     copied = 0
     notice = Path(__file__).parent / "android" / "notice.png"

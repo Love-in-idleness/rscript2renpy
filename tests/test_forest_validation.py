@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+import json
 from tempfile import TemporaryDirectory
 from textwrap import dedent
 from types import SimpleNamespace
@@ -66,10 +67,13 @@ def main() -> None:
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
         assert ("xmaximum = font_size * persistent.rscript_oload_line_chars"
                 not in gfx_text)
-        for name in ("android.json", "android-icon_background.png",
+        for name in ("android-icon_background.png",
                      "android-icon_foreground.png"):
             assert (project / name).read_bytes() == \
                 (ROOT / "forest" / "android" / name).read_bytes()
+        android = json.loads((project / "android.json").read_text(encoding="utf-8"))
+        assert android["version"] == "1.2" and android["numeric_version"] == 12
+        assert 'define config.version = "1.2"' in (project / "game/port_version.rpy").read_text()
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):
             assert (project / name).read_bytes() == notice

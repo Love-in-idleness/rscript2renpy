@@ -127,6 +127,9 @@ def main():
                               "KhimeKusaritop-rscript2renpy")
             assert ('define config.save_directory = "%s"' % save_directory) in \
                 (project / "game/options.rpy").read_text(encoding="utf-8")
+            assert "config.version" not in (project / "game/options.rpy").read_text()
+            assert (project / "game/port_version.rpy").read_text() == \
+                'define config.version = "1.2"\n'
             for source in (ROOT / "runtime").glob("*.rpy"):
                 assert (project / "game" / source.name).read_bytes() == source.read_bytes()
             if len(sys.argv) > 1:

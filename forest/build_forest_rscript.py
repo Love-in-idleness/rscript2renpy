@@ -9,7 +9,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import install_base, copy_file, write_scenario  # noqa: E402
+from build_port import install_base, install_android, copy_file, write_scenario  # noqa: E402
 from port_resources import (copy_assets, convert_masks, copy_movies,
                             parse_language_options, read_keywords,
                             strip_json_comments, write_language_config,
@@ -389,9 +389,7 @@ def main(argv: list[str]) -> int:
                  image_folders=("grpo_bg", "grpo_bu", "grpo_ci", "grpo_f"))
     scenario = game / "scenario"
     scenario.mkdir(parents=True, exist_ok=True)
-    for name in ("android.json", "android-icon_background.png",
-                 "android-icon_foreground.png"):
-        shutil.copyfile(android_source / name, target / name)
+    install_android(android_source, target, force=True)
     language_labels = [(None, language_marker or "Original")]
     language_labels.extend((name, name) for name, _ in language_patches)
     wiki_keywords = {}

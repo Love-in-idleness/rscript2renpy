@@ -3,13 +3,13 @@
     "google_play_key": null,
     "google_play_salt": null,
     "heap_size": "3",
-    "icon_name": "Forest",
+    "icon_name": "Khime",
     "include_pil": false,
     "include_sqlite": false,
     "layout": null,
-    "name": "Forest",
+    "name": "Khime",
     "orientation": "sensorLandscape",
-    "package": "io.github.loveinidleness.forest",
+    "package": "io.github.loveinidleness.khime",
     "permissions": [
         "VIBRATE",
         "INTERNET"

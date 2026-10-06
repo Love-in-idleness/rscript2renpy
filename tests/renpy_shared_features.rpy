@@ -1,6 +1,7 @@
 # Run on a disposable generated project, never on a player's save directory.
 python early:
     def check_shared_port_features():
+        assert config.version == "1.2"
         renpy.execute_default_statement(True)
         renpy.game.context().init_phase = False
         fields = ("rscript_text_size", "rscript_say_line_chars",

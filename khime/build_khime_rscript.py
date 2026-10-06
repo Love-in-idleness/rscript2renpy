@@ -8,7 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import build, copy_file, clear_script_cache  # noqa: E402
+from build_port import build, install_android, copy_file, clear_script_cache  # noqa: E402
 from port_resources import (parse_language_options, read_keywords,
                             copy_language_assets, write_language_config)  # noqa: E402
 from khime_tsc import compile_scene  # noqa: E402
@@ -51,6 +51,7 @@ def build_khime(resources: Path, project: Path, force: bool = False,
         build(resources, project, force=force, scenarios=scenario)
 
     game = project / "game"
+    install_android(Path(__file__).parent / "android", project, force)
     assets = Path(__file__).parent / "assets"
     copy_file(assets / "icon.ico", project / "icon.ico", force)
     copy_file(assets / "icon.png", game / "icon.png", force)

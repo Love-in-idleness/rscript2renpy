@@ -2,6 +2,7 @@
 """Smoke-check a converted Khime resource set without copying its assets."""
 
 from pathlib import Path
+import json
 from tempfile import TemporaryDirectory
 import shutil
 import struct
@@ -99,6 +100,16 @@ def main() -> None:
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):
             assert (project / name).read_bytes() == notice
+        for name in ("android-icon_foreground.png", "android-icon_background.png"):
+            assert (project / name).read_bytes() == (ROOT / "khime/android" / name).read_bytes()
+        with Image.open(project / "android-icon_foreground.png") as foreground, \
+                Image.open(ROOT / "khime/assets/icon.png") as icon:
+            assert foreground.size == (432, 432)
+            assert foreground.crop((72, 72, 360, 360)).tobytes() == \
+                icon.convert("RGBA").resize((288, 288), Image.Resampling.NEAREST).tobytes()
+        android = json.loads((project / "android.json").read_text())
+        assert android["version"] == "1.2" and android["numeric_version"] == 12
+        assert android["package"] == "io.github.loveinidleness.khime"
         assert (project / "game" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
         script = (project / "game" / "script.rpy").read_text(encoding="utf-8")
@@ -112,6 +123,7 @@ def main() -> None:
                      "03_rscript_gfx.rpy", "00_rscript_wrap.rpy", "rscript_wrap.py"):
             assert (project / "game" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
         options = (project / "game" / "options.rpy").read_text(encoding="utf-8")
+        assert "config.version" not in options
         assert 'define config.window_icon = "icon.png"' in options
         assert "init offset = -130" in options
         assert "default persistent.rscript_text_size = 29" in options
