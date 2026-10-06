@@ -151,12 +151,13 @@ def main():
                 for driver, marker in (("renpy_rev_controls", "OK: native menu updates rev target"),
                                        ("renpy_effects", "OK: native object effects"),
                                        ("renpy_registers", "OK: native bounded register reset"),
-                                       ("renpy_end", "OK: native end discards nested story calls")):
+                                       ("renpy_end", "OK: native end discards nested story calls"),
+                                       ("renpy_boot_movies", "OK: native startup movies play in order only on launch")):
                     shutil.copy2(ROOT / "tests" / (driver + ".rpy"),
                                  project / "game/scenario/0000.rpy")
                     (project / "game/scenario/0000.rpyc").unlink(missing_ok=True)
                     driver_environment = (environment | {"RENPY_SKIP_SPLASHSCREEN": ""}
-                                          if driver == "renpy_end" else environment)
+                                          if driver in ("renpy_end", "renpy_boot_movies") else environment)
                     with subprocess.Popen(command, env=driver_environment, stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT, text=True,
                                           start_new_session=True) as process:
