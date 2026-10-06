@@ -123,6 +123,10 @@ def main():
             for filename in ("text_features.rpy", "touch_controls.rpy", "gui.rpy"):
                 assert (project / "game" / filename).read_bytes() == \
                     (ROOT / "port_template/game" / filename).read_bytes()
+            save_directory = ("Forest-rscript2renpy" if name == "Forest" else
+                              "KhimeKusaritop-rscript2renpy")
+            assert ('define config.save_directory = "%s"' % save_directory) in \
+                (project / "game/options.rpy").read_text(encoding="utf-8")
             for source in (ROOT / "runtime").glob("*.rpy"):
                 assert (project / "game" / source.name).read_bytes() == source.read_bytes()
             if len(sys.argv) > 1:

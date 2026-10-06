@@ -30,6 +30,7 @@ khime/game/                 Khime 人脸、方言适配、布局策略及旧指�
 | Wiki | `keywords.json`、绿色链接、内联 `gf/gg` 图片标签、原图 WIKI 行 | Forest 的 601/603 图像链接映射 |
 | 语音 | `rscript_voice`、重播、停止/等待、Auto 等语音、SE 999 循环 | 文件编号格式及 TSC 语音操作数 |
 | GUI | 原图设置、dt1 存读档、图片选项、点击区域、对话/姓名牌和控制条 | 各游戏的坐标、配色、状态图策略及 Khime 人脸 |
+| 存档 | Ren'Py 原生用户存档及工程内同步副本 | `options.rpy` 指定各游戏独立、稳定的 `config.save_directory` |
 | Android | 触摸控制、原生 Auto、直接写系统相册、启动说明 | 应用名称、图标、RAPT 配置及锁定场景 |
 | 剧本 | 解析器、VM、补丁对齐、字幕插入、装配/兼容检查、编译缓存失效、启动视频机制 | Forest 5000 整体替换、视频顺序；各游戏方言/参数允许列表 |
 
@@ -46,7 +47,14 @@ Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 保留�
 Forest 的旧 `persistent.forest_*` 字体/文本/Wiki/备份设置会一次性迁移到
 `persistent.rscript_*`；旧 `textbox_opacity` 单独迁移到公共透明度字段。
 新存档使用 `rscript_dt1`，读取时兼容旧 `forest_dt1`，缺图才回退截图。
-寄存器进度和存档目录不变，未清除玩家存档；跨版本回滚仍需实际游玩确认。
+寄存器进度不变，未清除玩家存档；跨版本回滚仍需实际游玩确认。
+
+两款游戏使用同一套 Ren'Py 原生存档机制。Linux 用户目录分别为
+`~/.renpy/Forest-rscript2renpy/` 和 `~/.renpy/KhimeKusaritop-rscript2renpy/`；
+桌面版同时保留工程内 `game/saves/` 同步副本。Forest 旧版本漏配
+`config.save_directory`，仅使用工程内目录；升级前关闭游戏，备份并将旧
+`game/saves/` 内容复制到新的用户目录，保留原文件。若用户目录已有存档，
+不要直接覆盖，需先核对冲突。其他平台的实际用户路径由 Ren'Py 决定。
 
 ## 构建和语言补丁
 
