@@ -94,7 +94,8 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False) -> 
                 (op == 30 and values[:2] == (46, 9006)) or
                 (op == 75 and values[:2] == (46, 9106))):
             lines.append("    # Khime Zero: reserve a row between 9105 and 9106 only when unlocked.")
-            operands[3] = "517+35*khime_zero_unlocked()"
+            # Entry height: ceil(34px * 1.25) + 1px gap = 44px.
+            operands[3] = "517+44*khime_zero_unlocked()"
         if op & 0xf000:
             lines.extend("    " + line for line in emit_vm(op, values, temps))
         elif op == 9:
@@ -189,7 +190,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False) -> 
                     args[-1] = "0"
                     args.append("0")
                 if zero_title and op == 30 and source.stem == "0101" and parameters[:2] == (46, 9006):
-                    args[3] = "517+35*khime_zero_unlocked()"
+                    args[3] = "517+44*khime_zero_unlocked()"
                 return "_%s%s" % (command, " " + " ".join(args) if args else "")
             overrides = {language: mapping[item.offset]
                          for language, mapping in patch_operands.items()

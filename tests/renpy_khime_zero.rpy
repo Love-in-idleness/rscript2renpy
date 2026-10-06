@@ -7,7 +7,7 @@ python early:
         renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
         renpy.display.screen.prepare_screens()
         assert khime_zero_available
-        options = [(0, True, "grpo_tp 9006", "grpo_tp 9106", 253, 552)]
+        options = [(0, True, "grpo_tp 9006", "grpo_tp 9106", 253, 561)]
         _r[7901] = 0
         assert not khime_zero_unlocked()
         renpy.show_screen("rscript_click_screen", options=options)
@@ -21,7 +21,7 @@ python early:
         renpy.hide_screen("rscript_click_screen")
         _r[7901] = 1
         assert khime_zero_unlocked()
-        assert RScriptArguments(yLoc="517+35*khime_zero_unlocked()").yLoc == 552
+        assert RScriptArguments(yLoc="517+44*khime_zero_unlocked()").yLoc == 561
         renpy.show_screen("rscript_click_screen", options=options)
         renpy.get_screen("rscript_click_screen").update()
         buttons = []
@@ -30,7 +30,12 @@ python early:
             and isinstance(d.action, Jump) else None)
         assert len(buttons) == 1, buttons
         entry = buttons[0]
-        assert entry.style.xpos == 273 and entry.style.ypos == 517
+        assert entry.style.xpos == 400 and entry.style.xanchor == 0.5 and entry.style.ypos == 517
+        for state, tag in (("idle_", "khime_zero grpo 0001"), ("hover_", "khime_zero grpo 0101")):
+            child = entry.state_children[state]
+            child.find_target()
+            assert child.target.zoom == 1.25, (state, child.target)
+            assert renpy.get_registered_image(tag).zoom == 1.25
         assert entry.action.label == "khime_zero_start"
         renpy.hide_screen("rscript_click_screen")
         for tag in ("khime_zero grpe 0655", "khime_zero grpo_bu 1902"):
@@ -100,5 +105,5 @@ label _0000:
             renpy.quit()
     $ _r[7901] = 1
     $ menu_enabled = 0
-    $ renpy.call_screen("rscript_click_screen", options=[(0, True, "grpo_tp 9006", "grpo_tp 9106", 253, 552)])
+    $ renpy.call_screen("rscript_click_screen", options=[(0, True, "grpo_tp 9006", "grpo_tp 9106", 253, 561)])
     $ raise AssertionError("entry failed to jump into the side story")

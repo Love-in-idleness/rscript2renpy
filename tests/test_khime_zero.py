@@ -28,10 +28,10 @@ def main():
         title.write_text(modern + '*load 46 9006 253 517 0 0\n*setlink 46 9106 253 517 0\n*end\n')
         original = compile_scene(title)
         extended = compile_scene(title, zero_title=True)
-        assert "517+35*khime_zero_unlocked()" not in original
-        assert extended.count("517+35*khime_zero_unlocked()") == 2
-        assert "_load 46 9006 253 517+35*khime_zero_unlocked() 0 0" in extended
-        assert "_khime_setlink 46 9106 253 517+35*khime_zero_unlocked() 0" in extended
+        assert "517+44*khime_zero_unlocked()" not in original
+        assert extended.count("517+44*khime_zero_unlocked()") == 2
+        assert "_load 46 9006 253 517+44*khime_zero_unlocked() 0 0" in extended
+        assert "_khime_setlink 46 9106 253 517+44*khime_zero_unlocked() 0" in extended
         for folder in ("scr", "grpe", "grpo", "grpo_bu", "grps", "bgm", "wav", "voice"):
             (zero / folder).mkdir(parents=True)
         (patch / "scr").mkdir(parents=True)

@@ -90,9 +90,10 @@ screen rscript_click_extra(options):
     if khime_zero_unlocked() and any(hover == "grpo_tp 9106" for _, _, _, hover, _, _ in options):
         imagebutton:
             id "khime_zero_entry"
-            idle "images/khime_zero/grpo/0001.png"
-            hover "images/khime_zero/grpo/0101.png"
+            idle "khime_zero grpo 0001"
+            hover "khime_zero grpo 0101"
             focus_mask True
-            xpos 273
+            xpos config.screen_width // 2
+            xanchor 0.5
             ypos 517
             action Jump("khime_zero_start")
