@@ -34,3 +34,32 @@ RPY 对应位置保留原参数注释；
 生成；标题画面仍由 Khime 脚本的点击区域控制。
 Ren'Py lint 通过不等于完成视觉、音频和
 全路线游戏测试，这些仍需对照原游戏检查。
+
+## 可选外传《帰省 ～jamais vu～》
+
+本篇照常生成，追加下列参数接入用户自备的 Khime Zero 和翻译补丁：
+
+```bash
+python3 khime/build_khime_rscript.py --force \
+    /path/to/Khime /path/to/RenPy-Khime \
+    --language jp --language zh=/path/to/Khime.zh \
+    --khime-zero /path/to/Khime_zero \
+    --khime-zero-language zh=/path/to/Khime_zero.zh
+```
+
+这一版只接入外传 `scr/2001.tsc`，使用当前 LiarsoftTool 的 `legacy-28/early`
+命令格式，不接入其标题和其他场景。所有资源依旧由用户自行解包、转换。
+外传图片、姓名牌与音频放入 `khime_zero/` 命名空间，语言资源也有独立子目录，
+不会覆盖本篇同编号素材。补丁与本篇共用 `zh` 等语言标签，缺少译文时回退原文。
+640×480 的图片和对象坐标等比放大 1.25 倍到 800×600；对话沿用本篇文字设置。
+
+主标题在“狐狸娶亲”（9105）与“退出”（9106）之间新增图片入口，
+普通/悬停图分别来自外传 `grpo/0001.png` 与 `grpo/0101.png`。
+沿用原标题的持久寄存器 `7901 == 1` 解锁条件：未解锁不显示入口且不能进入；
+解锁后将退出行下移 35px，保留独立点击区域。外传结束或从菜单返回标题会重置
+运行时，不会把外传 CG 编号写入本篇解锁寄存器；本篇进度和玩家文字设置不清除。
+
+优先播放转换后的 OGG；外传 BGM 尚存的标准 PCM WAV 可直接使用，无需 ffmpeg。
+封装 OGG 的 WAV 必须先由 LiarsoftTool 提取，不接受假 WAV。
+早期 BGM 淡入/淡出时长尚未确认，暂为无渐变播放，并在生成位置注明。
+这是一版待人工验证的适配，画面、音频、字幕时序与旧存档仍需实际游玩确认。

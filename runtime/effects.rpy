@@ -436,6 +436,10 @@ init python:
         else:
             xpos, ypos = store.layer_pos.get(layer, (0.0, 0.0))
 
+        # RScript coordinates are pixels even after a fractional locgrid scale.
+        # Bare floats are *relative* positions in Ren'Py, not pixel offsets.
+        xpos, ypos = absolute(xpos), absolute(ypos)
+
         blend_mode, blend_level = store.layer_blend.get(layer, (0, 0))
 
         trans = Transform(
@@ -727,6 +731,7 @@ init python:
 
 
 
+        xpos, ypos = absolute(xpos), absolute(ypos)
         store.layer_pos[layer] = (xpos, ypos)
 
         effects = {

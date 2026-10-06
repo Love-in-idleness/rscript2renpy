@@ -3,6 +3,7 @@ init offset = -120
 define rscript_base_text_size = 22
 define rscript_inline_base_size = 22
 define rscript_use_speaker_images = False
+default rscript_speaker_images_override = False
 default persistent.rscript_text_size = rscript_base_text_size
 default persistent.rscript_line_spacing = 7
 default persistent.rscript_text_cps = 20
@@ -23,7 +24,7 @@ init python:
     def rscript_prepare_text(text):
         text = renpy.translation.translate_string(text)
         text = rscript_prepare_wiki_text(text)
-        if rscript_use_speaker_images:
+        if rscript_use_speaker_images or rscript_speaker_images_override:
             speaker = renpy.re.match(r"^\^g(\d{3})", text, flags=renpy.re.I)
             if speaker:
                 store.rscript_speaker = int(speaker.group(1))
@@ -72,32 +73,38 @@ init python:
                 getattr(persistent, "rscript_%s_line_chars" % kind),
                 persistent.rscript_line_spacing)
 
+    def rscript_text_image_path(name):
+        return "%s/%s.png" % (rscript_ui.get("text_image_root", "images/grps"), name)
+
     def rscript_g_tag(tag, argument):
         try:
             number, text_size = argument.split(":", 1)
             zoom = persistent.rscript_text_size / float(rscript_inline_base_size)
+            zoom *= rscript_ui.get("inline_zoom", 1.0)
         except (AttributeError, TypeError, ValueError):
             return []
-        if not renpy.loadable("images/grps/gf%s.png" % number):
+        path = rscript_text_image_path("gf%s" % number)
+        if not renpy.loadable(path):
             renpy.log("RScript: missing inline name image gf%s" % number)
             return []
-        image = Transform("images/grps/gf%s.png" % number, zoom=zoom)
+        image = Transform(path, zoom=zoom)
         return [(renpy.TEXT_DISPLAYABLE, image)]
 
     def rscript_a_tag(tag, argument):
         try:
             number, text_size = argument.split(":", 1)
             zoom = persistent.rscript_text_size / float(rscript_inline_base_size)
+            zoom *= rscript_ui.get("inline_zoom", 1.0)
         except (AttributeError, TypeError, ValueError):
             return []
         wiki_enabled = (persistent.rscript_wiki_mode and
                         _preferences.language in rscript_wiki_keywords)
         prefix = "gg" if wiki_enabled else "gf"
-        if not renpy.loadable("images/grps/%s%s.png" % (prefix, number)):
+        path = rscript_text_image_path(prefix + number)
+        if not renpy.loadable(path):
             renpy.log("RScript: missing inline Wiki image %s%s" % (prefix, number))
             return []
-        image = Transform("images/grps/%s%s.png" % (prefix, number),
-                          zoom=zoom)
+        image = Transform(path, zoom=zoom)
         if wiki_enabled:
             url = rscript_wiki_images.get(
                 _preferences.language, {}).get(number)

@@ -33,8 +33,10 @@ def label(scene: str, offset: int) -> str:
     return "_%s_L_%06x" % (scene, offset)
 
 
-def compile_scene(source: Path, patches=()) -> str:
-    tsc = read_tsc(source, "khime")
+def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False) -> str:
+    # Zero uses the early/legacy-28 operand table, not Khime's modern dialect.
+    dialect = "forest" if zero else "khime"
+    tsc = read_tsc(source, dialect)
     items = tsc.instructions()
     patch_texts = {}
     patch_insertions = {}
@@ -44,7 +46,7 @@ def compile_scene(source: Path, patches=()) -> str:
         if not path.is_file():
             continue  # A partial language patch falls back to original text.
         texts, additions, overrides = language_patch_data(
-            source.parent, directory / "scr", dialect="khime",
+            source.parent, directory / "scr", dialect=dialect,
             override_opcodes=set(PASSTHROUGH) - {20, 65},
             menu_transform=menu_text,
             source_names={source.name})
@@ -64,7 +66,7 @@ def compile_scene(source: Path, patches=()) -> str:
                   if (item.offset, kind) in mapping}
         return ("%r.get(_preferences.language, %r)" % (values, original)
                 if values else repr(original))
-    scene = source.stem
+    scene = "khime_zero_" + source.stem if zero else source.stem
     targets = {item.operands[0] for item in items if item.opcode in (3, 4, 5, 200)}
     for item in items:
         if item.opcode == 14:
@@ -88,6 +90,11 @@ def compile_scene(source: Path, patches=()) -> str:
         op, values = item.opcode, item.operands
         operands = [packed(value) if kind == E else str(value)
                     for kind, value in zip(item.kinds, values)]
+        if zero_title and source.stem == "0101" and (
+                (op == 30 and values[:2] == (46, 9006)) or
+                (op == 75 and values[:2] == (46, 9106))):
+            lines.append("    # Khime Zero: reserve a row between 9105 and 9106 only when unlocked.")
+            operands[3] = "517+35*khime_zero_unlocked()"
         if op & 0xf000:
             lines.extend("    " + line for line in emit_vm(op, values, temps))
         elif op == 9:
@@ -155,6 +162,8 @@ def compile_scene(source: Path, patches=()) -> str:
         elif op == 82:
             lines.append("    _khime_append %s" % text(item, 4))
         elif op == 120:
+            if zero:
+                operands[1] = "int(round((%s)*1.25))" % operands[1]
             lines.append("    _osize %s" % " ".join(operands))
         elif op == 121:
             lines.append("    _khime_folder %s %r" %
@@ -169,7 +178,19 @@ def compile_scene(source: Path, patches=()) -> str:
             def statement(parameters):
                 args = [packed(value) if kind == E else str(value)
                         for kind, value in zip(item.kinds, parameters)]
-                return "_%s%s" % (PASSTHROUGH[op], " " + " ".join(args) if args else "")
+                command = PASSTHROUGH[op]
+                if zero and op in (20, 60):
+                    command = "khime_zero_" + command
+                if zero and op in (60, 61):
+                    # The early dialect lacks modern FadeLen. Keep the existing
+                    # no-fade fallback explicit until its duration is confirmed.
+                    if parameters[-1]:
+                        lines.append("    # Khime Zero conversion: legacy BGM fade %s flattened to 0 (duration unconfirmed)." % args[-1])
+                    args[-1] = "0"
+                    args.append("0")
+                if zero_title and op == 30 and source.stem == "0101" and parameters[:2] == (46, 9006):
+                    args[3] = "517+35*khime_zero_unlocked()"
+                return "_%s%s" % (command, " " + " ".join(args) if args else "")
             overrides = {language: mapping[item.offset]
                          for language, mapping in patch_operands.items()
                          if item.offset in mapping}

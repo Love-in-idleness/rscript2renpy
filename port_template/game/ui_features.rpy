@@ -114,12 +114,17 @@ screen rscript_click_screen(options):
             xpos x
             ypos y
             action rscript_system_action(value, system)
+    use rscript_click_extra(options)
+
+# Game overlays can extend the native picture menu without copying it.
+screen rscript_click_extra(options):
+    pass
 
 screen rscript_speaker(who):
     if rscript_speaker_visible and rscript_speaker is not None:
-        $ path = "images/grps/gf%03d.png" % rscript_speaker
+        $ path = rscript_text_image_path("gf%03d" % rscript_speaker)
         if renpy.loadable(path):
-            add path pos rscript_ui.get("speaker_pos", (0, 7))
+            add Transform(path, zoom=rscript_ui.get("speaker_zoom", 1.0)) pos rscript_ui.get("speaker_pos", (0, 7))
     elif rscript_speaker_visible and who:
         text who:
             id "who"
@@ -131,8 +136,8 @@ screen rscript_speaker(who):
 screen say(who, what, center=False):
     $ textbox = rscript_grps_layout.get("tbox%02d" % cur_textbox, {})
     $ textpos = textbox.get("items", {}).get("text", (34, 12))
-    if rscript_use_speaker_images:
-        $ textpos = (text_indent + 1, 8)
+    if rscript_use_speaker_images or rscript_speaker_images_override:
+        $ textpos = (absolute(text_indent + 1), 8)
     window:
         id "window"
         background rscript_textbox_background()
@@ -140,7 +145,7 @@ screen say(who, what, center=False):
         yalign 1.0
         xsize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[0]
         ysize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[1]
-        if rscript_use_speaker_images:
+        if rscript_use_speaker_images or rscript_speaker_images_override:
             use rscript_speaker(who)
         if center:
             rscript_text what:
