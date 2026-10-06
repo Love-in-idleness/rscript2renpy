@@ -282,8 +282,7 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
     if dialect == "khime" and (byte_format != "modern-36" or schema not in
                                 ("modern", "rscript19", "rscript18")):
         raise ValueError(f"{path}: Khime requires current modern-36 command TSC")
-    if not encoding and dialect == "forest":
-        raise ValueError(f"{path}: missing TSC text encoding")
+    # Current LiarsoftTool TSC is UTF-8; GSC byte encoding belongs to its CLI.
 
     strings = [""]
     string_indices = {"": 0}
