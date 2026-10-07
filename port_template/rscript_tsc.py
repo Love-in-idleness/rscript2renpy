@@ -101,6 +101,8 @@ MODERN_COMMANDS = dict(COMMANDS, **{
     "voice": (66, "DEEE"), "click": (73, "EEE"),
     "setlink": (75, "EEEEE"), "TXT": (81, "EDEEDDE"),
     "insub": (200, "D" + "E" * 10),
+    "dynsel": (210, "DE"), "dynans": (211, "DEEE"),
+    "dynnext": (212, "D"), "dyndo": (213, "EEE"),
 })
 RSCRIPT19_COMMANDS = dict(MODERN_COMMANDS, **{
     "face": (48, "EE"), "se": (62, "E"),
@@ -119,6 +121,7 @@ RSCRIPT19_COMMANDS["facedep"] = RSCRIPT18_COMMANDS["facedep"] = (105, "E")
 STRING_OPERANDS = {
     14: {1, 7, 8, 9, 10, 11}, 32: {5}, 81: {4, 5}, 82: {4},
     15: {1}, 121: {1}, 150: {1}, 151: {1},
+    210: {0}, 211: {0}, 212: {0},
 }
 
 

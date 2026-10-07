@@ -12,11 +12,26 @@ from build_port import build, install_version  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
+from rscript_tsc import read_tsc  # noqa: E402
 
 
 def main() -> None:
     with TemporaryDirectory() as temporary:
         root = Path(temporary)
+        choices = root / "choices.tsc"
+        choices.write_text(
+            ';@gsc-byte-format modern-36\n;@gsc-schema modern\n'
+            '*dynsel "Question" 0\n'
+            '*dynans "调查少女像" 1 5024 0\n'
+            '*dynans "调查少女像" @1 -2 0\n'
+            '*dynnext "Next"\n*dyndo 2 0 1\n*end\n', encoding="utf-8")
+        choice_tsc = read_tsc(choices, "khime")
+        assert choice_tsc.strings == ("", "Question", "调查少女像", "Next")
+        decoded = choice_tsc.instructions()
+        assert [item.opcode for item in decoded] == [210, 211, 211, 212, 213, 8]
+        assert decoded[1].operands == (2, 1, 5024, 0)
+        assert decoded[2].operands == (2, 0x10001, 0xfffe, 0)
+        assert choice_tsc.code_size == 68
         resources = root / "resources"
         project = root / "project"
         (resources / "scenario").mkdir(parents=True)
