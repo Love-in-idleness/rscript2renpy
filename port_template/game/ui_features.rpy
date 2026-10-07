@@ -110,6 +110,9 @@ screen rscript_title_preferences():
     tag menu
     use rscript_text_preferences(wiki=rscript_ui.get("title_wiki", True))
 
+screen choice(items):
+    use rscript_choice(items, rscript_choice_prompt)
+
 screen rscript_click_screen(options):
     modal True
     key "game_menu" action Function(rscript_open_game_menu)
@@ -144,6 +147,7 @@ screen rscript_speaker(who):
 screen say(who, what, center=False):
     $ textbox = rscript_grps_layout.get("tbox%02d" % cur_textbox, {})
     $ textpos = textbox.get("items", {}).get("text", (34, 12))
+    $ textpos = rscript_ui.get("text_pos", textpos)
     if rscript_use_speaker_images or rscript_speaker_images_override:
         $ textpos = (absolute(text_indent + 1), 8)
     window:
@@ -153,7 +157,7 @@ screen say(who, what, center=False):
         yalign 1.0
         xsize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[0]
         ysize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[1]
-        if rscript_use_speaker_images or rscript_speaker_images_override:
+        if rscript_use_speaker_images or rscript_speaker_images_override or rscript_ui.get("show_speaker", False):
             use rscript_speaker(who)
         if center:
             rscript_text what:

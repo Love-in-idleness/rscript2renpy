@@ -8,7 +8,8 @@ import struct
 from PIL import Image, ImageOps
 
 IMAGE_FOLDERS = ("grpe", "grpf", "grpo", "grpo_bg", "grpo_bu", "grpo_ci",
-                 "grpo_f", "grpo_ex", "grpo_tp", "grpp", "grps")
+                 "grpo_f", "grpo_ex", "grpo_tp", "grpp", "grps",
+                 "grpo_bu0", "grpo_bu1", "grpo_cu", "grpo_ef", "grpo_map")
 
 
 def write_language_config(game: Path, labels, keywords, images=None) -> None:
@@ -36,6 +37,11 @@ def copy_language_assets(patch: Path, language: str, game: Path) -> None:
     for source, destination in (("wav", "wav"), ("wav", "audio"),
                                 ("bgm", "bgm"), ("voice", "voice")):
         copy_assets(patch / source, "*.ogg", target / destination)
+        for asset in (patch / source).rglob("*.wav"):
+            if not asset.with_suffix(".ogg").is_file():
+                output = target / destination / asset.relative_to(patch / source)
+                output.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(asset, output)
     copy_movies(patch / "mov", target / "mov")
     if (patch / "keywords.json").is_file():
         read_keywords(patch / "keywords.json")

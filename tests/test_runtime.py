@@ -12,7 +12,7 @@ from install_runtime import install  # noqa: E402
 
 def main() -> None:
     files = sorted((ROOT / "runtime").glob("*.rpy"))
-    assert len(files) == 18
+    assert len(files) == 19
     combined = "\n".join(path.read_text(encoding="utf-8") for path in files)
     for marker in ("class RScriptReg", "renpy.register_statement",
                    "def parse_txcls", "renpy.register_shader"):
@@ -58,13 +58,13 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 21
+        assert len(installed) == 22
         assert (project / "game" / "rscript_wrap.py").is_file()
         assert all(path.is_file() for path in installed)
         assert (project / "game" / "gui" / "rscript_cursor.png").is_file()
         assert (project / "game" / "gui" / "rscript_dither.svg").is_file()
 
-    print("OK: 18 generic RScript runtime modules and shared glyph breaker")
+    print("OK: 19 generic RScript runtime modules and shared glyph breaker")
 
 
 if __name__ == "__main__":

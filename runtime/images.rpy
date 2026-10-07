@@ -7,6 +7,7 @@ image nothing = "#0000"
 init python hide:
 
     img_extensions = [".png", ".jpg", ".bmp", ".webp"]
+    registered_tags = set()
 
     for _, fn in renpy.loader.listdirfiles(common = False):
 
@@ -15,6 +16,11 @@ init python hide:
             continue
 
         split = renpy.re.split(r"[\/\\]", base)
+        if split[0] == "tl" and len(split) > 3 and split[2] == "images":
+            # Added DLC artwork needs a logical tag even without a base asset.
+            # The logical filename keeps Ren'Py's current-language lookup.
+            split = split[2:]
+            fn = "/".join(fn.replace("\\", "/").split("/")[2:])
         base_dir = split[0]
 
         if not base_dir == "images":
@@ -23,5 +29,7 @@ init python hide:
 
 
         image_tag = " ".join(split[1:])
-        renpy.image(image_tag, fn)
+        if image_tag not in registered_tags:
+            renpy.image(image_tag, fn)
+            registered_tags.add(image_tag)
 # Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc

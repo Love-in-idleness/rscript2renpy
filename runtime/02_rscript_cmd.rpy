@@ -228,7 +228,8 @@ python early:
         for i, param in enumerate(params):
             _r[10 + i] = eval(param)
 
-        renpy.call(rscript_label_local(script, name))
+        renpy.call(name if name.startswith("_") and renpy.has_label(name)
+                   else rscript_label_local(script, name))
 
     def label_insub(o):
         name, params, loc = o

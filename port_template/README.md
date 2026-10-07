@@ -13,7 +13,8 @@
 - `mov/**/*.mpg`
 - 游戏专用 lowerer 生成的 `scenario/**/*.rpy`
 
-原始 GSC、WCG、WAV、XFL 和 LWG 不会复制进 Ren'Py 工程。
+原始 GSC、WCG、封装 WAV、XFL 和 LWG 不会复制进 Ren'Py 工程；可直接播放的
+普通 PCM WAV 可以复制，有同名提取 Ogg 时只复制 Ogg。
 语言补丁的 `grp*` 目录还可包含 CodeX 32 位 BMP；模板会还原其反向透明度，
 转换为 `tl/<语言>/images/` 下的 PNG，同名 BMP 优先于补丁 PNG。
 
@@ -79,7 +80,9 @@ Khime 通过 `build` 调用同一写入机制。写入运行时、界面和剧�
 `tsc_patches.language_patch_data` 在显式方言下对齐原文与补丁，
 允许新增 `font` 及配套 `wait/cls`，重定位分支；拒绝新增剧情逻辑。
 调用者明确传入可覆盖的 opcode，不自动放宽非文本参数校验。
-按语言整体替换场景仍是 Forest 5000 的专用行为。
+`modern_tsc.py` 复用 Khime 的 lowering 核心；`compile_overlays` 提供按语言整体
+覆盖的场景与命名入口路由，适用于 Evermaiden 的中文/DLC 逻辑变化。它不放宽
+Forest/Khime 现有纯文本补丁的对齐规则。
 
 ## 公共文本、语言与进度设置
 

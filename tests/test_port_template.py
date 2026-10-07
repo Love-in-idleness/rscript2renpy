@@ -56,7 +56,7 @@ def main() -> None:
             path.write_bytes(folder.encode("ascii"))
         (resources / "grps" / "ignored.wcg").write_bytes(b"raw")
         runtime_count, copied = build(resources, project)
-        assert runtime_count == 21
+        assert runtime_count == 22
         assert (project / "game/port_version.rpy").read_text() == \
             'define config.version = "1.2"\n'
         android = {"version": "0.1", "numeric_version": 200,

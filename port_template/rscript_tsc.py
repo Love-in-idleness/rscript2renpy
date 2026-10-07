@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+import struct
 
 
 E = "E"
@@ -24,6 +25,7 @@ class RScriptTsc:
     data_blocks: tuple[tuple[int, ...], ...]
     decoded_instructions: tuple[Instruction, ...]
     encoding: str
+    named_entries: tuple[tuple[str, int], ...] = ()
 
     def string(self, index: int) -> str:
         return self.strings[index]
@@ -93,6 +95,7 @@ COMMANDS = {
 
 # Newer CodeX layouts share the TSC grammar but change selected operand widths.
 MODERN_COMMANDS = dict(COMMANDS, **{
+    "gcls": (21, "E"),
     "jump": (12, "ED"), "gosub": (15, "ED" + "E" * 10),
     "quake": (23, "EEEE"), "locmode": (38, "EEEE"),
     "face": (48, "EEE"), "bgm_on": (60, "EEE"),
@@ -103,6 +106,7 @@ MODERN_COMMANDS = dict(COMMANDS, **{
     "insub": (200, "D" + "E" * 10),
     "dynsel": (210, "DE"), "dynans": (211, "DEEE"),
     "dynnext": (212, "D"), "dyndo": (213, "EEE"),
+    "flagset": (202, "EEE"), "locmap": (225, "EEEEE"),
 })
 RSCRIPT19_COMMANDS = dict(MODERN_COMMANDS, **{
     "face": (48, "EE"), "se": (62, "E"),
@@ -196,6 +200,8 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
     sources = []
     data_blocks = []
     offset = 0
+    trailer_header = (4, 1)
+    trailer = None
 
     for line_no, line in enumerate(
             path.read_text(encoding="utf-8").splitlines(), 1):
@@ -217,6 +223,17 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
                 raise ValueError(f"{path}: duplicate TSC schema")
             schema = line.removeprefix(";@gsc-schema ")
             continue
+        if line.startswith(";@gsc-trailer-header "):
+            sizes = line.split()[1:]
+            if len(sizes) != 2:
+                raise ValueError(f"{path}: malformed trailer header")
+            trailer_header = tuple(int(value, 0) for value in sizes)
+            continue
+        if line.startswith(";@gsc-trailer "):
+            if trailer is not None:
+                raise ValueError(f"{path}: duplicate trailer")
+            trailer = bytes.fromhex(line.removeprefix(";@gsc-trailer ").strip())
+            continue
 
         tokens = _tokens(line, line_no)
         if not tokens:
@@ -233,9 +250,9 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             raise ValueError(f"{path}: line {line_no}: expected command or label")
         if dialect == "forest" and (byte_format != "legacy-28" or schema != "early"):
             raise ValueError(f"{path}: Forest requires current legacy-28/early command TSC")
-        if dialect == "khime" and (byte_format != "modern-36" or schema not in
+        if dialect in ("khime", "modern") and (byte_format != "modern-36" or schema not in
                                     ("modern", "rscript19", "rscript18")):
-            raise ValueError(f"{path}: Khime requires current modern-36 command TSC")
+            raise ValueError(f"{path}: modern adapter requires current modern-36 command TSC")
         name = first[1:]
         if name == "datablock":
             if len(tokens) < 3:
@@ -256,7 +273,7 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             opcode = _number(tokens[1][0], "H", line_no)
             if not opcode & 0xf000:
                 raise ValueError(f"{path}: line {line_no}: invalid VM opcode")
-            if dialect == "khime":
+            if dialect in ("khime", "modern"):
                 kinds = "HS" if opcode & 0xf000 == 0xf000 else "HSS"
             else:
                 kinds = "HH" if opcode & 0xf000 == 0xf000 else "HHH"
@@ -273,7 +290,7 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
                 opcode, kinds = active[name]
             except KeyError as error:
                 raise ValueError(
-                    f"{path}: line {line_no}: unsupported Forest command {name}") from error
+                    f"{path}: line {line_no}: unsupported {dialect} command {name}") from error
             operand_tokens = tokens[1:]
         if len(operand_tokens) != len(kinds):
             raise ValueError(f"{path}: line {line_no}: wrong operand count for {name}")
@@ -282,9 +299,9 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
 
     if dialect == "forest" and (byte_format != "legacy-28" or schema != "early"):
         raise ValueError(f"{path}: Forest requires current legacy-28/early command TSC")
-    if dialect == "khime" and (byte_format != "modern-36" or schema not in
+    if dialect in ("khime", "modern") and (byte_format != "modern-36" or schema not in
                                 ("modern", "rscript19", "rscript18")):
-        raise ValueError(f"{path}: Khime requires current modern-36 command TSC")
+        raise ValueError(f"{path}: modern adapter requires current modern-36 command TSC")
     # Current LiarsoftTool TSC is UTF-8; GSC byte encoding belongs to its CLI.
 
     strings = [""]
@@ -312,5 +329,24 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
         instructions.append(Instruction(item_offset, opcode, tuple(kinds),
                                         tuple(operands), size))
 
+    names = []
+    if trailer and any(trailer):
+        # Some shipped scripts have short/long all-zero trailer padding,
+        # with no symbols. It is not a named-entry table to validate.
+        table_size, name_size = trailer_header
+        if table_size < 4 or table_size % 4 or name_size < 1 or len(trailer) < 2 * table_size + name_size:
+            raise ValueError(f"{path}: malformed named-entry tables")
+        # startup_jp.exe 0x404e00: parallel name/code-offset arrays; index 0
+        # is reserved. Header word 7 sizes EACH table, not their sum.
+        name_offsets = struct.unpack_from('<%dI' % (table_size // 4), trailer)
+        code_offsets = struct.unpack_from('<%dI' % (table_size // 4), trailer, table_size)
+        blob = trailer[2 * table_size:2 * table_size + name_size]
+        for name_offset, code_offset in zip(name_offsets[1:], code_offsets[1:]):
+            end = blob.find(b'\0', name_offset)
+            if end < 0 or code_offset > offset:
+                raise ValueError(f"{path}: invalid named-entry offset")
+            name = blob[name_offset:end].decode(encoding or 'CP932')
+            if name:
+                names.append((name, code_offset))
     return RScriptTsc(path, offset, tuple(strings), tuple(data_blocks),
-                     tuple(instructions), encoding or "CP932")
+                     tuple(instructions), encoding or "CP932", tuple(names))

@@ -75,9 +75,9 @@ ALLOWED_SUFFIXES = {
     "grpo_tp": {".png"},
     "grpp": {".png"},
     "grps": {".png"},
-    "bgm": {".ogg"},
-    "voice": {".ogg"},
-    "wav": {".ogg"},
+    "bgm": {".ogg", ".wav"},
+    "voice": {".ogg", ".wav"},
+    "wav": {".ogg", ".wav"},
     "mov": {".mpg"},
 }
 
@@ -99,6 +99,8 @@ def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> in
     for path in sorted(item for item in source.rglob("*") if item.is_file()):
         if path.suffix.lower() not in suffixes:
             continue
+        if path.suffix.lower() == ".wav" and path.with_suffix(".ogg").is_file():
+            continue  # Embedded Ogg was extracted; copy the playable file only.
         relative = path.relative_to(source)
         if path.suffix.lower() == ".mpg":
             relative = relative.with_suffix(".mpg")

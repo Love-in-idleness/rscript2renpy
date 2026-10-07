@@ -15,7 +15,7 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 当前运行时面向 Ren'Py 8（Python 3）；Forest 已使用 `/opt/apps/renpy`
 中的 Ren'Py 8.5 完成生成与 lint 验证。
 
-Forest 和 Khime 共用 `runtime/`、`port_template/`，游戏差异放在各自的
+Forest、Khime 和试验性 Evermaiden 共用 `runtime/`、`port_template/`，游戏差异放在各自的
 `game/*.rpy` 覆盖层。字体、文本/语言设置、Wiki、进度备份和安卓控制均由公共层
 维护，详见 [公共模板分层说明](docs/SHARED_TEMPLATE_MIGRATION.md)。
 
@@ -52,10 +52,14 @@ Forest 与 khime 的对话、追加对话、文本对象使用统一中日俄禁
 `port_template/` 是新游戏的半成品模板，负责安装通用运行时、复制已转换资源及
 游戏专用 lowerer 生成的 `scenario/*.rpy`。新项目引用该模板，不复制维护另一套；每款游戏只在
 自己的目录实现 TSC lowering、方言及专用行为。模板不会调用
-LiarsoftTool，也不会把原始 GSC/WCG/WAV/XFL/LWG 复制进 Ren'Py 工程。完整步骤和
+LiarsoftTool，也不会把原始 GSC/WCG/封装 WAV/XFL/LWG 复制进 Ren'Py 工程；可直接播放的
+普通 PCM WAV 允许复制。完整步骤和
 核对清单见 [`port_template/README.md`](port_template/README.md)。
 Forest 与 Khime 构建时会安装通用 Android 启动说明图，包含 GitHub 地址及正版资源
 自行构建提示。
+
+Evermaiden 的现代脚本移植入口、完整中文/DLC 覆盖与已知限制见
+[`evermaiden/README.md`](evermaiden/README.md)。生成器不依赖 EXE 或旧 Evermaiden 工程。
 
 ### Forest 生成器
 

@@ -1,0 +1,70 @@
+# Evermaiden（试验性移植）
+
+本适配重新以当前 Khime / Forest 的公共模板为基础，不使用旧 Evermaiden
+工程或旧生成器。专用覆盖层仅设置 1280×720 画布、32px 字号、28 个全角字宽、
+姓名/正文坐标、音频编号与全层目录语义。现代 TSC lowering、命名入口、动态选项、
+语音分组、字体设置、存读档及触屏控制均在公共层。
+
+## 生成
+
+先用当前 **LiarsoftTool** 在自己合法持有的资源副本中进行转换：
+
+```bash
+liarsofttool -R --unpack-only --gsc-to-tsc /path/to/Evermaiden
+liarsofttool -R --unpack-only --gsc-to-tsc -e gbk /path/to/Evermaiden.zh
+python3 evermaiden/build_evermaiden_rscript.py \
+    /path/to/Evermaiden /path/to/renpy-project \
+    --language jp --language zh=/path/to/Evermaiden.zh
+```
+
+生成器只读取当前 `modern-36/modern` 命令式 TSC 及转换后的资源；不读取、
+执行或依赖 EXE / DLL，不要求旧 Ren'Py 工程。原始 MPG 直接复制。
+资源目录包括 `scr/grpe/grpo/grpo_ex/grps/bgm/voice/wav`，以及
+`grpo_bg/grpo_bu0/grpo_bu1/grpo_cu/grpo_ef/grpo_map`。
+普通 PCM WAV 保留；含 Ogg 的封装 WAV 由 LiarsoftTool 提取后使用 Ogg。
+
+`--language NAME` 仅命名基准语言；`NAME=PATCH_DIR` 添加语言补丁。
+此适配采用**整场景覆盖**，不同于 Forest 的正文对齐：补丁能修改指令、偏移、
+选项与剧情，新增 DLC 场景也可保留。缺失补丁场景回退原版；补丁独有场景不在
+其他语言下偷偷执行。命名回想入口 `REP001` 等也按语言路由。
+请只加载可信补丁；游戏中切换语言不保证处于不同剧情结构的旧存档仍然兼容。
+
+`--force` 允许覆盖不同内容的生成文件，不用于混合两套运行时。升级旧移植时
+应移走旧 `evermaiden_compat.rpy/.rpyc` 与旧 `scenario/`，再重新生成；保留存档。
+新适配使用独立存档目录 `Evermaiden-shared-rscript2renpy`，不迁移旧适配进度。
+
+## 已知边界
+
+- `locmap`（原版/补丁 `0201`）的 CG 回想地图未实现，生成注释保留参数并返回 0。
+- 动态选项按 flag 过滤并将结果写入寄存器 0；原生动画/布局用公共选项菜单替代。
+  `dynnext` 分页未实现，运行时明确报错；本次输入中未出现它。
+- 现代 `TXT/TXA` 保留最后一个操作数的等待开关（`startup_jp.exe` 静态调用链
+  `0x437681/0x437799 → 0x43fa40/0x43f8e0 → 0x43f710`），避免给 `TXT 0` 后的
+  `hit` 重复添加点击等待。
+- 若共享运行时不支持效果，生成器保留原值/原因注释并降级。原生文本布局/样式状态
+  当前使用适配层固定默认值，相关指令旁有注释；不声称视觉等价。
+- 标题脚本保留缺失的 `998` / `999` 引用，不猜测其用途；当前标题按钮未绑定返回值 5，
+  `999` 位于无条件跳转后。触发缺失场景仍会报错，需后续证据确认。
+- 本次转换资源中未找到脚本引用的 `voice/5/2703`（`2320`）与 `wav/2527`
+  （`4250`）；日文/中文脚本都有此引用，保留编号，不替换成其他音频。
+- lint 不统计自定义 `_rscript_say` 的正文，统计中的对话数不能证明剧情为空。
+- 验证命令：`python3 -B tests/test_modern_port.py /opt/apps/renpy`，以及
+  `/opt/apps/renpy/renpy.sh /path/to/renpy-project lint`。算法、SDK 无图形检查、lint
+  与完整游玩/画面/音频/Android 实机验证必须分开看待。
+
+## 本次验证（2026-10-08）
+
+- 用当前 LiarsoftTool 重新转换原版 205 个场景、中文补丁 208 个场景；新增
+  `0502/5000/5010` DLC 场景保留为中文语言包的整场景覆盖。
+- 公共模板、运行时、折行、TSC 编码、Forest 静态验证、Khime Zero 测试通过；
+  SDK 无图形测试通过，包括动态选项、命名入口、分组音频、ruby、等待开关与
+  Forest/Khime 的公共设置界面逻辑。Khime 341 个重新转换的场景在提取到公共层
+  前后，可执行 lowering 相同（不比较注释和新增命名入口标签）。
+- Khime builder 的本机真实资源测试没有全部通过：其日文 credits 文本断言与
+  本机中文版资源不一致，未修改断言掩盖此差异。
+- 已生成 `/home/idleness/Source/renpy/Evermaiden`。Ren'Py lint 退出码 0，
+  无语法/初始化错误；仍提示三个非 ASCII 音频文件名和源脚本中的不可达分支。
+- 当前环境没有可用的 X11 图形连接；未启动实际游戏，未确认画面、完整剧情、
+  音频播放或 Android 实机效果。上述测试不是完整移植成功的证明。
+
+仓库不包含 Evermaiden 原游戏/汉化/DLC 资源，不创建发布包。

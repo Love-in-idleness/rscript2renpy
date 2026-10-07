@@ -1,6 +1,6 @@
-# Forest / Khime 公共模板分层
+# Forest / Khime / Evermaiden 公共模板分层
 
-两个移植入口现在安装同一份公共文件，再叠加游戏补丁；不复制另一款游戏的
+各移植入口安装同一份公共文件，再叠加游戏补丁；不复制另一款游戏的
 生成器，也不对复制后的运行时做字符串替换。
 
 ```text
@@ -12,13 +12,14 @@ port_template/
   port_resources.py         图像/元数据/遮罩/原始 MPG/语言资源/keywords.json
   fonts/, android/          共用字体及 Android 启动说明
   game/
-    gui.rpy                 共用 800×600 GUI
+    gui.rpy                 共用 GUI；rscript_screen_size 默认 800×600
     text_features.rpy       字体、字号、字数、行距、语言、Wiki、进度备份
     grps_ui.rpy             元数据驱动的设置、选项、存读档、对话控制条
     ui_features.rpy          对话/姓名牌、点击系统动作、旧存档和透明度迁移
     touch_controls.rpy      Back / Skip / Auto / Hide / Screenshot / Menu
 forest/game/                Forest 布局策略、旧指令别名、偏好迁移、5000 锁定
 khime/game/                 Khime 人脸、方言适配、布局策略及旧指令别名
+evermaiden/game/            1280×720、现代文本/音频编号与布局默认值
 ```
 
 ## 公共能力及游戏差异

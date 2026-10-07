@@ -11,7 +11,7 @@ python early:
 
     def execute_voice(args):
 
-        voice_file = rscript_voice_format % args.VoiceNo
+        voice_file = rscript_audio_file("voice", args.VoiceNo)
         repeat = args.Repeat
         fade   = args.Fade
         pan    = args.Pan
@@ -59,7 +59,7 @@ python early:
         return args
 
     def execute_bgm_on(args):
-        bgm = rscript_bgm_format % args.BgmNo
+        bgm = rscript_audio_file("bgm", args.BgmNo)
         fadein = args.Fade * args.FadeLen / 1000.
 
         if renpy.loadable(bgm):
@@ -107,7 +107,7 @@ python early:
 
     def execute_se_on(args):
         channel = "se%d" % args.Channel
-        se_file = rscript_se_format % store.se_queue[args.Channel]
+        se_file = rscript_audio_file("se", store.se_queue[args.Channel])
         if not renpy.loadable(se_file):
             renpy.log("RScript: missing sound effect %s" % se_file)
             return

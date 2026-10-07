@@ -16,7 +16,7 @@ python early:
         what = lex.rest()
         return lang, who, what
 
-    def execute_say(o):
+    def execute_say(o, interact=True):
         lang, who, what = o
 
         if who:
@@ -52,9 +52,10 @@ python early:
 
         queue_draw(show_window)
         process_draw_queue()
-        renpy.say(who, what, interact = True, show_center = center)
-        rscript_dialogue_end()
-        if persistent.rscript_stop_voice_on_advance:
+        renpy.say(who, what, interact = interact, show_center = center)
+        if interact:
+            rscript_dialogue_end()
+        if interact and persistent.rscript_stop_voice_on_advance:
             renpy.music.stop(channel = "voice")
             renpy.music.stop(channel = "rscript_voice")
 
@@ -73,7 +74,7 @@ python early:
         what = lex.rest()
         return lang, what
 
-    def execute_append(o):
+    def execute_append(o, interact=True):
         lang, what = o
 
         who  = store.last_spk
@@ -97,9 +98,10 @@ python early:
         process_draw_queue()
 
         who.do_extend()
-        renpy.say(who, what, interact = True, show_center = center)
-        rscript_dialogue_end()
-        if persistent.rscript_stop_voice_on_advance:
+        renpy.say(who, what, interact = interact, show_center = center)
+        if interact:
+            rscript_dialogue_end()
+        if interact and persistent.rscript_stop_voice_on_advance:
             renpy.music.stop(channel = "voice")
             renpy.music.stop(channel = "rscript_voice")
 
@@ -112,6 +114,7 @@ python early:
 
     def execute_hit(o):
         renpy.pause()
+        rscript_dialogue_end()
 
     renpy.register_statement("_hit", parse = parse_hit, execute = execute_hit, lint = lint_undef)
 

@@ -138,12 +138,16 @@ def main():
                 shutil.copy2(ROOT / "tests/renpy_shared_features.rpy",
                              project / "game/shared_features_test.rpy")
                 subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), str(project),
-                                "sharedporttest", "--savedir", str(project / "test-saves")], check=True)
+                                "sharedporttest", "--savedir", str(project / "test-saves")], check=True,
+                               env=os.environ | {"RENPY_PATH_TO_SAVES": str(temporary / "sdk-saves")})
+                if "--logic-only" in sys.argv[2:]:
+                    continue  # SDK parser/screen checks do not require X11.
                 command = [str(Path(sys.argv[1]) / "renpy.sh"), str(project),
                            "run", "--savedir", str(project / "test-saves")]
                 environment = os.environ | {"RENPY_PERFORMANCE_TEST": "0",
                                             "RENPY_SKIP_SPLASHSCREEN": "1",
                                             "RENPY_SKIP_MAIN_MENU": "1",
+                                            "RENPY_PATH_TO_SAVES": str(temporary / "sdk-saves"),
                                             "SDL_AUDIODRIVER": "dummy"}
                 if shutil.which("xvfb-run"):
                     command = ["xvfb-run", "-a", *command]

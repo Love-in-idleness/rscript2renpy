@@ -81,7 +81,7 @@ def main() -> None:
         assert not (project / "bundle.keystore").exists()
         gui = project / "game" / "gui.rpy"
         gui_text = gui.read_text(encoding="utf-8")
-        assert "gui.init(800, 600)" in gui_text
+        assert "gui.init(*rscript_screen_size)" in gui_text
         assert 'define gui.text_font = "fonts/NotoSansCJKjp-Regular.otf"' in gui_text
         for name in ("simhei.ttf", "SimHei-NOTICE.md"):
             assert (project / "game" / "fonts" / name).read_bytes() == \
@@ -151,14 +151,14 @@ def main() -> None:
         assert "text = rscript_prepare_text(text)" in util_runtime
         assert "text = rscript_prepare_wiki_text(text)" in compat_text
         assert '"g": rscript_green_color()' in util_runtime
-        say_start = text_runtime.index("    def execute_say(o):")
-        append_start = text_runtime.index("    def execute_append(o):")
+        say_start = text_runtime.index("    def execute_say(o, interact=True):")
+        append_start = text_runtime.index("    def execute_append(o, interact=True):")
         say_runtime = text_runtime[say_start:append_start]
         append_runtime = text_runtime[append_start:]
         assert "parse_rscript_text(what, True)" in say_runtime
         assert "parse_rscript_text(what, True)" in append_runtime
-        assert "renpy.say(who, what, interact = True" in say_runtime
-        assert "renpy.say(who, what, interact = True" in append_runtime
+        assert "renpy.say(who, what, interact = interact" in say_runtime
+        assert "renpy.say(who, what, interact = interact" in append_runtime
         assert '        if center:\n            rscript_text what:\n' \
             '                id "what"' in compat_text
         assert '        else:\n            rscript_text what:\n' \
