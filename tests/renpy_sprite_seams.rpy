@@ -29,19 +29,38 @@ init 100 python:
 label _0000:
     window hide
     scene black onlayer black
-    show expression "split_top.png" as top
-    show expression "split_bottom.png" as bottom
-    $ sprite_seam_transforms = config.layer_transforms.get(None, [])
-    $ config.layer_transforms[None] = []
+    $ rscript_show_layer("layer1", what=renpy.displayable("split_top"))
+    $ rscript_show_layer("layer2", what=renpy.displayable("split_bottom"))
+    show expression Text("Mixed 中文 … Royal Host", size=27) as native_text zorder 10
+    $ sprite_seam_transforms = config.layer_transforms.get(IMAGE_LAYER, [])
+    $ config.layer_transforms[IMAGE_LAYER] = []
     $ renpy.pause(0.2, hard=True)
     $ seam_before = sprite_seam_capture("before")
-    $ assert rscript_native_canvas in sprite_seam_transforms
-    $ config.layer_transforms[None] = sprite_seam_transforms
+    $ assert rscript_native_images in sprite_seam_transforms
+    $ config.layer_transforms[IMAGE_LAYER] = sprite_seam_transforms
     $ renpy.pause(0.2, hard=True)
     $ seam_after = sprite_seam_capture("after")
     $ assert seam_before < 250, (seam_before, seam_after)
     $ assert seam_after >= 250, (seam_before, seam_after)
     $ print("OK: split sprite seam native framebuffer %d -> %d" % (seam_before, seam_after))
+    python:
+        import pygame_sdl2 as pygame
+        before = pygame.image.load(os.path.join(config.basedir, "before.png"))
+        after = pygame.image.load(os.path.join(config.basedir, "after.png"))
+        assert all(before.get_at((x, y)) == after.get_at((x, y))
+                   for x in range(500) for y in range(65))
+        assert not config.layer_transforms.get(None)
+        # _oload objects and normal Text stay outside all Flatten nodes.
+        text_object = RScriptText("Mixed 中文 …", kind="oload")
+        rscript_show_layer("layer3", what=text_object)
+        entries = renpy.game.context().scene_lists.make_layer(IMAGE_LAYER, {})
+        composed = rscript_native_images(entries)
+        assert len(composed.children) == 3
+        assert composed.children[1] is entries.children[2]
+        assert composed.children[2] is entries.children[3]
+        assert not isinstance(entries.children[2].function, RScriptRasterVisibility)
+        print("OK: text pixels unchanged; text objects and screens bypass raster batching")
+        renpy.hide("layer3")
     python:
         for size in ((800, 600), (1000, 750)):
             renpy.set_physical_size(size)
@@ -49,8 +68,9 @@ label _0000:
             value = sprite_seam_capture("after-%d" % size[0])
             assert value >= 250, (size, value)
         print("OK: native canvas at 1:1 and enlarged window; final scaling remains smooth")
-    hide top
-    hide bottom
+    hide layer1
+    hide layer2
+    hide native_text
     show expression Solid("#204060") as scene_background onlayer cg
     show expression Transform(Solid("#000000"), shader="rscript.effect_invert", blend="rscript_invert") as scene_invert
     $ renpy.pause(0.2, hard=True)

@@ -5,11 +5,42 @@ image white = "#FFFFFF"
 image nothing = "#0000"
 
 init python:
-    def rscript_native_canvas(child):
-        # Join pixel-aligned sprite pieces before the window resamples them.
-        return Flatten(Transform(child, nearest=True), drawable_resolution=False)
+    class RScriptRasterVisibility:
+        def __init__(self, layer):
+            self.layer = layer
 
-    config.layer_transforms.setdefault(None, []).insert(0, rscript_native_canvas)
+        def __call__(self, trans, st, at):
+            return rscript_layer_visibility(self.layer, trans, st, at)
+
+    def rscript_native_images(child):
+        entries = getattr(child, "scene_list", None)
+        if not entries:
+            return child
+        result = renpy.display.layout.MultiBox(layout="fixed")
+        batch = []
+
+        def flush():
+            if len(batch) > 1:
+                group = renpy.display.layout.MultiBox(layout="fixed")
+                group.append_scene_list(batch)
+                # Stitch only raster pieces, never text, screens or blend effects.
+                result.add(Flatten(Transform(group, nearest=True),
+                                   drawable_resolution=False))
+            elif batch:
+                entry = batch[0]
+                result.add(entry.displayable, entry.show_time, entry.animation_time)
+            batch.clear()
+
+        for entry in entries:
+            if isinstance(getattr(entry.displayable, "function", None), RScriptRasterVisibility):
+                batch.append(entry)
+            else:
+                flush()
+                result.add(entry.displayable, entry.show_time, entry.animation_time)
+        flush()
+        return result
+
+    config.layer_transforms.setdefault(IMAGE_LAYER, []).insert(0, rscript_native_images)
 
 init python hide:
 

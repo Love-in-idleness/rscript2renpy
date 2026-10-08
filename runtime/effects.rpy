@@ -466,7 +466,9 @@ init python:
     def rscript_show_layer(name, at_list=None, **kwargs):
         transforms = list(at_list or [])
         if name.startswith("layer") and name[5:].isdigit():
-            transforms.append(Transform(function=renpy.curry(rscript_layer_visibility)(int(name[5:]))))
+            visibility = (RScriptRasterVisibility if isinstance(kwargs.get("what"), renpy.display.image.ImageReference)
+                          else renpy.curry(rscript_layer_visibility))
+            transforms.append(Transform(function=visibility(int(name[5:]))))
         renpy.show(name, at_list=transforms, **kwargs)
 
     def rscript_selected_layers(layer):
