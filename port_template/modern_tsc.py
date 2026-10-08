@@ -111,7 +111,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         op, values = item.opcode, item.operands
         operands = [packed(value) if kind == E else str(value)
                     for kind, value in zip(item.kinds, values)]
-        if adapter != "khime" and op in {41, 49, 55, 74, 90, 91, 93, 95, 96, 97, 98, 100, 103, 104, 106, 107, 108, 132}:
+        if adapter != "khime" and op in {41, 49, 55, 90, 91, 93, 95, 96, 97, 98, 100, 103, 104, 106, 107, 108, 132}:
             lines.append("    # CodeX %s %s: shared runtime uses adapter defaults; native layout/style state is not implemented." %
                          (commands.get(op, str(op)), " ".join(operands)))
         if adapter != "khime" and op == 38 and values[3]:

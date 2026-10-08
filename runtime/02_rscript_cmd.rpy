@@ -366,10 +366,12 @@ python early:
 
 
     def parse_autoreset(lex):
-        return (lex.rest(),)
+        args = rscript_arguments(lex, ["Mode"])
+        lex.expect_eol()
+        return args
 
     def execute_autoreset(o):
-        pass
+        store.rscript_click_autoreset = bool(o.Mode)
 
     renpy.register_statement("_autoreset", parse = parse_autoreset, execute = execute_autoreset, lint = lint_undef)
 
@@ -396,12 +398,16 @@ python early:
 
 
     def parse_click(lex):
-        return (lex.rest(),)
+        args = rscript_arguments(lex, ["Timer", "Timeout", "Cancel"])
+        lex.expect_eol()
+        return args
 
     def execute_click(o):
         options = []
         previews = {}
         for layer, (value, system) in sorted(store.rscript_click_values.items()):
+            if not store.layer_enabled.get(layer, 1):
+                continue
             if layer not in store.rscript_click_links or layer not in store.layer_info:
                 continue
             hover, x, y = store.rscript_click_links[layer]
@@ -412,7 +418,8 @@ python early:
                 x *= store.layer_x_grid
                 y *= store.layer_y_grid
             options.append((value, system, store.layer_info[layer],
-                            "%s %04d" % (folder, hover), x, y))
+                            (store.layer_info[layer] if hover in (-1, 0xffff) else
+                             "%s %04d" % (folder, hover)), x, y))
             if layer in store.rscript_click_previews:
                 cg, px, py = store.rscript_click_previews[layer]
                 if store.rscript_click_grid:
@@ -421,8 +428,10 @@ python early:
                 previews[len(options) - 1] = ("%s %04d" % (folder, cg), px, py)
         if not options:
             raise Exception("RScript click has no active image regions")
-        store._r[0] = renpy.call_screen("rscript_click_screen", options=options, previews=previews)
-        execute_resetclk(None)
+        store._r[0] = renpy.call_screen("rscript_click_screen", options=options,
+                                       previews=previews, cancel=bool(o.Cancel) if o is not None else False)
+        if store.rscript_click_autoreset:
+            execute_resetclk(None)
 
     renpy.register_statement("_click", parse = parse_click, execute = execute_click, lint = lint_undef)
 
@@ -493,7 +502,10 @@ python early:
             links = store.rscript_click_previews
         else:
             raise Exception("RScript setlink slot %s is not implemented" % o.Slot)
-        links[o.Layer] = (o.HoverCG, o.xLoc, o.yLoc)
+        if o.Slot == 1 and o.HoverCG in (-1, 0xffff):
+            links.pop(o.Layer, None)
+        else:
+            links[o.Layer] = (o.HoverCG, o.xLoc, o.yLoc)
 
     renpy.register_statement("_setlink", parse = parse_setlink, execute = execute_setlink, lint = lint_undef)
 

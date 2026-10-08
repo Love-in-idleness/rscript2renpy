@@ -49,6 +49,55 @@ python early:
         execute_rscript_locmode(SimpleNamespace(Layer=0, XMode=1, YMode=1, Mode=0))
         assert all(layer_anchor[i] == (0.5, 0.5) for i in range(100))
         assert renpy.has_image("grpo_ex 9999")
+        # enabl must preserve a loaded layer, including loads/moves while hidden.
+        original_with = renpy.with_statement
+        try:
+            renpy.with_statement = lambda *args, **kwargs: None
+            store.folder[11] = "grpo_map"
+            loadcls(11, 0, cg=9, xpos=233, ypos=480)
+            original = store.layer_info[11]
+            execute_queue(None)
+            execute_enabl(SimpleNamespace(Layer=11, Mode=0))
+            assert store.layer_enabled.get(11, 1) == 1
+            execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
+            displayable = renpy.game.context().scene_lists.get_displayable_by_tag(IMAGE_LAYER, "layer11")
+            displayable.function(displayable, 0, 0)
+            assert displayable.alpha == 0 and store.layer_info[11] == original
+            loadcls(11, 0, cg=12, xpos=441, ypos=480)
+            displayable = renpy.game.context().scene_lists.get_displayable_by_tag(IMAGE_LAYER, "layer11")
+            displayable.function(displayable, 0, 0)
+            assert displayable.alpha == 0
+            execute_enabl(SimpleNamespace(Layer=0, Mode=1))
+            displayable.function(displayable, 0, 0)
+            assert displayable.alpha == 1 and store.layer_info[11] == "grpo_map 0012"
+            assert store.layer_pos[11] == (441, 480)
+            loadcls(0, 0, clear=True)
+        finally:
+            renpy.with_statement = original_with
+        # Gallery CG movement and cls 0 must not destroy a newly loaded title.
+        original_with, original_pause = renpy.with_statement, renpy.pause
+        try:
+            renpy.with_statement = lambda *args, **kwargs: None
+            renpy.pause = lambda *args, **kwargs: None
+            execute_queue(None)
+            execute_gload(SimpleNamespace(CGNum=1020, Colormode=0))
+            execute_gmove(SimpleNamespace(Effect=0, xLoc=0, yLoc=-608, Speed=0))
+            execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
+            assert store.layer_pos[CG_LAYER] == (0, -608)
+            execute_gmove(SimpleNamespace(Effect=1, xLoc=0, yLoc=0, Speed=152))
+            for number in (9001, 9101):
+                execute_queue(None)
+                execute_gcls(SimpleNamespace(Mode=0))
+                loadcls(0, 0, clear=True)
+                execute_gload(SimpleNamespace(CGNum=number, Colormode=0))
+                execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
+                assert store.layer_info[CG_LAYER] == "grpe %04d" % number
+                assert store.layer_pos[CG_LAYER] == (0, 0)
+                assert renpy.get_attributes(CG_TAG, CG_LAYER) == ("%04d" % number,)
+                assert renpy.game.context().scene_lists.get_displayable_by_tag(CG_LAYER, CG_TAG) is not None
+            execute_gcls(SimpleNamespace(Mode=0))
+        finally:
+            renpy.with_statement, renpy.pause = original_with, original_pause
         # 0511: each icon has two independent setlink slots. Slot 1 must not
         # replace the slot-0 hit position or become a huge button at (0, 0).
         old_click_screen = renpy.call_screen
@@ -75,10 +124,42 @@ python early:
                     assert set(rscript_click_values) == {12, 47, 48, 49}
             for bindings in (rscript_click_values, rscript_click_links, rscript_click_previews):
                 assert set(bindings) == {47, 48, 49}
+            # Gallery data uses -1 for absent hover/info artwork, not -001.png.
+            for layer, sentinel in ((47, -1), (48, 0xffff)):
+                for slot in (0, 1):
+                    execute_setlink(SimpleNamespace(Layer=layer, HoverCG=sentinel,
+                                                   xLoc=layer, yLoc=642, Slot=slot))
+                assert layer not in rscript_click_previews
             renpy.call_screen = lambda name, **kwargs: (captured.append(kwargs), 99)[1]
             execute_click(None)
             assert _r[0] == 99
             assert [option[0] for option in captured[0]["options"]] == [91, 92, 99]
+            assert all(option[2] == option[3] for option in captured[0]["options"][:2])
+            assert set(captured[0]["previews"]) == {2}
+            captured.clear()
+            # 0401: playback/lyrics return to the same click without rebinding.
+            execute_autoreset(SimpleNamespace(Mode=0))
+            for layer, value in ((44, 95), (45, 93), (46, 94), (49, 99)):
+                store.folder[layer] = "grpo_ex"
+                store.layer_info[layer] = "grpo_ex %04d" % layer
+                execute_setclk(SimpleNamespace(Layer=layer, Value=value))
+                execute_setlink(SimpleNamespace(Layer=layer, HoverCG=layer + 100,
+                                               xLoc=layer, yLoc=644, Slot=0))
+            store.layer_enabled[46] = 0
+            lex = renpy.lexer.Lexer([("0401-test", 1, "0 0 1", [])])
+            lex.advance()
+            click = parse_click(lex)
+            for result in (93, 95, 0, 99):
+                renpy.call_screen = lambda name, result=result, **kwargs: (captured.append(kwargs), result)[1]
+                execute_click(click)
+                assert _r[0] == result
+                assert captured[-1]["cancel"] is True
+                assert [option[0] for option in captured[-1]["options"]] == [95, 93, 99]
+                assert set(rscript_click_values) == {44, 45, 46, 49}
+            store.layer_enabled.pop(46)
+            execute_autoreset(SimpleNamespace(Mode=1))
+            execute_click(click)
+            assert not rscript_click_values
             captured.clear()
             for layer, cg, hover, value, x, y in ((19, 9, 109, 1090, 569, 420),
                                                   (22, 12, 112, 1070, 450, 227),
@@ -128,6 +209,7 @@ python early:
             renpy.call_screen = old_click_screen
             store.folder, store.layer_info = old_folder, old_info
             execute_resetclk(None)
+            store.rscript_click_autoreset = True
         native_buttons = rscript_grps_layout["compane"]["controls"]
         assert set(native_buttons) == {"rev", "bak", "fow", "next", "skip", "auto", "save", "load", "qsave", "qload", "voc", "menu", "hide"}
         for spec in native_buttons.values():

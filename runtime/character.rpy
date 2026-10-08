@@ -14,7 +14,7 @@ init:
             xpos (rscript_layouts().get("wait00", {}).get("items", {}).get("grow", (0, 0))[0] if hasattr(store, "rscript_layouts") else 0)
             ypos (rscript_layouts().get("wait00", {}).get("items", {}).get("grow", (0, 0))[1] if hasattr(store, "rscript_layouts") else 0)
             alpha 0.0
-            additive 0.0
+            additive 1.0
             linear 35.0 / 30.0 alpha 1.0
             linear 35.0 / 30.0 alpha 0.0
             repeat

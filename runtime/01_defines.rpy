@@ -59,6 +59,7 @@ init:
     default rscript_click_values = {}
     default rscript_click_links = {}
     default rscript_click_previews = {}
+    default rscript_click_autoreset = True
     default layer_zorder = {}
     default layer_enabled = {}
     default layer_info = {}

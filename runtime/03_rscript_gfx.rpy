@@ -412,7 +412,13 @@ python early:
         return args
 
     def execute_enabl(args):
-        layer_enabled[args.Layer] = args.Mode
+        layer, mode = args.Layer, args.Mode
+        queue_draw(_execute_enabl, layer, mode)
+        process_draw_queue()
+
+    def _execute_enabl(layer, mode):
+        for number in (range(1, 100) if layer == 0 else (layer,)):
+            store.layer_enabled[number] = mode
 
     renpy.register_statement("_enabl", parse = parse_enabl, execute = execute_enabl, lint = lint_undef)
 

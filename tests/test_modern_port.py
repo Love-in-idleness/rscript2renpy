@@ -25,6 +25,9 @@ def main():
         for number in (9, 12, 13, 109, 112, 113, 1070, 1080, 1090):
             shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png',
                             base / 'grpo_map' / ('%04d.png' % number))
+        for number in (1020, 9001, 9101):
+            shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png',
+                            base / 'grpe' / ('%04d.png' % number))
         for folder, bindings in UI_ACTIONS.items():
             pane = base / 'grps' / folder
             pane.mkdir()

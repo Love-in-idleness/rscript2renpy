@@ -124,10 +124,10 @@ screen rscript_title_preferences():
 screen choice(items):
     use rscript_choice(items, rscript_choice_prompt)
 
-screen rscript_click_screen(options, previews=None):
+screen rscript_click_screen(options, previews=None, cancel=False):
     default preview = None
     modal True
-    key "game_menu" action Function(rscript_open_game_menu)
+    key "game_menu" action (Return(0) if cancel else Function(rscript_open_game_menu))
     key "rollback" action Rollback()
     for index, (value, system, idle_image, hover_image, x, y) in enumerate(options):
         imagebutton:
