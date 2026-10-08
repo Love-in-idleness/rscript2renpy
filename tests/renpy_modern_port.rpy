@@ -49,6 +49,61 @@ python early:
         execute_rscript_locmode(SimpleNamespace(Layer=0, XMode=1, YMode=1, Mode=0))
         assert all(layer_anchor[i] == (0.5, 0.5) for i in range(100))
         assert renpy.has_image("grpo_ex 9999")
+        # 0511: each icon has two independent setlink slots. Slot 1 must not
+        # replace the slot-0 hit position or become a huge button at (0, 0).
+        old_click_screen = renpy.call_screen
+        old_folder, old_info = dict(store.folder), dict(store.layer_info)
+        captured = []
+        try:
+            execute_resetclk(None)
+            for layer, cg, hover, value, x, y in ((19, 9, 109, 1090, 569, 420),
+                                                  (22, 12, 112, 1070, 450, 227),
+                                                  (23, 13, 113, 1080, 639, 200)):
+                store.folder[layer] = "grpo_map"
+                store.layer_info[layer] = "grpo_map %04d" % cg
+                for text, parse, execute in (
+                    ("%d %d %d %d 0" % (layer, hover, x, y), parse_setlink, execute_setlink),
+                    ("%d %d 0 0 1" % (layer, value), parse_setlink, execute_setlink),
+                    ("%d %d 3 1" % (layer, value), parse_setclk, execute_setclk)):
+                    lex = renpy.lexer.Lexer([("0511-test", 1, text, [])])
+                    lex.advance()
+                    execute(parse(lex))
+            renpy.call_screen = lambda name, **kwargs: (captured.append(kwargs), 1070)[1]
+            execute_click(None)
+            assert _r[0] == 1070
+            assert not rscript_click_links and not rscript_click_previews
+            options, previews = captured[0]["options"], captured[0]["previews"]
+            assert [option[4:] for option in options] == [(569, 420), (450, 227), (639, 200)]
+            assert previews == {0: ("grpo_map 1090", 0, 0), 1: ("grpo_map 1070", 0, 0), 2: ("grpo_map 1080", 0, 0)}
+            renpy.show_screen("rscript_click_screen", options=options, previews=previews)
+            screen = renpy.get_screen("rscript_click_screen")
+            screen.update()
+            buttons = []
+            screen.visit_all(lambda d: buttons.append(d) if isinstance(d, renpy.display.behavior.ImageButton) else None)
+            assert len(buttons) == 3
+            # ScreenDisplayable.event/focus normally supplies this context.
+            renpy.display.screen.push_current_screen(screen)
+            try:
+                for index, button in enumerate(buttons):
+                    assert (button.style.xpos, button.style.ypos) == options[index][4:]
+                    assert button.style.focus_mask is True
+                    assert renpy.run(button.action) == options[index][0]
+                    renpy.run(button.hovered)
+                    renpy.display.screen.updated_screens.discard(screen)
+                    screen.update()
+                    assert screen.scope["preview"] == previews[index]
+                    assert renpy.get_widget("rscript_click_screen", "rscript_click_preview") is not None
+                    renpy.run(button.unhovered)
+                    renpy.display.screen.updated_screens.discard(screen)
+                    screen.update()
+                    assert renpy.get_widget("rscript_click_screen", "rscript_click_preview") is None
+            finally:
+                renpy.display.screen.pop_current_screen()
+            renpy.hide_screen("rscript_click_screen")
+        finally:
+            renpy.call_screen = old_click_screen
+            store.folder, store.layer_info = old_folder, old_info
+            execute_resetclk(None)
         native_buttons = rscript_grps_layout["compane"]["controls"]
         assert set(native_buttons) == {"rev", "bak", "fow", "next", "skip", "auto", "save", "load", "qsave", "qload", "voc", "menu", "hide"}
         for spec in native_buttons.values():

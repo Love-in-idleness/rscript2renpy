@@ -115,18 +115,23 @@ screen rscript_title_preferences():
 screen choice(items):
     use rscript_choice(items, rscript_choice_prompt)
 
-screen rscript_click_screen(options):
+screen rscript_click_screen(options, previews=None):
+    default preview = None
     modal True
     key "game_menu" action Function(rscript_open_game_menu)
     key "rollback" action Rollback()
-    for value, system, idle_image, hover_image, x, y in options:
+    for index, (value, system, idle_image, hover_image, x, y) in enumerate(options):
         imagebutton:
             idle idle_image
             hover hover_image
             focus_mask True
             xpos x
             ypos y
+            hovered SetScreenVariable("preview", (previews or {}).get(index))
+            unhovered SetScreenVariable("preview", None)
             action rscript_system_action(value, system)
+    if preview is not None:
+        add preview[0] pos (preview[1], preview[2]) id "rscript_click_preview"
     use rscript_click_extra(options)
 
 # Game overlays can extend the native picture menu without copying it.

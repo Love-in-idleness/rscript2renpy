@@ -400,6 +400,7 @@ python early:
 
     def execute_click(o):
         options = []
+        previews = {}
         for layer, (value, system) in sorted(store.rscript_click_values.items()):
             if layer not in store.rscript_click_links or layer not in store.layer_info:
                 continue
@@ -412,9 +413,15 @@ python early:
                 y *= store.layer_y_grid
             options.append((value, system, store.layer_info[layer],
                             "%s %04d" % (folder, hover), x, y))
+            if layer in store.rscript_click_previews:
+                cg, px, py = store.rscript_click_previews[layer]
+                if store.rscript_click_grid:
+                    px *= store.layer_x_grid
+                    py *= store.layer_y_grid
+                previews[len(options) - 1] = ("%s %04d" % (folder, cg), px, py)
         if not options:
             raise Exception("RScript click has no active image regions")
-        store._r[0] = renpy.call_screen("rscript_click_screen", options=options)
+        store._r[0] = renpy.call_screen("rscript_click_screen", options=options, previews=previews)
         execute_resetclk(None)
 
     renpy.register_statement("_click", parse = parse_click, execute = execute_click, lint = lint_undef)
@@ -427,6 +434,7 @@ python early:
     def execute_resetclk(o):
         store.rscript_click_values.clear()
         store.rscript_click_links.clear()
+        store.rscript_click_previews.clear()
 
     renpy.register_statement("_resetclk", parse = parse_resetclk, execute = execute_resetclk, lint = lint_undef)
 
@@ -465,12 +473,19 @@ python early:
 
 
     def parse_setlink(lex):
-        args = rscript_arguments(lex, ["Layer", "HoverCG", "xLoc", "yLoc", "Unknown"])
+        args = rscript_arguments(lex, ["Layer", "HoverCG", "xLoc", "yLoc", "Slot"])
         lex.expect_eol()
         return args
 
     def execute_setlink(o):
-        store.rscript_click_links[o.Layer] = (o.HoverCG, o.xLoc, o.yLoc)
+        # Slot 1 is an independent hover information card, not the icon/hit region.
+        if o.Slot == 0:
+            links = store.rscript_click_links
+        elif o.Slot == 1:
+            links = store.rscript_click_previews
+        else:
+            raise Exception("RScript setlink slot %s is not implemented" % o.Slot)
+        links[o.Layer] = (o.HoverCG, o.xLoc, o.yLoc)
 
     renpy.register_statement("_setlink", parse = parse_setlink, execute = execute_setlink, lint = lint_undef)
 

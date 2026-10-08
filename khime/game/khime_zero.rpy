@@ -37,8 +37,7 @@ init python:
         store.text_indent = 97 * 1.25
         store.cur_textbox = 1
         store.khime_face_number = 0
-        store.rscript_click_values = {}
-        store.rscript_click_links = {}
+        execute_resetclk(None)
         store.menu_enabled = store.save_enabled = store.warp_enabled = 1
         store.roll_enabled = store.resm_enabled = 1
         store.last_say = store.last_spk = None

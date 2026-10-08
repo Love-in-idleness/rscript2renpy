@@ -22,6 +22,9 @@ def main():
         for folder in ("scr", "grpe", "grpo", "grpo_ex", "grps", "bgm", "voice", "wav", *IMAGE_FOLDERS):
             (base / folder).mkdir(parents=True)
         (patch / "scr").mkdir(parents=True)
+        for number in (9, 12, 13, 109, 112, 113, 1070, 1080, 1090):
+            shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png',
+                            base / 'grpo_map' / ('%04d.png' % number))
         for folder, bindings in UI_ACTIONS.items():
             pane = base / 'grps' / folder
             pane.mkdir()

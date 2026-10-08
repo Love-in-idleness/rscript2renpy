@@ -70,6 +70,11 @@ python early:
         execute_setlink(parse_setlink(lex))
         assert rscript_click_values[20] == (3, True)
         assert rscript_click_links[20] == (707, 12, 34)
+        lex = renpy.lexer.Lexer([("shared-test", 1, "20 1070 0 5 1", [])])
+        lex.advance()
+        execute_setlink(parse_setlink(lex))
+        assert rscript_click_links[20] == (707, 12, 34)
+        assert rscript_click_previews[20] == (1070, 0, 5)
         old_screen = renpy.call_screen
         old_folder, old_info = dict(store.folder), dict(store.layer_info)
         old_grid = (layer_x_grid, layer_y_grid)
@@ -81,10 +86,11 @@ python early:
             renpy.call_screen = lambda name, **kwargs: (captured.append((name, kwargs)), 9)[1]
             execute_click(None)
             assert store._r[0] == 9
-            assert not rscript_click_values and not rscript_click_links
+            assert not rscript_click_values and not rscript_click_links and not rscript_click_previews
             point = captured[0][1]["options"][0]
             assert point[:4] == (3, True, "idle image", "grpo 0707")
             assert point[4:] == ((24, 102) if rscript_click_grid else (12, 34))
+            assert captured[0][1]["previews"] == {0: ("grpo 1070", 0, 15 if rscript_click_grid else 5)}
             from types import SimpleNamespace
             execute_folder(SimpleNamespace(Layer=0, Folder="grpo_tp"))
             assert all(store.folder[number] == "grpo_tp" for number in range(100))
