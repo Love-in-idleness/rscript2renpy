@@ -3,6 +3,9 @@ python early:
     def check_shared_port_features():
         assert config.version == "1.2"
         renpy.execute_default_statement(True)
+        assert rscript_update_timing == "legacy"
+        assert rscript_update_duration(1, 16, 16) == 2.56
+        assert rscript_update_duration(11, 16, 16) == 5.12
         renpy.game.context().init_phase = False
         # Exercise the real say boundary, not just the parser: old-style
         # substitution crashes on "33%。" and silently changes "100%%".

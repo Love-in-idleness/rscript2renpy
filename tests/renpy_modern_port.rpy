@@ -83,6 +83,31 @@ python early:
         for answer in (("Always", 1, 0, 0), ("Once", 2, 5024, 0), ("Unlocked", 3, 5025, 1)):
             execute_dynans(repr(answer))
         from types import SimpleNamespace
+        from math import isclose
+        assert rscript_update_timing == "codex-ms"
+        original_with = renpy.with_statement
+        transitions = []
+        def capture_transition(transition):
+            if not hasattr(transition, "delay"):
+                transition = transition(old_widget=Solid("#000"), new_widget=Solid("#fff"))
+            transitions.append(transition)
+        try:
+            renpy.with_statement = capture_transition
+            for effect, step, wait, expected in (
+                    (1, 16, 16, .272), (1, 32, 16, .528),
+                    (1, 0, 16, .176), (1, 16, 0, 0),
+                    (2, 16, 16, .240), (2, 1, 16, 0),
+                    (3, 16, 16, .544), (4, 16, 16, .544),
+                    (11, 16, 16, .496)):
+                execute_update(SimpleNamespace(Effect=effect, Step=step, Wait=wait))
+                assert isclose(transitions[-1].delay, expected), (effect, transitions[-1].delay)
+            store.rscript_update_timing = "legacy"
+            for effect, expected in ((1, 2.56), (3, 5.12), (11, 5.12)):
+                execute_update(SimpleNamespace(Effect=effect, Step=16, Wait=16))
+                assert isclose(transitions[-1].delay, expected), (effect, transitions[-1].delay)
+        finally:
+            renpy.with_statement = original_with
+            store.rscript_update_timing = "codex-ms"
         assert rscript_arc_position((0, 0), (100, 0), 0, 1) == (0, 0)
         for direction in (-1, 1):
             middle = rscript_arc_position((0, 0), (100, 0), .5, direction)

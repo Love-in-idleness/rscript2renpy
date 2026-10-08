@@ -38,6 +38,7 @@ init:
     define MACRO_FN = "<macro>"
 
     define FRAME = 1 / 60.
+    define rscript_update_timing = "legacy"
 
     define rscript_voice_format = "voice/%05d.opus"
     define rscript_voice_groups = False

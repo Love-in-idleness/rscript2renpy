@@ -8,6 +8,14 @@
 - 公共生成入口默认保留动态效果、色彩参数，不再把寄存器表达式转换成 0。
   未支持的常量仍在对应位置注释并降级；动态值由运行时执行时检查。
 - 绘制队列里的 effect/tone/tonedep 固定指令执行时的寄存器值，不延迟读取。
+- `_update` 计时集中在公共 `rscript_update_duration`，Evermaiden 只选择
+  `codex-ms` 策略，不再继承 Forest 的百分之一秒调校。`Step=0` 默认取 10；
+  溶解每次等待为毫秒，共 `Step+1` 次；像素化为 `Step-1` 次；
+  遮罩为 `2*Step-1` 次；白/黑过渡每阶段 `Step+1` 次。
+  依据 `43b390` → `453010` / `4531d0` / `453940` / `452e60` 的循环。
+  例如 `update 1 16 16` 从 2.56 秒改为名义 0.272 秒。
+  不模拟原版绘制耗时和 Sleep/GetTickCount 的额外调度开销；
+  固定 load/cls 时长及 move 的速度语义仍不是原引擎精确复制。
 - `locgrid` 真正写入共享坐标倍率，修复原先只修改局部变量的问题。
 - `group` 保存图层所属组；清除、移动支持 0（全部已加载的 1～99 对象）与大于 100
   的分组选层（取除以 100 的余数）。`group 0` 按原引擎保持无操作。
@@ -58,7 +66,8 @@
   `run_native_text_wrap.py /opt/apps/renpy`。
 - 通过 `test_modern_port.py /opt/apps/renpy .port-check/evermaiden/zh`：
   包括真实解释器的寄存器队列快照、图层组、批量转场只执行一次，
-  以及 0201 / 0301 鉴赏脚本流程。
+  以及 0201 / 0301 鉴赏脚本流程。计时回归检查实际转场对象的总时长，
+  覆盖普通/零步数、零等待、像素化、白/黑过渡、遮罩与 legacy 策略。
 - 通过 `test_shared_port.py /opt/apps/renpy --logic-only`（Forest / Khime），
   `test_forest_builder.py /home/idleness/Source/LiarsoftTool/res_ft/Forest` 和
   `test_forest_validation.py`。

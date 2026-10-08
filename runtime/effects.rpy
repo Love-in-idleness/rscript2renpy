@@ -431,6 +431,21 @@ transform grayscale(img):
 
 init python:
 
+    def rscript_update_duration(effect, step, wait):
+        if store.rscript_update_timing == "codex-ms":
+            # Native 43b390: zero selects 10 steps; waits are milliseconds.
+            step = step or 10
+            if effect == 2:
+                frames = max(0, step - 1)
+            elif effect >= 11:
+                frames = 2 * step - 1
+            else:
+                frames = step + 1
+            return frames * wait / 1000.0
+        if store.rscript_update_timing == "legacy":
+            return step * wait / 100.0 * (2 if effect >= 11 else 1)
+        raise ValueError("Unknown RScript update timing: %s" % store.rscript_update_timing)
+
     def rscript_arc_position(start, end, fraction, direction):
         import math
         angle = math.pi * min(1.0, max(0.0, fraction))
@@ -847,9 +862,9 @@ init python:
 
 
 
-        ef_time = step * wait / 100.
-
-        return ImageDissolve("grps/ef%02d.png" % effect, ef_time * 2, ramplen = 64, reverse = True)
+        return ImageDissolve("grps/ef%02d.png" % effect,
+                            rscript_update_duration(effect, step, wait),
+                            ramplen = 64, reverse = True)
 
 
 

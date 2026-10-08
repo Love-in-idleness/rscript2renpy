@@ -46,8 +46,9 @@ def main() -> None:
     assert "im.Tile" not in combined
     assert "elif effect == 4:" in combined
     assert "elif effect == 2:" in combined
-    assert "ef_time = step * wait / 100." in combined
-    assert "ef_time = step * wait / 1000." not in combined
+    assert 'define rscript_update_timing = "legacy"' in combined
+    assert "ef_time = rscript_update_duration(effect, step, wait)" in combined
+    assert "def rscript_update_duration(effect, step, wait):" in combined
     assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN', 'mousedown_5' ]" in combined
     assert "dismiss = [ 'mouseup_1', 'mousedown_5'" in combined
     assert "game_menu = [ 'K_ESCAPE', 'K_MENU', 'mousedown_3' ]" in combined

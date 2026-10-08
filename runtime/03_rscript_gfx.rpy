@@ -236,7 +236,7 @@ python early:
         wait   = args.Wait
 
 
-        ef_time = step * wait / 100.
+        ef_time = rscript_update_duration(effect, step, wait)
         trans = None
 
         if effect == 0:

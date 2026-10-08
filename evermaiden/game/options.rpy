@@ -18,6 +18,7 @@ init -130 python:
 # scr/0500.tsc specifies 32px text and an 898px body area on a 1280x720 canvas.
 init -100 python:
     rscript_screen_size = (1280, 720)
+    rscript_update_timing = "codex-ms"
     rscript_base_text_size = 32
     rscript_inline_base_size = 32
     # 0500.tsc: texruby 0 0 13 9; annotations fit between body lines.
