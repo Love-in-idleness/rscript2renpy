@@ -228,11 +228,17 @@ screen preferences(title_mode=False):
 
 screen rscript_compane():
     $ layout = rscript_layouts().get("compane")
+    $ boxpos = rscript_textbox_state().get("box_pos", (0, config.screen_height - rscript_ui.get("textbox_size", (800, 138))[1]))
     if layout and not (rscript_ui.get("compane_hide_auto", False) and _preferences.afm_enable):
         fixed:
             xysize layout["size"]
-            xalign 1.0
-            yalign 1.0
+            if rscript_compane_position is not None:
+                anchor (0.0, 0.0)
+                # cmploc is in screen coordinates; this pane is inside say.
+                pos (rscript_compane_position[0] - boxpos[0], rscript_compane_position[1] - boxpos[1])
+            else:
+                xalign 1.0
+                yalign 1.0
             $ items = layout["items"]
             if "bg" in items and not rscript_ui.get("compane_bar_background", False):
                 $ bg = items["bg"]

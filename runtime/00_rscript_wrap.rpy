@@ -40,8 +40,9 @@ python early:
         def refresh_settings(self):
             base = self.rscript_base_size or self.style.size
             settings = rscript_text_settings(self.rscript_kind, base)
+            box = rscript_textbox_state() if self.rscript_kind == "say" else {}
             signature = (settings, _preferences.language,
-                         getattr(persistent, "rscript_wiki_mode", False))
+                         getattr(persistent, "rscript_wiki_mode", False), tuple(sorted(box.items())))
             if signature != self.rscript_settings:
                 self.rscript_settings = signature
                 font, size, chars, spacing = settings
@@ -53,6 +54,8 @@ python early:
                 self.style.font = font
                 self.style.size = size
                 self.style.line_spacing = spacing
+                if "color" in box:
+                    self.style.color = box["color"]
                 if prefix is not None:
                     self.style.set_prefix(prefix)
                 self.update()
@@ -130,6 +133,10 @@ python early:
                     setattr(self, name, value)
             if ruby:
                 scale = getattr(store, "rscript_ruby_scale", 0.5)
+                if _rscript_layout_stack[-1][1].rscript_kind == "say":
+                    box = rscript_textbox_state()
+                    if "ruby" in box:
+                        scale = box["ruby"][1] / float(box.get("size", getattr(store, "rscript_base_text_size", 22)))
                 self.size = max(layout.scale(1), self.size * scale)
                 self.kerning *= scale
                 self.color = color
@@ -146,6 +153,10 @@ python early:
         fullwidth = sum(g.advance for g in ts.glyphs("\u3000", layout))
         chars = text.rscript_settings[0][2]
         limit = (fullwidth or layout.scale(text.style.size)) * chars
+        if text.rscript_kind == "say":
+            rect = rscript_textbox_state().get("text_rect")
+            if rect and rect[2] > 0:
+                limit = min(limit, layout.scale(rect[2]))
         for index in rscript_wrap.glyph_breaks(glyphs, limit):
             glyphs[index].split = 1
 

@@ -157,29 +157,36 @@ screen rscript_click_extra(options):
     pass
 
 screen rscript_speaker(who):
+    $ namepos = rscript_textbox_state().get("name_rect", rscript_ui.get("speaker_pos", (0, 7)))[:2]
     if rscript_speaker_visible and rscript_speaker is not None:
         $ path = rscript_text_image_path("gf%03d" % rscript_speaker)
         if renpy.loadable(path):
-            add Transform(path, zoom=rscript_ui.get("speaker_zoom", 1.0)) pos rscript_ui.get("speaker_pos", (0, 7))
+            add Transform(path, zoom=rscript_ui.get("speaker_zoom", 1.0)) pos namepos
     elif rscript_speaker_visible and who:
         text who:
             id "who"
             font rscript_current_font()
             size rscript_base_text_size
             color "#ffffff"
-            pos rscript_ui.get("speaker_pos", (0, 7))
+            pos namepos
 
 screen say(who, what, center=False):
+    $ boxstate = rscript_textbox_state()
     $ textbox = rscript_layouts().get("tbox%02d" % cur_textbox, {})
     $ textpos = textbox.get("items", {}).get("text", (34, 12))
     $ textpos = rscript_ui.get("text_pos", textpos)
+    $ textpos = boxstate.get("text_rect", textpos)
     if rscript_use_speaker_images or rscript_speaker_images_override:
         $ textpos = (absolute(text_indent + 1), 8)
     window:
         id "window"
         background rscript_textbox_background()
-        xalign 0.5
-        yalign 1.0
+        if "box_pos" in boxstate:
+            anchor (0.0, 0.0)
+            pos boxstate["box_pos"]
+        else:
+            xalign 0.5
+            yalign 1.0
         xsize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[0]
         ysize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[1]
         if "front" in textbox.get("items", {}):

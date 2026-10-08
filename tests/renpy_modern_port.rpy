@@ -38,6 +38,43 @@ python early:
         assert normal_bottom <= ruby_top < ruby_bottom <= base_top, (normal_bottom, ruby_top, ruby_bottom, base_top)
         renpy.hide_screen("say")
         print("Evermaiden default dialogue: 3 lines, height", measured.size[1], "ruby inside existing gap")
+        def command(parser, executor, text):
+            lex = renpy.lexer.Lexer([("layout-test", 1, text, [])])
+            lex.advance()
+            executor(parser(lex))
+        command(parse_tboxloc, execute_tboxloc, "0 0 503")
+        command(parse_texloc, execute_texloc, "0 188 58 898 150")
+        command(parse_namloc, execute_namloc, "0 124 17 650 65")
+        command(parse_cmploc, execute_cmploc, "335 694")
+        command(parse_waitloc, execute_waitloc, "0 1080 135")
+        command(parse_waitcol, execute_waitcol, "0 255 128 64")
+        command(parse_waitlod, execute_waitlod, "0 2")
+        command(parse_texsize, execute_texsize, "0 24")
+        command(parse_texcolor, execute_texcolor, "0 4")
+        command(parse_texruby, execute_texruby, "0 0 13 9")
+        assert rscript_compane_position == (335, 694)
+        state = rscript_textbox_state()
+        assert state["text_rect"] == (188, 58, 898, 150)
+        assert state["name_rect"] == (124, 17, 650, 65)
+        indicator = Transform()
+        rscript_wait_transform(indicator, 0, 0)
+        assert (indicator.xpos, indicator.ypos) == (1080, 638)
+        assert state["wait_color"] == "#ff8040" and state["wait_image"] == 2
+        styled = RScriptText("text")
+        styled.refresh_settings()
+        assert styled.style.size == 24 and styled.style.color == Color("#FFDE00")
+        signature = styled.rscript_settings
+        command(parse_texsize, execute_texsize, "0 32")
+        command(parse_texcolor, execute_texcolor, "0 1")
+        styled.refresh_settings()
+        assert styled.style.size == 32 and styled.rscript_settings != signature
+        renpy.show_screen("say", who="Alice", what=sample)
+        renpy.get_screen("say").update()
+        assert renpy.get_widget("say", "window").style.ypos == 503
+        assert renpy.get_widget("say", "what").style.xpos == 188
+        renpy.hide_screen("say")
+        store.rscript_textboxes.clear()
+        store.rscript_compane_position = None
         lex = renpy.lexer.Lexer([("test", 1, "1 3 7", [])])
         lex.advance()
         execute_flagset(parse_flagset(lex))

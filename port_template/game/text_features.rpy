@@ -67,7 +67,8 @@ init python:
     config.start_callbacks.append(rscript_update_default_font)
 
     def rscript_text_settings(kind, base_size):
-        size = (persistent.rscript_text_size if kind == "say" else
+        native_size = rscript_textbox_state().get("size", rscript_base_text_size)
+        size = (max(1, native_size * persistent.rscript_text_size // rscript_base_text_size) if kind == "say" else
                 max(1, base_size * persistent.rscript_text_size // rscript_base_text_size))
         return (rscript_current_font(), size,
                 getattr(persistent, "rscript_%s_line_chars" % kind),

@@ -35,8 +35,8 @@ def main() -> None:
     assert 'define config.old_substitutions = False' in combined
     assert "rscript_wrap.normalize_boundaries" in combined
     assert "{k=-2}" not in combined
-    assert '"grps wait00 body"' in combined
-    assert 'rscript_layouts().get("wait00"' in combined
+    assert '"grps wait%02d body"' in combined
+    assert 'rscript_layouts().get("wait%02d"' in combined
     assert 'config.mouse = {' in combined
     assert '"engine/gui/rscript_cursor.png", 0, 0' in combined
     assert "transform rscript_zoom_in:" in combined

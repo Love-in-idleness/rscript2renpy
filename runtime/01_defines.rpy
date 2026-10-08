@@ -88,6 +88,9 @@ init:
     default resm_enabled = 1
 
     default cur_textbox = 1
+    default rscript_active_box = 0
+    default rscript_textboxes = {}
+    default rscript_compane_position = None
     default textbox_panel = 1
     default text_indent = 174
 

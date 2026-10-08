@@ -331,8 +331,8 @@ def main() -> None:
     # line inside that block. The text is laid out as a tight box, so it has to
     # be positioned with `xalign`; `xpos`/`xanchor` or a full-width `xsize`
     # either pin it to the left edge or drop it out of the window entirely.
-    centered = say_screen[say_screen.index("        if center:"):
-                          say_screen.index("        else:")]
+    center_start = say_screen.index("        if center:")
+    centered = say_screen[center_start:say_screen.index("        else:", center_start)]
     assert "                xalign 0.5" in centered
     assert "                text_align 0.5" in centered
     assert "xpos" not in centered

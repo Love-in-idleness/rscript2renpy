@@ -1,5 +1,29 @@
 python early:
 
+    def rscript_textbox_state(box=None):
+        if box is None:
+            box = getattr(store, "rscript_active_box", 0)
+        return getattr(store, "rscript_textboxes", {}).get(box, {})
+
+    def rscript_set_textbox(box, **values):
+        state = dict(rscript_textbox_state(box))
+        state.update(values)
+        store.rscript_textboxes[box] = state
+
+    def rscript_wait_transform(trans, st, at):
+        state = rscript_textbox_state()
+        pos = state.get("wait_pos")
+        if pos is None:
+            pos = (store.rscript_ctc_x, store.rscript_ctc_y)
+        else:
+            # waitloc is relative to tboxloc, not the screen.
+            boxpos = state.get("box_pos", (0, config.screen_height -
+                getattr(store, "rscript_ui", {}).get("textbox_size", (800, 138))[1]))
+            pos = (boxpos[0] + pos[0], boxpos[1] + pos[1])
+        trans.xpos, trans.ypos = map(absolute, pos)
+        trans.matrixcolor = TintMatrix(state.get("wait_color", "#ffffff"))
+        return .1
+
 
 
 
@@ -206,7 +230,7 @@ python early:
 
 
     def execute_namloc(args):
-        pass
+        rscript_set_textbox(args.Layer, name_rect=(args.xPos, args.yPos, args.Width, args.Height))
 
     renpy.register_statement("_namloc", parse = parse_namloc, execute = execute_namloc, lint = lint_undef)
 
@@ -218,6 +242,8 @@ python early:
         return args
 
     def execute_tbox(args):
+        store.rscript_active_box = args.boxNo
+        store.cur_textbox = rscript_textbox_state().get("background", store.cur_textbox)
         if args.mode == 0:
             queue_draw(hide_window)
 
@@ -234,7 +260,9 @@ python early:
         return args
 
     def execute_tboxback(args):
-        store.cur_textbox = args.Num
+        rscript_set_textbox(args.boxNo, background=args.Num)
+        if args.boxNo == store.rscript_active_box:
+            store.cur_textbox = args.Num
 
     renpy.register_statement("_tboxback", parse = parse_tboxback, execute = execute_tboxback, lint = lint_undef)
 
@@ -253,20 +281,24 @@ python early:
 
 
     def parse_tboxloc(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "X", "Y"])
 
-    def execute_tboxloc(o):
-        pass
+    def execute_tboxloc(args):
+        rscript_set_textbox(args.Box, box_pos=(args.X, args.Y))
 
     renpy.register_statement("_tboxloc", parse = parse_tboxloc, execute = execute_tboxloc, lint = lint_undef)
 
 
 
     def parse_texcolor(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "Color"])
 
-    def execute_texcolor(o):
-        pass
+    def execute_texcolor(args):
+        # Modern 43b6d0: numeric palette, matching the engine's text colors.
+        colors = ("#000000", "#FFFFFF", "#79F1F2", "#B73333", "#FFDE00",
+                  "#F8B1EF", "#7FDFA5", "#C187F6", "#FAA25A")
+        color = colors[args.Color] if 0 <= args.Color < len(colors) else colors[0]
+        rscript_set_textbox(args.Box, color=color)
 
     renpy.register_statement("_texcolor", parse = parse_texcolor, execute = execute_texcolor, lint = lint_undef)
 
@@ -283,10 +315,10 @@ python early:
 
 
     def parse_texloc(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "X", "Y", "Width", "Height"])
 
-    def execute_texloc(o):
-        pass
+    def execute_texloc(args):
+        rscript_set_textbox(args.Box, text_rect=(args.X, args.Y, args.Width, args.Height))
 
     renpy.register_statement("_texloc", parse = parse_texloc, execute = execute_texloc, lint = lint_undef)
 
@@ -313,60 +345,62 @@ python early:
 
 
     def parse_texruby(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "Mode", "Size", "Offset"])
 
-    def execute_texruby(o):
-        pass
+    def execute_texruby(args):
+        # Retain mode/offset for the remaining native placement variants.
+        rscript_set_textbox(args.Box, ruby=(args.Mode, args.Size, args.Offset))
 
     renpy.register_statement("_texruby", parse = parse_texruby, execute = execute_texruby, lint = lint_undef)
 
 
 
     def parse_texsize(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "Size"])
 
-    def execute_texsize(o):
-        pass
+    def execute_texsize(args):
+        rscript_set_textbox(args.Box, size=max(1, args.Size))
 
     renpy.register_statement("_texsize", parse = parse_texsize, execute = execute_texsize, lint = lint_undef)
 
 
 
     def parse_cmploc(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["X", "Y"])
 
-    def execute_cmploc(o):
-        pass
+    def execute_cmploc(args):
+        store.rscript_compane_position = (args.X, args.Y)
 
     renpy.register_statement("_cmploc", parse = parse_cmploc, execute = execute_cmploc, lint = lint_undef)
 
 
 
     def parse_waitcol(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "R", "G", "B"])
 
-    def execute_waitcol(o):
-        pass
+    def execute_waitcol(args):
+        color = "#%02x%02x%02x" % tuple(max(0, min(255, v)) for v in (args.R, args.G, args.B))
+        rscript_set_textbox(args.Box, wait_color=color)
 
     renpy.register_statement("_waitcol", parse = parse_waitcol, execute = execute_waitcol, lint = lint_undef)
 
 
 
     def parse_waitloc(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "X", "Y"])
 
-    def execute_waitloc(o):
-        pass
+    def execute_waitloc(args):
+        rscript_set_textbox(args.Box, wait_pos=(args.X, args.Y))
 
     renpy.register_statement("_waitloc", parse = parse_waitloc, execute = execute_waitloc, lint = lint_undef)
 
 
 
     def parse_waitlod(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "Number"])
 
-    def execute_waitlod(o):
-        pass
+    def execute_waitlod(args):
+        rscript_set_textbox(args.Box, wait_image=args.Number)
 
     renpy.register_statement("_waitlod", parse = parse_waitlod, execute = execute_waitlod, lint = lint_undef)
 
