@@ -310,7 +310,9 @@ python early:
 
 
     def execute_group(args):
-        pass
+        # Native 43c490: zero is a no-op, not a reset of all memberships.
+        if args.Layer != 0:
+            store.layer_groups[args.Layer] = args.Group
 
     renpy.register_statement("_group", parse = parse_group, execute = execute_group, lint = lint_undef)
 

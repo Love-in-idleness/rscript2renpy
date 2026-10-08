@@ -449,7 +449,30 @@ init python:
             transforms.append(Transform(function=renpy.curry(rscript_layer_visibility)(int(name[5:]))))
         renpy.show(name, at_list=transforms, **kwargs)
 
+    def rscript_selected_layers(layer):
+        if layer == 0:
+            return sorted(num for num in store.layer_info if isinstance(num, int))
+        if isinstance(layer, int) and layer > 100:
+            # Native 43bfc0 / 43c8d0: hundreds select a group by remainder.
+            return [num for num in range(1, 100)
+                    if store.layer_groups.get(num, 0) == layer % 100]
+        return [layer]
+
+    def rscript_apply_layers(layer, function, *args, **kwargs):
+        queued = store.in_queue
+        store.in_queue = True
+        try:
+            for selected in rscript_selected_layers(layer):
+                function(selected, *args, **kwargs)
+        finally:
+            store.in_queue = queued
+        process_draw_queue()
+
     def loadcls(layer, effect, cg = None, xpos = 0, ypos = 0, color = 0, clear = False, displayable = None):
+
+        if clear and (layer == 0 or layer > 100):
+            rscript_apply_layers(layer, loadcls, effect, clear=True)
+            return
 
         anchor = layer_anchor.get(layer, (0.0, 0.0))
 
@@ -493,15 +516,6 @@ init python:
                 queue_draw(rscript_show_layer, tag, what = renpy.displayable(img),
                            at_list = at_list, zorder = zorder, layer = IMAGE_LAYER)
 
-
-            elif layer == 0:
-
-                numeric_layers = [num for num in store.layer_info
-                                  if isinstance(num, (int, float))]
-                for num in numeric_layers:
-                    queue_draw(renpy.hide, "layer%d" % num, layer = IMAGE_LAYER)
-                    store.layer_info.pop(num, None)
-                    store.layer_pos.pop(num, None)
 
             else:
                 if layer in store.layer_info:
@@ -559,24 +573,27 @@ init python:
             queue_ef(renpy.with_statement, rscript_dither)
 
 
-        elif effect == 5:
-            at_list.append(white_in if not clear else white_out)
-            _queue_load()
-            queue_ef_pause(0.5)
-
-
-        elif effect == 6:
-            at_list.append(black_in if not clear else black_out)
-            _queue_load()
-            queue_ef_pause(0.5)
+        elif effect in (5, 6):
+            if not clear:
+                at_list.append(white_in if effect == 5 else black_in)
+                _queue_load()
+                queue_ef_pause(0.5)
+            elif layer in store.layer_info:
+                # Keep the artwork visible until its outgoing transform ends.
+                at_list.append(white_out if effect == 5 else black_out)
+                queue_draw(rscript_show_layer, tag,
+                           what=renpy.displayable(store.layer_info[layer]),
+                           at_list=at_list, zorder=zorder, layer=IMAGE_LAYER)
+                queue_ef_pause(0.5)
+                queue_draw_delayed(renpy.hide, tag, layer=IMAGE_LAYER)
 
         elif effect == 7:
             _queue_load()
-            queue_ef(renpy.with_statement, moveinleft)
+            queue_ef(renpy.with_statement, moveoutleft if clear else moveinleft)
 
         elif effect == 8:
             _queue_load()
-            queue_ef(renpy.with_statement, moveinright)
+            queue_ef(renpy.with_statement, moveoutright if clear else moveinright)
 
         elif effect == 10:
             _queue_load()
@@ -715,6 +732,10 @@ init python:
 
 
     def move_layer(layer, x, y, effect, speed, relative = False):
+        if isinstance(layer, int) and (layer == 0 or layer > 100):
+            rscript_apply_layers(layer, move_layer, x, y, effect, speed, relative=relative)
+            return
+
         if isinstance(layer, (int, float)):
             tag = "layer%d" % layer
             layer_name = IMAGE_LAYER

@@ -97,6 +97,43 @@ python early:
         captured_args = RScriptArguments(Effect="_r[6503]").resolved()
         _r[6503] = 0
         assert captured_args.Effect == 6
+        old_info, old_pos, old_groups = store.layer_info, store.layer_pos, store.layer_groups
+        old_pause = renpy.pause
+        pauses = []
+        try:
+            store.layer_info = {11: "grpo_map 0009", 12: "grpo_map 0012", CG_LAYER: "grpe 1020"}
+            store.layer_pos = {11: (0, 0), 12: (10, 20)}
+            store.layer_groups = {}
+            execute_group(SimpleNamespace(Layer=11, Group=2))
+            execute_group(SimpleNamespace(Layer=0, Group=0))
+            assert rscript_selected_layers(102) == [11]
+            assert rscript_selected_layers(202) == [11]
+            assert rscript_selected_layers(0) == [11, 12]
+            store.in_queue = True
+            move_layer(102, 5, 7, 0, 0, relative=True)
+            assert store.layer_pos[11] == (5, 7) and store.layer_pos[12] == (10, 20)
+            store.in_queue = False
+            process_draw_queue()
+            renpy.pause = lambda delay, **kwargs: pauses.append(delay)
+            for effect, transform in ((5, white_out), (6, black_out)):
+                store.layer_info[11] = "grpo_map 0009"
+                store.in_queue = True
+                loadcls(102, effect, clear=True)
+                assert 11 not in store.layer_info and 12 in store.layer_info
+                shows = [kwargs for fn, args, kwargs in store.draw_queue if fn == rscript_show_layer]
+                assert shows and shows[0]["at_list"][-1] == transform
+                assert not any(fn == renpy.hide for fn, args, kwargs in store.draw_queue)
+                store.in_queue = False
+                process_draw_queue()
+            store.layer_info[11] = "grpo_map 0009"
+            pauses.clear()
+            loadcls(0, 1, clear=True)
+            assert pauses == [.5], pauses  # all objects animate together
+            assert store.layer_info == {CG_LAYER: "grpe 1020"}
+        finally:
+            store.in_queue = False
+            renpy.pause = old_pause
+            store.layer_info, store.layer_pos, store.layer_groups = old_info, old_pos, old_groups
         args = SimpleNamespace(Effect=2, Layout=0, Mode=1)
         old_menu = renpy.display_menu
         captured = []

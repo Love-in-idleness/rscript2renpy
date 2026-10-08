@@ -66,6 +66,7 @@ init:
     default layer_zorder = {}
     default layer_enabled = {}
     default layer_info = {}
+    default layer_groups = {}
     default layer_pos = {}
     default layer_alpha = {}
     default layer_blend = {}
