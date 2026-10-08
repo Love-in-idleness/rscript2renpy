@@ -4,6 +4,18 @@ python early:
         assert config.version == "1.2"
         renpy.execute_default_statement(True)
         renpy.game.context().init_phase = False
+        # Exercise the real say boundary, not just the parser: old-style
+        # substitution crashes on "33%。" and silently changes "100%%".
+        assert config.old_substitutions is False
+        for raw in ("可不止如此哦～^n我也有两个数字失落了。它们的出现概率是33%。",
+                    "100%% %s %(name)s", "{a=https://example.test/a%20b}50%{/a}"):
+            parsed, _ = parse_rscript_text(repr(raw), True)
+            captured = []
+            renpy.say(lambda text, **kwargs: captured.append(text), parsed, interact=False)
+            assert captured == [raw.replace("^n", "\n")], captured
+            extended = parsed + "{fast}" + parse_rscript_text(repr("追加10%。"), True)[0]
+            renpy.say(lambda text, **kwargs: captured.append(text), extended, interact=False)
+            assert captured[-1] == captured[0] + "{fast}追加10%。"
         fields = ("rscript_text_size", "rscript_say_line_chars",
                   "rscript_oload_line_chars", "rscript_line_spacing")
         defaults = (22, 19, 20, 7) if rscript_use_speaker_images else (29, 21, 20, -5)

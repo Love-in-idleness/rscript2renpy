@@ -4,6 +4,9 @@ python early:
 init offset = -150
 init:
 
+    # RScript uses literal percent signs, not Ren'Py's legacy %(name)s syntax.
+    define config.old_substitutions = False
+
     define config.layers = ["debug", "black", "cg", "master", "flash",
                             "transient", "screens", "overlay"]
 

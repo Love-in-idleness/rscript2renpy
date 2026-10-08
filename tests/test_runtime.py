@@ -32,6 +32,7 @@ def main() -> None:
     assert '.rstrip()' not in combined
     assert 'text.replace(u"…", u"...")' not in combined
     assert 'text.replace("%",  "%%")' not in combined
+    assert 'define config.old_substitutions = False' in combined
     assert "rscript_wrap.normalize_boundaries" in combined
     assert "{k=-2}" not in combined
     assert '"grps wait00 body"' in combined
