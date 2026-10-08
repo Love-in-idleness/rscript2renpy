@@ -12,11 +12,11 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from install_runtime import install, clear_script_cache  # noqa: E402
+from install_runtime import install, clear_script_cache, retire_legacy  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
-from port_resources import convert_masks, read_keywords  # noqa: E402
+from port_resources import convert_masks, convert_bmp_assets, read_keywords  # noqa: E402
 
 
 PORT_VERSION = "1.2"
@@ -24,13 +24,14 @@ ANDROID_VERSION_CODE = 12
 
 
 def install_version(project: Path, force: bool = False) -> None:
-    destination = project / "game/port_version.rpy"
+    destination = project / "game/engine/port_version.rpy"
     content = 'define config.version = "%s"\n' % PORT_VERSION
     if destination.exists() and destination.read_text(encoding="utf-8") != content and not force:
         raise FileExistsError("refusing to overwrite different file: %s" % destination)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(content, encoding="utf-8")
     clear_script_cache(destination)
+    retire_legacy(project / "game/port_version.rpy", destination, force)
     android = project / "android.json"
     if android.is_file():
         settings = json.loads(android.read_text(encoding="utf-8"))
@@ -54,33 +55,6 @@ def install_android(source: Path, project: Path, force: bool = False) -> None:
         copy_file(source / name, project / name, force)
 
 
-RESOURCE_TARGETS = {
-    "grpe": "images/grpe",
-    "grpf": "images/grpf",
-    "grpo": "images/grpo",
-    "grpo_ex": "images/grpo_ex",
-    "grpo_tp": "images/grpo_tp",
-    "grpp": "images/grpp",
-    "grps": "images/grps",
-    "bgm": "bgm",
-    "voice": "voice",
-    "wav": "wav",
-    "mov": "mov",
-}
-ALLOWED_SUFFIXES = {
-    "grpe": {".png"},
-    "grpf": {".png"},
-    "grpo": {".png"},
-    "grpo_ex": {".png"},
-    "grpo_tp": {".png"},
-    "grpp": {".png"},
-    "grps": {".png"},
-    "bgm": {".ogg", ".wav"},
-    "voice": {".ogg", ".wav"},
-    "wav": {".ogg", ".wav"},
-    "mov": {".mpg"},
-}
-
 
 def copy_file(source: Path, target: Path, force: bool) -> None:
     if target.exists() and source.samefile(target):
@@ -102,11 +76,48 @@ def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> in
         if path.suffix.lower() == ".wav" and path.with_suffix(".ogg").is_file():
             continue  # Embedded Ogg was extracted; copy the playable file only.
         relative = path.relative_to(source)
-        if path.suffix.lower() == ".mpg":
-            relative = relative.with_suffix(".mpg")
         copy_file(path, target / relative, force)
         copied += 1
     return copied
+
+
+def copy_engine_file(source: Path, game: Path, force: bool) -> None:
+    destination = game / "engine" / source.name
+    legacy = game / source.name
+    if legacy.is_file() and legacy.read_bytes() != source.read_bytes() and not force:
+        raise FileExistsError("refusing to overwrite different legacy file: %s" % legacy)
+    copy_file(source, destination, force)
+    retire_legacy(legacy, destination, force)
+
+
+def migrate_old_layout(project: Path, force: bool) -> None:
+    game = project / "game"
+    old = [game / name for name in ("images", "scenario", "audio") if (game / name).is_dir()]
+    if not old:
+        return
+    if not force:
+        raise FileExistsError("legacy images/scenario layout requires --force: %s" % project)
+    archive = project / ".rscript-legacy-layout"
+    archive.mkdir(exist_ok=True)
+    # Old generated code must leave game/, otherwise Ren'Py loads it twice.
+    for source in old:
+        if source.name == "images":
+            for folder in list(source.iterdir()):
+                target = game / folder.name
+                if folder.is_dir() and not target.exists():
+                    shutil.move(str(folder), target)
+                elif folder.is_dir():
+                    for asset in folder.rglob("*"):
+                        if asset.is_file():
+                            copy_file(asset, target / asset.relative_to(folder), force=True)
+        destination = archive / source.name
+        if destination.exists():
+            # Preserve a previous migration; never replace its contents.
+            index = 1
+            while (archive / (source.name + "-%d" % index)).exists():
+                index += 1
+            destination = archive / (source.name + "-%d" % index)
+        shutil.move(str(source), destination)
 
 
 def write_scenario(content: str, destination: Path, resources: Path,
@@ -131,8 +142,7 @@ def copy_scenarios(source: Path, target: Path, resources: Path,
     return copied
 
 
-def install_base(resources: Path, project: Path, force: bool = False,
-                 image_folders: tuple[str, ...] = ()) -> tuple[int, int]:
+def install_base(resources: Path, project: Path, force: bool = False) -> tuple[int, int]:
     """Install the shared base; a game's overlay is applied only afterwards."""
     resources = resources.resolve()
     project = project.resolve()
@@ -140,6 +150,7 @@ def install_base(resources: Path, project: Path, force: bool = False,
     layout = "define rscript_grps_layout = %r\n" % collect_layout(resources)
 
     game.mkdir(parents=True, exist_ok=True)
+    migrate_old_layout(project, force)
     install_version(project, force)
     installed = install(project, force=force)
     copied = 0
@@ -147,38 +158,36 @@ def install_base(resources: Path, project: Path, force: bool = False,
     for name in ("android-presplash.png", "android-downloading.png"):
         copy_file(notice, project / name, force)
         copied += 1
-    for name, destination in RESOURCE_TARGETS.items():
-        copied += copy_tree(resources / name, game / destination,
-                            ALLOWED_SUFFIXES[name], force)
-    for name in image_folders:
-        copied += copy_tree(resources / name, game / "images" / name,
-                            {".png"}, force)
-    # Canvas origins are part of the converted resources, not optional artwork.
-    for name in (*RESOURCE_TARGETS, *image_folders):
-        if not name.startswith("grp"):
+    # Discover converted resources, retaining every relative directory/name.
+    # No fixed list of grp* folders, and no duplicate images/ or audio/ tree.
+    for folder in sorted(path for path in resources.iterdir() if path.is_dir()):
+        if folder.name in {"engine", "scr", "scenario", "saves", "tl"} or folder.name.startswith("."):
             continue
-        for metadata in (resources / name).rglob(".meta.xml"):
-            copy_file(metadata, game / "images" / name /
-                      metadata.relative_to(resources / name), force)
+        output = game / folder.name
+        copied += copy_tree(folder, output, {".png", ".jpg", ".webp", ".ogg", ".wav", ".mpg"}, force)
+        for metadata in folder.rglob(".meta.xml"):
+            copy_file(metadata, output / metadata.relative_to(folder), force)
             copied += 1
-    convert_masks(resources / "grps", game / "images" / "grps")
-    copied += copy_tree(resources / "wav", game / "audio", {".ogg"}, force)
+        convert_bmp_assets(folder, output)
+        convert_masks(folder, output)
     keywords = resources / "keywords.json"
     if keywords.is_file():
         read_keywords(keywords)  # Validate before enabling clickable links.
         copy_file(keywords, game / "keywords.json", force)
         copied += 1
     for source in sorted((Path(__file__).parent / "game").glob("*.rpy")):
-        copy_file(source, game / source.name, force)
+        copy_engine_file(source, game, force)
         copied += 1
     for source in sorted((Path(__file__).parent / "fonts").iterdir()):
         if source.is_file():
             copy_file(source, game / "fonts" / source.name, force)
             copied += 1
-    destination = game / "grps_layout.rpy"
+    destination = game / "engine/grps_layout.rpy"
     if destination.exists() and destination.read_text(encoding="utf-8") != layout and not force:
         raise FileExistsError("refusing to overwrite different file: %s" % destination)
     destination.write_text(layout, encoding="utf-8")
+    clear_script_cache(destination)
+    retire_legacy(game / "grps_layout.rpy", destination, force)
     copied += 1
     return len(installed), copied
 
@@ -191,7 +200,7 @@ def build(resources: Path, project: Path, force: bool = False,
             "game-specific TSC lowerer produced no scenario/*.rpy files: %s" %
             scenarios)
     installed, copied = install_base(resources, project, force)
-    copied += copy_scenarios(scenarios, project / "game" / "scenario",
+    copied += copy_scenarios(scenarios, project / "game" / "scr",
                             resources, force)
     return installed, copied
 

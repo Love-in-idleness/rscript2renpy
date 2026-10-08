@@ -49,6 +49,52 @@ python early:
         execute_rscript_locmode(SimpleNamespace(Layer=0, XMode=1, YMode=1, Mode=0))
         assert all(layer_anchor[i] == (0.5, 0.5) for i in range(100))
         assert renpy.has_image("grpo_ex 9999")
+        native_buttons = rscript_grps_layout["compane"]["controls"]
+        assert set(native_buttons) == {"rev", "bak", "fow", "next", "skip", "auto", "save", "load", "qsave", "qload", "voc", "menu", "hide"}
+        for spec in native_buttons.values():
+            assert rscript_ui_action(spec) is not None
+        settings = rscript_grps_layout["confscrn"]["controls"]
+        original_background_audio = _preferences.audio_when_unfocused
+        original_voice_stop = persistent.rscript_stop_voice_on_advance
+        try:
+            for name, expected in (("bgr_off", False), ("bgr_on", True)):
+                action = rscript_ui_action(settings[name])
+                action()
+                assert _preferences.audio_when_unfocused is expected
+                assert action.get_selected()
+                other = "bgr_on" if name == "bgr_off" else "bgr_off"
+                assert not rscript_ui_action(settings[other]).get_selected()
+            for name, expected in (("vocst_off", True), ("vocst_on", False)):
+                action = rscript_ui_action(settings[name])
+                action()
+                assert persistent.rscript_stop_voice_on_advance is expected
+                assert action.get_selected()
+        finally:
+            _preferences.audio_when_unfocused = original_background_audio
+            persistent.rscript_stop_voice_on_advance = original_voice_stop
+        for screen_name in ("rscript_compane", "preferences", "rscript_font_picker", "save", "load"):
+            renpy.show_screen(screen_name)
+            screen = renpy.get_screen(screen_name)
+            screen.update()
+            if screen_name == "rscript_compane":
+                buttons = []
+                screen.visit_all(lambda d: buttons.append(d) if isinstance(d, renpy.display.behavior.ImageButton) else None)
+                assert len(buttons) == 13, len(buttons)
+            renpy.hide_screen(screen_name)
+        original_newest = store.FileNewest
+        try:
+            store.FileNewest = lambda slot: slot == 1
+            renpy.show_screen("save")
+            renpy.get_screen("save").update()
+            renpy.hide_screen("save")
+        finally:
+            store.FileNewest = original_newest
+        original_language = _preferences.language
+        _preferences.language = "zh"
+        assert rscript_layouts()["compane"]["items"]["qload"][:2] == (9, 4)
+        assert rscript_grps_layout["compane"]["items"]["qload"][:2] != (9, 4)
+        assert len(rscript_layouts()["compane"]["controls"]) == 13
+        _preferences.language = original_language
         calls = []
         old_say = renpy.say
         old_queue = store.queue_draw

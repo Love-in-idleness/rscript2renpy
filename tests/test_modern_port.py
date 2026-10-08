@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evermaiden"))
 from build_evermaiden_rscript import build_evermaiden, IMAGE_FOLDERS
 from modern_tsc import compile_overlays
+from grps_layout import UI_ACTIONS, collect_layout
 
 
 def main():
@@ -21,6 +22,33 @@ def main():
         for folder in ("scr", "grpe", "grpo", "grpo_ex", "grps", "bgm", "voice", "wav", *IMAGE_FOLDERS):
             (base / folder).mkdir(parents=True)
         (patch / "scr").mkdir(parents=True)
+        for folder, bindings in UI_ACTIONS.items():
+            pane = base / 'grps' / folder
+            pane.mkdir()
+            names = ['bg', *bindings]
+            entries = []
+            for n, name in enumerate(names):
+                shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png', pane / (name + '.png'))
+                entries.append('<Item x="%d" y="3" flag="8">%s</Item>' % (n * 32, name))
+            (pane / '.meta.xml').write_text('<Canvas><Width>1280</Width><Height>720</Height><Items>' + ''.join(entries) + '</Items></Canvas>')
+        unknown = base / 'grps/new_panel'
+        unknown.mkdir()
+        shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png', unknown / 'body.png')
+        (unknown / '.meta.xml').write_text('<Canvas><Width>32</Width><Height>32</Height><Items><Item x="-2" y="1">body</Item></Items></Canvas>')
+        assert collect_layout(base)['new_panel']['items']['body'] == (-2, 1, 32, 32)
+        for folder, names in (('savescrn', ('bg_save', 'bg_load', '0', 'exit')),
+                              ('fontwnd', ('bg', 'list', 'list_txt', 'prev', 'next', 'exit')),
+                              ('saveconf', ('icon', 'thmb', 'date', 'new'))):
+            pane = base / 'grps' / folder
+            pane.mkdir()
+            for name in names:
+                shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png', pane / (name + '.png'))
+            (pane / '.meta.xml').write_text('<Canvas><Width>1280</Width><Height>720</Height><Items>' + ''.join('<Item x="0" y="0">%s</Item>' % name for name in names) + '</Items></Canvas>')
+        from PIL import Image
+        Image.new('RGB', (2, 3), '#123456').save(unknown / 'opaque.bmp')
+        patch_ui = patch / 'grps/compane'
+        patch_ui.mkdir(parents=True)
+        (patch_ui / '.meta.xml').write_text('<Canvas><Width>64</Width><Height>24</Height><Items><Item x="9" y="4">qload</Item></Items></Canvas>')
         header = ';@gsc-byte-format modern-36\n;@gsc-schema modern\n'
         source = ('*flagset 1 3 1\n*dynsel "Question" 0\n'
                   '*dynans "Always" 1 0 0\n*dynans "Once" 2 5024 0\n'
@@ -43,16 +71,18 @@ def main():
         added.parent.mkdir()
         shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png', added)
         files = compile_overlays(base, [('zh', patch)])
-        assert len(files) == 7, files.keys()
-        assert "if _preferences.language == 'zh':" in files['0000.rpy']
-        assert 'jump _rscript_variant0_0000' in files['0000.rpy']
-        assert 'only available' in files['5000.rpy']
-        assert 'jump _rscript_variant0_0001' in files['0001.rpy']
-        assert 'label _g_0001_REP:' in files['0001.rpy']
-        assert 'jump _g_rscript_variant0_0001_REP' in files['0001.rpy']
-        assert 'label _g_rscript_variant0_0001_REP:' in files['variant0/0001.rpy']
-        assert 'label _rscript_variant0_0001_L_000006:' in files['variant0/0001.rpy']
-        script = files['variant0/0000.rpy']
+        assert len(files) == 5, files.keys()
+        assert "if _preferences.language == 'zh':" in files['scr/0000.rpy']
+        assert 'jump _rscript_variant0_0000' in files['scr/0000.rpy']
+        assert 'only available' in files['scr/5000.rpy']
+        assert 'jump _rscript_variant0_0001' in files['scr/0001.rpy']
+        assert 'label _g_0001_REP:' in files['scr/0001.rpy']
+        assert 'jump _g_rscript_variant0_0001_REP' in files['scr/0001.rpy']
+        assert 'label _g_rscript_variant0_0001_REP:' in files['scr/0001.rpy']
+        assert 'label _rscript_variant0_0001_L_000006:' in files['scr/0001.rpy']
+        script = files['scr/0000.rpy']
+        assert 'tl/zh/scr/0000.rpy' in files
+        assert not (project / 'game/images').exists()
         assert '_se 2 33' in script and '_se_on 2 0 0 0' in script
         assert '_insub _rscript_variant0_0000_L_' in script
         assert "_rscript_say ('Alice', '|漢字[かんじ]^nA^cyB', 0)" in script
@@ -63,9 +93,15 @@ def main():
         game = project / 'game'
         assert (game / 'wav/0033.wav').is_file()
         assert (game / 'wav/0034.ogg').is_file() and not (game / 'wav/0034.wav').exists()
-        assert (game / 'tl/zh/images/grpo_ex/9999.png').is_file()
-        assert (game / 'ui_features.rpy').read_bytes() == (ROOT / 'port_template/game/ui_features.rpy').read_bytes()
+        assert (game / 'tl/zh/grpo_ex/9999.png').is_file()
+        assert (game / 'engine/ui_features.rpy').read_bytes() == (ROOT / 'port_template/game/ui_features.rpy').read_bytes()
         assert not (game / 'evermaiden_compat.rpy').exists()
+        assert (game / 'grps/new_panel/.meta.xml').is_file()
+        with Image.open(game / 'grps/new_panel/opaque.png') as opaque:
+            assert opaque.getpixel((0, 0)) == (18, 52, 86, 255)
+        assert not (game / 'audio').exists() and not (game / 'scenario').exists()
+        assert (game / 'engine/06_rscript_modern.rpy').is_file()
+        assert (game / 'scr/0000.rpy').is_file() and (game / 'tl/zh/scr/5000.rpy').is_file()
         if len(sys.argv) > 1:
             shutil.copyfile(ROOT / 'tests/renpy_modern_port.rpy', game / 'modern_test.rpy')
             subprocess.run([str(Path(sys.argv[1]) / 'renpy.sh'), str(project), 'modernporttest',

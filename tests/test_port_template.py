@@ -4,11 +4,13 @@ from pathlib import Path
 import json
 from tempfile import TemporaryDirectory
 import sys
+from contextlib import redirect_stdout
+from io import StringIO
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import build, install_version  # noqa: E402
+from build_port import build, install_version, migrate_old_layout  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
@@ -56,8 +58,8 @@ def main() -> None:
             path.write_bytes(folder.encode("ascii"))
         (resources / "grps" / "ignored.wcg").write_bytes(b"raw")
         runtime_count, copied = build(resources, project)
-        assert runtime_count == 22
-        assert (project / "game/port_version.rpy").read_text() == \
+        assert runtime_count == 23
+        assert (project / "game/engine/port_version.rpy").read_text() == \
             'define config.version = "1.2"\n'
         android = {"version": "0.1", "numeric_version": 200,
                    "package": "test.keep.package", "permissions": ["VIBRATE"]}
@@ -69,10 +71,10 @@ def main() -> None:
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):
             assert (project / name).read_bytes() == notice
-        assert (project / "game" / "touch_controls.rpy").read_bytes() == \
+        assert (project / "game" / "engine" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
-        assert (project / "game" / "scenario" / "0000.rpy").is_file()
-        scene = (project / "game" / "scenario" / "0000.rpy").read_text(
+        assert (project / "game" / "scr" / "0000.rpy").is_file()
+        scene = (project / "game" / "scr" / "0000.rpy").read_text(
             encoding="utf-8")
         assert "_oload 1 2 3 4 0 'text with spaces'" in scene
         assert "_load 1 2 3 4 19 0" in scene
@@ -96,28 +98,28 @@ def main() -> None:
         assert flatten_unsupported_text_controls(numeric_body) == numeric_body
         assert "    pass\n" in scene
         assert flatten_unsupported_effects(scene, resources) == scene
-        assert "scene onlayer master" in (project / "game" / "script.rpy").read_text(
+        assert "scene onlayer master" in (project / "game" / "engine" / "script.rpy").read_text(
             encoding="utf-8")
         assert "label main_menu:\n    # Returning lets Ren'Py enter start" in (
-            project / "game" / "script.rpy").read_text(encoding="utf-8")
-        assert "    jump start" not in (project / "game" / "script.rpy").read_text(
+            project / "game" / "engine" / "script.rpy").read_text(encoding="utf-8")
+        assert "    jump start" not in (project / "game" / "engine" / "script.rpy").read_text(
             encoding="utf-8")
-        assert "screen rscript_compane():" in (project / "game" / "grps_ui.rpy").read_text(
+        assert "screen rscript_compane():" in (project / "game" / "engine" / "grps_ui.rpy").read_text(
             encoding="utf-8")
-        save_ui = (project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
-        save_ui += (project / "game" / "ui_features.rpy").read_text(encoding="utf-8")
+        save_ui = (project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
+        save_ui += (project / "game" / "engine" / "ui_features.rpy").read_text(encoding="utf-8")
         assert 'data["rscript_dt1"] = int(store._r[1])' in save_ui
         assert 'FileJson(slot, key="rscript_dt1")' in save_ui
-        assert 'images/grps/dt1_%04d.png' in save_ui
+        assert 'grps/dt1_%04d.png' in save_ui
         assert 'key "game_menu" action Function(rscript_open_game_menu)' in (
-            project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
+            project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert 'key "rollback" action Rollback()' in (
-            project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
+            project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert 'text rscript_menu_text(caption):' in (
-            project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
+            project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert collect_layout(resources) == {}
         assert "define rscript_grps_layout = {}" in (
-            project / "game" / "grps_layout.rpy").read_text(encoding="utf-8")
+            project / "game" / "engine" / "grps_layout.rpy").read_text(encoding="utf-8")
         masks = root / "masks" / "grps"
         masks.mkdir(parents=True)
         (masks / "ef16.png").write_bytes(b"mask")
@@ -144,21 +146,21 @@ def main() -> None:
             assert flatten_unsupported_effects(source, resources) == source
         assert "effect 99 flattened" in flatten_unsupported_effects(
             "    _oload 20 30 40 99 0 'unknown'\n", resources)
-        assert (project / "game" / "images" / "grps" / "ui" /
+        assert (project / "game" / "grps" / "ui" /
                 "panel.png").is_file()
         assert (project / "game" / "bgm" / "Track01.ogg").is_file()
         assert (project / "game" / "voice" / "0001.ogg").is_file()
         assert (project / "game" / "wav" / "0002.ogg").is_file()
         assert (project / "game" / "mov" / "0001.mpg").is_file()
-        assert '"mov/%04d.mpg"' in (project / "game" / "03_rscript_gfx.rpy").read_text(
+        assert '"mov/%04d.mpg"' in (project / "game" / "engine" / "03_rscript_gfx.rpy").read_text(
             encoding="utf-8")
-        keymap = (project / "game" / "keymap.rpy").read_text(encoding="utf-8")
+        keymap = (project / "game" / "engine" / "keymap.rpy").read_text(encoding="utf-8")
         assert "game_menu = [ 'K_ESCAPE', 'K_MENU', 'mousedown_3' ]" in keymap
         assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN', 'mousedown_5' ]" in keymap
-        assert not (project / "game" / "images" / "grps" /
+        assert not (project / "game" / "grps" /
                     "ignored.wcg").exists()
 
-        changed = project / "game" / "scenario" / "0000.rpy"
+        changed = project / "game" / "scr" / "0000.rpy"
         cache = changed.with_suffix(".rpyc")
         cache.write_bytes(b"obsolete cache")
         build(resources, project, force=True)
@@ -170,6 +172,26 @@ def main() -> None:
             pass
         else:
             raise AssertionError("different generated files must not be overwritten")
+
+        legacy = root / "legacy-project"
+        (legacy / "game/images/grps").mkdir(parents=True)
+        (legacy / "game/images/grps/old.png").write_bytes(b"preserved image")
+        (legacy / "game/scenario").mkdir()
+        (legacy / "game/scenario/0000.rpy").write_text("user scene edit\n")
+        (legacy / "game/saves").mkdir()
+        (legacy / "game/saves/1.save").write_bytes(b"player progress")
+        try:
+            migrate_old_layout(legacy, False)
+        except FileExistsError:
+            pass
+        else:
+            raise AssertionError("legacy migration requires explicit overwrite permission")
+        migrate_old_layout(legacy, True)
+        assert (legacy / "game/grps/old.png").read_bytes() == b"preserved image"
+        assert (legacy / ".rscript-legacy-layout/scenario/0000.rpy").read_text() == "user scene edit\n"
+        assert (legacy / "game/saves/1.save").read_bytes() == b"player progress"
+        assert not (legacy / "game/scenario").exists()
+        assert not (legacy / "game/images").exists()
 
         conf = resources / "grps" / "confscrn"
         conf.mkdir()
@@ -193,6 +215,15 @@ def main() -> None:
             '</Items></Canvas>', encoding="utf-8")
         assert collect_layout(resources)["confscrn"]["items"]["bg"] == (4, 2, 800, 600), \
             "metadata-only LWG entry must not override its same-named image"
+        (conf / "unknown_off.png").write_bytes((conf / "bg.png").read_bytes())
+        (conf / ".meta.xml").write_text(
+            '<Canvas><Width>800</Width><Height>600</Height><Items>'
+            '<Item x="0" y="0">unknown_off</Item></Items></Canvas>')
+        warning = StringIO()
+        with redirect_stdout(warning):
+            layout = collect_layout(resources)
+        assert layout["confscrn"]["unhandled"] == ["unknown_off"]
+        assert "unbound UI controls" in warning.getvalue()
 
     print("OK: generic port template")
 

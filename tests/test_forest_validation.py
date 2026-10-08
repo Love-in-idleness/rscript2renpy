@@ -54,16 +54,16 @@ def main() -> None:
             forest_builder.main(["build_forest_rscript.py",
                                  str(resources), str(project),
                                  "--language", "english=" + str(patch_dir)])
-        assert (project / "game" / "gui" / "rscript_cursor.png").read_bytes() == \
+        assert (project / "game" / "engine" / "gui" / "rscript_cursor.png").read_bytes() == \
             (ROOT / "runtime" / "gui" / "rscript_cursor.png").read_bytes()
         assert '"mov/%04d.mpg"' in (
-            project / "game" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
-        gfx_text = (project / "game" / "03_rscript_gfx.rpy").read_text(
+            project / "game" / "engine" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
+        gfx_text = (project / "game" / "engine" / "03_rscript_gfx.rpy").read_text(
             encoding="utf-8")
         assert 'RScriptText(text_value, kind = "oload"' in gfx_text
-        assert (project / "game" / "rscript_wrap.py").is_file()
-        assert (project / "game" / "00_rscript_wrap.rpy").is_file()
-        assert (project / "game" / "touch_controls.rpy").read_bytes() == \
+        assert (project / "game" / "engine" / "rscript_wrap.py").is_file()
+        assert (project / "game" / "engine" / "00_rscript_wrap.rpy").is_file()
+        assert (project / "game" / "engine" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
         assert ("xmaximum = font_size * persistent.rscript_oload_line_chars"
                 not in gfx_text)
@@ -73,13 +73,13 @@ def main() -> None:
                 (ROOT / "forest" / "android" / name).read_bytes()
         android = json.loads((project / "android.json").read_text(encoding="utf-8"))
         assert android["version"] == "1.2" and android["numeric_version"] == 12
-        assert 'define config.version = "1.2"' in (project / "game/port_version.rpy").read_text()
+        assert 'define config.version = "1.2"' in (project / "game/engine/port_version.rpy").read_text()
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):
             assert (project / name).read_bytes() == notice
         assert not (project / "android.keystore").exists()
         assert not (project / "bundle.keystore").exists()
-        gui = project / "game" / "gui.rpy"
+        gui = project / "game" / "engine" / "gui.rpy"
         gui_text = gui.read_text(encoding="utf-8")
         assert "gui.init(*rscript_screen_size)" in gui_text
         assert 'define gui.text_font = "fonts/NotoSansCJKjp-Regular.otf"' in gui_text
@@ -87,13 +87,13 @@ def main() -> None:
             assert (project / "game" / "fonts" / name).read_bytes() == \
                 (ROOT / "port_template" / "fonts" / name).read_bytes()
         assert "gui.scale(" not in gui_text
-        compat_text = (project / "game" / "forest_compat.rpy").read_text(
+        compat_text = (project / "game" / "engine" / "forest_compat.rpy").read_text(
             encoding="utf-8")
-        compat_text += (project / "game" / "text_features.rpy").read_text(encoding="utf-8")
-        compat_text += (project / "game" / "language_config.rpy").read_text(encoding="utf-8")
-        compat_text += (project / "game" / "00_rscript_wrap.rpy").read_text(encoding="utf-8")
-        compat_text += (project / "game" / "ui_features.rpy").read_text(encoding="utf-8")
-        compat_text += (project / "game" / "grps_ui.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "engine" / "text_features.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "engine" / "language_config.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "engine" / "00_rscript_wrap.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "engine" / "ui_features.rpy").read_text(encoding="utf-8")
+        compat_text += (project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert "    rscript_languages = [(None, 'Original'), ('english', 'english')]" in compat_text
         assert "screen forest_title_preferences():" in compat_text
         assert "default persistent.rscript_text_size = rscript_base_text_size" in compat_text
@@ -140,11 +140,11 @@ def main() -> None:
             "translate english python:\n    pass\n"
         assert (project / "game" / "tl" / "english" /
                 "keywords.json").read_text(encoding="utf-8") == keywords_text
-        text_runtime = (project / "game" / "05_rscript_text.rpy").read_text(
+        text_runtime = (project / "game" / "engine" / "05_rscript_text.rpy").read_text(
             encoding="utf-8")
-        command_runtime = (project / "game" / "02_rscript_cmd.rpy").read_text(
+        command_runtime = (project / "game" / "engine" / "02_rscript_cmd.rpy").read_text(
             encoding="utf-8")
-        util_runtime = (project / "game" / "01_util.rpy").read_text(
+        util_runtime = (project / "game" / "engine" / "01_util.rpy").read_text(
             encoding="utf-8")
         assert "renpy.pause(delay / 10.)" in command_runtime
         assert "text = eval(text)" in util_runtime

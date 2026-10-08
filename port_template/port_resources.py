@@ -6,22 +6,22 @@ import re
 import shutil
 import struct
 from PIL import Image, ImageOps
-
-IMAGE_FOLDERS = ("grpe", "grpf", "grpo", "grpo_bg", "grpo_bu", "grpo_ci",
-                 "grpo_f", "grpo_ex", "grpo_tp", "grpp", "grps",
-                 "grpo_bu0", "grpo_bu1", "grpo_cu", "grpo_ef", "grpo_map")
+from grps_layout import collect_layout
 
 
 def write_language_config(game: Path, labels, keywords, images=None) -> None:
-    (game / "language_config.rpy").write_text(
+    (game / "engine/language_config.rpy").write_text(
         "init -90 python:\n"
         "    rscript_languages = %r\n"
         "    rscript_wiki_keywords = %r\n"
         "    rscript_wiki_images = %r\n" % (labels, keywords, images or {}),
         encoding="utf-8")
+    (game / "language_config.rpy").unlink(missing_ok=True)
+    (game / "language_config.rpyc").unlink(missing_ok=True)
+    (game / "engine/language_config.rpyc").unlink(missing_ok=True)
 
 
-def copy_language_assets(patch: Path, language: str, game: Path) -> None:
+def copy_language_assets(patch: Path, language: str, game: Path, base: Path | None = None) -> None:
     # This directory is owned by the generated language package, not saves.
     target = game / "tl" / language
     if target.is_dir():
@@ -29,19 +29,22 @@ def copy_language_assets(patch: Path, language: str, game: Path) -> None:
     target.mkdir(parents=True)
     (target / "rscript_strings.rpy").write_text(
         "translate %s python:\n    pass\n" % language, encoding="utf-8")
-    for folder in IMAGE_FOLDERS:
-        copy_assets(patch / folder, "*.png", target / "images" / folder)
-        convert_bmp_assets(patch / folder, target / "images" / folder)
-        copy_assets(patch / folder, ".meta.xml", target / "images" / folder)
-    convert_masks(patch / "grps", target / "images" / "grps")
-    for source, destination in (("wav", "wav"), ("wav", "audio"),
-                                ("bgm", "bgm"), ("voice", "voice")):
-        copy_assets(patch / source, "*.ogg", target / destination)
-        for asset in (patch / source).rglob("*.wav"):
+    (target / "grps_layout.rpy").write_text(
+        "init 1 python:\n    rscript_grps_language_layouts[%r] = %r\n" %
+        (language, collect_layout(patch, fallback=base)), encoding="utf-8")
+    for folder in sorted(path for path in patch.iterdir() if path.is_dir()):
+        if folder.name in {"engine", "scr", "scenario", "saves", "tl"} or folder.name.startswith("."):
+            continue
+        output = target / folder.name
+        for pattern in ("*.png", "*.jpg", "*.webp", "*.ogg", ".meta.xml"):
+            copy_assets(folder, pattern, output)
+        convert_bmp_assets(folder, output)
+        convert_masks(folder, output)
+        for asset in folder.rglob("*.wav"):
             if not asset.with_suffix(".ogg").is_file():
-                output = target / destination / asset.relative_to(patch / source)
-                output.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(asset, output)
+                destination = output / asset.relative_to(folder)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(asset, destination)
     copy_movies(patch / "mov", target / "mov")
     if (patch / "keywords.json").is_file():
         read_keywords(patch / "keywords.json")
@@ -155,17 +158,21 @@ def convert_bmp_assets(source: Path, target: Path) -> None:
         if not asset.is_file() or asset.suffix.lower() != ".bmp":
             continue
         data = asset.read_bytes()
-        if (len(data) < 54 or data[:2] != b"BM" or
-                struct.unpack_from("<H", data, 28)[0] != 32 or
-                struct.unpack_from("<I", data, 30)[0] != 0 or
-                struct.unpack_from("<i", data, 22)[0] <= 0):
+        if len(data) < 54 or data[:2] != b"BM":
             raise ValueError("unsupported CodeX patch BMP: %s" % asset)
+        bits = struct.unpack_from("<H", data, 28)[0]
         with Image.open(asset) as bmp:
-            offset = struct.unpack_from("<I", data, 10)[0]
-            image = Image.frombytes("RGBA", bmp.size, data[offset:],
-                                    "raw", "BGRA", 0, -1)
-        # CodeX stores inverse alpha in the fourth byte of these BMPs.
-        image.putalpha(ImageOps.invert(image.getchannel("A")))
+            if bits == 32:
+                if (struct.unpack_from("<I", data, 30)[0] != 0 or
+                        struct.unpack_from("<i", data, 22)[0] <= 0):
+                    raise ValueError("unsupported CodeX patch BMP: %s" % asset)
+                offset = struct.unpack_from("<I", data, 10)[0]
+                image = Image.frombytes("RGBA", bmp.size, data[offset:],
+                                        "raw", "BGRA", 0, -1)
+                # CodeX uses inverse alpha only for its 32-bit BMPs.
+                image.putalpha(ImageOps.invert(image.getchannel("A")))
+            else:
+                image = bmp.convert("RGBA")  # Ordinary opaque/paletted BMP.
         output = (target / asset.relative_to(source)).with_suffix(".png")
         output.parent.mkdir(parents=True, exist_ok=True)
         image.save(output, "PNG")
@@ -182,4 +189,4 @@ def copy_movies(source: Path, target: Path, clear: bool = False) -> None:
                 obsolete.unlink()
     for asset in sorted(source.iterdir()):
         if asset.is_file() and asset.suffix.lower() == ".mpg":
-            shutil.copyfile(asset, target / (asset.stem + ".mpg"))
+            shutil.copyfile(asset, target / asset.name)

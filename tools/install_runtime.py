@@ -15,6 +15,16 @@ def clear_script_cache(path: Path) -> None:
     if path.suffix == ".rpy":
         path.with_suffix(".rpyc").unlink(missing_ok=True)
 
+def retire_legacy(path: Path, replacement: Path, force: bool) -> None:
+    """Remove only a known generated old path, after its replacement exists."""
+    if path == replacement:
+        return
+    if path.is_file():
+        if path.read_bytes() != replacement.read_bytes() and not force:
+            raise FileExistsError("refusing to remove different legacy file: %s" % path)
+        path.unlink()
+    clear_script_cache(path)
+
 def install(project: Path, force: bool = False) -> list[Path]:
     game = project / "game"
     if not game.is_dir():
@@ -22,13 +32,21 @@ def install(project: Path, force: bool = False) -> list[Path]:
 
     installed = []
     for source in sorted(path for path in RUNTIME.rglob("*") if path.is_file()):
-        target = game / source.relative_to(RUNTIME)
+        relative = source.relative_to(RUNTIME)
+        target = game / "engine" / relative
+        legacy = game / relative
+        if legacy.is_file() and legacy.read_bytes() != source.read_bytes() and not force:
+            raise FileExistsError("refusing to overwrite different legacy file: %s" % legacy)
         if target.exists() and target.read_bytes() != source.read_bytes() and not force:
             raise FileExistsError("refusing to overwrite different file: %s" % target)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)
         clear_script_cache(target)
+        retire_legacy(legacy, target, force)
         installed.append(target)
+    gui = game / "gui"
+    if gui.is_dir() and not any(gui.iterdir()):
+        gui.rmdir()
     return installed
 
 

@@ -2,7 +2,7 @@ default persistent.rscript_say_line_chars = 19
 default persistent.rscript_oload_line_chars = 20
 
 python early:
-    import rscript_wrap
+    from engine import rscript_wrap
 
     # Ren'Py 8.5.3 text.py: Layout shapes glyphs before linebreak_nobreak,
     # then copies the virtual layout's splits to the drawable layout. This

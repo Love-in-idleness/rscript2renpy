@@ -8,7 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import build, install_android, copy_file, clear_script_cache  # noqa: E402
+from build_port import build, install_android, copy_file, copy_engine_file, clear_script_cache, retire_legacy  # noqa: E402
 from port_resources import (parse_language_options, read_keywords,
                             copy_language_assets, write_language_config)  # noqa: E402
 from khime_tsc import compile_scene  # noqa: E402
@@ -56,10 +56,10 @@ def build_khime(resources: Path, project: Path, force: bool = False,
     copy_file(assets / "icon.ico", project / "icon.ico", force)
     copy_file(assets / "icon.png", game / "icon.png", force)
     for source in (Path(__file__).parent / "game").glob("*.rpy"):
-        copy_file(source, game / source.name, force)
+        copy_engine_file(source, game, force)
     keywords = {None: read_keywords(resources / "keywords.json")}
     for language, patch in patches:
-        copy_language_assets(patch, language, game)
+        copy_language_assets(patch, language, game, base=resources)
         keywords[language] = read_keywords(patch / "keywords.json")
     labels = [(None, marker or "Original")] + [(name, name) for name, _ in patches]
     if zero_resources is not None:
@@ -70,10 +70,11 @@ def build_khime(resources: Path, project: Path, force: bool = False,
                 target = game / "tl" / language / "rscript_strings.rpy"
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text("translate %s python:\n    pass\n" % language, encoding="utf-8")
-    (game / "zero_config.rpy").write_text(
+    (game / "engine/zero_config.rpy").write_text(
         "init 1 python:\n    khime_zero_available = %r\n" % (zero_resources is not None),
         encoding="utf-8")
-    clear_script_cache(game / "zero_config.rpy")
+    clear_script_cache(game / "engine/zero_config.rpy")
+    retire_legacy(game / "zero_config.rpy", game / "engine/zero_config.rpy", force)
     write_language_config(game, labels,
                           {name: entries for name, entries in keywords.items()
                            if entries})

@@ -32,7 +32,7 @@ init python:
         store.rscript_bgm_format = "khime_zero/bgm/Track%02d.ogg"
         store.rscript_se_format = "khime_zero/wav/%04d.ogg"
         store.rscript_speaker_images_override = True
-        store.rscript_ui = dict(rscript_ui, text_image_root="images/khime_zero/grps",
+        store.rscript_ui = dict(rscript_ui, text_image_root="khime_zero/grps",
                                speaker_zoom=1.25, inline_zoom=1.25, speaker_pos=(6, 15))
         store.text_indent = 97 * 1.25
         store.cur_textbox = 1
@@ -52,7 +52,7 @@ init python:
 # Register the side story's 640x480 images as 800x600 displayables.
 init 5 python:
     for path in renpy.list_files():
-        if path.startswith("images/khime_zero/") and path.endswith(".png"):
+        if path.startswith("khime_zero/") and path.endswith(".png"):
             tag = " ".join(path[7:-4].lower().split("/"))
             renpy.image(tag, Transform(Image(path), zoom=1.25))
 

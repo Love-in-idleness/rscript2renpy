@@ -59,7 +59,7 @@ transform dissolve_zoom_out(xpos, ypos, anchor):
 define fast_dissolve = Dissolve(.2)
 define rscript_slow_dissolve = Dissolve(2.0)
 define rscript_dither = ImageDissolve(
-    Tile("gui/rscript_dither.svg"), 0.5, ramplen = 8)
+    Tile("engine/gui/rscript_dither.svg"), 0.5, ramplen = 8)
 
 transform oload_fade:
     alpha 0.0
@@ -772,7 +772,7 @@ init python:
 
         ef_time = step * wait / 100.
 
-        return ImageDissolve("images/grps/ef%02d.png" % effect, ef_time * 2, ramplen = 64, reverse = True)
+        return ImageDissolve("grps/ef%02d.png" % effect, ef_time * 2, ramplen = 64, reverse = True)
 
 
 

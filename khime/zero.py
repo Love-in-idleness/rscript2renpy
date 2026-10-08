@@ -73,7 +73,7 @@ def install_zero(resources: Path, patches, game: Path, content: str, force: bool
     for root, target in [(resources, game),
                          *((patch, game / "tl" / language) for language, patch in patches)]:
         for folder in IMAGE_FOLDERS:
-            output = target / "images" / "khime_zero" / folder
+            output = target / "khime_zero" / folder
             copy_tree(root / folder, output, {".png", ".xml"}, force)
             convert_bmp_assets(root / folder, output)
             convert_masks(root / folder, output)
@@ -86,4 +86,4 @@ def install_zero(resources: Path, patches, game: Path, content: str, force: bool
                         continue
                     check_pcm(wav)
                     copy_file(wav, output / wav.with_suffix(".wav").name, force)
-    write_scenario(content, game / "scenario" / "khime_zero_2001.rpy", resources, force)
+    write_scenario(content, game / "khime_zero/scr/2001.rpy", resources, force)

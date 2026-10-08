@@ -286,7 +286,9 @@ def compile_overlays(resources: Path, patches=()) -> dict[str, str]:
             if not source.stem.isdigit():
                 raise ValueError("numeric scene filename required: %s" % source)
             prefix = "rscript_variant%d_" % index
-            files["variant%d/%s.rpy" % (index, source.stem)] = compile_scene(
+            destination = ("scr/%s.rpy" % source.stem if language is None else
+                           "tl/%s/scr/%s.rpy" % (language, source.stem))
+            files[destination] = compile_scene(
                 source, adapter="modern", scene_prefix=prefix)
             routes.setdefault(source.stem, []).append((language, prefix + source.stem))
             for name, offset in read_tsc(source, "modern").named_entries:
@@ -303,7 +305,8 @@ def compile_overlays(resources: Path, patches=()) -> dict[str, str]:
         else:
             lines.append("    $ raise Exception(%r)" %
                          ("Scene %s is only available in its language/DLC patch" % scene))
-        files["%s.rpy" % scene] = "\n".join(lines) + "\n"
+        key = "scr/%s.rpy" % scene
+        files[key] = "\n".join(lines) + "\n" + files.get(key, "")
     for (scene, name), destinations in entry_routes.items():
         lines = ["label _g_%s_%s:" % (scene, name)]
         for language, target in destinations:
@@ -313,5 +316,5 @@ def compile_overlays(resources: Path, patches=()) -> dict[str, str]:
         base = next((target for language, target in destinations if language is None), None)
         # Native named lookup falls back to the scene beginning if not found.
         lines.append("    jump %s" % (base or "_%s" % scene))
-        files["%s.rpy" % scene] += "\n" + "\n".join(lines) + "\n"
+        files["scr/%s.rpy" % scene] += "\n" + "\n".join(lines) + "\n"
     return files

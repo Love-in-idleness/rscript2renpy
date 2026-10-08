@@ -62,12 +62,12 @@ def main():
         build_khime(resources, project, languages=["jp", "zh=" + str(main_patch)],
                     zero_resources=zero, zero_languages=["zh=" + str(patch)])
         game = project / "game"
-        assert (game / "tl/zh/images/grpo_tp/9105.png").is_file()
-        assert (game / "images/khime_zero/grpo_bu/1902.png").is_file()
-        assert (game / "tl/zh/images/khime_zero/grpo_bu/1902.png").is_file()
-        assert not (game / "images/grpo_bu/1902.png").exists()
+        assert (game / "tl/zh/grpo_tp/9105.png").is_file()
+        assert (game / "khime_zero/grpo_bu/1902.png").is_file()
+        assert (game / "tl/zh/khime_zero/grpo_bu/1902.png").is_file()
+        assert not (game / "grpo_bu/1902.png").exists()
         assert (game / "khime_zero/bgm/Track02.wav").is_file()
-        assert "khime_zero_available = True" in (game / "zero_config.rpy").read_text()
+        assert "khime_zero_available = True" in (game / "engine/zero_config.rpy").read_text()
         if len(sys.argv) > 3:
             sdk = Path(sys.argv[3])
             shutil.copy2(ROOT / "tests/renpy_khime_zero.rpy", game / "zero_test.rpy")
@@ -101,8 +101,8 @@ def main():
             (game / "zero_test.rpy").unlink()
             (game / "zero_test.rpyc").unlink(missing_ok=True)
         build_khime(resources, project, force=True)
-        assert "khime_zero_available = False" in (game / "zero_config.rpy").read_text()
-        assert "khime_zero_unlocked()" not in (game / "scenario/0101.rpy").read_text()
+        assert "khime_zero_available = False" in (game / "engine/zero_config.rpy").read_text()
+        assert "khime_zero_unlocked()" not in (game / "scr/0101.rpy").read_text()
         (zero / "grpo/0101.png").unlink()
         try:
             prepare_zero(zero, [])

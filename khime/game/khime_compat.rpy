@@ -29,7 +29,7 @@ python early:
         if not number:
             renpy.hide("khime_face", layer=IMAGE_LAYER)
             return
-        path = "images/grpf/%04d.png" % number
+        path = "grpf/%04d.png" % number
         if renpy.loadable(path):
             renpy.show("khime_face", what=Image(path), layer=IMAGE_LAYER,
                        at_list=[Transform(xpos=store.khime_face_x,

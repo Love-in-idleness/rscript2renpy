@@ -93,7 +93,7 @@ def main() -> None:
             assert original.size == window_icon.size == (32, 32)
             assert original.convert("RGBA").tobytes() == window_icon.convert("RGBA").tobytes()
         for folder in ("grpe", "grpo_tp"):
-            with Image.open(project / "game" / "tl" / "zh" / "images" /
+            with Image.open(project / "game" / "tl" / "zh" /
                             folder / "9001.png") as translated:
                 assert translated.getpixel((0, 0)) == (0, 0, 0, 0)
                 assert translated.getpixel((1, 0)) == (0, 255, 0, 255)
@@ -110,19 +110,19 @@ def main() -> None:
         android = json.loads((project / "android.json").read_text())
         assert android["version"] == "1.2" and android["numeric_version"] == 12
         assert android["package"] == "io.github.loveinidleness.khime"
-        assert (project / "game" / "touch_controls.rpy").read_bytes() == \
+        assert (project / "game" / "engine" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
-        script = (project / "game" / "script.rpy").read_text(encoding="utf-8")
+        script = (project / "game" / "engine" / "script.rpy").read_text(encoding="utf-8")
         assert "scene onlayer master\n    scene black onlayer black" in script
-        credits = (project / "game" / "scenario" / "1110.rpy").read_text(encoding="utf-8")
+        credits = (project / "game" / "scr" / "1110.rpy").read_text(encoding="utf-8")
         assert "_oload effect 4 flattened to 0" not in credits
         assert "_oload 20 400 188 4 0" in credits
         assert "unsupported text control ^fm flattened to empty" not in credits
         assert "'^fm企画・シナリオ'" in credits
         for name in ("04_rscript_audio.rpy", "character.rpy", "keymap.rpy",
                      "03_rscript_gfx.rpy", "00_rscript_wrap.rpy", "rscript_wrap.py"):
-            assert (project / "game" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
-        options = (project / "game" / "options.rpy").read_text(encoding="utf-8")
+            assert (project / "game" / "engine" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
+        options = (project / "game" / "engine" / "options.rpy").read_text(encoding="utf-8")
         assert "config.version" not in options
         assert 'define config.window_icon = "icon.png"' in options
         assert "init offset = -130" in options
@@ -134,17 +134,17 @@ def main() -> None:
         assert 'rscript_voice_format = "voice/%04d.ogg"' in options
         assert "rscript_ctc_x = 729" in options
         assert 729 + 24 + 8 == 800 - layout["compane"]["size"][0]
-        click = (project / "game" / "ui_features.rpy").read_text(encoding="utf-8")
+        click = (project / "game" / "engine" / "ui_features.rpy").read_text(encoding="utf-8")
         assert 'key "game_menu" action Function(rscript_open_game_menu)' in click
         assert 'key "rollback" action Rollback()' in click
         assert "rscript_text what:" in click
         assert "xalign 0.5" in click and "text_align 0.5" in click
         assert "execute_append((None, repr(eval(value))))" in (
-            project / "game" / "khime_compat.rpy").read_text(encoding="utf-8")
-        keymap = (project / "game" / "keymap.rpy").read_text(encoding="utf-8")
+            project / "game" / "engine" / "khime_compat.rpy").read_text(encoding="utf-8")
+        keymap = (project / "game" / "engine" / "keymap.rpy").read_text(encoding="utf-8")
         assert "'mousedown_3'" in keymap
         assert "'mousedown_4'" in keymap and "'mousedown_5'" in keymap
-        assert '"mov/%04d.mpg"' in (project / "game" / "03_rscript_gfx.rpy").read_text(
+        assert '"mov/%04d.mpg"' in (project / "game" / "engine" / "03_rscript_gfx.rpy").read_text(
             encoding="utf-8")
     print("OK: compiled %d Khime TSC files and title click flow" % len(sources))
 

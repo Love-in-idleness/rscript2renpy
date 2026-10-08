@@ -101,12 +101,12 @@ python early:
         old_loadable = renpy.loadable
         try:
             for first in (0, 1):
-                images = {"images/grps/nonbl/%d.png" % number
+                images = {"grps/nonbl/%d.png" % number
                           for number in range(first, first + 10)}
                 renpy.loadable = lambda path: path in images
                 for page in range(1, 11):
                     assert rscript_page_image(str(page)) == (
-                        "images/grps/nonbl/%d.png" % (page - 1 + first))
+                        "grps/nonbl/%d.png" % (page - 1 + first))
                 assert rscript_page_image("auto") is None
                 assert rscript_page_image("11") is None
         finally:
@@ -285,9 +285,9 @@ python early:
         skin_screen.visit_all(collect_skin)
         assert "问题" in skin_texts and "译文" in skin_texts, skin_texts
         assert not any("<01>" in text or "<02>" in text for text in skin_texts)
-        assert "images/grps/sel_q01/body.png" in skin_images, skin_images
-        assert "images/grps/sel_a02/body.png" in skin_images, skin_images
-        assert "images/grps/sel_a00/body.png" not in skin_images, skin_images
+        assert "grps/sel_q01/body.png" in skin_images, skin_images
+        assert "grps/sel_a02/body.png" in skin_images, skin_images
+        assert "grps/sel_a00/body.png" not in skin_images, skin_images
         assert len(skin_actions) == 1 and skin_actions[0].value == 7, skin_actions
         renpy.hide_screen("rscript_choice")
         # Inspect real native actions: rev targets the recorded choice,

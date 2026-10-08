@@ -41,12 +41,12 @@ python early:
         for tag in ("khime_zero grpe 0655", "khime_zero grpo_bu 1902"):
             image = renpy.get_registered_image(tag)
             assert image.zoom == 1.25
-        assert rscript_text_image_path("gf008") == "images/grps/gf008.png"
+        assert rscript_text_image_path("gf008") == "grps/gf008.png"
         main_ui = rscript_ui
         registers = dict(persistent._reg)
         khime_zero_begin()
         assert main_ui is not rscript_ui and "text_image_root" not in main_ui
-        assert rscript_text_image_path("gf008") == "images/khime_zero/grps/gf008.png"
+        assert rscript_text_image_path("gf008") == "khime_zero/grps/gf008.png"
         assert rscript_speaker_images_override and not rscript_use_speaker_images
         assert layer_x_grid == layer_y_grid == 1.25
         assert folder[21] == "khime_zero grpo_bu"

@@ -38,9 +38,11 @@ init python:
         return Return(value)
 
     def rscript_textbox_background():
-        path = "images/grps/tbox%02d/back.png" % store.cur_textbox
+        path = "grps/tbox%02d/back.png" % store.cur_textbox
         background = path if renpy.loadable(path) else Solid("#000000d0")
-        return Transform(background, alpha=persistent.rscript_textbox_opacity)
+        origin = rscript_layouts().get("tbox%02d" % store.cur_textbox, {}).get("items", {}).get("back", (0, 0))
+        return Transform(background, xoffset=origin[0], yoffset=origin[1],
+                         alpha=persistent.rscript_textbox_opacity)
 
     def rscript_choice_asset(caption):
         try:
@@ -52,7 +54,7 @@ init python:
                 return None
         except (TypeError, ValueError, IndexError):
             return None
-        path = "images/grps/sel_a%02d/body.png" % number
+        path = "grps/sel_a%02d/body.png" % number
         return number if renpy.loadable(path) else None
 
     def rscript_menu_panel(caption, prefix):
@@ -68,9 +70,9 @@ init python:
             if number is not None:
                 caption = ""
         folder = "%s%02d" % (prefix, number if number is not None else 0)
-        if folder not in rscript_grps_layout:
+        if folder not in rscript_layouts():
             folder = prefix  # Native fallback is the unnumbered archive.
-        if "body" not in rscript_grps_layout.get(folder, {}).get("items", {}):
+        if "body" not in rscript_layouts().get(folder, {}).get("items", {}):
             folder = None
         return folder, caption
 
@@ -80,7 +82,7 @@ init python:
         if number is None:
             number = FileJson(slot, key="forest_dt1")
         if isinstance(number, int) and number > 0:
-            path = "images/grps/dt1_%04d.png" % number
+            path = "grps/dt1_%04d.png" % number
             if renpy.loadable(path):
                 return path
         return None
@@ -90,9 +92,9 @@ init python:
             return None
         number = int(page)
         # Khime names page artwork 0..9 (displaying 1..10); Forest uses 1..10.
-        if renpy.loadable("images/grps/nonbl/0.png"):
+        if renpy.loadable("grps/nonbl/0.png"):
             number -= 1
-        path = "images/grps/nonbl/%d.png" % number
+        path = "grps/nonbl/%d.png" % number
         return path if renpy.loadable(path) else None
 
     def rscript_preference_action(setting, value):
@@ -145,7 +147,7 @@ screen rscript_speaker(who):
             pos rscript_ui.get("speaker_pos", (0, 7))
 
 screen say(who, what, center=False):
-    $ textbox = rscript_grps_layout.get("tbox%02d" % cur_textbox, {})
+    $ textbox = rscript_layouts().get("tbox%02d" % cur_textbox, {})
     $ textpos = textbox.get("items", {}).get("text", (34, 12))
     $ textpos = rscript_ui.get("text_pos", textpos)
     if rscript_use_speaker_images or rscript_speaker_images_override:
@@ -157,6 +159,10 @@ screen say(who, what, center=False):
         yalign 1.0
         xsize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[0]
         ysize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[1]
+        if "front" in textbox.get("items", {}):
+            add "grps/tbox%02d/front.png" % cur_textbox:
+                pos textbox["items"]["front"][:2]
+                alpha persistent.rscript_textbox_opacity
         if rscript_use_speaker_images or rscript_speaker_images_override or rscript_ui.get("show_speaker", False):
             use rscript_speaker(who)
         if center:

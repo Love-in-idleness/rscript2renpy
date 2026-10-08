@@ -9,7 +9,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import install_base, install_android, copy_file, write_scenario  # noqa: E402
+from build_port import install_base, install_android, copy_engine_file, write_scenario  # noqa: E402
 from port_resources import (copy_assets, convert_masks, copy_movies,
                             parse_language_options, read_keywords,
                             strip_json_comments, write_language_config,
@@ -95,7 +95,7 @@ def wiki_image_links(entries: list[tuple[str, str, str]]) -> dict[str, str]:
 
 def write_language_patch(base: Path, patch: Path, language: str,
                          game: Path) -> None:
-    copy_language_assets(patch, language, game)
+    copy_language_assets(patch, language, game, base=base)
 
 def patch_text_expression(language_texts, item, kind, default):
     replacements = {
@@ -385,9 +385,8 @@ def main(argv: list[str]) -> int:
     android_source = here / "forest" / "android"
     game = target / "game"
     validate_inputs(root)
-    install_base(root, target, force=True,
-                 image_folders=("grpo_bg", "grpo_bu", "grpo_ci", "grpo_f"))
-    scenario = game / "scenario"
+    install_base(root, target, force=True)
+    scenario = game / "scr"
     scenario.mkdir(parents=True, exist_ok=True)
     install_android(android_source, target, force=True)
     language_labels = [(None, language_marker or "Original")]
@@ -409,7 +408,7 @@ def main(argv: list[str]) -> int:
                 wiki_images[language] = links
     write_language_config(game, language_labels, wiki_keywords, wiki_images)
     for overlay in (Path(__file__).parent / "game").glob("*.rpy"):
-        copy_file(overlay, game / overlay.name, force=True)
+        copy_engine_file(overlay, game, force=True)
     patch_texts = {}
     patch_insertions = {}
     patch_operands = {}

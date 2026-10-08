@@ -15,8 +15,10 @@
 
 原始 GSC、WCG、封装 WAV、XFL 和 LWG 不会复制进 Ren'Py 工程；可直接播放的
 普通 PCM WAV 可以复制，有同名提取 Ogg 时只复制 Ogg。
-语言补丁的 `grp*` 目录还可包含 CodeX 32 位 BMP；模板会还原其反向透明度，
-转换为 `tl/<语言>/images/` 下的 PNG，同名 BMP 优先于补丁 PNG。
+资源目录还可包含 BMP；CodeX 32 位 BMP 还原反向透明度，普通 BMP 保持不透明，
+转换为原相对位置下的 PNG，同名 BMP 优先于 PNG。
+语言资源安装到 `game/tl/<语言>/<原目录>/`，剧本生成到 `game/scr/`；
+所有运行时、公共界面和游戏覆盖层安装到 `game/engine/`。
 
 ## 开始新移植
 
@@ -38,17 +40,23 @@
 模板拒绝覆盖内容不同的现有文件。确认要同步模板或运行时更新时才使用
 `--force`。
 
+升级旧生成工程时，`--force` 将旧 `images/scenario/audio` 目录归档到工程根
+`.rscript-legacy-layout/`，迁移图像并清理已知旧生成模块的缓存，保留玩家存档。
+
 模板还会在工程根目录生成 `android-presplash.png` 和
 `android-downloading.png`，替换 Android 构建时默认的 Ren'Py loading 图片。
 两者使用同一张项目说明图，标明 GitHub 地址，并提醒玩家自行使用正版游戏文件构建。
 
-`grps/confscrn`、`grps/compane`、`grps/savescrn`、`sel_a*`、`sel_q*`、`tbox*` 有 PNG 时还会读取各目录的
-`.meta.xml` 画布尺寸和坐标，生成 `grps_layout.rpy`。共用界面用原图实现设置、
+所有 `grps/**/.meta.xml` 都读取画布尺寸和坐标，生成 `engine/grps_layout.rpy`。
+主要菜单、选项和文本框有 PNG 却没有元数据时明确报错。共用界面用原图实现设置、
 存读档、选择项、对话/姓名牌和控制条；默认 `say` screen 已在公共层，
 `choice` screen 可 `use rscript_choice(items, prompt)`。
 存档时会将 `_r[1]` 记入存档元数据；若存在 `grps/dt1_NNNN.png`，存读档页按此编号显示原游戏章节图，旧存档或缺图时才回退到 Ren'Py 截图。
 缺少坐标元数据会在构建时明确报错，而不是生成位置不明的界面。标题流程和
-选择分支仍由各游戏脚本决定；素材命名或控制语义不同的作品需在专用适配层修改。
+选择分支仍由各游戏脚本决定。`grps_layout.UI_ACTIONS` 统一声明已知按钮动作，
+按元数据存在的按钮自动生成，不再遗漏快存/快读/重播/隐藏或字体选择；未知按钮明确警告，
+不凭文件名猜测动作。语言补丁元数据随语言切换；滑条、文本框前后图层、等待提示、
+存档预览也使用元数据。素材命名或控制语义不同的作品仍需适配。
 
 ## 效果兼容检查
 

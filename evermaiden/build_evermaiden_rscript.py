@@ -7,7 +7,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import install_base, copy_file, write_scenario, clear_script_cache
+from build_port import install_base, copy_engine_file, write_scenario, clear_script_cache
 from modern_tsc import compile_overlays
 from port_resources import (parse_language_options, copy_language_assets,
                             write_language_config, read_keywords)
@@ -25,20 +25,20 @@ def build_evermaiden(resources, project, force=False, languages=()):
             raise FileNotFoundError("converted resource directory missing: %s" % (resources / folder))
     # Validate every script before touching the generated project.
     scenes = compile_overlays(resources, patches)
-    install_base(resources, project, force, image_folders=IMAGE_FOLDERS)
+    install_base(resources, project, force)
     game = project / "game"
-    for name, content in scenes.items():
-        write_scenario(content, game / "scenario" / name, resources, force)
     for source in (Path(__file__).parent / "game").glob("*.rpy"):
-        copy_file(source, game / source.name, force)
+        copy_engine_file(source, game, force)
     keywords = {None: read_keywords(resources / "keywords.json")}
     for language, patch in patches:
-        copy_language_assets(patch, language, game)
+        copy_language_assets(patch, language, game, base=resources)
         keywords[language] = read_keywords(patch / "keywords.json")
+    for name, content in scenes.items():
+        write_scenario(content, game / name, resources, force)
     write_language_config(game, [(None, marker or "Original")] +
                           [(language, language) for language, _ in patches],
                           {language: value for language, value in keywords.items() if value})
-    clear_script_cache(game / "language_config.rpy")
+    clear_script_cache(game / "engine/language_config.rpy")
     print("Wrote %s: %d original scenes, %d language packages" %
           (project, len(list((resources / "scr").glob("*.tsc"))), len(patches)))
     return scenes

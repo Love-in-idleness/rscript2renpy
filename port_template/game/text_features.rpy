@@ -74,7 +74,7 @@ init python:
                 persistent.rscript_line_spacing)
 
     def rscript_text_image_path(name):
-        return "%s/%s.png" % (rscript_ui.get("text_image_root", "images/grps"), name)
+        return "%s/%s.png" % (rscript_ui.get("text_image_root", "grps"), name)
 
     def rscript_g_tag(tag, argument):
         try:

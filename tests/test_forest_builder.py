@@ -17,6 +17,7 @@ from build_forest_rscript import (FOREST_COMPAT,
                                   menu_text, read_keywords, scene_strings,
                                   strip_json_comments, wiki_image_links)
 from rscript_tsc import read_tsc
+from grps_layout import UI_ACTIONS
 
 
 # Check the assembled shared base plus the game overlay, not an embedded copy.
@@ -146,7 +147,7 @@ def main() -> None:
         copy_movies(movie_source, movie_target, clear=True)
         assert not (movie_target / "old.MPG").exists()
         assert not (movie_target / "old.webm").exists()
-        assert (movie_target / "0001.mpg").read_bytes() == b"original MPEG"
+        assert (movie_target / "0001.MPG").read_bytes() == b"original MPEG"
     for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",
                  "NotoSerifCJK-Regular.ttc", "simhei.ttf"):
         font = ROOT / "port_template" / "fonts" / name
@@ -288,11 +289,10 @@ def main() -> None:
         "screen forest_title_preferences():", 1)[0]
     title_menu = FOREST_COMPAT.split("screen forest_title_preferences():", 1)[1].split(
         "screen choice(items):", 1)[0]
-    assert 'if _preferences.language in rscript_wiki_keywords:' in game_menu
-    assert 'Function(rscript_set_wiki, True)' in game_menu
-    assert 'Function(rscript_set_wiki, False)' in game_menu
-    assert 'selected=persistent.rscript_wiki_mode' in game_menu
-    assert 'selected=not persistent.rscript_wiki_mode' in game_menu
+    assert 'for name, spec in layout.get("controls", {}).items():' in game_menu
+    assert UI_ACTIONS['confscrn']['gef_on'] == ('effects', True)
+    assert UI_ACTIONS['confscrn']['gef_off'] == ('effects', False)
+    assert 'SetField(persistent, "rscript_wiki_mode", args[0])' in FOREST_COMPAT
     assert 'textbutton ("维基' not in game_menu
     assert 'rscript_set_wiki' not in title_menu
     assert 'prefix = "gg" if wiki_enabled else "gf"' in FOREST_COMPAT
@@ -319,9 +319,8 @@ def main() -> None:
     assert 'text "Text Speed"' not in FOREST_COMPAT
     assert 'text "[persistent.rscript_text_cps]"' not in FOREST_COMPAT
     assert "min_width 48" in FOREST_COMPAT
-    assert '("msp_slw", "text speed", 25)' in FOREST_COMPAT
-    assert '("msp_nom", "text speed", 75)' in FOREST_COMPAT
-    assert '("msp_now", "text speed", 0)' in FOREST_COMPAT
+    for name, speed in (('msp_slw', 25), ('msp_nom', 75), ('msp_now', 0)):
+        assert UI_ACTIONS['confscrn'][name] == ('preference', 'text speed', speed)
     assert "slow_cps persistent.rscript_text_cps" in FOREST_COMPAT
     say_screen = FOREST_COMPAT[FOREST_COMPAT.index(
         "screen say(who, what, center=False):"):]
@@ -375,19 +374,19 @@ def main() -> None:
     assert 'config.game_menu_action = Function(rscript_open_game_menu)' in FOREST_COMPAT
     assert 'if store.menu_enabled and not rscript_touch_locked():' in FOREST_COMPAT
     assert 'screen preferences(title_mode=False):' in FOREST_COMPAT
-    assert 'if not title_mode:' in FOREST_COMPAT
-    assert 'ShowMenu("save"), save_enabled' in FOREST_COMPAT
-    assert 'ShowMenu("load"), save_enabled' in FOREST_COMPAT
+    assert 'title_mode and spec[0] in ("save", "load", "close", "quit")' in FOREST_COMPAT
+    assert 'if kind in ("save", "load", "quick_save", "quick_load"):' in FOREST_COMPAT
+    assert 'return bool(save_enabled) and not rscript_touch_locked()' in FOREST_COMPAT
     assert 'style rscript_volume_bar is bar:' in FOREST_COMPAT
-    assert '"images/grps/nonbl/%d.png" % number' in FOREST_COMPAT
-    assert 'renpy.loadable("images/grps/nonbl/0.png")' in FOREST_COMPAT
+    assert '"grps/nonbl/%d.png" % number' in FOREST_COMPAT
+    assert 'renpy.loadable("grps/nonbl/0.png")' in FOREST_COMPAT
     assert 'data["rscript_dt1"] = int(store._r[1])' in FOREST_COMPAT
     assert 'FileJson(slot, key="forest_dt1")' in FOREST_COMPAT
-    assert 'images/grps/dt1_%04d.png' in FOREST_COMPAT
+    assert 'grps/dt1_%04d.png' in FOREST_COMPAT
     assert 'FileScreenshot' in FOREST_COMPAT
     assert '"selected_plain_folders": ("confscrn",)' in FOREST_COMPAT
     assert 'register_rscript_ui_aliases("forest")' in FOREST_COMPAT
-    assert '"gui/rscript_cursor.png", 0, 0' in (
+    assert '"engine/gui/rscript_cursor.png", 0, 0' in (
         ROOT / "runtime" / "cursor.rpy").read_text(encoding="utf-8")
     with Image.open(ROOT / "runtime" / "gui" / "rscript_cursor.png") as cursor:
         assert cursor.format == "PNG" and cursor.size == (32, 32)

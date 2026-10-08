@@ -112,7 +112,7 @@ def main():
                     header + text.replace('"body"', '"译文"').replace('"overlay"', '"字幕"')
                     .replace('"append"', '"追加"').replace('"<01>answer"', '"<02>选项"'), encoding="utf-8")
                 build_khime(resources, project, languages=["jp", "zh=" + str(patch)])
-                assert "('zh', 'zh')" in (project / "game/language_config.rpy").read_text()
+                assert "('zh', 'zh')" in (project / "game/engine/language_config.rpy").read_text()
                 assert (project / "game/tl/zh/rscript_strings.rpy").is_file()
                 (patch / "scr/0000.tsc").write_text(
                     header + text.replace("*font 20", "*font 21"), encoding="utf-8")
@@ -123,17 +123,17 @@ def main():
                 else:
                     raise AssertionError("Khime must not silently flatten non-text patch changes")
             for filename in ("text_features.rpy", "touch_controls.rpy", "gui.rpy"):
-                assert (project / "game" / filename).read_bytes() == \
+                assert (project / "game" / "engine" / filename).read_bytes() == \
                     (ROOT / "port_template/game" / filename).read_bytes()
             save_directory = ("Forest-rscript2renpy" if name == "Forest" else
                               "KhimeKusaritop-rscript2renpy")
             assert ('define config.save_directory = "%s"' % save_directory) in \
-                (project / "game/options.rpy").read_text(encoding="utf-8")
-            assert "config.version" not in (project / "game/options.rpy").read_text()
-            assert (project / "game/port_version.rpy").read_text() == \
+                (project / "game/engine/options.rpy").read_text(encoding="utf-8")
+            assert "config.version" not in (project / "game/engine/options.rpy").read_text()
+            assert (project / "game/engine/port_version.rpy").read_text() == \
                 'define config.version = "1.2"\n'
             for source in (ROOT / "runtime").glob("*.rpy"):
-                assert (project / "game" / source.name).read_bytes() == source.read_bytes()
+                assert (project / "game" / "engine" / source.name).read_bytes() == source.read_bytes()
             if len(sys.argv) > 1:
                 shutil.copy2(ROOT / "tests/renpy_shared_features.rpy",
                              project / "game/shared_features_test.rpy")
@@ -158,8 +158,8 @@ def main():
                                        ("renpy_end", "OK: native end discards nested story calls"),
                                        ("renpy_boot_movies", "OK: native startup movies play in order only on launch")):
                     shutil.copy2(ROOT / "tests" / (driver + ".rpy"),
-                                 project / "game/scenario/0000.rpy")
-                    (project / "game/scenario/0000.rpyc").unlink(missing_ok=True)
+                                 project / "game/scr/0000.rpy")
+                    (project / "game/scr/0000.rpyc").unlink(missing_ok=True)
                     driver_environment = (environment | {"RENPY_SKIP_SPLASHSCREEN": ""}
                                           if driver in ("renpy_end", "renpy_boot_movies") else environment)
                     with subprocess.Popen(command, env=driver_environment, stdout=subprocess.PIPE,

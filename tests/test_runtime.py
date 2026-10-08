@@ -34,13 +34,14 @@ def main() -> None:
     assert 'text.replace("%",  "%%")' not in combined
     assert "rscript_wrap.normalize_boundaries" in combined
     assert "{k=-2}" not in combined
-    assert '"grps wait00 body"\n            xpos 4\n            ypos 5' in combined
+    assert '"grps wait00 body"' in combined
+    assert 'rscript_layouts().get("wait00"' in combined
     assert 'config.mouse = {' in combined
-    assert '"gui/rscript_cursor.png", 0, 0' in combined
+    assert '"engine/gui/rscript_cursor.png", 0, 0' in combined
     assert "transform rscript_zoom_in:" in combined
     assert "elif effect == 1:" in combined
     assert "define rscript_dither = ImageDissolve(" in combined
-    assert 'Tile("gui/rscript_dither.svg")' in combined
+    assert 'Tile("engine/gui/rscript_dither.svg")' in combined
     assert "im.Tile" not in combined
     assert "elif effect == 4:" in combined
     assert "elif effect == 2:" in combined
@@ -58,11 +59,11 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 22
-        assert (project / "game" / "rscript_wrap.py").is_file()
+        assert len(installed) == 23
+        assert (project / "game" / "engine" / "rscript_wrap.py").is_file()
         assert all(path.is_file() for path in installed)
-        assert (project / "game" / "gui" / "rscript_cursor.png").is_file()
-        assert (project / "game" / "gui" / "rscript_dither.svg").is_file()
+        assert (project / "game" / "engine" / "gui" / "rscript_cursor.png").is_file()
+        assert (project / "game" / "engine" / "gui" / "rscript_dither.svg").is_file()
 
     print("OK: 19 generic RScript runtime modules and shared glyph breaker")
 

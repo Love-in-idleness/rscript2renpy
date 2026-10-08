@@ -40,7 +40,7 @@ LiarsoftTool 2.1 当前生成的命令式 TSC（`*TXT`、`*load`、标签等）�
 python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
-该命令会把通用运行时（含共享折行器）和光标复制到 Ren'Py 工程的 `game/` 目录。除非使用
+该命令会把通用运行时（含共享折行器）和光标复制到 Ren'Py 工程的 `game/engine/` 目录。除非使用
 `--force`，否则不会覆盖内容不同的已有文件。
 
 Forest 与 khime 的对话、追加对话、文本对象使用统一中日俄禁则，按最终字体的
@@ -50,7 +50,10 @@ Forest 与 khime 的对话、追加对话、文本对象使用统一中日俄禁
 ### 新游戏移植模板
 
 `port_template/` 是新游戏的半成品模板，负责安装通用运行时、复制已转换资源及
-游戏专用 lowerer 生成的 `scenario/*.rpy`。新项目引用该模板，不复制维护另一套；每款游戏只在
+游戏专用 lowerer 生成的剧本。输出保留原资源目录：剧本在 `game/scr/`，图像在
+`game/grps/` 等原目录，音频在 `game/bgm/voice/wav/`；运行时、公共界面和游戏覆盖层统一在
+`game/engine/`。模板扫描全部 `grps/**/.meta.xml`，自动绑定已知原图控件，未知控件明确警告。
+新项目引用该模板，不复制维护另一套；每款游戏只在
 自己的目录实现 TSC lowering、方言及专用行为。模板不会调用
 LiarsoftTool，也不会把原始 GSC/WCG/封装 WAV/XFL/LWG 复制进 Ren'Py 工程；可直接播放的
 普通 PCM WAV 允许复制。完整步骤和
@@ -130,7 +133,7 @@ SimHei 不是开源字体，来源与权利说明见
 生成器只扫描 `scr/*.tsc`。原始 GSC 是否保留在资源目录中不影响生成结果。
 
 仓库保存了从《Forest》原版提取的 32×32 光标。安装通用运行时或运行 Forest
-生成器时，它会复制为 `game/gui/rscript_cursor.png` 并自动启用；以后其他移植
+生成器时，它会复制为 `game/engine/gui/rscript_cursor.png` 并自动启用；以后其他移植
 项目也统一使用这一光标。
 
 生成器还需要 Python 3 和 Pillow。Forest 的原始 MPG 会直接复制到工程，
@@ -184,7 +187,7 @@ python3 tools/install_runtime.py /path/to/renpy-project
 ```
 
 The command copies the runtime, shared glyph line breaker, and cursor into the
-project's `game/` directory. Existing different files are not overwritten
+project's `game/engine/` directory. Existing different files are not overwritten
 unless `--force` is specified.
 
 Forest and khime use one language-independent kinsoku rule set for dialogue,
@@ -209,7 +212,10 @@ opcodes and rendering modes must be implemented and verified per game.
 ## New-game port template
 
 `port_template/` is a deliberately incomplete starter that installs the shared
-runtime and copies converted assets plus game-specific `scenario/*.rpy` output.
+runtime and copies converted assets plus game-specific scripts. Generated projects
+retain native resource directories (`game/scr`, `game/grps`, `game/bgm`, etc.);
+runtime, shared UI and adapters live in `game/engine`. All `grps/**/.meta.xml`
+files are scanned; known controls are bound and unknown controls produce warnings.
 Forest and Khime builds also install a shared Android loading notice with the
 project URL and an instruction to build from legitimately owned game files.
 See [`port_template/README.md`](port_template/README.md) for the workflow and
@@ -287,7 +293,7 @@ remains white.
 
 The repository carries the original 32x32 Forest cursor as the shared RScript
 cursor. Runtime installation and the Forest generator copy it to
-`game/gui/rscript_cursor.png`; future game adapters use the same asset.
+`game/engine/gui/rscript_cursor.png`; future game adapters use the same asset.
 
 The generator only reads the directory supplied by the user. It expects
 `scr/*.tsc`, PNG files under the `grp*` directories, OGG files

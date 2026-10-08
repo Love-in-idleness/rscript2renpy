@@ -29,9 +29,16 @@ python3 evermaiden/build_evermaiden_rscript.py \
 其他语言下偷偷执行。命名回想入口 `REP001` 等也按语言路由。
 请只加载可信补丁；游戏中切换语言不保证处于不同剧情结构的旧存档仍然兼容。
 
-`--force` 允许覆盖不同内容的生成文件，不用于混合两套运行时。升级旧移植时
-应移走旧 `evermaiden_compat.rpy/.rpyc` 与旧 `scenario/`，再重新生成；保留存档。
+`--force` 允许覆盖不同内容的生成文件，不用于混合两套运行时。旧目录结构升级时，
+生成器将 `images/scenario/audio` 移到工程根的 `.rscript-legacy-layout/`，
+清理已知旧生成模块和缓存，保留存档和归档中的手工脚本。
 新适配使用独立存档目录 `Evermaiden-shared-rscript2renpy`，不迁移旧适配进度。
+
+输出剧本在 `game/scr/`，中文覆盖在 `game/tl/zh/scr/`；图像、声音、视频保留
+原目录名和相对位置，不加 `images/` 或 `audio/` 中间层。解释器、公共菜单、
+游戏补丁、版本和语言配置统一在 `game/engine/`。
+公共元数据绑定覆盖 `compane` 的全部 13 个按钮，以及设置页字体选择、
+播放/静音、语音停止、速度、跳过、滑条和底部动作；字体列表复用 `fontwnd` 图片与坐标。
 
 ## 已知边界
 
@@ -48,6 +55,11 @@ python3 evermaiden/build_evermaiden_rscript.py \
 - 本次转换资源中未找到脚本引用的 `voice/5/2703`（`2320`）与 `wav/2527`
   （`4250`）；日文/中文脚本都有此引用，保留编号，不替换成其他音频。
 - lint 不统计自定义 `_rscript_say` 的正文，统计中的对话数不能证明剧情为空。
+- 设置页 `bgr_on/off`（Silent Mode）映射到 Ren'Py 的失焦时静音设置，
+  原游戏语义已由用户确认。素材 `bgr_off.png` 显示 ON（后台不播放），
+  `bgr_on.png` 显示 OFF（后台继续播放）；不能按文件后缀理解静音状态。
+  `vocst_off/on` 同样分别表示点击停止／不停止语音。实际窗口失焦行为仍需桌面验证。
+- 原字体选择窗口使用便携的字体文件列表，不复刻系统字体枚举和双列预览。
 - 验证命令：`python3 -B tests/test_modern_port.py /opt/apps/renpy`，以及
   `/opt/apps/renpy/renpy.sh /path/to/renpy-project lint`。算法、SDK 无图形检查、lint
   与完整游玩/画面/音频/Android 实机验证必须分开看待。
@@ -63,8 +75,14 @@ python3 evermaiden/build_evermaiden_rscript.py \
 - Khime builder 的本机真实资源测试没有全部通过：其日文 credits 文本断言与
   本机中文版资源不一致，未修改断言掩盖此差异。
 - 已生成 `/home/idleness/Source/renpy/Evermaiden`。Ren'Py lint 退出码 0，
-  无语法/初始化错误；仍提示三个非 ASCII 音频文件名和源脚本中的不可达分支。
+  无语法/初始化错误；仍提示两个非 ASCII 音频文件名和源脚本中的不可达分支。
+- 目录迁移、完整控件动作、语言元数据覆盖、字体选择和存读档界面更新检查通过；
+  公共资源复制也覆盖普通 24 位 BMP（不应用 CodeX 32 位 BMP 的反向透明度）。
 - 当前环境没有可用的 X11 图形连接；未启动实际游戏，未确认画面、完整剧情、
   音频播放或 Android 实机效果。上述测试不是完整移植成功的证明。
+
+可在有图形连接的桌面运行独立原图检查工程（不执行实际游戏剧情）：
+`python3 -B tests/run_grps_capture.py /opt/apps/renpy /path/to/prepared-resources /tmp/grps-preview`。
+它输出设置页、控制条、字体窗口截图。本次尝试因 SDL 无可用视频设备失败，未取得像素验证结果。
 
 仓库不包含 Evermaiden 原游戏/汉化/DLC 资源，不创建发布包。

@@ -41,9 +41,23 @@ evermaiden/game/            1280×720、现代文本/音频编号与布局默认
 点击 `No` 只关闭确认框，保留当前菜单与进度。提示和 `Yes`／`No` 不随剧情语言翻译。
 
 当前统一版本为 `1.2`，安卓版本代码最低为 `12`。公共构建流程生成
-`game/port_version.rpy`，并更新 `android.json` 的版本；保留已有更高的版本代码，
+`game/engine/port_version.rpy`，并更新 `android.json` 的版本；保留已有更高的版本代码，
 以及本机包名、权限和其他构建配置。RAPT 打包时仍可能按其原生规则使用更高的时间戳版本代码。
 Forest／Khime 的游戏配置和安卓配置源文件不再保留重复版本值。
+
+生成工程保留原始资源目录和场景文件名：`game/scr/*.rpy`、`game/grps/`、
+`game/grpe/`、`game/bgm/`、`game/voice/`、`game/wav/`、`game/mov/`。
+语言覆盖同样位于 `game/tl/<语言>/scr/` 及对应原资源目录；不生成 `variantN/` 文件夹。
+所有运行时、公共界面、游戏覆盖层、版本及语言配置放在 `game/engine/`；字体仍在 `game/fonts/`。
+旧工程重建时，`--force` 将 `images/scenario/audio` 旧目录移到工程外层的
+`.rscript-legacy-layout/`，迁移图像并清理已知旧生成模块及缓存，不清除存档。
+旧目录中的手工脚本可从此归档恢复，但不会与新脚本同时加载。
+
+公共模板扫描全部 `grps/**/.meta.xml`，按画布、坐标、实际图像尺寸生成布局；
+`grps_layout.UI_ACTIONS` 统一维护已确认的控件名到 Ren'Py 动作的映射。
+控制条按元数据实际存在的按钮生成，包括快存、快读、重播、隐藏等，不用游戏白名单裁剪。
+设置页字体选择、滑条、存档预览与等待提示同样复用元数据；语言补丁元数据随语言切换。
+未知按钮在构建时列入 `unhandled` 并发出警告；元数据只给位置，不能自动推导未知按钮语义。
 
 Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 保留专属
 剧本降级器和参数策略；补丁对齐、界面与点击行为只在公共层维护。
