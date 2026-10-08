@@ -426,6 +426,18 @@ transform grayscale(img):
 
 init python:
 
+    def rscript_arc_position(start, end, fraction, direction):
+        import math
+        angle = math.pi * min(1.0, max(0.0, fraction))
+        dx, dy = (end[0] - start[0]) / 2., (end[1] - start[1]) / 2.
+        return (start[0] + dx * (1 - math.cos(angle)) - direction * dy * math.sin(angle),
+                start[1] + dy * (1 - math.cos(angle)) + direction * dx * math.sin(angle))
+
+    def rscript_arc_move(start, end, anchor, dur, direction, trans, st, at):
+        trans.xpos, trans.ypos = map(absolute, rscript_arc_position(start, end, st / max(dur, .001), direction))
+        trans.anchor = anchor
+        return 0 if st < dur else None
+
     def rscript_layer_visibility(layer, trans, st, at):
         # Keep the loaded image and its effects; enabl is visibility, not cls.
         trans.alpha = float(bool(store.layer_enabled.get(layer, 1)))
@@ -718,6 +730,7 @@ init python:
         dur = 0.5 if speed == 0 else speed / 16.0
 
         xpos, ypos = store.layer_pos.get(layer, (0, 0))
+        origin = (xpos, ypos)
         anchor = layer_anchor.get(layer, (0.0, 0.0))
 
 
@@ -756,12 +769,16 @@ init python:
       10: move_shake_h_sm,
     }
 
-        if not effect in effects:
+        if effect not in effects and effect not in (5, 6):
             raise Exception("Move effect %d not defined." % effect)
 
         trans = Transform(xpos = xpos, ypos = ypos, anchor = anchor)
-        ef = effects[effect]
-        ef = ef(xpos, ypos, anchor, dur)
+        if effect in (5, 6):
+            # Native 413e40 -> 44d3c0: opposite half-circle paths, not shakes.
+            ef = Transform(function=renpy.curry(rscript_arc_move)(
+                origin, (xpos, ypos), anchor, dur, 1 if effect == 5 else -1))
+        else:
+            ef = effects[effect](xpos, ypos, anchor, dur)
 
 
 

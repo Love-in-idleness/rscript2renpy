@@ -46,6 +46,20 @@ python early:
         for answer in (("Always", 1, 0, 0), ("Once", 2, 5024, 0), ("Unlocked", 3, 5025, 1)):
             execute_dynans(repr(answer))
         from types import SimpleNamespace
+        assert rscript_arc_position((0, 0), (100, 0), 0, 1) == (0, 0)
+        for direction in (-1, 1):
+            middle = rscript_arc_position((0, 0), (100, 0), .5, direction)
+            assert abs(middle[0] - 50) < .001 and middle[1] == direction * 50
+            end = rscript_arc_position((0, 0), (100, 0), 1, direction)
+            assert abs(end[0] - 100) < .001 and abs(end[1]) < .001
+        execute_locgrid(RScriptArguments(Xgrid=2, Ygrid=3))
+        assert (store.layer_x_grid, store.layer_y_grid) == (2, 3)
+        execute_locgrid(RScriptArguments(Xgrid=0, Ygrid=0))
+        assert (store.layer_x_grid, store.layer_y_grid) == (1, 1)
+        _r[6503] = 6
+        captured_args = RScriptArguments(Effect="_r[6503]").resolved()
+        _r[6503] = 0
+        assert captured_args.Effect == 6
         args = SimpleNamespace(Effect=2, Layout=0, Mode=1)
         old_menu = renpy.display_menu
         captured = []
@@ -107,18 +121,18 @@ python early:
         try:
             renpy.with_statement = lambda *args, **kwargs: None
             renpy.pause = lambda *args, **kwargs: None
-            execute_tone(SimpleNamespace(Level=100, Mode=0))
+            execute_tone(RScriptArguments(Level=100, Mode=0))
             execute_queue(None)
-            execute_tone(SimpleNamespace(Level=0, Mode=0))
-            execute_tonedep(SimpleNamespace(Depth=0))
+            execute_tone(RScriptArguments(Level=0, Mode=0))
+            execute_tonedep(RScriptArguments(Depth=0))
             execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
             assert store.tone_level == 0 and not renpy.showing(TONE_TAG, TONE_LAYER)
             execute_queue(None)
-            execute_tone(SimpleNamespace(Level=50, Mode=1))
-            execute_tonedep(SimpleNamespace(Depth=20))
+            execute_tone(RScriptArguments(Level=50, Mode=1))
+            execute_tonedep(RScriptArguments(Depth=20))
             execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
             assert (store.tone_level, store.tone_color, store.tonedep) == (50, "white", 39)
-            execute_tone(SimpleNamespace(Level=0, Mode=0))
+            execute_tone(RScriptArguments(Level=0, Mode=0))
             execute_queue(None)
             execute_gload(SimpleNamespace(CGNum=1020, Colormode=0))
             execute_gmove(SimpleNamespace(Effect=0, xLoc=0, yLoc=-608, Speed=0))
@@ -249,8 +263,8 @@ python early:
             # those buttons are focused. Click screens must not redraw them.
             store.folder[40] = "grpo_map"
             loadcls(40, 0, cg=9, xpos=285, ypos=118)
-            execute_tonedep(SimpleNamespace(Depth=40))
-            execute_tone(SimpleNamespace(Level=50, Mode=0))
+            execute_tonedep(RScriptArguments(Depth=40))
+            execute_tone(RScriptArguments(Level=50, Mode=0))
             renpy.show_screen("rscript_click_screen", options=options, previews=previews, layers=native_layers)
             screen = renpy.get_screen("rscript_click_screen")
             screen.update()
@@ -311,7 +325,7 @@ python early:
             scene.get_displayable_by_tag(IMAGE_LAYER, "layer19").visit_all(
                 lambda d: refs.append(d.name) if isinstance(d, renpy.display.image.ImageReference) else None)
             assert ("grpo_map", "0009") in refs and ("grpo_map", "0109") not in refs, refs
-            execute_tone(SimpleNamespace(Level=0, Mode=0))
+            execute_tone(RScriptArguments(Level=0, Mode=0))
             loadcls(0, 0, clear=True)
         finally:
             renpy.call_screen = old_click_screen

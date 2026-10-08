@@ -126,13 +126,18 @@ def main() -> None:
         assert flatten_unsupported_effects("    _update 16 10 10\n",
                                            root / "masks") == "    _update 16 10 10\n"
         dynamic = flatten_unsupported_effects("    _load 1 2 3 4 _r[9] 0\n",
-                                               resources)
+                                               resources, preserve_dynamic=False)
         assert "effect _r[9] flattened to 0 (not statically supported)" in dynamic
         preserved = flatten_unsupported_effects("    _load 1 2 3 4 _r[9] 0\n",
-                                                 resources, preserve_dynamic=True)
+                                                 resources)
         assert "_load 1 2 3 4 _r[9] 0" in preserved
         assert "preserved for runtime validation" in preserved
         assert "flattened" not in preserved
+        for command in ("_movi 1 2 3 6 8", "_movi 1 2 3 105 8",
+                        "_load 1 2 3 4 _r[6503] _r[904]",
+                        "_cls 1 _r[6501]", "_effect _r[6511] 0"):
+            result = flatten_unsupported_effects("    " + command + "\n", resources)
+            assert command in result and "flattened" not in result
         (masks / "ef11.msk").write_bytes(b"converted by install_base")
         assert flatten_unsupported_effects("    _update 11 10 10\n",
                                            root / "masks") == "    _update 11 10 10\n"

@@ -121,7 +121,7 @@ def migrate_old_layout(project: Path, force: bool) -> None:
 
 
 def write_scenario(content: str, destination: Path, resources: Path,
-                   force: bool = False, preserve_dynamic: bool = False) -> None:
+                   force: bool = False, preserve_dynamic: bool = True) -> None:
     result = flatten_unsupported_effects(content, resources,
                                          preserve_dynamic=preserve_dynamic)
     result = flatten_unsupported_text_controls(result)

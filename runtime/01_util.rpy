@@ -44,6 +44,11 @@ python early:
 
 
     class RScriptArguments(dict):
+        def resolved(self):
+            # Queued drawing must capture registers at the instruction, not
+            # read them again after the script changes them before update.
+            return RScriptArguments((name, getattr(self, name)) for name in self)
+
         def __getattr__(self, name):
             if name in self:
                 if isinstance(self[name], (int, float)):

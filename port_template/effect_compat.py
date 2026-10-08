@@ -26,7 +26,7 @@ COUNTS = {
     "_draw": 3, "_oaction": 2,
 }
 LOAD_EFFECTS = set(range(9)) | {10, 15, 16, 19} | set(range(20, 29))
-MOVE_EFFECTS = {0, 1, 2, 3, 7, 8, 9, 10}
+MOVE_EFFECTS = {0, 1, 2, 3, 5, 6, 7, 8, 9, 10}
 
 
 def _supported(command: str, field: str, value: int,
@@ -69,8 +69,8 @@ def _supported(command: str, field: str, value: int,
 
 def flatten_unsupported_effects(text: str, resources: Path,
                                 label: str = "RScript",
-                                preserve_dynamic: bool = False) -> str:
-    """Return RPY with unsupported literal or dynamic effects made safe."""
+                                preserve_dynamic: bool = True) -> str:
+    """Flatten unsupported literals; evaluate register operands at execution."""
     output = []
     for line in text.splitlines(keepends=True):
         body = line.rstrip("\r\n")

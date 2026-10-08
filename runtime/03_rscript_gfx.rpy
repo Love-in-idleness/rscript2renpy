@@ -367,7 +367,7 @@ python early:
         return args
 
     def execute_effect(args):
-        queue_draw(_execute_effect, args)
+        queue_draw(_execute_effect, args.resolved())
         process_draw_queue()
 
 
@@ -488,8 +488,8 @@ python early:
         return args
 
     def execute_locgrid(args):
-        layer_x_grid = args.Xgrid or 1
-        layer_y_grid = args.Ygrid or 1
+        store.layer_x_grid = args.Xgrid or 1
+        store.layer_y_grid = args.Ygrid or 1
 
     renpy.register_statement("_locgrid", parse = parse_locgrid, execute = execute_locgrid, lint = lint_undef)
 
@@ -577,7 +577,7 @@ python early:
         return args
 
     def execute_tone(args):
-        queue_draw(_execute_tone, args)
+        queue_draw(_execute_tone, args.resolved())
         process_draw_queue()
 
 
@@ -609,7 +609,7 @@ python early:
         return args
 
     def execute_tonedep(args):
-        queue_draw(_execute_tonedep, args)
+        queue_draw(_execute_tonedep, args.resolved())
         process_draw_queue()
 
     def _execute_tonedep(args):
