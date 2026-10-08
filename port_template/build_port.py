@@ -13,18 +13,65 @@ from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from install_runtime import install, clear_script_cache, retire_legacy  # noqa: E402
+from install_runtime import install, clear_script_cache, reject_legacy_paths  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
-from port_resources import convert_masks, convert_bmp_assets, read_keywords  # noqa: E402
+from port_resources import (convert_masks, convert_bmp_assets, read_keywords,
+                            copy_language_assets, write_language_config)  # noqa: E402
+from tsc_patches import scenario_sources  # noqa: E402
 
 
 PORT_VERSION = "1.3"
 ANDROID_VERSION_CODE = 13
 
 
+def validate_resources(root, *, directories=(), files=(), patterns=(), alternatives=()):
+    missing = [str(root / name) for name in directories if not (root / name).is_dir()]
+    missing.extend(str(root / name) for name in files if not (root / name).is_file())
+    if not scenario_sources(root / "scr"):
+        missing.append(str(root / "scr/*.tsc"))
+    missing.extend(str(root / pattern) for pattern in patterns if not any(root.glob(pattern)))
+    missing.extend(str(root / names[0]) for names in alternatives
+                   if not any((root / name).is_file() for name in names))
+    if missing:
+        raise FileNotFoundError("resources must be unpacked and converted first; missing:\n- " +
+                                "\n- ".join(missing))
+
+
+def assemble_port(resources, project, scenes, overlay, marker=None, patches=(), *,
+                  force=False, wiki_images=None, android=None, extra_languages=()):
+    """Install already compiled scenes using the same resource/overlay path."""
+    if not scenes:
+        raise ValueError("no compiled scenes")
+    labels = [(None, marker or "Original")] + [(name, name) for name, _ in patches]
+    labels.extend((name, name) for name in extra_languages
+                  if name not in {language for language, _ in labels})
+    keywords, images = {}, {}
+    for language, directory in [(None, resources), *patches]:
+        entries = read_keywords(directory / "keywords.json")
+        if entries:
+            keywords[language] = entries
+            if wiki_images and (links := wiki_images(entries)):
+                images[language] = links
+        # Invalid patch metadata must fail before replacing a language package.
+        if language is not None:
+            collect_layout(directory, fallback=resources)
+    install_base(resources, project, force)
+    game = project / "game"
+    if android:
+        install_android(android, project, force)
+    for source in (overlay / "game").glob("*.rpy"):
+        copy_engine_file(source, game, force)
+    for language, patch in patches:
+        copy_language_assets(patch, language, game, base=resources)
+    for name, content in scenes.items():
+        write_scenario(content, game / name, resources, force)
+    write_language_config(game, labels, keywords, images)
+
+
 def install_version(project: Path, force: bool = False) -> None:
+    reject_legacy_paths(project / "game", ("port_version.rpy", "port_version.rpyc"))
     destination = project / "game/engine/port_version.rpy"
     content = 'define config.version = "%s"\n' % PORT_VERSION
     if destination.exists() and destination.read_text(encoding="utf-8") != content and not force:
@@ -32,7 +79,6 @@ def install_version(project: Path, force: bool = False) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(content, encoding="utf-8")
     clear_script_cache(destination)
-    retire_legacy(project / "game/port_version.rpy", destination, force)
     android = project / "android.json"
     if android.is_file():
         settings = json.loads(android.read_text(encoding="utf-8"))
@@ -108,41 +154,8 @@ def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> in
 
 def copy_engine_file(source: Path, game: Path, force: bool) -> None:
     destination = game / "engine" / source.name
-    legacy = game / source.name
-    if legacy.is_file() and legacy.read_bytes() != source.read_bytes() and not force:
-        raise FileExistsError("refusing to overwrite different legacy file: %s" % legacy)
+    reject_legacy_paths(game, (source.name, source.with_suffix(".rpyc").name))
     copy_file(source, destination, force)
-    retire_legacy(legacy, destination, force)
-
-
-def migrate_old_layout(project: Path, force: bool) -> None:
-    game = project / "game"
-    old = [game / name for name in ("images", "scenario", "audio") if (game / name).is_dir()]
-    if not old:
-        return
-    if not force:
-        raise FileExistsError("legacy images/scenario layout requires --force: %s" % project)
-    archive = project / ".rscript-legacy-layout"
-    archive.mkdir(exist_ok=True)
-    # Old generated code must leave game/, otherwise Ren'Py loads it twice.
-    for source in old:
-        if source.name == "images":
-            for folder in list(source.iterdir()):
-                target = game / folder.name
-                if folder.is_dir() and not target.exists():
-                    shutil.move(str(folder), target)
-                elif folder.is_dir():
-                    for asset in folder.rglob("*"):
-                        if asset.is_file():
-                            copy_file(asset, target / asset.relative_to(folder), force=True)
-        destination = archive / source.name
-        if destination.exists():
-            # Preserve a previous migration; never replace its contents.
-            index = 1
-            while (archive / (source.name + "-%d" % index)).exists():
-                index += 1
-            destination = archive / (source.name + "-%d" % index)
-        shutil.move(str(source), destination)
 
 
 def write_scenario(content: str, destination: Path, resources: Path,
@@ -175,7 +188,8 @@ def install_base(resources: Path, project: Path, force: bool = False) -> tuple[i
     layout = "define rscript_grps_layout = %r\n" % collect_layout(resources)
 
     game.mkdir(parents=True, exist_ok=True)
-    migrate_old_layout(project, force)
+    reject_legacy_paths(game, ("images", "scenario", "audio", "grps_layout.rpy",
+                               "grps_layout.rpyc", "language_config.rpy", "language_config.rpyc"))
     install_version(project, force)
     installed = install(project, force=force)
     copied = 0
@@ -212,7 +226,6 @@ def install_base(resources: Path, project: Path, force: bool = False) -> tuple[i
         raise FileExistsError("refusing to overwrite different file: %s" % destination)
     destination.write_text(layout, encoding="utf-8")
     clear_script_cache(destination)
-    retire_legacy(game / "grps_layout.rpy", destination, force)
     copied += 1
     return len(installed), copied
 

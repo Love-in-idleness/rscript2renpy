@@ -18,6 +18,8 @@ Ren'Py 兼容运行时与移植工具。它提供寄存器模型、自定义 RSc
 Forest、Khime 和试验性 Evermaiden 共用 `runtime/`、`port_template/`，游戏差异放在各自的
 `game/*.rpy` 覆盖层。字体、文本/语言设置、Wiki、进度备份和安卓控制均由公共层
 维护，详见 [公共模板分层说明](docs/SHARED_TEMPLATE_MIGRATION.md)。
+三个生成器统一调用公共 early/modern 编译器与工程装配流程；不迁移旧文件布局
+或 `persistent.forest_*` 设置。旧布局需重新生成到新工程目录。
 
 除通用鼠标光标、Forest Android 应用图标、Khime 和 Evermaiden 应用图标外，本项目不包含
 游戏剧本、图像、音频、视频或可执行文件。
@@ -165,10 +167,13 @@ mixed encodings and version-specific evidence limits.
 The runtime now targets Ren'Py 8 and Python 3. Forest generation and lint have
 been verified with Ren'Py 8.5.
 
-Forest and Khime now share `runtime/` and `port_template/`; game-specific code
+Forest, Khime and Evermaiden share `runtime/` and `port_template/`; game-specific code
 lives in each game's `game/*.rpy` overlay. Fonts, text/language settings, Wiki
 links, progress backups and Android controls are maintained in the shared base.
 See [the architecture and migration notes](docs/SHARED_TEMPLATE_MIGRATION.md).
+All three builders use the shared early/modern compiler and project assembler.
+Legacy file layouts and `persistent.forest_*` settings are not migrated; generate
+legacy projects into a fresh output directory.
 
 This project is maintained and distributed directly from the Git repository.
 No new GitHub Releases or versioned release packages will be published.

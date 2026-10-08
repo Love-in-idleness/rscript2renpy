@@ -66,6 +66,15 @@ def main() -> None:
         assert all(path.is_file() for path in installed)
         assert (project / "game" / "engine" / "gui" / "rscript_cursor.png").is_file()
         assert (project / "game" / "engine" / "gui" / "rscript_dither.svg").is_file()
+        old = project / "game/01_defines.rpy"
+        old.write_text("old layout\n", encoding="utf-8")
+        try:
+            install(project, force=True)
+        except FileExistsError as error:
+            assert "fresh project" in str(error)
+        else:
+            raise AssertionError("old runtime must not be automatically moved or deleted")
+        assert old.read_text() == "old layout\n"
 
     print("OK: 19 generic RScript runtime modules and shared glyph breaker")
 

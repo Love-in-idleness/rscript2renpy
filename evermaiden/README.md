@@ -37,9 +37,9 @@ Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标，统一使用同�
 其他语言下偷偷执行。命名回想入口 `REP001` 等也按语言路由。
 请只加载可信补丁；游戏中切换语言不保证处于不同剧情结构的旧存档仍然兼容。
 
-`--force` 允许覆盖不同内容的生成文件，不用于混合两套运行时。旧目录结构升级时，
-生成器将 `images/scenario/audio` 移到工程根的 `.rscript-legacy-layout/`，
-清理已知旧生成模块和缓存，保留存档和归档中的手工脚本。
+`--force` 允许覆盖不同内容的生成文件，不用于混合两套运行时。
+不迁移旧 `images/scenario/audio` 布局或根目录旧运行时，检测到时明确报错，
+请使用新的输出工程目录；不会移动或删除旧文件。
 新适配使用独立存档目录 `Evermaiden-shared-rscript2renpy`，不迁移旧适配进度。
 
 输出剧本在 `game/scr/`，中文覆盖在 `game/tl/zh/scr/`；图像、声音、视频保留

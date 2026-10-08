@@ -10,7 +10,7 @@ from io import StringIO
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import build, install_version, migrate_old_layout  # noqa: E402
+from build_port import build, install_version  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
@@ -189,17 +189,15 @@ def main() -> None:
         (legacy / "game/saves").mkdir()
         (legacy / "game/saves/1.save").write_bytes(b"player progress")
         try:
-            migrate_old_layout(legacy, False)
+            build(resources, legacy, force=True)
         except FileExistsError:
             pass
         else:
-            raise AssertionError("legacy migration requires explicit overwrite permission")
-        migrate_old_layout(legacy, True)
-        assert (legacy / "game/grps/old.png").read_bytes() == b"preserved image"
-        assert (legacy / ".rscript-legacy-layout/scenario/0000.rpy").read_text() == "user scene edit\n"
+            raise AssertionError("legacy layout must fail instead of migrating files")
+        assert (legacy / "game/images/grps/old.png").read_bytes() == b"preserved image"
+        assert (legacy / "game/scenario/0000.rpy").read_text() == "user scene edit\n"
         assert (legacy / "game/saves/1.save").read_bytes() == b"player progress"
-        assert not (legacy / "game/scenario").exists()
-        assert not (legacy / "game/images").exists()
+        assert not (legacy / ".rscript-legacy-layout").exists()
 
         conf = resources / "grps" / "confscrn"
         conf.mkdir()

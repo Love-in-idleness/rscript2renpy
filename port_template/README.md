@@ -23,15 +23,17 @@
 ## 开始新移植
 
 1. 新建游戏专用目录，不复制 `port_template/` 或 `runtime/`。生成器从
-   `port_template.build_port` 导入 `build`，复用同一套装配和兼容检查。
-2. 在专用目录实现当前游戏的 TSC → RPY lowerer，把结果写到临时
-   `scenario/`，再调用通用 `build(resources, project, scenarios=...)`。
+   `port_template.build_port` 导入 `validate_resources`、`assemble_port`。
+2. 调用 `tsc_compiler.compile_scene` 或 `compile_overlays` 编译全部剧本，
+   得到以 `scr/0000.rpy` 等相对路径为键的字典，再调用
+   `assemble_port(resources, project, scenes, overlay, marker, patches)`。
+   新方言的通用能力优先在公共编译器补全，专用行为留在覆盖层。
 3. 游戏差异放在专用 `game/*.rpy` 覆盖文件中；音频命名与提示图位置通过
    `rscript_*_format`、`rscript_ctc_x/y` 配置，不改写安装后的共用文件。
 4. 运行构建入口；脚本会创建尚不存在的工程目录：
 
    ```bash
-   python3 port_template/build_port.py /path/to/prepared-resources /path/to/renpy-project
+   python3 <游戏目录>/build_<游戏>_rscript.py /path/to/prepared-resources /path/to/renpy-project
    ```
 
 5. 在游戏目录添加专用的界面、文本规则和标题流程；最后运行
@@ -40,8 +42,8 @@
 模板拒绝覆盖内容不同的现有文件。确认要同步模板或运行时更新时才使用
 `--force`。
 
-升级旧生成工程时，`--force` 将旧 `images/scenario/audio` 目录归档到工程根
-`.rscript-legacy-layout/`，迁移图像并清理已知旧生成模块的缓存，保留玩家存档。
+旧文件布局不受支持，不迁移或归档；使用新的输出工程目录。
+已有 RPY 的通用装配 CLI `build_port.py` 仍保留，但新游戏入口无需临时场景目录。
 
 模板还会在工程根目录生成 `android-presplash.png` 和
 `android-downloading.png`，替换 Android 构建时默认的 Ren'Py loading 图片。
@@ -96,9 +98,14 @@ Khime 通过 `build` 调用同一写入机制。写入运行时、界面和剧�
 `tsc_patches.language_patch_data` 在显式方言下对齐原文与补丁，
 允许新增 `font` 及配套 `wait/cls`，重定位分支；拒绝新增剧情逻辑。
 调用者明确传入可覆盖的 opcode，不自动放宽非文本参数校验。
-`modern_tsc.py` 复用 Khime 的 lowering 核心；`compile_overlays` 提供按语言整体
+`tsc_compiler.py` 统一 early/modern lowering；`compile_overlays` 提供按语言整体
 覆盖的场景与命名入口路由，适用于 Evermaiden 的中文/DLC 逻辑变化。它不放宽
 Forest/Khime 现有纯文本补丁的对齐规则。
+Forest、Khime、Evermaiden 共用 `build_port.validate_resources` 和
+`assemble_port`。各游戏只声明自己的资源要求、编译策略及覆盖层；
+剧本、补丁词典及补丁元数据预检失败时，不开始覆盖目标工程。
+旧 `images/scenario/audio` 布局或根目录旧运行时不自动迁移，即使 `--force`
+也会报错；请输出到新工程。当前布局的生成文件仍按原覆盖规则重建。
 
 ## 公共文本、语言与进度设置
 

@@ -16,8 +16,6 @@ def write_language_config(game: Path, labels, keywords, images=None) -> None:
         "    rscript_wiki_keywords = %r\n"
         "    rscript_wiki_images = %r\n" % (labels, keywords, images or {}),
         encoding="utf-8")
-    (game / "language_config.rpy").unlink(missing_ok=True)
-    (game / "language_config.rpyc").unlink(missing_ok=True)
     (game / "engine/language_config.rpyc").unlink(missing_ok=True)
 
 

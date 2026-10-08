@@ -5,13 +5,13 @@ import json
 from tempfile import TemporaryDirectory
 from textwrap import dedent
 from types import SimpleNamespace
-from unittest.mock import patch
 import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
 import build_forest_rscript as forest_builder  # noqa: E402
+from rscript_tsc import read_tsc  # noqa: E402
 
 validate_inputs = forest_builder.validate_inputs
 
@@ -48,12 +48,9 @@ def main() -> None:
             path.write_bytes(b"fixture")
         validate_inputs(resources)
         project = base / "project"
-        with patch.object(forest_builder, "copy_assets"), \
-                patch.object(forest_builder, "convert_masks"), \
-                patch.object(forest_builder, "copy_movies"):
-            forest_builder.main(["build_forest_rscript.py",
-                                 str(resources), str(project),
-                                 "--language", "english=" + str(patch_dir)])
+        forest_builder.main(["build_forest_rscript.py",
+                             str(resources), str(project),
+                             "--language", "english=" + str(patch_dir)])
         assert (project / "game" / "engine" / "gui" / "rscript_cursor.png").read_bytes() == \
             (ROOT / "runtime" / "gui" / "rscript_cursor.png").read_bytes()
         assert '"mov/%04d.mpg"' in (
@@ -193,7 +190,7 @@ def main() -> None:
             ";@gsc-structure-end\n")
         (resources / "scr" / "0000.tsc").write_text(old_tsc, encoding="utf-8")
         try:
-            forest_builder.read_tsc(resources / "scr" / "0000.tsc")
+            read_tsc(resources / "scr" / "0000.tsc")
         except ValueError as error:
             assert "obsolete TSC format" in str(error)
         else:
@@ -208,6 +205,43 @@ def main() -> None:
             current_tsc, encoding="utf-8")
         assert "    _say '^g999Edited text'" in forest_builder.compile_scene(
             resources / "scr" / "0000.tsc")
+        (resources / "voice/0001.ogg").write_bytes(b"fixture")
+        generated = project / "game/engine/port_version.rpy"
+        generated.write_text("untouched on invalid input\n", encoding="utf-8")
+        (patch_dir / "scr").mkdir()
+        patch_source = patch_dir / "scr/0000.tsc"
+        patch_source.write_text(tsc.replace("*end", "*gosub 99\n*end"), encoding="utf-8")
+        try:
+            forest_builder.main(["build", str(resources), str(project),
+                                 "--language", "english=" + str(patch_dir)])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid patch accepted")
+        assert generated.read_text() == "untouched on invalid input\n"
+        patch_source.unlink()
+        (patch_dir / "keywords.json").write_text("invalid JSON", encoding="utf-8")
+        try:
+            forest_builder.main(["build", str(resources), str(project),
+                                 "--language", "english=" + str(patch_dir)])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid keywords accepted")
+        assert generated.read_text() == "untouched on invalid input\n"
+        (patch_dir / "keywords.json").write_text(keywords_text, encoding="utf-8")
+        panel = patch_dir / "grps/confscrn"
+        panel.mkdir(parents=True)
+        (panel / "bg.png").write_bytes(b"missing metadata fixture")
+        try:
+            forest_builder.main(["build", str(resources), str(project),
+                                 "--language", "english=" + str(patch_dir)])
+        except ValueError as error:
+            assert ".meta.xml" in str(error)
+        else:
+            raise AssertionError("invalid patch metadata accepted")
+        assert generated.read_text() == "untouched on invalid input\n"
+        assert (project / "game/tl/english/keywords.json").read_text() == keywords_text
     print("OK: Forest input validation")
 
 

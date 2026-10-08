@@ -10,6 +10,35 @@ from tsc_vm import packed
 PATCH_INSERT_OPCODES = {13, 32, 36}
 
 
+def patch_text_expression(language_texts, item, kind, default):
+    replacements = {language: texts[(item.offset, kind)]
+                    for language, texts in language_texts.items()
+                    if (item.offset, kind) in texts}
+    return (("%r.get(_preferences.language, %r)" % (replacements, default), True)
+            if replacements else (repr(default), False))
+
+
+def emit_insertions(lines, insertions, offset):
+    for language, commands in insertions.items():
+        added = commands.get(offset, ())
+        if added:
+            lines.append("    if _preferences.language == %r:" % language)
+            lines.extend("        " + command for command in added)
+
+
+def emit_operand_variants(lines, overrides, item, statement):
+    variants = {language: mapping[item.offset]
+                for language, mapping in overrides.items()
+                if item.offset in mapping}
+    for index, (language, values) in enumerate(variants.items()):
+        lines.extend(("    %s _preferences.language == %r:" %
+                      ("if" if index == 0 else "elif", language),
+                      "        " + statement(values)))
+    if variants:
+        lines.append("    else:")
+    lines.append(("        " if variants else "    ") + statement(item.operands))
+
+
 def menu_text(value: str) -> str:
     asset = re.fullmatch(r"<@(\d+)>", value)
     if asset:

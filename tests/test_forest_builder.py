@@ -10,17 +10,17 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
-from build_forest_rscript import (FOREST_COMPAT,
-                                  compile_credits_scene, compile_scene,
-                                  convert_masks, copy_assets, copy_movies,
-                                  language_patch_data, language_patch_strings,
-                                  menu_text, read_keywords, scene_strings,
-                                  strip_json_comments, wiki_image_links)
+from build_forest_rscript import (compile_credits_scene, compile_scene,
+                                  language_patch_data, wiki_image_links)
+from port_resources import (convert_masks, copy_assets, copy_movies,
+                            read_keywords, strip_json_comments)
+from tsc_patches import menu_text, scene_strings
 from rscript_tsc import read_tsc
 from grps_layout import UI_ACTIONS
 
 
 # Check the assembled shared base plus the game overlay, not an embedded copy.
+FOREST_COMPAT = (ROOT / "forest/game/forest_compat.rpy").read_text(encoding="utf-8")
 FOREST_COMPAT += (ROOT / "port_template/game/text_features.rpy").read_text(encoding="utf-8")
 FOREST_COMPAT += (ROOT / "runtime/00_rscript_wrap.rpy").read_text(encoding="utf-8")
 FOREST_COMPAT += (ROOT / "port_template/game/ui_features.rpy").read_text(encoding="utf-8")
@@ -36,7 +36,7 @@ def main() -> None:
     builder_path = ROOT / "forest" / "build_forest_rscript.py"
     builder = builder_path.read_text(encoding="utf-8")
     assert "renpy.save_persistent()" in (ROOT / "runtime/01_defines.rpy").read_text()
-    assert "install_base(root, target" in builder
+    assert "assemble_port(root, target" in builder
     assert "audio_text.replace" not in builder
     assert "subprocess" not in builder
     assert "ffmpeg" not in builder
@@ -259,7 +259,8 @@ def main() -> None:
     assert "persistent.rscript_text_size // rscript_base_text_size" in FOREST_COMPAT
     assert "parse_rscript_text(repr(args.Text), True)" in RSCRIPT_OBJECTS
     assert 'RScriptText(text_value, kind = "oload"' in RSCRIPT_OBJECTS
-    assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in builder
+    assert 're.fullmatch(r"(?:\\^c[ygwk])+", name)' in (
+        ROOT / "port_template/tsc_patches.py").read_text()
     assert "screen say(who, what, center=False):" in FOREST_COMPAT
     assert "def rscript_text_settings(kind, base_size):" in FOREST_COMPAT
     assert FOREST_COMPAT.count('                id "what"') == 2
@@ -404,9 +405,8 @@ def main() -> None:
         changed[-2] = "^g999TRANSLATED"
         (patch_scr / source.name).write_text(
             patched.replace(first, '"'.join(changed), 1), encoding="utf-8")
-        old = next(value for (key, value) in scene_strings(source).items()
-                   if key[1] == "say")
-        assert language_patch_strings(resources / "scr", patch_scr)[old] == \
+        key = next(key for key in scene_strings(source) if key[1] == "say")
+        assert language_patch_data(resources / "scr", patch_scr)[0][source.name][key] == \
             "^g999TRANSLATED"
         first_voice = next(line for line in patched.splitlines()
                            if line.startswith("*voice "))

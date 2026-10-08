@@ -7,8 +7,9 @@
 runtime/                    RScript 指令、寄存器、图层/效果、文本度量、语音
 port_template/
   rscript_tsc.py, tsc_vm.py  当前 TSC 解析及表达式/VM 公共部分
-  tsc_patches.py             文字补丁对齐、字幕/等待/清除插入、参数覆盖校验
-  build_port.py             install_base + 场景装配/兼容检查
+  tsc_compiler.py           early/modern 共用编译循环，方言和适配策略显式区分
+  tsc_patches.py            补丁对齐、文本表达式、字幕插入、参数分支及校验
+  build_port.py             资源校验、公共装配、Android/覆盖层/语言包安装
   port_resources.py         图像/元数据/遮罩/原始 MPG/语言资源/keywords.json
   fonts/, android/          共用字体及 Android 启动说明
   game/
@@ -34,7 +35,7 @@ evermaiden/game/            1280×720、现代文本/音频编号与布局默认
 | 存档 | Ren'Py 原生用户存档及工程内同步副本 | `options.rpy` 指定各游戏独立、稳定的 `config.save_directory` |
 | 版本 | `build_port.py` 的 `PORT_VERSION` 生成 PC／Android 版本，安卓版本代码不倒退 | 各游戏保留包名、图标和其他平台设置，不另设版本号 |
 | Android | 触摸控制、原生 Auto、直接写系统相册、启动说明 | 应用名称、图标、RAPT 配置及锁定场景 |
-| 剧本 | 解析器、VM、补丁对齐、字幕插入、装配/兼容检查、编译缓存失效、启动视频机制 | Forest 5000 整体替换、视频顺序；各游戏方言/参数允许列表 |
+| 剧本 | early/modern 编译循环、解析器、VM、补丁对齐、字幕插入、装配/兼容检查、编译缓存失效、启动视频机制 | Forest 5000 整体替换、2500 图片编号纠错、视频顺序；各游戏方言/参数允许列表 |
 
 文字显示速度只在游戏内右键原图菜单调整，标题文字设置面板不提供速度入口。
 原图右键菜单及无资源回退菜单的“返回主界面／退出游戏”统一使用英文确认框，
@@ -54,9 +55,9 @@ Forest／Khime 的游戏配置和安卓配置源文件不再保留重复版本�
 不改素材或脚本坐标；正文、文本对象、菜单及跨层混合效果不进入位图合成，保持原生渲染。
 隔离 GL2 像素回归：`python3 -B tests/test_sprite_seams.py /path/to/renpy-sdk`。
 每组相邻位图增加一次纹理合成；实际动画观感和 Android GPU 性能仍需实机确认。
-旧工程重建时，`--force` 将 `images/scenario/audio` 旧目录移到工程外层的
-`.rscript-legacy-layout/`，迁移图像并清理已知旧生成模块及缓存，不清除存档。
-旧目录中的手工脚本可从此归档恢复，但不会与新脚本同时加载。
+不支持旧工程文件布局迁移。检测到 `images/scenario/audio` 旧目录或已知的
+根目录旧运行时模块时，即使指定 `--force` 也会报错，要求使用新的输出工程。
+生成器不会移动、归档或删除这些旧文件；当前布局重建仍会清理对应编译缓存。
 
 公共模板扫描全部 `grps/**/.meta.xml`，按画布、坐标、实际图像尺寸生成布局；
 `grps_layout.UI_ACTIONS` 统一维护已确认的控件名到 Ren'Py 动作的映射。
@@ -72,8 +73,13 @@ Forest／Khime 的游戏配置和安卓配置源文件不再保留重复版本�
 因此歌词、遮罩和其他高层图像不会被点击界面重复绘制的低层图片遮住。
 `depth` 同时更新已加载图像，重排与其他绘制操作共用队列；独立 UI 按钮仍可自行绘制。
 
-Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 保留专属
-剧本降级器和参数策略；补丁对齐、界面与点击行为只在公共层维护。
+Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 只保留
+入口、资源要求、5000 整体替换、2500 图片纠错和 Wiki 601/603 映射。
+三个入口均使用 `tsc_compiler.py`，不再各自维护重复的指令遍历循环。
+early 的返回与 SE 语义、现代文本参数及 Khime Zero 策略仍明确区分，不强行等同。
+三个入口共用 `assemble_port` 安装基础文件、覆盖层、语言资源及场景；
+先完成全部剧本编译与语言词典/元数据校验，再开始覆盖目标。该预检不是事务式写入：
+磁盘故障或复制失败仍可能中断安装。补丁对齐、界面与点击行为只在公共层维护。
 两款游戏的原生选项统一由 `config.menu_arguments_callback` 记录选择点，
 `rev` 统一使用公共 `rscript_rev_action()` 返回最近的选择点；缺失或过期的
 目标由原生动作禁用。Forest 仅保留控制条布局和输入锁定，不再在剧本中重复记录。
@@ -124,6 +130,7 @@ Khime EXE 的对象效果与文本控制符依据、已实现范围和未确认�
 python3 -B tests/test_shared_port.py /opt/apps/renpy
 python3 -B tests/test_runtime.py
 python3 -B tests/test_port_template.py
+python3 -B tests/test_tsc_compiler.py
 python3 -B tests/test_text_wrap.py
 python3 -B tests/run_native_text_wrap.py /opt/apps/renpy
 python3 -B tests/run_touch_controls.py /opt/apps/renpy

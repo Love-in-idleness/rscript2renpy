@@ -11,7 +11,7 @@ import struct
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evermaiden"))
 from build_evermaiden_rscript import build_evermaiden, IMAGE_FOLDERS
-from modern_tsc import compile_overlays, compile_scene
+from tsc_compiler import compile_overlays, compile_scene
 from grps_layout import UI_ACTIONS, collect_layout
 
 

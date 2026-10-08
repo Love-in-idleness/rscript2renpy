@@ -1,13 +1,15 @@
-"""Shared modern CodeX lowering, with explicit dialect/adapter policies."""
+"""Shared early/modern CodeX lowering, with explicit adapter policies."""
 
 from pathlib import Path
 import sys
 import re
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
-from rscript_tsc import E, STRING_OPERANDS, read_tsc  # noqa: E402
+from rscript_tsc import E, read_tsc  # noqa: E402
 from tsc_vm import emit_vm, packed  # noqa: E402
-from tsc_patches import language_patch_data, instruction_strings, menu_text  # noqa: E402
+from tsc_patches import (language_patch_data, instruction_strings, menu_text,
+                         patch_text_expression, emit_insertions,
+                         emit_operand_variants)  # noqa: E402
 
 
 PASSTHROUGH = {
@@ -35,6 +37,13 @@ KHIME_COMMANDS = {
     70: "setclk", 71: "setclksys", 72: "resetclk", 73: "click",
     75: "setlink", 38: "locmode",
 }
+EARLY_COMMANDS = dict(MODERN_PASSTHROUGH)
+for _modern_only in (106, 107, 108):
+    EARLY_COMMANDS.pop(_modern_only)
+EARLY_COMMANDS.update({33: "move", 35: "oaction", 38: "locmode", 120: "osize"})
+
+EARLY_PATCH_OPCODES = set(EARLY_COMMANDS) - {30, 36, 64}
+EARLY_PATCH_OPCODES.update({70, 71, 72, 73, 75})
 
 
 def label(scene: str, offset: int) -> str:
@@ -42,15 +51,20 @@ def label(scene: str, offset: int) -> str:
 
 
 def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
-                  adapter="khime", scene_prefix="") -> str:
+                  adapter="khime", scene_prefix="", language=None,
+                  language_texts=None, language_insertions=None,
+                  language_operands=None, scene_name=None, operand_patch=None,
+                  statement_prefix=None) -> str:
     # Zero uses the early/legacy-28 operand table, not Khime's modern dialect.
-    dialect = "forest" if zero else "modern"
+    early = adapter == "early"
+    modern = adapter not in {"khime", "early"}
+    dialect = "forest" if zero or early else "modern"
     tsc = read_tsc(source, dialect)
     items = tsc.instructions()
-    patch_texts = {}
-    patch_insertions = {}
-    patch_operands = {}
-    for language, directory in patches:
+    patch_texts = language_texts or {}
+    patch_insertions = language_insertions or {}
+    patch_operands = language_operands or {}
+    for patch_language, directory in patches:
         path = directory / "scr" / source.name
         if not path.is_file():
             continue  # A partial language patch falls back to original text.
@@ -59,9 +73,17 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             override_opcodes=set(PASSTHROUGH) - {20, 65},
             menu_transform=menu_text,
             source_names={source.name})
-        patch_texts[language] = texts.get(source.name, {})
-        patch_insertions[language] = additions.get(source.name, {})
-        patch_operands[language] = overrides.get(source.name, {})
+        patch_texts[patch_language] = texts.get(source.name, {})
+        patch_insertions[patch_language] = additions.get(source.name, {})
+        patch_operands[patch_language] = overrides.get(source.name, {})
+    languages = set(patch_texts) | set(patch_insertions) | set(patch_operands)
+    if language:
+        languages.add(language)
+    for name in languages:
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+            raise ValueError("invalid language name: %s" % name)
+    if scene_name and not re.fullmatch(r"[A-Za-z0-9_]+", scene_name):
+        raise ValueError("invalid scene name: %s" % scene_name)
 
     def text(item, index):
         original = tsc.string(item.operands[index])
@@ -70,14 +92,10 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         kind = ({14: {1: "prompt"}, 32: {5: "oload"},
                  82: {4: "append"}}.get(item.opcode, {}).get(index)
                 or "choice%d" % (index - 7))
-        values = {language: mapping[(item.offset, kind)]
-                  for language, mapping in patch_texts.items()
-                  if (item.offset, kind) in mapping}
-        return ("%r.get(_preferences.language, %r)" % (values, original)
-                if values else repr(original))
-    scene = "khime_zero_" + source.stem if zero else scene_prefix + source.stem
-    commands = PASSTHROUGH if adapter == "khime" else MODERN_PASSTHROUGH
-    prefix = "khime" if adapter == "khime" else "rscript"
+        return patch_text_expression(patch_texts, item, kind, original)[0]
+    scene = scene_name or ("khime_zero_" + source.stem if zero else scene_prefix + source.stem)
+    commands = EARLY_COMMANDS if early else PASSTHROUGH if adapter == "khime" else MODERN_PASSTHROUGH
+    prefix = statement_prefix or ("khime" if adapter == "khime" else "rscript")
     targets = {item.operands[0] for item in items if item.opcode in (3, 4, 5, 200)}
     targets.update(offset for name, offset in tsc.named_entries)
     entries = {}
@@ -91,19 +109,17 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         if item.opcode == 14:
             targets.update(item.operands[2:2 + min(item.operands[0], 5)])
     boundaries = {item.offset for item in items} | {tsc.code_size}
-    if targets - boundaries:
+    if not early and targets - boundaries:
         raise ValueError("%s: non-instruction target %s" %
                          (source, sorted(targets - boundaries)))
 
-    lines = ["# Generated from %s; offsets preserved in labels." % source.name,
+    header = "command offsets are" if early else "offsets"
+    lines = ["# Generated from %s; %s preserved in labels." % (source.name, header),
              "label _%s:" % scene]
     temps = {}
     pending_se = None
     for item in items:
-        for language, additions in patch_insertions.items():
-            if item.offset in additions:
-                lines.append("    if _preferences.language == %r:" % language)
-                lines.extend("        " + command for command in additions[item.offset])
+        emit_insertions(lines, patch_insertions, item.offset)
         if item.offset in targets:
             lines.extend(("", "label %s:" % label(scene, item.offset)))
         for name in entries.get(item.offset, ()):
@@ -111,12 +127,12 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         op, values = item.opcode, item.operands
         operands = [packed(value) if kind == E else str(value)
                     for kind, value in zip(item.kinds, values)]
-        if adapter != "khime" and op in {49, 55, 97, 98, 107, 108, 132}:
+        if modern and op in {49, 55, 97, 98, 107, 108, 132}:
             lines.append("    # CodeX %s %s: shared runtime uses adapter defaults; native layout/style state is not implemented." %
                          (commands.get(op, str(op)), " ".join(operands)))
-        if adapter != "khime" and op == 38 and values[3]:
+        if modern and op == 38 and values[3]:
             lines.append("    # CodeX locmode Mode %s ignored; only the X/Y origin is implemented." % operands[3])
-        if adapter != "khime" and op == 213:
+        if modern and op == 213:
             lines.append("    # CodeX dyndo %s: native effect/layout uses the shared choice screen." % " ".join(operands))
         if zero_title and source.stem == "0101" and (
                 (op == 30 and values[:2] == (46, 9006)) or
@@ -138,40 +154,58 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         elif op == 8:
             # KhimeDL_CHS.exe 0x41fe3c -> 0x420e66 exits the interpreter,
             # not a gosub frame (opcode 16). Do not resume the caller's story.
-            lines.append("    _end")
+            lines.append("    return" if early else "    _end")
         elif op == 12:
             entry = tsc.string(values[1]) if len(values) > 1 else ""
             lines.append("    _jump %s" % (operands[0] + ("%" + entry if entry else "")))
         elif op == 14:
             count = min(values[0], 5)
-            lines.append("    $ %s_choice_prompt = %s" % (prefix, text(item, 1)))
+            prompt = text(item, 1)
+            if early:
+                prompt = "rscript_inline_graphics(renpy.translation.translate_string(%s))" % prompt
+            lines.append("    $ %s_choice_prompt = %s" % (prefix, prompt))
             captions = [text(item, 7 + index) for index in range(count)]
             for index, caption in enumerate(captions):
-                if patch_texts:
+                if early:
+                    original = menu_text(tsc.string(values[7 + index]))
+                    changed = patch_text_expression(patch_texts, item, "choice%d" % index, original)[1]
+                    if changed or "^g" in caption:
+                        variable = "%s_choice_%d" % (prefix, index)
+                        lines.append("    $ %s = rscript_inline_graphics(renpy.translation.translate_string(%s))" % (variable, caption))
+                        captions[index] = repr("[%s]" % variable)
+                elif patch_texts:
                     lines.append("    $ khime_menu_caption_%d = %s" % (index, caption))
             lines.append("    menu:")
             for index in range(count):
                 caption = (repr("[khime_menu_caption_%d]" % index)
-                           if patch_texts else captions[index])
+                           if patch_texts and not early else captions[index])
                 lines.extend(("        %s:" % caption,
-                              "            $ _r[%s] = %d" % (operands[12], index),
-                              "            $ %s_choice_prompt = None" % prefix,
-                              "            jump %s" % label(scene, values[2 + index])))
+                              "            $ _r[%s] = %d" % (operands[12], index)))
+                if not early:
+                    lines.append("            $ %s_choice_prompt = None" % prefix)
+                lines.append("            jump %s" % label(scene, values[2 + index]))
         elif op == 15:
-            name = operands[0] + (("%" + tsc.string(values[1]))
-                                  if tsc.string(values[1]) else "")
-            lines.append("    _gosub %s %s" % (name, " ".join(operands[2:])))
+            if early:
+                lines.append("    _gosub %s" % operands[0])
+            else:
+                name = operands[0] + (("%" + tsc.string(values[1]))
+                                      if tsc.string(values[1]) else "")
+                lines.append("    _gosub %s %s" % (name, " ".join(operands[2:])))
         elif op == 16:
-            lines.append("    _return %s" % operands[0])
+            lines.append("    return" if early else "    _return %s" % operands[0])
         elif op == 18:
             data = tsc.data(values[1])
-            lines.append("    _data %s %s" %
-                         (operands[0], " ".join(map(str, data))))
+            if early:
+                lines.extend("    $ _r[(%s) + %d] = %d" % (operands[0], index, value)
+                             for index, value in enumerate(data))
+            else:
+                lines.append("    _data %s %s" %
+                             (operands[0], " ".join(map(str, data))))
         elif op == 32:
             lines.append("    _oload %s %s" %
                          (" ".join(operands[:5]), text(item, 5)))
         elif op == 62:
-            if adapter == "khime":
+            if not modern:
                 pending_se = operands[-1]
             else:
                 lines.append("    _se %s" % " ".join(operands))
@@ -180,30 +214,28 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                 lines.append("    _se 0 %s" % pending_se)
                 pending_se = None
             lines.append("    _se_on %s" % " ".join(
-                ["0"] + operands[-3:] if adapter == "khime" else operands))
+                ["0"] + (operands if early else operands[-3:]) if not modern else operands))
         elif op == 64:
             lines.append("    _se_off %s" % ("0 " + operands[-1]
-                                           if adapter == "khime" else " ".join(operands)))
+                                           if not modern else " ".join(operands)))
         elif op == 81:
             original = instruction_strings(tsc, item)["say"]
-            translated = {language: mapping[(item.offset, "say")]
-                          for language, mapping in patch_texts.items()
-                          if (item.offset, "say") in mapping}
-            raw = ("%r.get(_preferences.language, %r)" % (translated, original)
-                   if translated else repr(original))
+            raw = patch_text_expression(patch_texts, item, "say", original)[0]
             if values[1]:
                 lines.append("    _voice %s 0 0 0" % operands[1])
-            if adapter != "khime":
+            if modern:
                 raw = "(%r, %r, %s)" % (tsc.string(values[4]), tsc.string(values[5]), operands[6])
                 if any(values[index] for index in (0, 2, 3)):
                     lines.append("    # CodeX TXT box/voice mode operands %s are not implemented." % " ".join(operands[:4]))
-            lines.append("    _%s_say %s" % (prefix, raw))
+            command = "say" + (" " + language if language else "") if early else prefix + "_say"
+            lines.append("    _%s %s" % (command, raw))
         elif op == 82:
             body = text(item, 4)
-            if adapter != "khime":
+            if modern:
                 body = "(%s, %s)" % (body, operands[5])
-            lines.append("    _%s_append %s" % (prefix, body))
-        elif op == 120:
+            command = "append" + (" " + language if language else "") if early else prefix + "_append"
+            lines.append("    _%s %s" % (command, body))
+        elif op == 120 and not early:
             if zero:
                 operands[1] = "int(round((%s)*1.25))" % operands[1]
             lines.append("    _osize %s" % " ".join(operands))
@@ -227,9 +259,13 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             lines.append("    _dyndo %s" % " ".join(operands))
         elif op == 225:
             lines.append("    _locmap %s" % " ".join(operands))
-        elif op in KHIME_COMMANDS:
-            lines.append("    _%s_%s %s" %
-                         (prefix, KHIME_COMMANDS[op], " ".join(operands)))
+        elif op in KHIME_COMMANDS and (not early or op in {70, 71, 72, 73, 75}):
+            def adapter_statement(parameters):
+                args = operands if parameters == values else [
+                    packed(value) if kind == E else str(value)
+                    for kind, value in zip(item.kinds, parameters)]
+                return "_%s_%s %s" % (prefix, KHIME_COMMANDS[op], " ".join(args))
+            emit_operand_variants(lines, patch_operands, item, adapter_statement)
         elif op in commands:
             def statement(parameters):
                 args = [packed(value) if kind == E else str(value)
@@ -246,24 +282,22 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                     args.append("0")
                 if zero_title and op == 30 and source.stem == "0101" and parameters[:2] == (46, 9006):
                     args[3] = "517+44*khime_zero_unlocked()"
+                if early and op == 74:
+                    command = prefix + "_" + command
+                if operand_patch:
+                    args = operand_patch(scene, item, args, lines)
                 return "_%s%s" % (command, " " + " ".join(args) if args else "")
-            overrides = {language: mapping[item.offset]
-                         for language, mapping in patch_operands.items()
-                         if item.offset in mapping}
-            for index, (language, parameters) in enumerate(overrides.items()):
-                lines.extend(("    %s _preferences.language == %r:" %
-                              ("if" if index == 0 else "elif", language),
-                              "        " + statement(parameters)))
-            if overrides:
-                lines.append("    else:")
-            lines.append(("        " if overrides else "    ") + statement(values))
+            emit_operand_variants(lines, patch_operands, item, statement)
         else:
-            raise ValueError("%s: unsupported opcode 0x%04x" % (source, op))
-    for language, additions in patch_insertions.items():
-        if tsc.code_size in additions:
-            lines.append("    if _preferences.language == %r:" % language)
-            lines.extend("        " + command for command in additions[tsc.code_size])
-    if tsc.code_size in targets:
+            if early:
+                lines.append("    # unlifted opcode 0x%04x %s" % (op, values))
+            else:
+                raise ValueError("%s: unsupported opcode 0x%04x" % (source, op))
+    emit_insertions(lines, patch_insertions, tsc.code_size)
+    if early:
+        for target in sorted(targets - {item.offset for item in items}):
+            lines.extend(("", "label %s:" % label(scene, target), "    return"))
+    elif tsc.code_size in targets:
         lines.extend(("", "label %s:" % label(scene, tsc.code_size)))
     for name in entries.get(tsc.code_size, ()):
         lines.append("label _g_%s_%s:" % (scene, name))
