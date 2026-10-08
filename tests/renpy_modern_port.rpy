@@ -8,8 +8,36 @@ python early:
         renpy.display.screen.prepare_screens()
         assert (config.screen_width, config.screen_height) == (1280, 720)
         assert persistent.rscript_text_size == 32
+        assert persistent.rscript_line_spacing == -7
+        assert rscript_ruby_scale == 13 / 32
         assert rscript_label("0001%REP") == "_g_0001_REP"
         assert parse_rscript_text(repr("|漢字[かんじ]^nnext"), True)[0] == "{rb}漢字{/rb}{rt}かんじ{/rt}\nnext"
+        sample, _ = parse_rscript_text(repr("失去了阿德拉这位监督角色，不再有必要继续研习造化术以成为|少女[Ｍａｉｄｅｎ]。直到包围学园的白色荆棘消失为止，现在只要一直等待就好。"), True)
+        renpy.show_screen("say", who=None, what=sample)
+        renpy.get_screen("say").update()
+        sample_text = renpy.get_widget("say", "what")
+        sample_text.refresh_settings()
+        measured = renpy.text.text.Layout(sample_text, 1280, 720, {}, size_only=True, drawable_res=False)
+        assert measured.size[1] <= 694 - 503 - 58, measured.size
+        baselines = sorted({g.y for p in measured.paragraph_glyphs for g in p if g.ruby < 2})
+        assert len(baselines) == 3 and baselines[1] - baselines[0] == baselines[2] - baselines[1]
+        renpy.text.text.textsupport.place_ruby(measured.paragraph_glyphs[0], sample_text.style.ruby_style.yoffset, 0, *measured.size)
+        # Check visible ink fits between the previous body row and
+        # the annotated row, rather than just checking nominal font boxes.
+        normal_bottom = base_top = ruby_top = ruby_bottom = None
+        for paragraph in measured.paragraphs:
+            for segment, content in paragraph:
+                bounds = segment.bounds(segment.glyphs(content, measured), (0, 0, 0, 0), measured)
+                if segment.ruby_bottom:
+                    base_top = baselines[1] + bounds[1]
+                elif segment.ruby_top:
+                    glyph = next(g for p in measured.paragraph_glyphs for g in p if g.ruby == 2)
+                    ruby_top, ruby_bottom = glyph.y + bounds[1], glyph.y + bounds[3]
+                else:
+                    normal_bottom = max(normal_bottom or 0, baselines[0] + bounds[3])
+        assert normal_bottom <= ruby_top < ruby_bottom <= base_top, (normal_bottom, ruby_top, ruby_bottom, base_top)
+        renpy.hide_screen("say")
+        print("Evermaiden default dialogue: 3 lines, height", measured.size[1], "ruby inside existing gap")
         lex = renpy.lexer.Lexer([("test", 1, "1 3 7", [])])
         lex.advance()
         execute_flagset(parse_flagset(lex))

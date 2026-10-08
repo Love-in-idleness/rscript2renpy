@@ -9,12 +9,19 @@ init -130 python:
         persistent.rscript_text_size = 32
     if persistent.rscript_say_line_chars is None:
         persistent.rscript_say_line_chars = 28
+    # Migrate the inherited 7px default once; keep custom spacing choices.
+    if not persistent.evermaiden_compact_text_defaults:
+        if persistent.rscript_line_spacing in (None, 7):
+            persistent.rscript_line_spacing = -7
+        persistent.evermaiden_compact_text_defaults = True
 
 # scr/0500.tsc specifies 32px text and an 898px body area on a 1280x720 canvas.
 init -100 python:
     rscript_screen_size = (1280, 720)
     rscript_base_text_size = 32
     rscript_inline_base_size = 32
+    # 0500.tsc: texruby 0 0 13 9; annotations fit between body lines.
+    rscript_ruby_scale = 13 / 32
     rscript_voice_format = "voice/%04d.ogg"
     rscript_voice_groups = True
     rscript_folder_zero_all = True

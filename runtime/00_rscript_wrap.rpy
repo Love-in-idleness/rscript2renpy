@@ -84,14 +84,23 @@ python early:
                     glyphs = [g for paragraph in self.paragraph_glyphs for g in paragraph]
                     top = [g for g in glyphs if g.ruby == 2]
                     if top:
-                        leading = math.ceil(max(g.ascent + g.descent for g in top))
-                        ascent = max((g.ascent for g in glyphs if g.ruby == 1), default=0)
-                        offset = -math.ceil(ascent + max(g.descent for g in top))
-                        base_leading = text.rscript_style.line_leading
+                        # Use visible ink, not the font's ascender padding.
+                        # Ruby belongs in the existing gap; it must not move
+                        # body baselines or add leading to any line.
+                        bottom_bounds, top_bounds = [], []
+                        for paragraph in self.paragraphs:
+                            for segment, content in paragraph:
+                                if (getattr(segment, "ruby_bottom", False) or
+                                        getattr(segment, "ruby_top", False)):
+                                    bounds = segment.bounds(segment.glyphs(content, self),
+                                                            (0, 0, 0, 0), self)
+                                    (top_bounds if segment.ruby_top else bottom_bounds).append(bounds)
+                        ascent = max((-b[1] for b in bottom_bounds),
+                                     default=text.style.size)
+                        offset = -math.ceil(ascent + max(b[3] for b in top_bounds))
                         ruby_style = text.style.ruby_style.copy()
                         ruby_style.yoffset = offset
                         new_style = text.style.copy()
-                        new_style.line_leading = base_leading + leading
                         new_style.ruby_style = ruby_style
                         text.style = new_style
                 super(RScriptLayout, self).__init__(text, width, height, renders,
@@ -120,8 +129,9 @@ python early:
                 for name, value in metrics.items():
                     setattr(self, name, value)
             if ruby:
-                self.size = max(layout.scale(1), self.size / 2)
-                self.kerning /= 2
+                scale = getattr(store, "rscript_ruby_scale", 0.5)
+                self.size = max(layout.scale(1), self.size * scale)
+                self.kerning *= scale
                 self.color = color
 
     def rscript_linebreak(glyphs):
