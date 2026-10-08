@@ -4,6 +4,13 @@ image cg white = "#FFFFFF"
 image white = "#FFFFFF"
 image nothing = "#0000"
 
+init python:
+    def rscript_native_canvas(child):
+        # Join pixel-aligned sprite pieces before the window resamples them.
+        return Flatten(Transform(child, nearest=True), drawable_resolution=False)
+
+    config.layer_transforms.setdefault(None, []).insert(0, rscript_native_canvas)
+
 init python hide:
 
     img_extensions = [".png", ".jpg", ".bmp", ".webp"]
