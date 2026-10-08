@@ -140,9 +140,8 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             # not a gosub frame (opcode 16). Do not resume the caller's story.
             lines.append("    _end")
         elif op == 12:
-            if values[1]:
-                lines.append("    # CodeX jump transition %s flattened to the shared scene jump." % operands[1])
-            lines.append("    _jump %s" % operands[0])
+            entry = tsc.string(values[1]) if len(values) > 1 else ""
+            lines.append("    _jump %s" % (operands[0] + ("%" + entry if entry else "")))
         elif op == 14:
             count = min(values[0], 5)
             lines.append("    $ %s_choice_prompt = %s" % (prefix, text(item, 1)))
@@ -227,9 +226,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         elif op == 213:
             lines.append("    _dyndo %s" % " ".join(operands))
         elif op == 225:
-            lines.append("    # CodeX locmap %s: map UI unimplemented; return 0 (no selection)." %
-                         " ".join(operands))
-            lines.append("    $ _r[0] = 0")
+            lines.append("    _locmap %s" % " ".join(operands))
         elif op in KHIME_COMMANDS:
             lines.append("    _%s_%s %s" %
                          (prefix, KHIME_COMMANDS[op], " ".join(operands)))

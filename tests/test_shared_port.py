@@ -32,7 +32,7 @@ def main():
             script = resources / "scr/0000.tsc"
             header += ";@gsc-text-encoding CP932\n"
             script.write_text(header + "*end\n", encoding="utf-8")
-            for asset in ("grpe/9001.png", "grps/gf707.png"):
+            for asset in ("grpe/9001.png", "grps/gf707.png", "grpo/0707.png", "grpo/1070.png"):
                 shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", resources / asset)
             conf = resources / "grps/confscrn"
             conf.mkdir()

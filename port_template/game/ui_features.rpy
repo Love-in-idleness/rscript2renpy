@@ -124,6 +124,11 @@ screen rscript_title_preferences():
 screen choice(items):
     use rscript_choice(items, rscript_choice_prompt)
 
+screen rscript_locmap_screen(cancel=False):
+    modal True
+    key "dismiss" action Return(1)
+    key "game_menu" action (Return(0) if cancel else NullAction())
+
 screen rscript_click_screen(options, previews=None, cancel=False):
     default preview = None
     modal True

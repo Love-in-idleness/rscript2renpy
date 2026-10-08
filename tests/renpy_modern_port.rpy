@@ -79,6 +79,18 @@ python early:
         try:
             renpy.with_statement = lambda *args, **kwargs: None
             renpy.pause = lambda *args, **kwargs: None
+            execute_tone(SimpleNamespace(Level=100, Mode=0))
+            execute_queue(None)
+            execute_tone(SimpleNamespace(Level=0, Mode=0))
+            execute_tonedep(SimpleNamespace(Depth=0))
+            execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
+            assert store.tone_level == 0 and not renpy.showing(TONE_TAG, TONE_LAYER)
+            execute_queue(None)
+            execute_tone(SimpleNamespace(Level=50, Mode=1))
+            execute_tonedep(SimpleNamespace(Depth=20))
+            execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
+            assert (store.tone_level, store.tone_color, store.tonedep) == (50, "white", 39)
+            execute_tone(SimpleNamespace(Level=0, Mode=0))
             execute_queue(None)
             execute_gload(SimpleNamespace(CGNum=1020, Colormode=0))
             execute_gmove(SimpleNamespace(Effect=0, xLoc=0, yLoc=-608, Speed=0))
@@ -136,6 +148,28 @@ python early:
             assert [option[0] for option in captured[0]["options"]] == [91, 92, 99]
             assert all(option[2] == option[3] for option in captured[0]["options"][:2])
             assert set(captured[0]["previews"]) == {2}
+            captured.clear()
+            # Scene gallery asks for real-numbered optional images which are
+            # absent, not just -1. Also validate old/restored preview bindings.
+            execute_setclk(SimpleNamespace(Layer=49, Value=99))
+            execute_setlink(SimpleNamespace(Layer=49, HoverCG=8501, xLoc=0, yLoc=0, Slot=0))
+            store.rscript_click_previews[49] = (8502, 0, 665)
+            execute_click(None)
+            assert captured[-1]["options"][0][2:4] == ("grpo_ex 0049", "grpo_ex 0049")
+            assert not captured[-1]["previews"]
+            captured.clear()
+            old_mouse_pos = renpy.get_mouse_pos
+            try:
+                renpy.get_mouse_pos = lambda: (123, 456)
+                for result in (1, 0):
+                    renpy.call_screen = lambda name, **kwargs: (captured.append((name, kwargs)), result)[1]
+                    lex = renpy.lexer.Lexer([("0201-locmap", 1, "31 32 0 0 1", [])])
+                    lex.advance()
+                    execute_locmap(parse_locmap(lex))
+                    assert (_r[0], _r[31], _r[32]) == (result, 123, 456)
+                    assert captured[-1] == ("rscript_locmap_screen", {"cancel": True})
+            finally:
+                renpy.get_mouse_pos = old_mouse_pos
             captured.clear()
             # 0401: playback/lyrics return to the same click without rebinding.
             execute_autoreset(SimpleNamespace(Mode=0))

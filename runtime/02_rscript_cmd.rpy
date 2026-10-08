@@ -417,15 +417,20 @@ python early:
             if store.rscript_click_grid:
                 x *= store.layer_x_grid
                 y *= store.layer_y_grid
-            options.append((value, system, store.layer_info[layer],
-                            (store.layer_info[layer] if hover in (-1, 0xffff) else
-                             "%s %04d" % (folder, hover)), x, y))
+            idle = store.layer_info[layer]
+            hover_image = "%s %04d" % (folder, hover)
+            # Native optional setlink artwork may be absent (not only -1).
+            # Keep required idle resources visible as errors if they are missing.
+            options.append((value, system, idle,
+                            hover_image if renpy.has_image(hover_image, exact=True) else idle, x, y))
             if layer in store.rscript_click_previews:
                 cg, px, py = store.rscript_click_previews[layer]
                 if store.rscript_click_grid:
                     px *= store.layer_x_grid
                     py *= store.layer_y_grid
-                previews[len(options) - 1] = ("%s %04d" % (folder, cg), px, py)
+                image = "%s %04d" % (folder, cg)
+                if renpy.has_image(image, exact=True):
+                    previews[len(options) - 1] = (image, px, py)
         if not options:
             raise Exception("RScript click has no active image regions")
         store._r[0] = renpy.call_screen("rscript_click_screen", options=options,

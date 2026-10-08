@@ -28,6 +28,9 @@ def main():
         for number in (1020, 9001, 9101):
             shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png',
                             base / 'grpe' / ('%04d.png' % number))
+        for number in (49, 149, 249):
+            shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png',
+                            base / 'grpo_ex' / ('%04d.png' % number))
         for folder, bindings in UI_ACTIONS.items():
             pane = base / 'grps' / folder
             pane.mkdir()
@@ -72,6 +75,10 @@ def main():
         numeric.write_text(header + ';@gsc-trailer-header 8 6\n;@gsc-trailer '
                            + trailer + '\n*wait 1\n*end\n')
         assert 'label _g_1125_8011:' in compile_scene(numeric)
+        jump_source = directory / '0201.tsc'
+        jump_source.write_text(header + '*locmap 0 0 0 0 1\n*jump 1 "REP"\n')
+        lowered = compile_scene(jump_source, adapter='modern')
+        assert '_jump 1%REP' in lowered and '_locmap 0 0 0 0 1' in lowered
         (patch / 'scr/0000.tsc').write_text(header + '*wait 2\n' + source.replace('Question', '问题'), encoding='utf-8')
         (patch / 'scr/5000.tsc').write_text(header + '*end\n')
         pcm = base / 'wav/0033.wav'
@@ -119,6 +126,23 @@ def main():
                             '--savedir', str(directory / 'test-saves')], check=True,
                            env=os.environ | {'SDL_AUDIODRIVER': 'dummy',
                                              'RENPY_PATH_TO_SAVES': str(directory / 'sdk-saves')})
+            if len(sys.argv) > 2:
+                # Execute actual converted title/CG/scene scripts in isolation.
+                # Use tiny stand-in artwork, not formal game saves or resources.
+                resources = Path(sys.argv[2])
+                for name in ('0001', '0201', '0301'):
+                    (game / 'scr' / (name + '.rpy')).write_text(compile_scene(
+                        resources / 'scr' / (name + '.tsc'), adapter='modern'))
+                for folder in ('grpe', 'grpo', 'grpo_ex', 'grpo_cu'):
+                    (game / folder).mkdir(exist_ok=True)
+                    for asset in (resources / folder).glob('*.png'):
+                        shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png',
+                                        game / folder / asset.name)
+                shutil.copyfile(ROOT / 'tests/renpy_gallery_flow.rpy', game / 'gallery_test.rpy')
+                subprocess.run([str(Path(sys.argv[1]) / 'renpy.sh'), str(project), 'galleryflowtest',
+                                '--savedir', str(directory / 'gallery-saves')], check=True,
+                               env=os.environ | {'SDL_AUDIODRIVER': 'dummy',
+                                                 'RENPY_PATH_TO_SAVES': str(directory / 'gallery-sdk-saves')})
         print('OK: modern shared lowering, complete language/DLC routes and PCM assets')
 
 

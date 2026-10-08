@@ -508,15 +508,25 @@ python early:
 
 
     def parse_locmap(lex):
-        rscript_arguments(lex)
+        args = rscript_arguments(lex, ["XRegister", "YRegister", "Timer", "Mode", "Cancel"])
         lex.expect_eol()
         return args
 
 
     def execute_locmap(args):
-        pass
+        # Evermaiden 0x43e0c0 / 0x43002d / 0x4300b4: point wait,
+        # left click returns 1, optional right-click cancellation returns 0.
+        if args.Timer or args.Mode:
+            raise Exception("RScript locmap timer/mode is not implemented")
+        store._r[0] = renpy.call_screen("rscript_locmap_screen", cancel=bool(args.Cancel))
+        if args.XRegister or args.YRegister:
+            x, y = renpy.get_mouse_pos()
+            if args.XRegister:
+                store._r[args.XRegister] = x
+            if args.YRegister:
+                store._r[args.YRegister] = y
 
-    renpy.register_statement("_locmap", parse = parse_locmode, execute = execute_locmode, lint = lint_undef)
+    renpy.register_statement("_locmap", parse = parse_locmap, execute = execute_locmap, lint = lint_undef)
 
 
 
@@ -596,14 +606,17 @@ python early:
         return args
 
     def execute_tonedep(args):
+        queue_draw(_execute_tonedep, args)
+        process_draw_queue()
 
+    def _execute_tonedep(args):
         store.tonedep = args.Depth * 2 - 1
 
         if renpy.showing(TONE_TAG, TONE_LAYER) and store.tone_color:
             args.Mode = 0 if store.tone_color == "black" else 1
             args.Level = store.tone_level
 
-            queue_draw(_execute_tone, args)
+            _execute_tone(args)
 
 
 
