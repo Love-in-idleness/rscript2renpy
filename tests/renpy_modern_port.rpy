@@ -9,7 +9,7 @@ python early:
         assert (config.screen_width, config.screen_height) == (1280, 720)
         assert persistent.rscript_text_size == 32
         assert rscript_label("0001%REP") == "_g_0001_REP"
-        assert rscript_modern_text("|漢字[かんじ]^nnext") == "{rb}漢字{/rb}{rt}かんじ{/rt}^nnext"
+        assert parse_rscript_text(repr("|漢字[かんじ]^nnext"), True)[0] == "{rb}漢字{/rb}{rt}かんじ{/rt}\nnext"
         lex = renpy.lexer.Lexer([("test", 1, "1 3 7", [])])
         lex.advance()
         execute_flagset(parse_flagset(lex))
@@ -172,6 +172,19 @@ python early:
             assert calls[-1] == ("Alice", "nonblocking", False)
             execute_rscript_append(repr((" plus", 0)))
             assert calls[-1][2] is False and "nonblocking{fast} plus" in calls[-1][1]
+            execute_rscript_append(repr((" |追加[ついか]", 0)))
+            assert "{fast} {rb}追加{/rb}{rt}ついか{/rt}" in calls[-1][1]
+            old_loadcls = store.loadcls
+            objects = []
+            try:
+                store.loadcls = lambda *args, **kwargs: objects.append(kwargs["displayable"])
+                lex = renpy.lexer.Lexer([("ruby-object-test", 1, "21 0 0 0 0 '|字幕[ルビ]'", [])])
+                lex.advance()
+                execute_oload(parse_oload(lex))
+                assert objects[0].text == ["{rb}字幕{/rb}{rt}ルビ{/rt}"]
+                assert objects[0].rscript_kind == "oload"
+            finally:
+                store.loadcls = old_loadcls
         finally:
             renpy.say = old_say
             store.queue_draw = old_queue

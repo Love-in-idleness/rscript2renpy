@@ -2,6 +2,7 @@ default persistent.rscript_say_line_chars = 19
 default persistent.rscript_oload_line_chars = 20
 
 python early:
+    import math
     from engine import rscript_wrap
 
     # Ren'Py 8.5.3 text.py: Layout shapes glyphs before linebreak_nobreak,
@@ -67,10 +68,34 @@ python early:
 
     class RScriptLayout(_rscript_native_layout):
         rscript_native = _rscript_native_layout
-        def __init__(self, text, *args, **kwargs):
+        def __init__(self, text, width, height, renders, size_only=False,
+                     splits_from=None, drawable_res=True):
             _rscript_layout_stack.append((self, text))
             try:
-                super(RScriptLayout, self).__init__(text, *args, **kwargs)
+                if (isinstance(text, RScriptText) and splits_from is None and
+                        any(kind == renpy.TEXT_TAG and value == "rt"
+                            for kind, value in text.tokens)):
+                    # Measure with the native shaper first. Resolved anonymous
+                    # styles cache all properties: install a fresh copy BEFORE
+                    # the real layout, never mutate an already resolved style.
+                    # ponytail: two shaping passes for ruby blocks; cache only if profiling warrants it.
+                    super(RScriptLayout, self).__init__(text, width, height, renders,
+                                                       size_only=True, drawable_res=False)
+                    glyphs = [g for paragraph in self.paragraph_glyphs for g in paragraph]
+                    top = [g for g in glyphs if g.ruby == 2]
+                    if top:
+                        leading = math.ceil(max(g.ascent + g.descent for g in top))
+                        ascent = max((g.ascent for g in glyphs if g.ruby == 1), default=0)
+                        offset = -math.ceil(ascent + max(g.descent for g in top))
+                        base_leading = text.rscript_style.line_leading
+                        ruby_style = text.style.ruby_style.copy()
+                        ruby_style.yoffset = offset
+                        new_style = text.style.copy()
+                        new_style.line_leading = base_leading + leading
+                        new_style.ruby_style = ruby_style
+                        text.style = new_style
+                super(RScriptLayout, self).__init__(text, width, height, renders,
+                    size_only=size_only, splits_from=splits_from, drawable_res=drawable_res)
             finally:
                 _rscript_layout_stack.pop()
 
@@ -80,18 +105,24 @@ python early:
             # Native hyperlink_text inherits the default font, not the
             # surrounding text. Wiki links must only add link presentation;
             # keep the active font/style/tag metrics and typewriter timing.
-            linked = (context == "A hyperlink style" and
-                      _rscript_layout_stack and
+            shared = (_rscript_layout_stack and
                       isinstance(_rscript_layout_stack[-1][1], RScriptText))
-            if linked:
+            linked = shared and context == "A hyperlink style"
+            ruby = shared and context == "The ruby style"
+            if linked or ruby:
                 names = ("font", "size", "bold", "italic", "kerning",
                          "hinting", "antialias", "shaper", "axis",
                          "instance", "features", "cps")
                 metrics = {name: getattr(self, name) for name in names}
+                color = self.color
             super(RScriptTextSegment, self).take_style(style, layout, context)
-            if linked:
+            if linked or ruby:
                 for name, value in metrics.items():
                     setattr(self, name, value)
+            if ruby:
+                self.size = max(layout.scale(1), self.size / 2)
+                self.kerning /= 2
+                self.color = color
 
     def rscript_linebreak(glyphs):
         _rscript_native_nobreak(glyphs)

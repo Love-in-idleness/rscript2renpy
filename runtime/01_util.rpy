@@ -161,6 +161,9 @@ python early:
             r"\^(?:[ag][0-9]{3}|[cf][a-z]|[binm]|[dw][0-9]+|s[0-9]|v[-0-9]+)",
             lambda match: match.group().lower(), text, flags=renpy.re.I)
         text = rscript_prepare_text(text)
+        # Shared by say, append, text objects and choices, not just modern TXT.
+        text = renpy.re.sub(r"\|([^\[\]|]+)\[([^\[\]]+)\]",
+                            lambda m: "{rb}%s{/rb}{rt}%s{/rt}" % m.groups(), text)
 
         no_wait = text.endswith(("<", ">"))
         if text.endswith("<"):

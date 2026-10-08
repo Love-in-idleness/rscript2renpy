@@ -12,16 +12,11 @@ python early:
     def execute_rscript_say(value):
         name, body, wait = eval(value)
         execute_say((None, repr(name) if name else None,
-                     repr(rscript_modern_text(body))), interact=bool(wait))
+                     repr(body)), interact=bool(wait))
 
     def execute_rscript_append(value):
         body, wait = eval(value)
-        execute_append((None, repr(rscript_modern_text(body))), interact=bool(wait))
-
-    def rscript_modern_text(text):
-        # CodeX |base[ruby] -> Ren'Py ruby, before the common control parser.
-        return renpy.re.sub(r"\|([^\[\]|]+)\[([^\[\]]+)\]",
-                            lambda m: "{rb}%s{/rb}{rt}%s{/rt}" % m.groups(), text)
+        execute_append((None, repr(body)), interact=bool(wait))
 
     def parse_flagset(lex):
         args = rscript_arguments(lex, ["First", "Last", "Value"])

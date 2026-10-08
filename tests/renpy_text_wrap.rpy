@@ -29,6 +29,49 @@ python early:
                     current += chr(g.character)
                 result.append(current)
             return result
+        raw = "|学習装置[インキュナブラ]后"
+        parsed, _ = parse_rscript_text(repr(raw), True)
+        assert parsed == "{rb}学習装置{/rb}{rt}インキュナブラ{/rt}后"
+        for kind in ("say", "oload"):
+            for size in (22, 32, 44):
+                ruby_text, ruby_layout = shaped(parsed, chars=4, size=size, kind=kind)
+                assert lines(ruby_layout) == ["学習装置インキュナブラ", "后"]
+                glyphs = ruby_layout.paragraph_glyphs[0]
+                base = [g for g in glyphs if g.ruby == 1]
+                top = [g for g in glyphs if g.ruby == 2]
+                assert all(g.advance == size / 2 for g in top)
+                assert ruby_layout.size[0] == size * 4
+                ruby_segment = next(segment for paragraph in ruby_layout.paragraphs
+                                    for segment, _ in paragraph if segment.ruby_top)
+                assert ruby_segment.font == gui.text_font and ruby_segment.size == size / 2
+                # Execute the SDK's real ruby placement (size_only normally
+                # stops before this), checking geometry without a video device.
+                renpy.text.text.textsupport.place_ruby(glyphs, ruby_text.style.ruby_style.yoffset, 0, *ruby_layout.size)
+                assert all(g.y - g.ascent >= 0 for g in top), [(g.y, g.ascent) for g in top]
+                assert all(g.y < base[0].y for g in top), (size, [(chr(g.character), g.x, g.y, g.ascent, g.descent, g.split, g.ruby) for g in glyphs])
+        # An annotation cannot be orphaned by wrapping within its base.
+        assert lines(shaped(parsed, chars=2)[1]) == ["学習装置インキュナブラ", "后"]
+        tagged, _ = parse_rscript_text(repr("^b^fm^cy|漢字[かんじ]^b^n|字[じ]"), True)
+        _, ruby_layout = shaped(tagged, chars=20)
+        ruby_segments = [segment for paragraph in ruby_layout.paragraphs
+                         for segment, _ in paragraph if segment.ruby_top]
+        assert ruby_segments[0].bold and ruby_segments[0].color == Color("#FFDE00")
+        inline, _ = parse_rscript_text(repr("{size=44}|漢字[かんじ]{/size}"), True)
+        ruby_text, ruby_layout = shaped(inline, chars=20)
+        top = [g for g in ruby_layout.paragraph_glyphs[0] if g.ruby == 2]
+        assert all(g.advance == 22 for g in top)
+        renpy.text.text.textsupport.place_ruby(ruby_layout.paragraph_glyphs[0],
+            ruby_text.style.ruby_style.yoffset, 0, *ruby_layout.size)
+        assert all(g.y - g.ascent >= 0 for g in top)
+        original_font = gui.text_font
+        gui.text_font = "fonts/NotoSerifCJK-Regular.ttc"
+        ruby_text.refresh_settings()
+        ruby_layout = renpy.text.text.Layout(ruby_text, 800, 600, {}, size_only=True, drawable_res=False)
+        assert next(segment for paragraph in ruby_layout.paragraphs
+                    for segment, _ in paragraph if segment.ruby_top).font == gui.text_font
+        gui.text_font = original_font
+        visible, _ = parse_rscript_text(repr("[literal] |incomplete[  "), True)
+        assert lines(shaped(visible, chars=100)[1]) == ["[literal] |incomplete[  "]
         original_faces = getattr(store, "rscript_text_fonts", None)
         try:
             store.rscript_text_fonts = {"m": "fonts/NotoSerifCJK-Regular.ttc",

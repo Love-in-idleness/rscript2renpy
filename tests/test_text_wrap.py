@@ -41,6 +41,12 @@ def main():
     assert wrap("甲\u200b乙", 1, [10, 0, 1]) == ["甲\u200b", "乙"]
     assert wrap("（乙", 1, [10, 1]) == ["（", "乙"]
     assert wrap("", 0) == [""]
+    ruby = [SimpleNamespace(character=ord(c), advance=w, ruby=r)
+            for c, w, r in (("甲", 1, 0), ("漢", 1, 1), ("字", 1, 1),
+                            ("か", 0.5, 2), ("ん", 0.5, 2), ("じ", 0.5, 2), ("乙", 1, 0))]
+    assert glyph_breaks(ruby, 3) == [6]  # Reading adds no inline width.
+    assert glyph_breaks(ruby, 2) == [6]  # Starts inside edge: whole base hangs.
+    assert glyph_breaks(ruby, 1) == [1, 6]  # Never split/orphan the annotation.
     # Exhaustively check forward progress and preservation, including zero width.
     for length in range(1, 6):
         for chars in product("甲（。“\u200b", repeat=length):

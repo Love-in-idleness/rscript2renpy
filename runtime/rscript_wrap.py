@@ -13,15 +13,33 @@ NO_LINE_END = frozenset(
 
 def glyph_breaks(glyphs, limit):
     """Return indices of line starts. Never mutate advances or discard glyphs."""
+    units = []
+    index = 0
+    while index < len(glyphs):
+        first = last = glyphs[index]
+        start = index
+        advance = first.advance
+        index += 1
+        if getattr(first, "ruby", 0) == 1:
+            # Native ruby flags: 1 = base, 2/3 = annotation above it.
+            # Keep the pair indivisible; annotation does not advance the pen.
+            while index < len(glyphs) and getattr(glyphs[index], "ruby", 0) == 1:
+                last = glyphs[index]
+                advance += last.advance
+                index += 1
+            while index < len(glyphs) and getattr(glyphs[index], "ruby", 0) >= 2:
+                index += 1
+        elif getattr(first, "ruby", 0) >= 2:
+            continue
+        units.append((start, advance, chr(first.character), chr(last.character)))
     # Keep both properties: e.g. “ belongs to both sets.
-    no_start = [chr(g.character) in NO_LINE_START for g in glyphs]
-    no_end = [chr(g.character) in NO_LINE_END for g in glyphs]
+    no_start = [first in NO_LINE_START for _, _, first, _ in units]
+    no_end = [last in NO_LINE_END for _, _, _, last in units]
     starts = []
     start = 0
     width = 0.0
     hanging = False
-    for index, glyph in enumerate(glyphs):
-        advance = glyph.advance
+    for index, (_, advance, _, _) in enumerate(units):
         if advance <= 0 or width + advance <= limit or index == start:
             # An oversized first glyph must still be consumed.
             width += advance
@@ -37,7 +55,7 @@ def glyph_breaks(glyphs, limit):
             # Move exactly one glyph back, never recursively retreat.
             start = index - 1
             starts.append(start)
-            width = glyphs[start].advance
+            width = units[start][1]
             hanging = False
             if width + advance <= limit:
                 width += advance
@@ -51,7 +69,7 @@ def glyph_breaks(glyphs, limit):
         starts.append(start)
         width = advance
         hanging = False
-    return starts
+    return [units[index][0] for index in starts]
 
 
 def normalize_boundaries(tokens, text_type, paragraph_type, displayable_type):
