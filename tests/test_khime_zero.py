@@ -45,6 +45,10 @@ def main():
         for asset in ("grpo/0001.png", "grpo/0101.png", "grpe/0655.png",
                       "grpo_bu/1902.png", "grps/gf008.png"):
             shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", zero / asset)
+        from PIL import Image
+        for name, size, color in (("dt1_1001.png", (56, 62), "red"),
+                                  ("dt2_0001.png", (198, 62), "blue")):
+            Image.new("RGBA", size, color).save(zero / "grps" / name)
         shutil.copy2(zero / "grpo_bu/1902.png", patch / "grpo_bu/1902.png")
         with wave.open(str(zero / "bgm/Track02.WAV"), "wb") as stream:
             stream.setparams((1, 2, 8000, 0, "NONE", "not compressed"))
@@ -67,6 +71,8 @@ def main():
         assert (game / "tl/zh/khime_zero/grpo_bu/1902.png").is_file()
         assert not (game / "grpo_bu/1902.png").exists()
         assert (game / "khime_zero/bgm/Track02.wav").is_file()
+        for name in ("dt1_1001.png", "dt2_0001.png"):
+            assert (game / "khime_zero/grps" / name).read_bytes() == (zero / "grps" / name).read_bytes()
         assert "khime_zero_available = True" in (game / "engine/zero_config.rpy").read_text()
         if len(sys.argv) > 3:
             sdk = Path(sys.argv[3])
@@ -110,6 +116,14 @@ def main():
             assert "grpo/0101.png" in str(error)
         else:
             raise AssertionError("missing hover artwork must fail before generation")
+        shutil.copy2(zero / "grpo/0001.png", zero / "grpo/0101.png")
+        (zero / "grps/dt2_0001.png").unlink()
+        try:
+            prepare_zero(zero, [])
+        except FileNotFoundError as error:
+            assert "grps/dt2_0001.png" in str(error)
+        else:
+            raise AssertionError("missing save artwork must fail before generation")
     if len(sys.argv) > 1:
         zero, patch = map(Path, sys.argv[1:3])
         content = prepare_zero(zero, [("zh", patch)])

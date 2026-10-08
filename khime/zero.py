@@ -31,7 +31,8 @@ def prepare_zero(resources: Path, patches) -> str:
         if not script.is_file():
             continue
         tsc = read_tsc(script, "forest")
-        required = {"grpo/0001.png", "grpo/0101.png"}
+        required = {"grpo/0001.png", "grpo/0101.png",
+                    "grps/dt1_1001.png", "grps/dt2_0001.png"}
         for item in tsc.instructions():
             op, values = item.opcode, item.operands
             if op == 20:

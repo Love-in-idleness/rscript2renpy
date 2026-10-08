@@ -65,6 +65,9 @@ init python:
 
     def rscript_save_json(data):
         data["rscript_dt1"] = int(store._r[1])
+        if rscript_ui.get("slot_images"):
+            data["rscript_slot_images"] = rscript_ui["slot_images"]
+            data["rscript_slot_zoom"] = rscript_ui.get("slot_image_zoom", 1.0)
 
     config.save_json_callbacks.append(rscript_save_json)
 

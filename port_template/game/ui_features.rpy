@@ -77,6 +77,15 @@ init python:
         return folder, caption
 
     def rscript_slot_image(slot):
+        from collections.abc import Sequence
+        # Keep side-story artwork in the save, not the currently active game UI.
+        images = FileJson(slot, key="rscript_slot_images")
+        if isinstance(images, Sequence) and not isinstance(images, str) and images and all(
+                isinstance(path, str) and renpy.loadable(path) for path in images):
+            zoom = FileJson(slot, key="rscript_slot_zoom")
+            if not isinstance(zoom, (int, float)) or zoom <= 0:
+                zoom = 1.0
+            return HBox(*(Transform(Image(path), zoom=zoom) for path in images), spacing=0)
         # Keep existing Forest saves readable; all new saves use the shared key.
         number = FileJson(slot, key="rscript_dt1")
         if number is None:

@@ -44,6 +44,9 @@ python early:
         assert rscript_text_image_path("gf008") == "grps/gf008.png"
         main_ui = rscript_ui
         registers = dict(persistent._reg)
+        main_save = {}
+        rscript_save_json(main_save)
+        assert "rscript_slot_images" not in main_save
         khime_zero_begin()
         assert main_ui is not rscript_ui and "text_image_root" not in main_ui
         assert rscript_text_image_path("gf008") == "khime_zero/grps/gf008.png"
@@ -59,6 +62,31 @@ python early:
         khime_zero_gload(RScriptArguments(CGNum=655, Colormode=0))
         assert layer_info[CG_LAYER] == "khime_zero grpe 0655"
         assert dict(persistent._reg) == registers
+        # Save metadata survives leaving Zero, including language changes.
+        import json
+        metadata = {}
+        rscript_save_json(metadata)
+        metadata = json.loads(json.dumps(metadata))
+        assert metadata["rscript_slot_images"] == ["khime_zero/grps/dt1_1001.png",
+                                                   "khime_zero/grps/dt2_0001.png"]
+        assert metadata["rscript_slot_zoom"] == 1.25
+        zero_ui = rscript_ui
+        old_json, old_language = store.FileJson, _preferences.language
+        try:
+            store.FileJson = lambda slot, key: metadata.get(key)
+            store.rscript_ui = main_ui
+            for language in (None, "zh"):
+                _preferences.language = language
+                card = rscript_slot_image(1)
+                assert isinstance(card, renpy.display.layout.MultiBox), card
+                assert [child.child.filename for child in card.children] == metadata["rscript_slot_images"]
+                assert all(child.zoom == 1.25 for child in card.children)
+            metadata["rscript_slot_images"] = ["missing.png"]
+            assert rscript_slot_image(1) is None
+        finally:
+            store.FileJson = old_json
+            _preferences.language = old_language
+            store.rscript_ui = zero_ui
         rscript_dialogue_begin()
         parsed, center = parse_rscript_text(repr("^g008body"), True)
         assert rscript_speaker == 8 and parsed == "body"
@@ -84,6 +112,15 @@ init 100 python:
         assert text is not None and isinstance(text.style.xpos, absolute)
         assert 0 < text.style.xpos < 800
         assert rscript_speaker == 8
+        metadata = {}
+        rscript_save_json(metadata)
+        old_json = store.FileJson
+        try:
+            store.FileJson = lambda slot, key: metadata.get(key)
+            rendered = renpy.render(rscript_slot_image(1), 800, 600, 0, 0)
+            assert rendered.get_size() == (317.5, 77.5), rendered.get_size()
+        finally:
+            store.FileJson = old_json
         renpy.screenshot(config.basedir + "/zero-dialogue.png")
         renpy.session["zero_display_done"] = True
         renpy.end_interaction(True)

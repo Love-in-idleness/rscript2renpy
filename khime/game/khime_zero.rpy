@@ -33,7 +33,10 @@ init python:
         store.rscript_se_format = "khime_zero/wav/%04d.ogg"
         store.rscript_speaker_images_override = True
         store.rscript_ui = dict(rscript_ui, text_image_root="khime_zero/grps",
-                               speaker_zoom=1.25, inline_zoom=1.25, speaker_pos=(6, 15))
+                               speaker_zoom=1.25, inline_zoom=1.25, speaker_pos=(6, 15),
+                               slot_images=("khime_zero/grps/dt1_1001.png",
+                                            "khime_zero/grps/dt2_0001.png"),
+                               slot_image_zoom=1.25)
         store.text_indent = 97 * 1.25
         store.cur_textbox = 1
         store.khime_face_number = 0
@@ -52,7 +55,7 @@ init python:
 init 5 python:
     for path in renpy.list_files():
         if path.startswith("khime_zero/") and path.endswith(".png"):
-            tag = " ".join(path[7:-4].lower().split("/"))
+            tag = " ".join(path[:-4].lower().split("/"))
             renpy.image(tag, Transform(Image(path), zoom=1.25))
 
 python early:
