@@ -485,7 +485,7 @@ python early:
             if screen_name == "rscript_compane":
                 buttons = []
                 screen.visit_all(lambda d: buttons.append(d) if isinstance(d, renpy.display.behavior.ImageButton) else None)
-                assert len(buttons) == 13, len(buttons)
+                assert len(buttons) == 12, len(buttons)  # Unvoiced text hides voc.
             renpy.hide_screen(screen_name)
         original_newest = store.FileNewest
         try:
@@ -505,12 +505,17 @@ python early:
         old_say = renpy.say
         old_queue = store.queue_draw
         old_process = store.process_draw_queue
+        old_loadable, old_play = renpy.loadable, renpy.music.play
         try:
             store.queue_draw = lambda *args, **kwargs: None
             store.process_draw_queue = lambda: None
             renpy.say = lambda who, what, **kwargs: calls.append((who.name, what, kwargs['interact']))
+            renpy.loadable = lambda path: path == "voice/1/0001.wav" or old_loadable(path)
+            renpy.music.play = lambda *args, **kwargs: None
             store.jump_back_point = 1  # No rollback log exists in command-mode tests.
+            execute_voice(SimpleNamespace(VoiceNo=10001, Repeat=0, Fade=0, Pan=0))
             execute_rscript_say(repr(("Alice", "|漢字[かんじ]^nnext", 1)))
+            assert rscript_last_voice == "voice/1/0001.wav" and not rscript_voice_pending
             assert calls[-1][0] == "Alice" and "{rb}漢字{/rb}" in calls[-1][1]
             parsed = calls[-1][1]
             rscript_dialogue_begin()
@@ -518,8 +523,13 @@ python early:
             renpy.get_screen("say").update()
             assert renpy.get_widget("say", "what").text == [parsed]
             assert renpy.get_widget("say", "who").text == ["Alice"]
+            buttons = []
+            renpy.get_screen("say").visit_all(lambda d: buttons.append(d)
+                if isinstance(d, renpy.display.behavior.ImageButton) else None)
+            assert len(buttons) == 13, len(buttons)
             renpy.hide_screen("say")
             execute_rscript_say(repr(("Alice", "nonblocking", 0)))
+            assert rscript_last_voice is None
             assert calls[-1] == ("Alice", "nonblocking", False)
             execute_rscript_append(repr((" plus", 0)))
             assert calls[-1][2] is False and "nonblocking{fast} plus" in calls[-1][1]
@@ -540,6 +550,7 @@ python early:
             renpy.say = old_say
             store.queue_draw = old_queue
             store.process_draw_queue = old_process
+            renpy.loadable, renpy.music.play = old_loadable, old_play
         print("OK: native modern choices, registers, voices, canvas, names and ruby")
         return False
     renpy.arguments.register_command("modernporttest", check_modern_port)

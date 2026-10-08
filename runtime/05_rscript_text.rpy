@@ -61,6 +61,10 @@ python early:
             else:
                 who = nvl_narrator
 
+        # A new unvoiced line must not replay the preceding dialogue's voice.
+        if not store.rscript_voice_pending:
+            store.rscript_last_voice = None
+        store.rscript_voice_pending = False
         rscript_dialogue_begin()
         what, center = parse_rscript_text(what, True)
 
@@ -102,6 +106,7 @@ python early:
         lang, what = o
 
         who  = store.last_spk
+        store.rscript_voice_pending = False
         rscript_dialogue_begin(append=True)
         what, center = parse_rscript_text(what, True)
 

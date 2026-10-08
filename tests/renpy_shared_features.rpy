@@ -218,6 +218,65 @@ python early:
         # Update native screens to catch missing variables/properties and
         # verify the same controls exist in both games (lint does not do this).
         renpy.display.screen.prepare_screens()
+        # Drive the actual shared say/append path and count rendered buttons.
+        old_say, old_play, old_pause = renpy.say, renpy.music.play, renpy.pause
+        old_queue, old_process = store.queue_draw, store.process_draw_queue
+        old_loadable, old_point = renpy.loadable, store.jump_back_point
+        played = []
+        def voice_button_count():
+            renpy.show_screen("rscript_compane")
+            panel = renpy.get_screen("rscript_compane")
+            panel.update()
+            buttons = []
+            panel.visit_all(lambda d: buttons.append(d)
+                            if isinstance(d, renpy.display.behavior.ImageButton) else None)
+            renpy.hide_screen("rscript_compane")
+            return len(buttons)
+        try:
+            renpy.say = lambda *args, **kwargs: None
+            renpy.music.play = lambda path, **kwargs: played.append(path)
+            renpy.pause = lambda *args, **kwargs: None
+            store.queue_draw = lambda *args, **kwargs: None
+            store.process_draw_queue = lambda: None
+            store.jump_back_point = 1
+            renpy.loadable = lambda path: (not os.path.splitext(path)[0].endswith("9999")
+                                           if path.startswith("voice/") else old_loadable(path))
+            voice = SimpleNamespace(VoiceNo=1, Repeat=0, Fade=0, Pan=0)
+            execute_say((None, None, repr("unvoiced")), interact=False)
+            assert voice_button_count() == 2
+            execute_voice(voice)
+            execute_say((None, None, repr("voiced")), interact=False)
+            assert not rscript_voice_pending and rscript_last_voice == played[-1]
+            assert voice_button_count() == 3
+            # Playback has not actually started: availability is not is_playing.
+            rscript_replay_voice()
+            assert played[-1] == played[-2] and len(played) == 2
+            execute_append((None, repr(" plus")), interact=False)
+            assert voice_button_count() == 3
+            execute_say((None, None, repr("next unvoiced")), interact=False)
+            assert voice_button_count() == 2 and rscript_last_voice is None
+            rscript_replay_voice()
+            assert len(played) == 2
+            voice.VoiceNo = 9999
+            execute_voice(voice)
+            execute_say((None, None, repr("missing voice")), interact=False)
+            assert voice_button_count() == 2
+            voice.VoiceNo = 1
+            execute_voice(voice)
+            execute_append((None, repr(" voiced append")), interact=False)
+            assert voice_button_count() == 3 and not rscript_voice_pending
+            execute_say((None, None, repr("after append")), interact=False)
+            assert voice_button_count() == 2
+            execute_voice(voice)
+            execute_voice_off(SimpleNamespace(Fade=0))
+            execute_say((None, None, repr("after standalone voice")), interact=False)
+            assert voice_button_count() == 2
+        finally:
+            renpy.say, renpy.music.play, renpy.pause = old_say, old_play, old_pause
+            store.queue_draw, store.process_draw_queue = old_queue, old_process
+            renpy.loadable, store.jump_back_point = old_loadable, old_point
+            store.rscript_last_voice = None
+            store.rscript_voice_pending = False
         old_afm_time = _preferences.afm_time
         renpy.show_screen("preferences")
         preference_screen = renpy.get_screen("preferences")

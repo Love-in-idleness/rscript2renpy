@@ -56,6 +56,8 @@ init:
     default nvl_mode = False
     default quakeex_params = None
     default jump_back_point = None
+    default rscript_last_voice = None
+    default rscript_voice_pending = False
 
     default folder = {}
     define rscript_folder_zero_all = False

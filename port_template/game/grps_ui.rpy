@@ -1,6 +1,5 @@
 # Shared CodeX UI. Positions and available sprites come from grps/*/.meta.xml.
 default persistent.rscript_textbox_opacity = 1.0
-default rscript_last_voice = None
 define rscript_grps_language_layouts = {}
 
 init python:
@@ -272,8 +271,9 @@ screen rscript_compane():
                         xsize track[2]
                         ysize track[3]
             for name, spec in layout.get("controls", {}).items():
-                use rscript_grps_button("compane", name, rscript_ui_action(spec),
-                                         enabled=rscript_ui_sensitive(spec[0]))
+                if spec[0] != "voice" or rscript_ui_sensitive("voice"):
+                    use rscript_grps_button("compane", name, rscript_ui_action(spec),
+                                             enabled=rscript_ui_sensitive(spec[0]))
 
 screen rscript_choice(items, prompt=None):
     modal True

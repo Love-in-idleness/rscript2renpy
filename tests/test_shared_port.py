@@ -52,8 +52,9 @@ def main():
                            "next", "next_f", "voc", "voc_f", "voc_off", "hide", "hide_f"):
                 shutil.copy2(ROOT / "runtime/gui/rscript_cursor.png", panel / (button + ".png"))
             (panel / ".meta.xml").write_text(
-                '<Canvas><Width>64</Width><Height>32</Height><Items>'
+                '<Canvas><Width>96</Width><Height>32</Height><Items>'
                 '<Item x="0" y="0">rev</Item><Item x="32" y="0">bak</Item>'
+                '<Item x="64" y="0">voc</Item>'
                 '</Items></Canvas>', encoding="utf-8")
             textbox = resources / "grps/tbox01"
             textbox.mkdir()
