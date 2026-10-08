@@ -247,6 +247,8 @@ python early:
         narrator = Speaker()
         store.narrator = narrator
         store.nvl_mode = False
+        store.rscript_voice_pending = False
+        store.rscript_last_voice = None
         store.jump_back_point = "test"
         persistent.rscript_stop_voice_on_advance = False
         store.queue_draw = lambda *args, **kwargs: None
