@@ -82,7 +82,9 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
     targets.update(offset for name, offset in tsc.named_entries)
     entries = {}
     for name, offset in tsc.named_entries:
-        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+        # Generated labels already start with _g_<scene>_, so numeric names
+        # such as Khime 1125's "8011" are valid suffixes too.
+        if not re.fullmatch(r"[A-Za-z0-9_]+", name):
             raise ValueError("%s: unsupported named-entry identifier %r" % (source, name))
         entries.setdefault(offset, []).append(name)
     for item in items:

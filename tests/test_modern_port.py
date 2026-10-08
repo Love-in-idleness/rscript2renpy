@@ -11,7 +11,7 @@ import struct
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "evermaiden"))
 from build_evermaiden_rscript import build_evermaiden, IMAGE_FOLDERS
-from modern_tsc import compile_overlays
+from modern_tsc import compile_overlays, compile_scene
 from grps_layout import UI_ACTIONS, collect_layout
 
 
@@ -64,6 +64,11 @@ def main():
         trailer = (struct.pack('<4I', 0, 1, 0, 6) + b'\0REP\0').hex()
         (base / 'scr/0001.tsc').write_text(
             header + ';@gsc-trailer-header 8 5\n;@gsc-trailer ' + trailer + '\n*wait 1\n*end\n')
+        numeric = directory / '1125.tsc'
+        trailer = (struct.pack('<4I', 0, 1, 0, 6) + b'\0' + b'8011\0').hex()
+        numeric.write_text(header + ';@gsc-trailer-header 8 6\n;@gsc-trailer '
+                           + trailer + '\n*wait 1\n*end\n')
+        assert 'label _g_1125_8011:' in compile_scene(numeric)
         (patch / 'scr/0000.tsc').write_text(header + '*wait 2\n' + source.replace('Question', '问题'), encoding='utf-8')
         (patch / 'scr/5000.tsc').write_text(header + '*end\n')
         pcm = base / 'wav/0033.wav'
