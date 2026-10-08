@@ -214,7 +214,16 @@ python early:
             options, previews = captured[0]["options"], captured[0]["previews"]
             assert [option[4:] for option in options] == [(569, 420), (450, 227), (639, 200)]
             assert previews == {0: ("grpo_map 1090", 0, 0), 1: ("grpo_map 1070", 0, 0), 2: ("grpo_map 1080", 0, 0)}
-            renpy.show_screen("rscript_click_screen", options=options, previews=previews)
+            native_layers = captured[0]["layers"]
+            for index, layer in native_layers.items():
+                loadcls(layer, 0, cg=(9, 12, 13)[index], xpos=options[index][4], ypos=options[index][5])
+            # Lyrics/tone must remain above the song-list buttons even while
+            # those buttons are focused. Click screens must not redraw them.
+            store.folder[40] = "grpo_map"
+            loadcls(40, 0, cg=9, xpos=285, ypos=118)
+            execute_tonedep(SimpleNamespace(Depth=40))
+            execute_tone(SimpleNamespace(Level=50, Mode=0))
+            renpy.show_screen("rscript_click_screen", options=options, previews=previews, layers=native_layers)
             screen = renpy.get_screen("rscript_click_screen")
             screen.update()
             buttons = []
@@ -225,20 +234,57 @@ python early:
             try:
                 for index, button in enumerate(buttons):
                     assert (button.style.xpos, button.style.ypos) == options[index][4:]
-                    assert button.style.focus_mask is True
+                    assert isinstance(button.style.focus_mask, renpy.display.image.ImageReference)
+                    assert all(button.state_children[state].alpha == 0.0 for state in ("idle_", "hover_"))
                     assert renpy.run(button.action) == options[index][0]
                     renpy.run(button.hovered)
                     renpy.display.screen.updated_screens.discard(screen)
                     screen.update()
-                    assert screen.scope["preview"] == previews[index]
-                    assert renpy.get_widget("rscript_click_screen", "rscript_click_preview") is not None
+                    assert screen.scope["preview"] is None
+                    assert renpy.get_widget("rscript_click_screen", "rscript_click_preview") is None
+                    scene = renpy.game.context().scene_lists
+                    orders = dict(scene.get_zorder_list(IMAGE_LAYER))
+                    layer = native_layers[index]
+                    assert orders["layer%d" % layer] < orders[TONE_TAG] < orders["layer40"]
+                    assert orders["rscript_click_preview"] == orders["layer%d" % layer] + 1
+                    assert orders["rscript_click_preview"] < orders["layer40"]
+                    displayable = scene.get_displayable_by_tag(IMAGE_LAYER, "layer%d" % layer)
+                    refs = []
+                    displayable.visit_all(lambda d: refs.append(d.name) if isinstance(d, renpy.display.image.ImageReference) else None)
+                    assert tuple(options[index][3].split()) in refs, refs
+                    assert store.layer_info[layer] == options[index][2]
                     renpy.run(button.unhovered)
                     renpy.display.screen.updated_screens.discard(screen)
                     screen.update()
                     assert renpy.get_widget("rscript_click_screen", "rscript_click_preview") is None
+                    assert "rscript_click_preview" not in dict(scene.get_zorder_list(IMAGE_LAYER))
             finally:
                 renpy.display.screen.pop_current_screen()
             renpy.hide_screen("rscript_click_screen")
+            # depth changes apply to loaded objects; queue keeps their order.
+            execute_queue(None)
+            execute_depth(SimpleNamespace(Layer=19, Depth=50))
+            assert dict(scene.get_zorder_list(IMAGE_LAYER))["layer19"] == 38
+            execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
+            assert dict(scene.get_zorder_list(IMAGE_LAYER))["layer19"] == 100
+            for layer, cg in ((19, 109), (22, 112), (23, 113)):
+                execute_setclk(SimpleNamespace(Layer=layer, Value=layer))
+                execute_setlink(SimpleNamespace(Layer=layer, HoverCG=cg, xLoc=0, yLoc=0, Slot=0))
+            execute_setlink(SimpleNamespace(Layer=19, HoverCG=1090, xLoc=0, yLoc=0, Slot=1))
+            def cancel_focused(name, **kwargs):
+                assert list(kwargs["layers"].values()) == [22, 23, 19]
+                rscript_click_focus(19, "grpo_map 0109", kwargs["previews"][2])
+                return 0
+            renpy.call_screen = cancel_focused
+            execute_click(SimpleNamespace(Cancel=1))
+            assert _r[0] == 0
+            assert "rscript_click_preview" not in dict(scene.get_zorder_list(IMAGE_LAYER))
+            refs = []
+            scene.get_displayable_by_tag(IMAGE_LAYER, "layer19").visit_all(
+                lambda d: refs.append(d.name) if isinstance(d, renpy.display.image.ImageReference) else None)
+            assert ("grpo_map", "0009") in refs and ("grpo_map", "0109") not in refs, refs
+            execute_tone(SimpleNamespace(Level=0, Mode=0))
+            loadcls(0, 0, clear=True)
         finally:
             renpy.call_screen = old_click_screen
             store.folder, store.layer_info = old_folder, old_info

@@ -129,20 +129,24 @@ screen rscript_locmap_screen(cancel=False):
     key "dismiss" action Return(1)
     key "game_menu" action (Return(0) if cancel else NullAction())
 
-screen rscript_click_screen(options, previews=None, cancel=False):
+screen rscript_click_screen(options, previews=None, cancel=False, layers=None):
     default preview = None
     modal True
     key "game_menu" action (Return(0) if cancel else Function(rscript_open_game_menu))
     key "rollback" action Rollback()
     for index, (value, system, idle_image, hover_image, x, y) in enumerate(options):
+        $ native_layer = (layers or {}).get(index)
+        $ info_image = (previews or {}).get(index)
         imagebutton:
-            idle idle_image
-            hover hover_image
-            focus_mask True
+            # Script-backed buttons are hit masks only. Standalone callers
+            # without scene layers still draw their own UI normally.
+            idle (Transform(idle_image, alpha=0.0) if native_layer is not None else idle_image)
+            hover (Transform(idle_image, alpha=0.0) if native_layer is not None else hover_image)
+            focus_mask renpy.displayable(idle_image)
             xpos x
             ypos y
-            hovered SetScreenVariable("preview", (previews or {}).get(index))
-            unhovered SetScreenVariable("preview", None)
+            hovered (Function(rscript_click_focus, native_layer, hover_image, info_image) if native_layer is not None else SetScreenVariable("preview", info_image))
+            unhovered (Function(rscript_click_focus, native_layer) if native_layer is not None else SetScreenVariable("preview", None))
             action rscript_system_action(value, system)
     if preview is not None:
         add preview[0] pos (preview[1], preview[2]) id "rscript_click_preview"

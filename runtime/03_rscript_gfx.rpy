@@ -337,6 +337,9 @@ python early:
 
     def execute_depth(args):
         layer_zorder[args.Layer] = args.Depth * 2
+        # Also reorder already loaded artwork, in the same drawing queue.
+        queue_draw(renpy.change_zorder, IMAGE_LAYER, "layer%d" % args.Layer, args.Depth * 2)
+        process_draw_queue()
 
     renpy.register_statement("_depth", parse = parse_depth, execute = execute_depth, lint = lint_undef)
 

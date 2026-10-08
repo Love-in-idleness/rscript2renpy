@@ -8,6 +8,9 @@ init 100 python:
     renpy.image("grpo 9990", Solid("#204060", xsize=100, ysize=80))
     renpy.image("grps es101", Solid("#000000", xsize=100, ysize=80))
     renpy.image("grps es102", Solid("#808080", xsize=100, ysize=80))
+    renpy.image("grpo 9980", Solid("#ff0000", xsize=100, ysize=80))
+    renpy.image("grpo 9981", Solid("#0000ff", xsize=100, ysize=80))
+    renpy.image("grpo 9982", Solid("#00ff00", xsize=100, ysize=80))
 
     def effects_test_pixel(expected):
         import io
@@ -47,6 +50,30 @@ label _0000:
     _action
     _cls 20 10
     $ assert 20 not in store.layer_info and 20 not in store.layer_pos
+    # Same ordering as music list < tone < lyrics. Check actual framebuffer,
+    # not only scene metadata; screens must contain transparent hit masks.
+    $ store.folder[11] = store.folder[40] = "grpo"
+    $ store.layer_anchor[11] = store.layer_anchor[40] = (0.0, 0.0)
+    _load 11 9980 0 0 0 0
+    _load 40 9982 0 0 0 0
+    _tonedep 40
+    _tone 50 0
+    show screen rscript_click_screen(options=[(1, False, "grpo 9980", "grpo 9981", 0, 0)], layers={0: 11})
+    $ renpy.pause(0.1, hard=True)
+    $ effects_test_pixel((0, 255, 0))
+    $ rscript_click_focus(11, "grpo 9981", ("grpo 9980", 0, 0))
+    $ renpy.pause(0.1, hard=True)
+    $ effects_test_pixel((0, 255, 0))
+    _depth 11 50
+    $ renpy.pause(0.1, hard=True)
+    $ effects_test_pixel((0, 0, 255))
+    $ rscript_click_focus(11)
+    $ renpy.pause(0.1, hard=True)
+    $ effects_test_pixel((255, 0, 0))
+    hide screen rscript_click_screen
+    _tone 0 0
+    _cls 11 0
+    _cls 40 0
     python:
         for effect in (0, 2, 3, 4, 15, 19, 24, 28):
             lex = renpy.lexer.Lexer([("effects-test", 1,

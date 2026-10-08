@@ -405,7 +405,9 @@ python early:
     def execute_click(o):
         options = []
         previews = {}
-        for layer, (value, system) in sorted(store.rscript_click_values.items()):
+        layers = {}
+        for layer, (value, system) in sorted(store.rscript_click_values.items(),
+                key=lambda item: (store.layer_zorder.get(item[0], item[0] * 2), item[0])):
             if not store.layer_enabled.get(layer, 1):
                 continue
             if layer not in store.rscript_click_links or layer not in store.layer_info:
@@ -423,6 +425,7 @@ python early:
             # Keep required idle resources visible as errors if they are missing.
             options.append((value, system, idle,
                             hover_image if renpy.has_image(hover_image, exact=True) else idle, x, y))
+            layers[len(options) - 1] = layer
             if layer in store.rscript_click_previews:
                 cg, px, py = store.rscript_click_previews[layer]
                 if store.rscript_click_grid:
@@ -433,10 +436,32 @@ python early:
                     previews[len(options) - 1] = (image, px, py)
         if not options:
             raise Exception("RScript click has no active image regions")
-        store._r[0] = renpy.call_screen("rscript_click_screen", options=options,
-                                       previews=previews, cancel=bool(o.Cancel) if o is not None else False)
+        try:
+            store._r[0] = renpy.call_screen("rscript_click_screen", options=options,
+                                           previews=previews, layers=layers,
+                                           cancel=bool(o.Cancel) if o is not None else False)
+        finally:
+            for layer in layers.values():
+                rscript_click_focus(layer)
         if store.rscript_click_autoreset:
             execute_resetclk(None)
+
+    def rscript_click_focus(layer, image=None, preview=None):
+        # Input lives on screens; native artwork stays in the master scene.
+        # Re-showing the same tag retains its transforms/position and depth.
+        tag = "layer%d" % layer
+        scene = renpy.game.context().scene_lists
+        depth = dict(scene.get_zorder_list(IMAGE_LAYER)).get(tag,
+                    store.layer_zorder.get(layer, layer * 2))
+        if layer in store.layer_info and scene.get_displayable_by_tag(IMAGE_LAYER, tag) is not None:
+            renpy.show(tag, what=renpy.displayable(image or store.layer_info[layer]),
+                       layer=IMAGE_LAYER, zorder=depth)
+        renpy.hide("rscript_click_preview", layer=IMAGE_LAYER)
+        if preview is not None and store.layer_enabled.get(layer, 1):
+            image, x, y = preview
+            renpy.show("rscript_click_preview", what=renpy.displayable(image),
+                       layer=IMAGE_LAYER, zorder=depth + 1,
+                       at_list=[Transform(pos=(absolute(x), absolute(y)))])
 
     renpy.register_statement("_click", parse = parse_click, execute = execute_click, lint = lint_undef)
 
