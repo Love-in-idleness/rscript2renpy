@@ -3,6 +3,7 @@ __pycache__/
 .vscode/
 .port-check/
 local.paths.toml
+/rebuild_local.sh
 .codex/config.toml
 *.pyc
 *.rpyc

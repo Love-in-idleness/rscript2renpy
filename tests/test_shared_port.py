@@ -132,7 +132,7 @@ def main():
                 (project / "game/engine/options.rpy").read_text(encoding="utf-8")
             assert "config.version" not in (project / "game/engine/options.rpy").read_text()
             assert (project / "game/engine/port_version.rpy").read_text() == \
-                'define config.version = "1.2"\n'
+                'define config.version = "1.3"\n'
             for source in (ROOT / "runtime").glob("*.rpy"):
                 assert (project / "game" / "engine" / source.name).read_bytes() == source.read_bytes()
             if len(sys.argv) > 1:

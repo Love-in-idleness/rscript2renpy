@@ -39,6 +39,14 @@ copyright holder. Attribution does not establish redistribution permission.
 of the same icon on a transparent adaptive-icon canvas; the accompanying
 background is solid black. The foreground has the same copyright restrictions.
 
+## Evermaiden application icon
+
+`evermaiden/assets/L42_EM.ico` is the original Evermaiden application icon,
+supplied from `Evermaiden_s/L42_EM.ico`. The generator copies the ICO unchanged
+and derives the window, macOS, Android, iOS and web icons from that same image.
+These assets are not covered by MIT; all rights remain with the original
+copyright holder. Attribution does not establish redistribution permission.
+
 ## Forest fonts
 
 `port_template/fonts/simhei.ttf` (SimHei Regular, version 5.04) is included to match

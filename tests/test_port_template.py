@@ -60,12 +60,12 @@ def main() -> None:
         runtime_count, copied = build(resources, project)
         assert runtime_count == 23
         assert (project / "game/engine/port_version.rpy").read_text() == \
-            'define config.version = "1.2"\n'
+            'define config.version = "1.3"\n'
         android = {"version": "0.1", "numeric_version": 200,
                    "package": "test.keep.package", "permissions": ["VIBRATE"]}
         (project / "android.json").write_text(json.dumps(android))
         install_version(project)
-        android["version"] = "1.2"
+        android["version"] = "1.3"
         assert json.loads((project / "android.json").read_text()) == android
         assert copied >= 12
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()

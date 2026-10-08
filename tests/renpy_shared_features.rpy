@@ -1,7 +1,7 @@
 # Run on a disposable generated project, never on a player's save directory.
 python early:
     def check_shared_port_features():
-        assert config.version == "1.2"
+        assert config.version == "1.3"
         renpy.execute_default_statement(True)
         assert rscript_update_timing == "legacy"
         assert rscript_update_duration(1, 16, 16) == 2.56

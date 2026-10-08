@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import shutil
 import sys
+from tempfile import TemporaryDirectory
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,8 +20,8 @@ from grps_layout import collect_layout  # noqa: E402
 from port_resources import convert_masks, convert_bmp_assets, read_keywords  # noqa: E402
 
 
-PORT_VERSION = "1.2"
-ANDROID_VERSION_CODE = 12
+PORT_VERSION = "1.3"
+ANDROID_VERSION_CODE = 13
 
 
 def install_version(project: Path, force: bool = False) -> None:
@@ -64,6 +65,30 @@ def copy_file(source: Path, target: Path, force: bool) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
     clear_script_cache(target)
+
+
+def install_icon(source: Path, project: Path, force: bool = False) -> None:
+    """Use one ICO source for Ren'Py's desktop, mobile and web icon inputs."""
+    from PIL import Image
+
+    with Image.open(source) as original:
+        icon = original.convert("RGBA")
+    copy_file(source, project / "icon.ico", force)
+    with TemporaryDirectory(prefix="port-icons-") as temporary:
+        temporary = Path(temporary)
+        large = icon.resize((1024, 1024), Image.Resampling.LANCZOS)
+        foreground = Image.new("RGBA", (432, 432))
+        foreground.paste(icon.resize((288, 288), Image.Resampling.LANCZOS), (72, 72))
+        ios = Image.new("RGB", (1024, 1024), "black")
+        ios.paste(large, mask=large.getchannel("A"))
+        for name, image in (("game/icon.png", icon), ("icon.icns", large),
+                            ("web-icon.png", icon.resize((512, 512), Image.Resampling.LANCZOS)),
+                            ("ios-icon.png", ios),
+                            ("android-icon_foreground.png", foreground),
+                            ("android-icon_background.png", Image.new("RGB", (432, 432), "black"))):
+            generated = temporary / Path(name).name
+            image.save(generated)
+            copy_file(generated, project / name, force)
 
 
 def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> int:

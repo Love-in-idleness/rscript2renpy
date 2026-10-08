@@ -24,6 +24,9 @@ python3 evermaiden/build_evermaiden_rscript.py \
 
 生成器只读取当前 `modern-36/modern` 命令式 TSC 及转换后的资源；不读取、
 执行或依赖 EXE / DLL，不要求旧 Ren'Py 工程。原始 MPG 直接复制。
+仓库保存原图标 `assets/L42_EM.ico`，生成器通过公共 `install_icon` 派生
+Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标，统一使用同一图案。
+版权说明见根目录 `THIRD_PARTY_NOTICES.md`；生成图标不代表这些平台已完成打包测试。
 资源目录包括 `scr/grpe/grpo/grpo_ex/grps/bgm/voice/wav`，以及
 `grpo_bg/grpo_bu0/grpo_bu1/grpo_cu/grpo_ef/grpo_map`。
 普通 PCM WAV 保留；含 Ogg 的封装 WAV 由 LiarsoftTool 提取后使用 Ogg。

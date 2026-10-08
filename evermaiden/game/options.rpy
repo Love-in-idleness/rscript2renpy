@@ -1,4 +1,5 @@
 define config.name = "Evermaiden"
+define config.window_icon = "icon.png"
 define config.save_directory = "Evermaiden-shared-rscript2renpy"
 define config.has_sound = True
 define config.has_music = True

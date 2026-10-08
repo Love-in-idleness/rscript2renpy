@@ -7,7 +7,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import install_base, copy_engine_file, write_scenario, clear_script_cache
+from build_port import install_base, install_icon, copy_engine_file, write_scenario, clear_script_cache
 from modern_tsc import compile_overlays
 from port_resources import (parse_language_options, copy_language_assets,
                             write_language_config, read_keywords)
@@ -26,6 +26,7 @@ def build_evermaiden(resources, project, force=False, languages=()):
     # Validate every script before touching the generated project.
     scenes = compile_overlays(resources, patches)
     install_base(resources, project, force)
+    install_icon(Path(__file__).parent / "assets/L42_EM.ico", project, force)
     game = project / "game"
     for source in (Path(__file__).parent / "game").glob("*.rpy"):
         copy_engine_file(source, game, force)

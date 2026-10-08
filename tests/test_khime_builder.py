@@ -108,7 +108,7 @@ def main() -> None:
             assert foreground.crop((72, 72, 360, 360)).tobytes() == \
                 icon.convert("RGBA").resize((288, 288), Image.Resampling.NEAREST).tobytes()
         android = json.loads((project / "android.json").read_text())
-        assert android["version"] == "1.2" and android["numeric_version"] == 12
+        assert android["version"] == "1.3" and android["numeric_version"] == 13
         assert android["package"] == "io.github.loveinidleness.khime"
         assert (project / "game" / "engine" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
@@ -135,7 +135,7 @@ def main() -> None:
         assert "rscript_ctc_x = 729" in options
         assert 729 + 24 + 8 == 800 - layout["compane"]["size"][0]
         click = (project / "game" / "engine" / "ui_features.rpy").read_text(encoding="utf-8")
-        assert 'key "game_menu" action Function(rscript_open_game_menu)' in click
+        assert 'key "game_menu" action (Return(0) if cancel else Function(rscript_open_game_menu))' in click
         assert 'key "rollback" action Rollback()' in click
         assert "rscript_text what:" in click
         assert "xalign 0.5" in click and "text_align 0.5" in click

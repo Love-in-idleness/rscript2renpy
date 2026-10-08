@@ -19,7 +19,7 @@ Forest、Khime 和试验性 Evermaiden 共用 `runtime/`、`port_template/`，�
 `game/*.rpy` 覆盖层。字体、文本/语言设置、Wiki、进度备份和安卓控制均由公共层
 维护，详见 [公共模板分层说明](docs/SHARED_TEMPLATE_MIGRATION.md)。
 
-除通用鼠标光标、Forest Android 应用图标和 Khime 应用图标外，本项目不包含
+除通用鼠标光标、Forest Android 应用图标、Khime 和 Evermaiden 应用图标外，本项目不包含
 游戏剧本、图像、音频、视频或可执行文件。
 用户必须从自己合法持有的游戏副本中准备其余资源。
 
@@ -141,7 +141,7 @@ SimHei 不是开源字体，来源与权利说明见
 
 两款生成器会同时写入 Ren'Py Android 配置和各自的自适应图标，包括
 横屏方向、包名与版本。PC／Android 版本统一由通用模板 `port_template/build_port.py`
-中的 `PORT_VERSION` 管理，当前为 `1.2`；安卓版本代码最低为 `12`，保留已有更高值。
+中的 `PORT_VERSION` 管理，当前为 `1.3`；安卓版本代码最低为 `13`，保留已有更高值。
 这不代表已完成安卓打包或实机验证。签名用的 `android.keystore` 和 `bundle.keystore`
 不会纳入仓库或复制到工程；Ren'Py 会在构建机器上创建或使用本地签名密钥。
 
@@ -175,8 +175,8 @@ No new GitHub Releases or versioned release packages will be published.
 Runtime behavior depends on the source game's CodeX dialect, so each new game
 still requires verification.
 
-Apart from the shared mouse cursor, Forest Android application icon and Khime
-application icon, this repository contains engine-side support only. It does not contain game
+Apart from the shared mouse cursor and Forest, Khime and Evermaiden application
+icons, this repository contains engine-side support only. It does not contain game
 scripts, other images, audio, movies, executables, or other proprietary game
 data.
 

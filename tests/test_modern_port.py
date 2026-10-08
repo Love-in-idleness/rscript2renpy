@@ -109,6 +109,19 @@ def main():
         assert '_flagset 1 3 1' in script
         build_evermaiden(base, project, languages=['jp', 'zh=' + str(patch)])
         game = project / 'game'
+        assert (project / 'icon.ico').read_bytes() == (ROOT / 'evermaiden/assets/L42_EM.ico').read_bytes()
+        with Image.open(ROOT / 'evermaiden/assets/L42_EM.ico') as original, Image.open(game / 'icon.png') as window:
+            assert window.convert('RGBA').tobytes() == original.convert('RGBA').tobytes()
+        for name, size in (('icon.icns', (1024, 1024)), ('ios-icon.png', (1024, 1024)),
+                           ('web-icon.png', (512, 512)), ('android-icon_foreground.png', (432, 432)),
+                           ('android-icon_background.png', (432, 432))):
+            with Image.open(project / name) as image:
+                assert image.size == size, (name, image.size)
+        assert 'define config.window_icon = "icon.png"' in (game / 'engine/options.rpy').read_text()
+        assert 'define config.version = "1.3"' in (game / 'engine/port_version.rpy').read_text()
+        # A repeated build produces identical icon inputs, without --force.
+        from build_port import install_icon
+        install_icon(ROOT / 'evermaiden/assets/L42_EM.ico', project)
         assert (game / 'wav/0033.wav').is_file()
         assert (game / 'wav/0034.ogg').is_file() and not (game / 'wav/0034.wav').exists()
         assert (game / 'tl/zh/grpo_ex/9999.png').is_file()
