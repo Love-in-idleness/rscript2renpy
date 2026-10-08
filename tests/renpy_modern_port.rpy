@@ -56,6 +56,30 @@ python early:
         captured = []
         try:
             execute_resetclk(None)
+            # 0201/0301/0351 disable locked thumbnails individually. The
+            # navigation buttons must survive even when every thumbnail locks.
+            for layer, value in ((12, 12), (47, 91), (48, 92), (49, 99)):
+                store.folder[layer] = "grpo_ex"
+                store.layer_info[layer] = "grpo_ex %04d" % layer
+                execute_setclk(SimpleNamespace(Layer=layer, Value=value))
+                execute_setlink(SimpleNamespace(Layer=layer, HoverCG=layer + 100,
+                                               xLoc=layer, yLoc=642, Slot=0))
+                execute_setlink(SimpleNamespace(Layer=layer, HoverCG=layer + 200,
+                                               xLoc=0, yLoc=665, Slot=1))
+            _r[31] = 12
+            for expression in ("0", "_r[31]", "_r[31]"):
+                lex = renpy.lexer.Lexer([("0201-test", 1, expression, [])])
+                lex.advance()
+                execute_resetclk(parse_resetclk(lex))
+                if expression == "0":
+                    assert set(rscript_click_values) == {12, 47, 48, 49}
+            for bindings in (rscript_click_values, rscript_click_links, rscript_click_previews):
+                assert set(bindings) == {47, 48, 49}
+            renpy.call_screen = lambda name, **kwargs: (captured.append(kwargs), 99)[1]
+            execute_click(None)
+            assert _r[0] == 99
+            assert [option[0] for option in captured[0]["options"]] == [91, 92, 99]
+            captured.clear()
             for layer, cg, hover, value, x, y in ((19, 9, 109, 1090, 569, 420),
                                                   (22, 12, 112, 1070, 450, 227),
                                                   (23, 13, 113, 1080, 639, 200)):

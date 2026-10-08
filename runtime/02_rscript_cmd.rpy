@@ -429,12 +429,20 @@ python early:
 
 
     def parse_resetclk(lex):
-        return (lex.rest(),)
+        args = rscript_arguments(lex, ["Layer"])
+        lex.expect_eol()
+        return args
 
     def execute_resetclk(o):
-        store.rscript_click_values.clear()
-        store.rscript_click_links.clear()
-        store.rscript_click_previews.clear()
+        # None is an internal full reset; the script command targets one layer.
+        # Native resetclk 0 is a no-op, not a request to clear all regions.
+        layer = None if o is None else o.Layer
+        for bindings in (store.rscript_click_values, store.rscript_click_links,
+                         store.rscript_click_previews):
+            if layer is None:
+                bindings.clear()
+            elif layer != 0:
+                bindings.pop(layer, None)
 
     renpy.register_statement("_resetclk", parse = parse_resetclk, execute = execute_resetclk, lint = lint_undef)
 
