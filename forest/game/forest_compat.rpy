@@ -49,21 +49,6 @@ init python:
         "choice_center_art": True,
     })
 
-    def forest_migrate_preferences():
-        if getattr(persistent, "rscript_forest_preferences_migrated", False):
-            return
-        for name in ("text_size", "say_line_chars", "oload_line_chars",
-                     "line_spacing", "text_cps", "text_font", "wiki_mode",
-                     "progress_backup", "previous_default_font"):
-            value = getattr(persistent, "forest_" + name, None)
-            if value is not None:
-                setattr(persistent, "rscript_" + name, value)
-        persistent.rscript_forest_preferences_migrated = True
-        renpy.save_persistent()
-
-    # Run the migration before the shared default-font upgrade.
-    config.start_callbacks.insert(0, forest_migrate_preferences)
-
     def rscript_touch_locked():
         return store.forest_input_locked
 

@@ -17,7 +17,7 @@ port_template/
     grps_ui.rpy             元数据驱动的设置、选项、存读档、对话控制条
     ui_features.rpy          对话/姓名牌、点击系统动作、旧存档和透明度迁移
     touch_controls.rpy      Back / Skip / Auto / Hide / Screenshot / Menu
-forest/game/                Forest 布局策略、旧指令别名、偏好迁移、5000 锁定
+forest/game/                Forest 布局策略、指令别名、5000 锁定
 khime/game/                 Khime 人脸、方言适配、布局策略及旧指令别名
 evermaiden/game/            1280×720、现代文本/音频编号与布局默认值
 ```
@@ -80,7 +80,7 @@ Forest 的 `forest/game/*.rpy` 是覆盖层，`build_forest_rscript.py` 保留�
 原生运行时安装器 `tools/install_runtime.py` 仍可以单独使用；模板钩子未安装时
 保留普通文本颜色和文本设置的默认实现。
 
-Forest 的旧 `persistent.forest_*` 字体/文本/Wiki/备份设置会一次性迁移到
+Forest 不再读取或迁移旧 `persistent.forest_*` 设置，仅使用
 `persistent.rscript_*`；旧 `textbox_opacity` 单独迁移到公共透明度字段。
 新存档使用 `rscript_dt1`，读取时兼容旧 `forest_dt1`，缺图才回退截图。
 寄存器进度不变，未清除玩家存档；跨版本回滚仍需实际游玩确认。

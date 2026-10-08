@@ -180,14 +180,10 @@ python early:
             assert persistent._reg == {7001: 3}
             assert persistent.seen_cg == {"0001": True}
             if rscript_use_speaker_images:
-                persistent.rscript_forest_preferences_migrated = False
+                current_size = persistent.rscript_text_size
                 persistent.forest_text_size = 26
-                forest_migrate_preferences()
-                assert persistent.rscript_text_size == 26
-                persistent.forest_text_size = 31
-                forest_migrate_preferences()
-                assert persistent.rscript_text_size == 26
-                persistent.rscript_text_size = rscript_base_text_size
+                assert "forest_migrate_preferences" not in vars(store)
+                assert persistent.rscript_text_size == current_size
         finally:
             renpy.save_persistent = original_save
             renpy.notify = original_notify
