@@ -97,6 +97,17 @@ python early:
         captured_args = RScriptArguments(Effect="_r[6503]").resolved()
         _r[6503] = 0
         assert captured_args.Effect == 6
+        store.in_queue = True
+        _r[6511], _r[904], _r[905] = 0, 40, 3
+        execute_effect(RScriptArguments(EffectNo="_r[6511]", Mode=0))
+        execute_tone(RScriptArguments(Level="_r[904]", Mode=1))
+        execute_tonedep(RScriptArguments(Depth="_r[905]"))
+        _r[6511], _r[904], _r[905] = 11, 0, 99
+        store.in_queue = False
+        process_draw_queue()
+        assert store.tone_level == 40 and store.tonedep == 5
+        execute_tone(RScriptArguments(Level=0, Mode=0))
+        execute_tonedep(RScriptArguments(Depth=0))
         old_info, old_pos, old_groups = store.layer_info, store.layer_pos, store.layer_groups
         old_pause = renpy.pause
         pauses = []
@@ -109,19 +120,24 @@ python early:
             assert rscript_selected_layers(102) == [11]
             assert rscript_selected_layers(202) == [11]
             assert rscript_selected_layers(0) == [11, 12]
+            store.layer_info.update({0: "black", 102: "black"})
+            assert rscript_selected_layers(0) == [11, 12]  # selectors never recurse
+            del store.layer_info[0], store.layer_info[102]
             store.in_queue = True
             move_layer(102, 5, 7, 0, 0, relative=True)
             assert store.layer_pos[11] == (5, 7) and store.layer_pos[12] == (10, 20)
             store.in_queue = False
             process_draw_queue()
             renpy.pause = lambda delay, **kwargs: pauses.append(delay)
-            for effect, transform in ((5, white_out), (6, black_out)):
+            for effect, transform in ((5, white_out), (6, black_out), (14, None)):
                 store.layer_info[11] = "grpo_map 0009"
                 store.in_queue = True
                 loadcls(102, effect, clear=True)
                 assert 11 not in store.layer_info and 12 in store.layer_info
                 shows = [kwargs for fn, args, kwargs in store.draw_queue if fn == rscript_show_layer]
-                assert shows and shows[0]["at_list"][-1] == transform
+                assert shows
+                if transform is not None:
+                    assert shows[0]["at_list"][-1] == transform
                 assert not any(fn == renpy.hide for fn, args, kwargs in store.draw_queue)
                 store.in_queue = False
                 process_draw_queue()
@@ -130,6 +146,14 @@ python early:
             loadcls(0, 1, clear=True)
             assert pauses == [.5], pauses  # all objects animate together
             assert store.layer_info == {CG_LAYER: "grpe 1020"}
+            store.layer_info.update({11: "grpo_map 0009", 12: "grpo_map 0012"})
+            store.in_queue = True
+            loadcls(0, 3, clear=True)
+            transitions = [op for op in store.draw_queue_delayed if op[0] == renpy.with_statement]
+            assert len(transitions) == 1, transitions
+            store.draw_queue_delayed[:] = [op for op in store.draw_queue_delayed if op[0] != renpy.with_statement]
+            store.in_queue = False
+            process_draw_queue()
         finally:
             store.in_queue = False
             renpy.pause = old_pause

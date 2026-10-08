@@ -98,6 +98,9 @@ def main() -> None:
         assert flatten_unsupported_text_controls(numeric_body) == numeric_body
         assert "    pass\n" in scene
         assert flatten_unsupported_effects(scene, resources) == scene
+        assert flatten_unsupported_effects("    _cls 42 14\n", resources) == "    _cls 42 14\n"
+        assert "compound zoom transition not implemented" in flatten_unsupported_effects(
+            "    _update 116 16 0\n", resources)
         assert "scene onlayer master" in (project / "game" / "engine" / "script.rpy").read_text(
             encoding="utf-8")
         assert "label main_menu:\n    # Returning lets Ren'Py enter start" in (

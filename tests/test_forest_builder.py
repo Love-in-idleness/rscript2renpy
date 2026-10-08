@@ -97,8 +97,8 @@ def main() -> None:
     assert "store.effect_pause = max(store.effect_pause, dur)" in util
     effects = (ROOT / "runtime" / "effects.rpy").read_text(encoding="utf-8")
     assert "if layer not in store.layer_info:" in effects
-    assert "if isinstance(num, (int, float))" in effects
-    assert 'queue_draw(renpy.hide, "layer%d" % num' in effects
+    assert "if isinstance(num, int) and 1 <= num < 100" in effects
+    assert "rscript_apply_layers(layer, loadcls, effect, clear=True)" in effects
     assert "transform rotate_zoom_in:" in effects
     assert "linear 0.5 rotate 0 zoom 1.0" in effects
     assert "transform rotate_zoom_out:" in effects

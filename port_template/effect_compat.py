@@ -38,7 +38,7 @@ def _supported(command: str, field: str, value: int,
     if command == "_oaction":
         return value == 4, "not implemented"
     if command in ("_load", "_cls", "_oload"):
-        return value in LOAD_EFFECTS, "not implemented"
+        return value in LOAD_EFFECTS or (command == "_cls" and value == 14), "not implemented"
     if command in ("_move", "_movi", "_gmove"):
         effect = value - 100 if value > 100 else value
         return effect in MOVE_EFFECTS, "not implemented"
@@ -47,6 +47,8 @@ def _supported(command: str, field: str, value: int,
     if command == "_zupdate":
         return value == 1, "not implemented"
     if command in ("_update", "_effect"):
+        if command == "_update" and value >= 100:
+            return False, "compound zoom transition not implemented"
         if value == 0 or (command == "_update" and value in range(1, 5)):
             return True, ""
         if value < 11:

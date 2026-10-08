@@ -143,6 +143,11 @@ transform rscript_zoom_out:
     zoom 1.0
     linear 0.5 zoom 0.0
 
+transform rscript_exit_bottom_right(x, y, origin_anchor):
+    xpos absolute(x) ypos absolute(y)
+    anchor origin_anchor
+    linear 0.5 xpos absolute(config.screen_width) ypos absolute(config.screen_height)
+
 transform rotate_clockwise:
     transform_anchor True
     rotate 0
@@ -451,7 +456,8 @@ init python:
 
     def rscript_selected_layers(layer):
         if layer == 0:
-            return sorted(num for num in store.layer_info if isinstance(num, int))
+            return sorted(num for num in store.layer_info
+                          if isinstance(num, int) and 1 <= num < 100)
         if isinstance(layer, int) and layer > 100:
             # Native 43bfc0 / 43c8d0: hundreds select a group by remainder.
             return [num for num in range(1, 100)
@@ -460,10 +466,21 @@ init python:
 
     def rscript_apply_layers(layer, function, *args, **kwargs):
         queued = store.in_queue
+        delayed_start = len(store.draw_queue_delayed)
         store.in_queue = True
         try:
             for selected in rscript_selected_layers(layer):
                 function(selected, *args, **kwargs)
+            # A scene transition applies to the whole batch, not once per object.
+            transitions = []
+            operations = []
+            for operation in store.draw_queue_delayed[delayed_start:]:
+                if operation[0] == renpy.with_statement:
+                    if operation in transitions:
+                        continue
+                    transitions.append(operation)
+                operations.append(operation)
+            store.draw_queue_delayed[delayed_start:] = operations
         finally:
             store.in_queue = queued
         process_draw_queue()
@@ -598,6 +615,17 @@ init python:
         elif effect == 10:
             _queue_load()
             queue_ef(renpy.with_statement, moveoutbottom if clear else moveinbottom)
+
+        elif effect == 14 and clear:
+            # Native 43a9a0 -> 410660 -> 411b10 case 14 (411f6a).
+            # Target is the canvas bottom-right; retain shared animation timing.
+            if layer in store.layer_info:
+                queue_draw(rscript_show_layer, tag,
+                           what=renpy.displayable(store.layer_info[layer]),
+                           at_list=[trans, rscript_exit_bottom_right(xpos, ypos, anchor)],
+                           zorder=zorder, layer=IMAGE_LAYER)
+                queue_ef_pause(0.5)
+                queue_draw_delayed(renpy.hide, tag, layer=IMAGE_LAYER)
 
         elif effect == 15:
             # Khime 0x40771d / 0x408485: white RGB fade, alpha step 16.
