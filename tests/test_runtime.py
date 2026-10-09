@@ -12,7 +12,7 @@ from install_runtime import install  # noqa: E402
 
 def main() -> None:
     files = sorted((ROOT / "runtime").glob("*.rpy"))
-    assert len(files) == 19
+    assert len(files) == 20
     combined = "\n".join(path.read_text(encoding="utf-8") for path in files)
     for marker in ("class RScriptReg", "renpy.register_statement",
                    "def parse_txcls", "renpy.register_shader"):
@@ -35,7 +35,7 @@ def main() -> None:
     assert 'define config.old_substitutions = False' in combined
     assert "rscript_wrap.normalize_boundaries" in combined
     assert "{k=-2}" not in combined
-    assert '"grps wait%02d body"' in combined
+    assert 'def rscript_wait_image(glow=False):' in combined
     assert 'rscript_layouts().get("wait%02d"' in combined
     assert 'config.mouse = {' in combined
     assert '"engine/gui/rscript_cursor.png", 0, 0' in combined
@@ -61,7 +61,7 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 23
+        assert len(installed) == 24
         assert (project / "game" / "engine" / "rscript_wrap.py").is_file()
         assert all(path.is_file() for path in installed)
         assert (project / "game" / "engine" / "gui" / "rscript_cursor.png").is_file()
@@ -76,7 +76,7 @@ def main() -> None:
             raise AssertionError("old runtime must not be automatically moved or deleted")
         assert old.read_text() == "old layout\n"
 
-    print("OK: 19 generic RScript runtime modules and shared glyph breaker")
+    print("OK: 20 generic RScript runtime modules and shared glyph breaker")
 
 
 if __name__ == "__main__":

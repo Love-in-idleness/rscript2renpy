@@ -114,6 +114,8 @@ RSCRIPT19_COMMANDS = dict(MODERN_COMMANDS, **{
     "facedep": (105, "E"),
 })
 RSCRIPT18_COMMANDS = dict(RSCRIPT19_COMMANDS, locmode=(38, "EEE"))
+EARLY_SHORT_SELECT_COMMANDS = dict(COMMANDS, select=(14, "H" + "D" * 11))
+PRE_CODEX_COMMANDS = dict(EARLY_SHORT_SELECT_COMMANDS, TXT=(81, "EEEEDD"))
 for _commands in (MODERN_COMMANDS, RSCRIPT19_COMMANDS, RSCRIPT18_COMMANDS):
     _commands.update({"faceloc": (101, "EE"), "facedep": (105, "EE"),
                       "fontsize": (120, "EE"), "numload": (130, "EEEE"),
@@ -203,6 +205,18 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
     trailer_header = (4, 1)
     trailer = None
 
+    def validate_dialect():
+        if dialect == "forest" and (byte_format != "legacy-28" or schema != "early"):
+            raise ValueError(f"{path}: Forest requires current legacy-28/early command TSC")
+        if dialect == "legacy" and (byte_format != "legacy-28" or schema not in
+                ("early", "early-short-select", "pre-codex", "rscript18")):
+            raise ValueError(f"{path}: legacy adapter requires a supported legacy-28 command TSC")
+        if dialect in ("khime", "modern") and (byte_format != "modern-36" or schema not in
+                ("modern", "rscript19", "rscript18")):
+            raise ValueError(f"{path}: modern adapter requires current modern-36 command TSC")
+        if dialect not in ("forest", "legacy", "khime", "modern"):
+            raise ValueError(f"{path}: unknown dialect {dialect}")
+
     for line_no, line in enumerate(
             path.read_text(encoding="utf-8").splitlines(), 1):
         if line.startswith(";@gsc-structure-") or line.startswith(";@gsc-raw-"):
@@ -248,11 +262,7 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             continue
         if not first.startswith("*"):
             raise ValueError(f"{path}: line {line_no}: expected command or label")
-        if dialect == "forest" and (byte_format != "legacy-28" or schema != "early"):
-            raise ValueError(f"{path}: Forest requires current legacy-28/early command TSC")
-        if dialect in ("khime", "modern") and (byte_format != "modern-36" or schema not in
-                                    ("modern", "rscript19", "rscript18")):
-            raise ValueError(f"{path}: modern adapter requires current modern-36 command TSC")
+        validate_dialect()
         name = first[1:]
         if name == "datablock":
             if len(tokens) < 3:
@@ -273,7 +283,7 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             opcode = _number(tokens[1][0], "H", line_no)
             if not opcode & 0xf000:
                 raise ValueError(f"{path}: line {line_no}: invalid VM opcode")
-            if dialect in ("khime", "modern"):
+            if dialect in ("khime", "modern") or schema == "rscript18":
                 kinds = "HS" if opcode & 0xf000 == 0xf000 else "HSS"
             else:
                 kinds = "HH" if opcode & 0xf000 == 0xf000 else "HHH"
@@ -286,7 +296,9 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             try:
                 active = COMMANDS if dialect == "forest" else {
                     "modern": MODERN_COMMANDS, "rscript19": RSCRIPT19_COMMANDS,
-                    "rscript18": RSCRIPT18_COMMANDS}[schema]
+                    "rscript18": RSCRIPT18_COMMANDS, "early": COMMANDS,
+                    "early-short-select": EARLY_SHORT_SELECT_COMMANDS,
+                    "pre-codex": PRE_CODEX_COMMANDS}[schema]
                 opcode, kinds = active[name]
             except KeyError as error:
                 raise ValueError(
@@ -297,11 +309,7 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
         sources.append((line_no, offset, opcode, kinds, operand_tokens))
         offset += 2 + sum(2 if kind in "HS" else 4 for kind in kinds)
 
-    if dialect == "forest" and (byte_format != "legacy-28" or schema != "early"):
-        raise ValueError(f"{path}: Forest requires current legacy-28/early command TSC")
-    if dialect in ("khime", "modern") and (byte_format != "modern-36" or schema not in
-                                ("modern", "rscript19", "rscript18")):
-        raise ValueError(f"{path}: modern adapter requires current modern-36 command TSC")
+    validate_dialect()
     # Current LiarsoftTool TSC is UTF-8; GSC byte encoding belongs to its CLI.
 
     strings = [""]

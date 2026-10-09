@@ -66,6 +66,9 @@ Forest 与 Khime 构建时会安装通用 Android 启动说明图，包含 GitHu
 Evermaiden 的现代脚本移植入口、完整中文/DLC 覆盖与已知限制见
 [`evermaiden/README.md`](evermaiden/README.md)。生成器不依赖 EXE 或旧 Evermaiden 工程。
 
+CannonBall 的老式 CodeX 方言、日中整场景覆盖和已知回退见
+[`cannonball/README.md`](cannonball/README.md)，同样基于公共模板构建，不依赖 EXE。
+
 ### Forest 生成器
 
 项目提供《Forest》专用生成器。先使用 LiarsoftTool 2.1 解包、转换

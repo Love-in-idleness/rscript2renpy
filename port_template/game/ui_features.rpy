@@ -38,7 +38,7 @@ init python:
         return Return(value)
 
     def rscript_textbox_background():
-        path = rscript_image_path("grps/tbox%02d/back.png" % store.cur_textbox)
+        path = rscript_image_path(rscript_ui.get("textbox_background", "grps/tbox%02d/back.png") % store.cur_textbox)
         background = path if renpy.loadable(path) else Solid("#000000d0")
         origin = rscript_layouts().get("tbox%02d" % store.cur_textbox, {}).get("items", {}).get("back", (0, 0))
         return Transform(background, xoffset=origin[0], yoffset=origin[1],

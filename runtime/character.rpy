@@ -1,15 +1,24 @@
+init python:
+    def rscript_wait_image(glow=False):
+        tag = "grps wait%02d %s" % (rscript_textbox_state().get("wait_image", 0), "grow" if glow else "body")
+        if renpy.has_image(tag):
+            return tag
+        if glow:
+            return Null()
+        return renpy.displayable(getattr(store, "rscript_ui", {}).get("wait_image", Text("▼", size=22, color="#ffffff")))
+
 init:
 
     image rscript_ctc:
         function rscript_wait_transform
 
         contains:
-            ("grps wait%02d body" % rscript_textbox_state().get("wait_image", 0))
+            rscript_wait_image()
             xpos (rscript_layouts().get("wait%02d" % rscript_textbox_state().get("wait_image", 0), {}).get("items", {}).get("body", (4, 5))[0] if hasattr(store, "rscript_layouts") else 4)
             ypos (rscript_layouts().get("wait%02d" % rscript_textbox_state().get("wait_image", 0), {}).get("items", {}).get("body", (4, 5))[1] if hasattr(store, "rscript_layouts") else 5)
         contains:
 
-            ("grps wait%02d grow" % rscript_textbox_state().get("wait_image", 0))
+            rscript_wait_image(True)
             xpos (rscript_layouts().get("wait%02d" % rscript_textbox_state().get("wait_image", 0), {}).get("items", {}).get("grow", (0, 0))[0] if hasattr(store, "rscript_layouts") else 0)
             ypos (rscript_layouts().get("wait%02d" % rscript_textbox_state().get("wait_image", 0), {}).get("items", {}).get("grow", (0, 0))[1] if hasattr(store, "rscript_layouts") else 0)
             alpha 0.0

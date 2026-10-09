@@ -59,7 +59,7 @@ init:
     default rscript_last_voice = None
     default rscript_voice_pending = False
 
-    default folder = {}
+    default folder = dict(getattr(store, "rscript_initial_folders", {}))
     define rscript_folder_zero_all = False
     define rscript_click_grid = False
     default rscript_click_values = {}

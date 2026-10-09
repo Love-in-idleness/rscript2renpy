@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""CannonBall's legacy CodeX dialect on the shared Ren'Py template."""
+
+import argparse
+from pathlib import Path
+import sys
+from tempfile import TemporaryDirectory
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "port_template"))
+from build_port import assemble_port, validate_resources
+from port_resources import parse_language_options
+from tsc_compiler import compile_overlays
+
+
+def build_cannonball(resources, project, force=False, languages=()):
+    resources, project = Path(resources).resolve(), Path(project).resolve()
+    marker, patches = parse_language_options(list(languages))
+    for directory in (resources, *(directory for _, directory in patches)):
+        if project == directory or project.is_relative_to(directory):
+            raise ValueError("output must not be inside original/patch resources")
+    validate_resources(resources, directories=("scr", "grpe", "grpo", "grps", "bgm", "voice", "wav"),
+                       patterns=("grpe/0901.*", "bgm/Track01.wav", "voice/**/*.ogg"))
+    se_directory = "wav" if any((resources / "wav").glob("*.ogg")) else "wav/wav"
+    if not any((resources / se_directory).glob("*.ogg")):
+        raise FileNotFoundError("converted sound effects missing: %s" % (resources / se_directory))
+    scenes = compile_overlays(resources, patches, adapter="pre-codex")
+    with TemporaryDirectory(prefix="cannonball-port-") as temporary:
+        temporary = Path(temporary)
+        prepared = temporary / "resources"
+        prepared.mkdir()
+        # Only engine resource directories, never patch backups or native saves.
+        for source in resources.iterdir():
+            if source.is_dir() and (source.name.startswith("grp") or source.name in
+                                    {"scr", "bgm", "voice", "wav", "mov"}):
+                (prepared / source.name).symlink_to(source, target_is_directory=True)
+        if (resources / "keywords.json").is_file():
+            (prepared / "keywords.json").symlink_to(resources / "keywords.json")
+        overlay = temporary / "overlay/game"
+        overlay.mkdir(parents=True)
+        for source in (Path(__file__).parent / "game").glob("*.rpy"):
+            (overlay / source.name).symlink_to(source)
+        (overlay / "audio_paths.rpy").write_text(
+            'init -99 python:\n    rscript_se_format = %r\n' % (se_directory + "/%04d.ogg"),
+            encoding="utf-8")
+        assemble_port(prepared, project, scenes, overlay.parent, marker, patches, force=force)
+    print("Wrote %s: %d original scenes, %d language packages" %
+          (project, len(list((resources / "scr").glob("*.tsc"))), len(patches)))
+    return scenes
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Build CannonBall for Ren'Py 8 from current TSC")
+    parser.add_argument("resources", type=Path)
+    parser.add_argument("project", type=Path)
+    parser.add_argument("--force", action="store_true")
+    parser.add_argument("--language", action="append", default=[], metavar="NAME[=PATCH_DIR]")
+    args = parser.parse_args()
+    try:
+        build_cannonball(args.resources, args.project, args.force, args.language)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
+
+
+if __name__ == "__main__":
+    main()

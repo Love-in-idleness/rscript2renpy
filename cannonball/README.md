@@ -1,8 +1,59 @@
-# CannonBall（移植准备中）
+# CannonBall（实验性移植）
 
 移植以 `runtime/` 与 `port_template/` 为基础，通用能力补在公共层，
 游戏专用差异保留在 `cannonball/`。资源由用户自行提供并使用 LiarsoftTool
 预先转换；原版和中文补丁目录只读使用，不将游戏资源纳入仓库。
+
+## 生成工程
+
+```bash
+python3 cannonball/build_cannonball_rscript.py \
+    /path/to/CannonBall /path/to/renpy/CannonBall \
+    --language jp --language zh=/path/to/CannonBall.zh
+```
+
+重建现有工程时追加 `--force`。生成器不依赖 EXE，也不会复制原游戏存档或
+补丁备份目录。输出保留 `scr`、`grp*`、`bgm`、`voice`、`wav`、`mov` 的名称与
+资源相对位置；解释器、配置与公共界面统一位于 `game/engine/`。
+同名图像优先使用 WebP，语言补丁优先于原版。原始 MPG 和普通 PCM WAV
+直接保留，不引入 FFmpeg。音效支持当前资源的 `wav/wav` 和扁平 `wav` 两种位置。
+
+中文补丁按**整场景覆盖**生成，保留其自身分支、等待和新增场景，不仅替换对话。
+未覆盖的场景回退原版；只有补丁存在的场景在其他语言下会明确拒绝访问。
+语言资源位于 `game/tl/zh/`；语言标签使用与其他生成器相同的
+`--language NAME` 和 `--language NAME=PATCH_DIR` 参数。
+
+本作接受当前 LiarsoftTool 的 `legacy-28` 命令式 TSC，包括 `early`、
+`early-short-select`、`pre-codex` 与本作末尾脚本的 `rscript18` schema。
+此适配不放宽 Forest 或现代游戏的格式要求；不接收旧转储、raw 回退或 GSC。
+本作 `TXT` 的正文取第一个字符串，不能误用第二个陈旧字符串。
+标题在指定 `*folder` 之前就加载图片，因此初始对象图层目录配置为 `grpo`；
+此默认值由公共运行时读取，其他游戏仍保留各自的初始化行为。
+
+## 已知限制与验证边界
+
+- 老式 BGM 淡入淡出参数的原生时长未确认，目前显式降为无淡入淡出，并在对应
+  RPY 保留原参数及原因。公共兼容器不支持的图片效果同样产生注释，例如标题的
+  `load effect 9`。能加载图片不代表所有视觉效果已还原。
+- `numload/numreng/numenable/numloc/numset/num` 保留参数、启用状态、范围、位置
+  与数值更新，显示使用普通文字回退；原生数字皮肤、偏移与计数动画尚未还原。
+- 当前转换资源没有菜单布局 `.meta.xml`，通用系统菜单使用回退界面；剧情内
+  `setclk/setlink/click` 图片选项仍由原脚本控制。不能声称已还原所有原图系统菜单。
+- 临时寄存器按执行时保存值；完整 16 位 VM 溢出及所有算术边界仍待原引擎对照。
+- 跨语言中途切换、存档兼容、完整路线、音频时序和安卓实机仍需游玩验证。
+
+回归测试（SDK 与实际资源参数可省略）：
+
+```bash
+python3 -B tests/test_cannonball_port.py /path/to/renpy-sdk \
+    /path/to/CannonBall /path/to/CannonBall.zh
+```
+
+该测试覆盖方言边界、正文/菜单/音效顺序、VM 临时值、数字控件状态、大小写资源
+路径和完整补丁路由；提供实际资源时还会在隔离工程执行日中标题脚本至“开始”
+跳转，不开游戏窗口、不播放音频、不读取正式存档。它不是视觉或完整游玩验证。
+正式生成后还需执行 `renpy.sh /path/to/renpy/CannonBall lint`；动态自定义跳转
+和原脚本死分支可能产生 unreachable 提示，不能把这些提示当作路线正确性的证明。
 
 ## 中文补丁的流程差异：暂缓评估
 
@@ -23,7 +74,7 @@
 按用户决定，**暂不评估或修正上述流程差异，留待后续处理**。不将“还原为日文
 流程”作为当前移植的前置条件，也不把差异默认为补丁错误。后续实现应保留
 补丁自身的指令与分支，避免仅对齐译文而抹掉这些差异；此处是适配要求，
-不表示已完成生成器或整场景覆盖。跨语言切换、存档兼容性和实际路线影响待验证。
+当前生成器已采用整场景覆盖，但跨语言切换、存档兼容性和实际路线影响待验证。
 
 ## 已排除的问题
 

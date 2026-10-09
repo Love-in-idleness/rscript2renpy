@@ -56,9 +56,10 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                   language_operands=None, scene_name=None, operand_patch=None,
                   statement_prefix=None) -> str:
     # Zero uses the early/legacy-28 operand table, not Khime's modern dialect.
-    early = adapter == "early"
-    modern = adapter not in {"khime", "early"}
-    dialect = "forest" if zero or early else "modern"
+    legacy = adapter == "pre-codex"
+    early = adapter in {"early", "pre-codex"}
+    modern = adapter not in {"khime", "early", "pre-codex"}
+    dialect = "legacy" if legacy else "forest" if zero or early else "modern"
     tsc = read_tsc(source, dialect)
     items = tsc.instructions()
     patch_texts = language_texts or {}
@@ -117,7 +118,6 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
     lines = ["# Generated from %s; %s preserved in labels." % (source.name, header),
              "label _%s:" % scene]
     temps = {}
-    pending_se = None
     for item in items:
         emit_insertions(lines, patch_insertions, item.offset)
         if item.offset in targets:
@@ -141,11 +141,14 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             # Entry height: ceil(34px * 1.25) + 1px gap = 44px.
             operands[3] = "517+44*khime_zero_unlocked()"
         if op & 0xf000:
-            lines.extend("    " + line for line in emit_vm(op, values, temps))
+            lines.extend("    " + line for line in emit_vm(op, values, temps, snapshot=legacy))
         elif op == 9:
-            temps[values[0]] = "renpy.random.randrange(0x8000)"
+            if legacy:
+                lines.append("    $ rscript_vm_temps[%d] = renpy.random.randrange(0x8000)" % values[0])
+            else:
+                temps[values[0]] = "renpy.random.randrange(0x8000)"
         elif op in (3, 4):
-            condition = temps.get(0, "0")
+            condition = "rscript_vm_temps.get(0, 0)" if legacy else temps.get(0, "0")
             test = "not (%s)" % condition if op == 3 else "(%s)" % condition
             lines.extend(("    if %s:" % test,
                           "        jump %s" % label(scene, values[0])))
@@ -180,7 +183,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                 caption = (repr("[khime_menu_caption_%d]" % index)
                            if patch_texts and not early else captions[index])
                 lines.extend(("        %s:" % caption,
-                              "            $ _r[%s] = %d" % (operands[12], index)))
+                              "            $ _r[%s] = %d" % (operands[12] if len(operands) > 12 else "0", index)))
                 if not early:
                     lines.append("            $ %s_choice_prompt = None" % prefix)
                 lines.append("            jump %s" % label(scene, values[2 + index]))
@@ -206,20 +209,17 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                          (" ".join(operands[:5]), text(item, 5)))
         elif op == 62:
             if not modern:
-                pending_se = operands[-1]
+                lines.append("    _se 0 %s" % operands[-1])
             else:
                 lines.append("    _se %s" % " ".join(operands))
         elif op == 63:
-            if pending_se is not None:
-                lines.append("    _se 0 %s" % pending_se)
-                pending_se = None
             lines.append("    _se_on %s" % " ".join(
                 ["0"] + (operands if early else operands[-3:]) if not modern else operands))
         elif op == 64:
             lines.append("    _se_off %s" % ("0 " + operands[-1]
                                            if not modern else " ".join(operands)))
         elif op == 81:
-            original = instruction_strings(tsc, item)["say"]
+            original = tsc.string(values[4]) if legacy else instruction_strings(tsc, item)["say"]
             raw = patch_text_expression(patch_texts, item, "say", original)[0]
             if values[1]:
                 lines.append("    _voice %s 0 0 0" % operands[1])
@@ -247,6 +247,15 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             lines.append("    _insub %s %s" % (target, " ".join(operands[1:])))
         elif op == 202:
             lines.append("    _flagset %s" % " ".join(operands))
+        elif legacy and op == 111:
+            # Cannonball.exe 0x417f40: signed multiply/divide, result in r0.
+            lines.append("    $ _r[0] = rscript_muldev(%s)" % ", ".join(operands))
+        elif legacy and op in {130, 131, 132, 134, 135, 136}:
+            if op in {130, 131, 135, 136}:
+                lines.append("    # Legacy numeric widget: original operands retained; native skin/counting animation uses a static text fallback.")
+            lines.append("    _rscript_number %s %s" % (
+                {130: "numload", 131: "numreng", 132: "numenable",
+                 134: "numloc", 135: "numset", 136: "num"}[op], " ".join(operands)))
         elif op in (210, 211, 212):
             command = {210: "dynsel", 211: "dynans", 212: "dynnext"}[op]
             args = repr(tsc.string(values[0]))
@@ -280,6 +289,13 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                         lines.append("    # Khime Zero conversion: legacy BGM fade %s flattened to 0 (duration unconfirmed)." % args[-1])
                     args[-1] = "0"
                     args.append("0")
+                if legacy and op in (60, 61):
+                    if parameters[-1]:
+                        lines.append("    # Legacy BGM fade %s flattened to 0 (native duration unconfirmed)." % args[-1])
+                    args[-1] = "0"
+                    args.append("0")
+                if legacy and op == 21:
+                    args = ["0"]
                 if zero_title and op == 30 and source.stem == "0101" and parameters[:2] == (46, 9006):
                     args[3] = "517+44*khime_zero_unlocked()"
                 if early and op == 74:
@@ -289,7 +305,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                 return "_%s%s" % (command, " " + " ".join(args) if args else "")
             emit_operand_variants(lines, patch_operands, item, statement)
         else:
-            if early:
+            if early and not legacy:
                 lines.append("    # unlifted opcode 0x%04x %s" % (op, values))
             else:
                 raise ValueError("%s: unsupported opcode 0x%04x" % (source, op))
@@ -305,7 +321,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
     return "\n".join(lines) + "\n"
 
 
-def compile_overlays(resources: Path, patches=()) -> dict[str, str]:
+def compile_overlays(resources: Path, patches=(), *, adapter="modern") -> dict[str, str]:
     """Whole-scenario localization, including added scenes and changed offsets."""
     variants = [(None, resources), *patches]
     files = {}
@@ -322,9 +338,9 @@ def compile_overlays(resources: Path, patches=()) -> dict[str, str]:
             destination = ("scr/%s.rpy" % source.stem if language is None else
                            "tl/%s/scr/%s.rpy" % (language, source.stem))
             files[destination] = compile_scene(
-                source, adapter="modern", scene_prefix=prefix)
+                source, adapter=adapter, scene_prefix=prefix)
             routes.setdefault(source.stem, []).append((language, prefix + source.stem))
-            for name, offset in read_tsc(source, "modern").named_entries:
+            for name, offset in read_tsc(source, "legacy" if adapter == "pre-codex" else "modern").named_entries:
                 entry_routes.setdefault((source.stem, name), []).append((language, "_g_%s%s_%s" % (prefix, source.stem, name)))
     for scene, destinations in routes.items():
         lines = ["# Generated language-aware scene entry.", "label _%s:" % scene]

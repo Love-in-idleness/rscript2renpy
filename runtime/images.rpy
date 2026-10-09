@@ -81,6 +81,7 @@ init python hide:
 
         image_tag = " ".join(split)
         if image_tag not in registered_tags:
-            renpy.image(image_tag, DynamicImage("[rscript_image_path(%r)]" % ("/".join(split) + ".png")))
+            # Tags are case-insensitive; actual filesystem paths are not.
+            renpy.image(image_tag, DynamicImage("[rscript_image_path(%r)]" % (os.path.splitext(fn)[0] + ".png")))
             registered_tags.add(image_tag)
 # Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc
