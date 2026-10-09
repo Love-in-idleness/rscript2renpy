@@ -74,7 +74,19 @@ def main():
         assert "_say '^g001body'" in result and "stale string" not in result
         assert "_r[0] = 0" in result
         assert result.index("_se 0 7") < result.index("_gosub 1") < result.index("_se_on 0 0 0 0")
-        assert "BGM fade 2 flattened to 0" in result and "_bgm_on 1 0 0" in result
+        assert "BGM fade 2: nonzero enables the native 2000 ms fade" in result
+        assert "_bgm_on 1 1 2000" in result and "_bgm_off 1 2000" in result
+        source.write_text(header + '*bgm_on 1 0\n*bgm_off @7\n*draw 1 3 50\n*draw 1 99 50\n*draw 1 @8 50\n*end\n')
+        lowered = compile_scene(source, adapter="pre-codex")
+        assert "_bgm_on 1 0 2000" in lowered
+        assert "_bgm_off int(bool(rscript_signed16(_r[7]))) 2000" in lowered
+        assert lowered.count("_draw 1 0 50") == 2
+        assert "native normal-drawing alias" in lowered and "flattened" not in lowered
+        assert "_draw 1 {1:1,2:2}.get(rscript_signed16(_r[8]),0) 50" in lowered
+        # Lowered expressions must survive the common visual compatibility pass.
+        from effect_compat import flatten_unsupported_effects
+        assert "flattened" not in flatten_unsupported_effects(lowered, base)
+        source.write_text(header + body)
         assert "_r[0] = rscript_muldev(-3, 5, 2)" in result
         assert "_rscript_number num 1 42 1" in result
         for schema, suffix in (("early-short-select", ' 1'), ("early", ' 1')):

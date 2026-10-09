@@ -114,7 +114,7 @@ init python:
             return SetField(persistent, "rscript_text_cps", value)
         action = Preference(setting, value)
         if value == "enable" and setting.endswith(" mute"):
-            channels = {"music mute": ("music",),
+            channels = {"music mute": ("music", "rscript_music"),
                         "voice mute": ("rscript_voice",),
                         "sound mute": ("se0", "se1", "se2")}
             return [action] + [Stop(channel) for channel in channels[setting]]

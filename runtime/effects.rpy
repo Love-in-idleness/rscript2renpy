@@ -77,6 +77,19 @@ transform rscript_white_out:
     u_rscript_white 0.0
     linear 1.0 u_rscript_white 1.0
 
+transform rscript_grid_in:
+    # shortcut: shared 1s cadence; calibrate against native playback if needed.
+    mesh True
+    shader "rscript.grid_wipe"
+    u_rscript_grid 255.0
+    linear 1.0 u_rscript_grid -1.0
+
+transform rscript_grid_out:
+    mesh True
+    shader "rscript.grid_wipe"
+    u_rscript_grid 0.0
+    linear 1.0 u_rscript_grid 255.0
+
 
 
 transform move_instant(xpos, ypos, anchor, dur):
@@ -640,6 +653,10 @@ init python:
             _queue_load()
             queue_ef(renpy.with_statement, moveoutright if clear else moveinright)
 
+        elif effect == 9:
+            _queue_load()
+            queue_ef(renpy.with_statement, moveouttop if clear else moveintop)
+
         elif effect == 10:
             _queue_load()
             queue_ef(renpy.with_statement, moveoutbottom if clear else moveinbottom)
@@ -655,17 +672,19 @@ init python:
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer=IMAGE_LAYER)
 
-        elif effect == 15:
-            # Khime 0x40771d / 0x408485: white RGB fade, alpha step 16.
+        elif effect in (15, 17):
+            # White fade / native 16-pixel grid wipe; both use level step 16.
+            fade_in = rscript_white_in if effect == 15 else rscript_grid_in
+            fade_out = rscript_white_out if effect == 15 else rscript_grid_out
             if not clear:
-                at_list.append(rscript_white_in)
+                at_list.append(fade_in)
                 _queue_load()
                 queue_ef_pause(1.0)
             elif layer in store.layer_info:
                 img = store.layer_info.pop(layer)
                 store.layer_pos.pop(layer, None)
                 queue_draw(rscript_show_layer, tag, what = renpy.displayable(img),
-                           at_list = [trans, rscript_white_out],
+                           at_list = [trans, fade_out],
                            zorder = zorder, layer = IMAGE_LAYER)
                 queue_ef_pause(1.0)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)

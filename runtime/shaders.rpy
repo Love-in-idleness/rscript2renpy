@@ -130,8 +130,7 @@ init python:
       gl_FragColor *= (1.0 - (u_blendlevel / 100.0));
     }
 
-    // 3 -> Channel mask
-    // I'd have to see it to know what to do.
+    // Other modes require dialect-specific lowering.
     """
   )
 
@@ -215,5 +214,21 @@ gl_FragColor = vec4(a);
         variables = "uniform float u_rscript_white;",
         fragment_1200 = """
 gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(gl_FragColor.a), u_rscript_white);
+""")
+
+    # Cannonball.exe 4203a6..420421: row and diagonal must exceed level >> 4.
+    renpy.register_shader("rscript.grid_wipe",
+        variables = """
+uniform float u_rscript_grid;
+attribute vec4 a_position;
+varying vec2 v__pixel;
+""",
+        vertex_300 = "v__pixel = a_position.xy;",
+        fragment_1200 = """
+vec2 pixel = floor(v__pixel);
+float threshold = floor(u_rscript_grid / 16.0);
+float visible = step(threshold + 1.0, mod(pixel.y, 16.0))
+              * step(threshold + 1.0, mod(pixel.x + pixel.y, 16.0));
+gl_FragColor *= visible;
 """)
 # Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc

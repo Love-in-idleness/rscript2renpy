@@ -25,7 +25,7 @@ COUNTS = {
     "_gmove": 4, "_flash": 2, "_zupdate": 2,
     "_draw": 3, "_oaction": 2,
 }
-LOAD_EFFECTS = set(range(9)) | {10, 15, 16, 19} | set(range(20, 29))
+LOAD_EFFECTS = set(range(11)) | {15, 16, 17, 19} | set(range(20, 29))
 MOVE_EFFECTS = {0, 1, 2, 3, 5, 6, 7, 8, 9, 10}
 
 

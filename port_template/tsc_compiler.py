@@ -290,10 +290,18 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                     args[-1] = "0"
                     args.append("0")
                 if legacy and op in (60, 61):
-                    if parameters[-1]:
-                        lines.append("    # Legacy BGM fade %s flattened to 0 (native duration unconfirmed)." % args[-1])
-                    args[-1] = "0"
-                    args.append("0")
+                    # Cannonball.exe 43d122 / 43db4f: 100 ticks of 20 ms.
+                    lines.append("    # Legacy BGM fade %s: nonzero enables the native 2000 ms fade." % args[-1])
+                    args[-1] = "int(bool(%s))" % args[-1] if parameters[-1] >= 65536 else str(int(bool(parameters[-1])))
+                    args.append("2000")
+                if legacy and op == 39:
+                    # Native 405490 maps only 1/2 specially; all others are normal.
+                    mode = parameters[1]
+                    if mode >= 65536:
+                        args[1] = "{1:1,2:2}.get(%s,0)" % args[1]
+                    elif mode not in (0, 1, 2):
+                        lines.append("    # Legacy draw mode %s: native normal-drawing alias, not an unsupported effect." % args[1])
+                        args[1] = "0"
                 if legacy and op == 21:
                     args = ["0"]
                 if zero_title and op == 30 and source.stem == "0101" and parameters[:2] == (46, 9006):

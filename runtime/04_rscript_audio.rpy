@@ -62,11 +62,21 @@ python early:
         return args
 
     def execute_bgm_on(args):
+        if store.rscript_bgm_crossfade and (not args.BgmNo or args.BgmNo == store.rscript_bgm_number):
+            return
         bgm = rscript_audio_file("bgm", args.BgmNo)
         fadein = args.Fade * args.FadeLen / 1000.
 
         if renpy.loadable(bgm):
-            renpy.music.play(bgm, channel = "music", fadein = fadein, loop = True, if_changed = True)
+            channel = "music"
+            if store.rscript_bgm_crossfade:
+                old_channel = store.rscript_bgm_channel
+                renpy.music.stop(old_channel, fadeout=fadein)
+                channel = "rscript_music" if old_channel == "music" else "music"
+                store.rscript_bgm_channel = channel
+                store.rscript_bgm_number = args.BgmNo
+            renpy.music.play(bgm, channel = channel, fadeout = 0 if store.rscript_bgm_crossfade else None,
+                             fadein = fadein, loop = True, if_changed = not store.rscript_bgm_crossfade)
         else:
             renpy.log("RScript: missing BGM %s" % bgm)
 
@@ -83,7 +93,9 @@ python early:
         fadeout = args.Fade * args.FadeLen / 1000.
 
         renpy.pause(1. / 30.)
-        renpy.music.stop(channel = "music", fadeout = fadeout)
+        channel = store.rscript_bgm_channel if store.rscript_bgm_crossfade else "music"
+        renpy.music.stop(channel = channel, fadeout = fadeout)
+        store.rscript_bgm_number = 0
 
     renpy.register_statement("_bgm_off", parse = parse_bgm_off, execute = execute_bgm_off, lint = lint_undef)
 

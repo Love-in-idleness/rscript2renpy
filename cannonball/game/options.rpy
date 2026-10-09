@@ -26,6 +26,7 @@ init -100 python:
     rscript_click_native_effects = True
     rscript_locmode_zero_all = True
     rscript_bgm_format = "bgm/Track%02d.wav"
+    rscript_bgm_crossfade = True
     rscript_ctc_x, rscript_ctc_y = 770, 555
     rscript_ui = {"show_speaker": True, "speaker_pos": (0, 7),
                   "textbox_size": (800, 135),

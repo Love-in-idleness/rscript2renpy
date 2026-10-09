@@ -30,6 +30,17 @@ init 100 python:
                 actual = image.get_at((x, y))[:3]
                 assert all(abs(a - b) <= 3 for a, b in zip(actual, (32, 64, 96))), (x, y, actual)
 
+    def effects_test_grid(level):
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        for y in range(32):
+            for x in range(32):
+                visible = y % 16 > level // 16 and (x + y) % 16 > level // 16
+                expected = (255, 0, 0) if visible else (32, 64, 96)
+                actual = image.get_at((x, y))[:3]
+                assert all(abs(a - b) <= 3 for a, b in zip(actual, expected)), (level, x, y, actual, expected)
+
 screen effects_test_wakeup():
     # A modal click screen blocks the pause behavior underneath it.
     timer .1 repeat True action Function(renpy.end_interaction, True)
@@ -66,6 +77,13 @@ label _0000:
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((255, 255, 255))
     $ renpy.hide("white_probe")
+    python:
+        for level in (-1, 0, 128, 255):
+            renpy.show("grid_probe", what=Solid("#ff0000", xsize=100, ysize=80),
+                       at_list=[Transform(mesh=True, shader="rscript.grid_wipe", u_rscript_grid=level)])
+            renpy.pause(0.1, hard=True)
+            effects_test_grid(level)
+        renpy.hide("grid_probe")
     _load 20 9990 0 0 15 0
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((32, 64, 96))
@@ -104,7 +122,7 @@ label _0000:
     _cls 11 0
     _cls 40 0
     python:
-        for effect in (0, 2, 3, 4, 15, 19, 24, 28):
+        for effect in (0, 2, 3, 4, 9, 15, 17, 19, 24, 28):
             lex = renpy.lexer.Lexer([("effects-test", 1,
                 "20 200 100 %d 0 'object'" % effect, [])])
             lex.advance()
@@ -114,5 +132,5 @@ label _0000:
             execute_cls(type("Args", (), {"Layer": 20, "Effect": effect})())
             assert 20 not in store.layer_info and 20 not in store.layer_pos
         assert not store.in_queue and not store.draw_queue and not store.draw_queue_delayed
-        print("OK: native object effects, queued execution, white fade and mask inversion")
+        print("OK: native object effects, queued execution, white fade, 16-pixel grid wipe and mask inversion")
         renpy.quit()

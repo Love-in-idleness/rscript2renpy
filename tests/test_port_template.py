@@ -150,7 +150,7 @@ def main() -> None:
         (masks / "ES101.PNG").write_bytes(b"mask")
         assert flatten_unsupported_effects("    _effect 101 1\n",
                                            root / "masks") == "    _effect 101 1\n"
-        for effect in (2, 3, 4, 10, 15, 19):
+        for effect in (2, 3, 4, 9, 10, 15, 17, 19):
             source = ("    _load 1 2 3 4 %d 0\n"
                       "    _oload 20 30 40 %d 0 'object'\n"
                       "    _cls 20 %d\n") % (effect, effect, effect)

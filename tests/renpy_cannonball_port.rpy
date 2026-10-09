@@ -98,6 +98,51 @@ python early:
         assert rscript_wait_image().name == ("grps", "tbox_w")
         assert rscript_audio_file("se", 1) == "wav/wav/0001.ogg"
         assert rscript_audio_file("bgm", 1) == "bgm/Track01.wav"
+        _r[8] = 3
+        lex = renpy.lexer.Lexer([("draw-test", 1, "1 {1:1,2:2}.get(rscript_signed16(_r[8]),0) 50", [])])
+        lex.advance()
+        execute_draw(parse_draw(lex))
+        assert layer_blend[1] == (0, 50)
+        # Check real statement parsing and channel scheduling without playing audio.
+        from types import SimpleNamespace
+        old_play, old_stop, old_pause, old_loadable = renpy.music.play, renpy.music.stop, renpy.pause, renpy.loadable
+        calls = []
+        try:
+            renpy.music.play = lambda file, **kw: calls.append(("play", file, kw))
+            renpy.music.stop = lambda channel="music", **kw: calls.append(("stop", channel, kw))
+            renpy.pause = lambda *a, **kw: None
+            renpy.loadable = lambda file: file in ("bgm/Track01.wav", "bgm/Track02.wav")
+            for line, fade in (("1 1 2000", 2.0), ("2 0 2000", 0.0)):
+                lex = renpy.lexer.Lexer([("bgm-test", 1, line, [])])
+                lex.advance()
+                execute_bgm_on(parse_bgm_on(lex))
+                assert calls[-2][2]["fadeout"] == fade
+                assert calls[-1][2]["fadein"] == fade and calls[-1][2]["fadeout"] == 0
+                assert calls[-2][1] != calls[-1][2]["channel"]
+                assert calls[-1][2]["if_changed"] is False  # Restart a reused buffer even if its old track is still fading.
+            count = len(calls)
+            for number in (0, 2, 999):
+                execute_bgm_on(SimpleNamespace(BgmNo=number, Fade=1, FadeLen=2000))
+            assert len(calls) == count  # zero/same track/missing file don't interrupt.
+            _r[7] = 2
+            lex = renpy.lexer.Lexer([("bgm-test", 1, "int(bool(rscript_signed16(_r[7]))) 2000", [])])
+            lex.advance()
+            execute_bgm_off(parse_bgm_off(lex))
+            assert calls[-1] == ("stop", "music", {"fadeout": 2.0})
+            assert rscript_bgm_number == 0
+            # Other dialects keep the single-channel behavior and modern timing.
+            store.rscript_bgm_crossfade = False
+            execute_bgm_on(SimpleNamespace(BgmNo=1, Fade=1, FadeLen=350))
+            assert calls[-1][2]["channel"] == "music" and calls[-1][2]["fadein"] == .35
+            assert calls[-1][2]["fadeout"] is None
+            stop_audio()
+            assert any(call[:2] == ("stop", "rscript_music") for call in calls)
+            assert rscript_bgm_channel == "music" and rscript_bgm_number == 0
+            actions = rscript_preference_action("music mute", "enable")
+            assert {action.channel for action in actions[1:]} == {"music", "rscript_music"}
+        finally:
+            renpy.music.play, renpy.music.stop, renpy.pause, renpy.loadable = old_play, old_stop, old_pause, old_loadable
+            store.rscript_bgm_crossfade = True
         for values, expected in (((-3, 5, 2), -7), ((3, -5, -2), 7), ((65535, 5, 2), -2)):
             assert rscript_muldev(*values) == expected
         def command(text):

@@ -44,6 +44,7 @@ init:
     define rscript_voice_groups = False
     define rscript_screen_size = (800, 600)
     define rscript_bgm_format = "bgm/Track%02d.opus"
+    define rscript_bgm_crossfade = False
     define rscript_se_format = "wav/%04d.opus"
     define rscript_ctc_x = 1191
     define rscript_ctc_y = 639
@@ -58,6 +59,8 @@ init:
     default jump_back_point = None
     default rscript_last_voice = None
     default rscript_voice_pending = False
+    default rscript_bgm_channel = "music"
+    default rscript_bgm_number = 0
 
     default folder = dict(getattr(store, "rscript_initial_folders", {}))
     define rscript_folder_zero_all = False
