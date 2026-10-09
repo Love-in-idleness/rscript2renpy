@@ -54,6 +54,8 @@ def native_layouts(resources, positions=None):
         return width, height
 
     layouts["confscrn"]["size"] = add("confscrn", "bg", "con_base", 0, 0)
+    # 410603 -> 41c320: darken by 80%, lookup row floor(255 * 80 / 100).
+    layouts["confscrn"]["background_dim"] = 204 / 256
     for name, (source, field, x, y) in BUTTONS.items():
         if positions is not None:
             x, y = positions[field]

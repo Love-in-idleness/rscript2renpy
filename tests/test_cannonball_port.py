@@ -119,6 +119,7 @@ def main():
         assert layout["sel_q"]["size"] == (520, 56)
         assert layout["confscrn"]["items"]["save"] == (157, 330, 85, 21)
         assert layout["confscrn"]["images"]["save_f"][1] == (0, 21, 85, 21)
+        assert layout["confscrn"]["background_dim"] == 204 / 256
         assert layout["compane"]["items"]["hide"] == (179, 1, 17, 17)
         assert set(layout["compane"]["controls"]) == {"rev", "bak", "fow", "next", "voc", "hide"}
         assert layout["savescrn"]["size"] == (800, 600)
@@ -211,7 +212,7 @@ def main():
                 shutil.copyfile(ROOT / "tests/renpy_cannonball_click.rpy", game / "scr/click_render_test.rpy")
                 subprocess.run(["xvfb-run", "-a", str(Path(sys.argv[1]) / "renpy.sh"), str(project),
                                 "run", "--savedir", str(directory / "render-saves")],
-                               check=True, timeout=30, env=os.environ | {
+                               check=True, timeout=45, env=os.environ | {
                                    "SDL_VIDEODRIVER": "x11", "SDL_AUDIODRIVER": "dummy",
                                    "RENPY_SKIP_SPLASHSCREEN": "1", "RENPY_PERFORMANCE_TEST": "0",
                                    "RENPY_PATH_TO_SAVES": str(directory / "render-sdk-saves")})

@@ -174,6 +174,8 @@ screen preferences(title_mode=False):
     modal True
     key "game_menu" action Return()
     $ layout = rscript_layouts().get("confscrn")
+    if layout and layout.get("background_dim", 0):
+        add Solid("#000000") alpha layout["background_dim"]
     if rscript_ui.get("game_text_settings", True):
         textbutton "Text Settings":
             xalign 0.5

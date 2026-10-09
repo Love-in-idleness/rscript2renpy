@@ -428,10 +428,21 @@ python early:
                 y *= store.layer_y_grid
             idle = store.layer_info[layer]
             hover_image = "%s %04d" % (folder, hover) if hover is not None else idle
+            if store.rscript_click_native_effects:
+                mode = store.rscript_click_modes.get(layer, 0)
+                # Native 405cb0: invert, wash toward white (LUT row 64), or omit the body.
+                if mode == 1:
+                    hover_image = Transform(idle, matrixcolor=InvertMatrix(1.0))
+                elif mode == 2:
+                    hover_image = Transform(idle, matrixcolor=Matrix([
+                        .75, 0, 0, 64 / 255., 0, .75, 0, 64 / 255.,
+                        0, 0, .75, 64 / 255., 0, 0, 0, 1]))
+                elif mode == 3:
+                    hover_image = Transform(idle, alpha=0.0)
             # Native optional setlink artwork may be absent (not only -1).
             # Keep required idle resources visible as errors if they are missing.
             options.append((value, system, idle,
-                            hover_image if renpy.has_image(hover_image, exact=True) else idle,
+                            hover_image if not isinstance(hover_image, str) or renpy.has_image(hover_image, exact=True) else idle,
                             absolute(x), absolute(y)))
             layers[len(options) - 1] = layer
             preview = (link if store.rscript_click_link_is_preview else
@@ -492,7 +503,7 @@ python early:
         scene = renpy.game.context().scene_lists
         depth = dict(scene.get_zorder_list(IMAGE_LAYER)).get(tag,
                     store.layer_zorder.get(layer, layer * 2))
-        if (not store.rscript_click_link_is_preview and layer in store.layer_info
+        if ((not store.rscript_click_link_is_preview or store.rscript_click_native_effects) and layer in store.layer_info
                 and scene.get_displayable_by_tag(IMAGE_LAYER, tag) is not None):
             renpy.show(tag, what=renpy.displayable(image or store.layer_info[layer]),
                        layer=IMAGE_LAYER, zorder=depth)
@@ -517,7 +528,7 @@ python early:
         # Native resetclk 0 is a no-op, not a request to clear all regions.
         layer = None if o is None else o.Layer
         for bindings in (store.rscript_click_values, store.rscript_click_links,
-                         store.rscript_click_previews):
+                         store.rscript_click_previews, store.rscript_click_modes):
             if layer is None:
                 bindings.clear()
             elif layer != 0:
@@ -534,6 +545,7 @@ python early:
 
     def execute_setclk(o):
         store.rscript_click_values[o.Layer] = (o.Value, False)
+        store.rscript_click_modes[o.Layer] = getattr(o, "Mode", 0)
 
     renpy.register_statement("_setclk", parse = parse_setclk, execute = execute_setclk, lint = lint_undef)
 
@@ -554,6 +566,7 @@ python early:
 
     def execute_setclksys(o):
         store.rscript_click_values[o.Layer] = (o.Value, True)
+        store.rscript_click_modes[o.Layer] = getattr(o, "Mode", 0)
 
     renpy.register_statement("_setclksys", parse = parse_setclksys, execute = execute_setclksys, lint = lint_undef)
 

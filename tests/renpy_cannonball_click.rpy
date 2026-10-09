@@ -2,6 +2,9 @@
 default cannonball_test_select = False
 default cannonball_choice_index = 0
 default cannonball_timed_caption_test = False
+default cannonball_effect_test = False
+default cannonball_effect_mode = 0
+default cannonball_dim_test = False
 
 init 100 python:
     def cannonball_click_error(info):
@@ -12,6 +15,39 @@ init 100 python:
     renpy.image("grpo 9995", Solid("#ff0000", xsize=100, ysize=50))
     renpy.image("grpo 9996", Solid("#0000ff", xsize=100, ysize=50))
     renpy.image("grpo 9997", Solid("#00ff00", xsize=100, ysize=50))
+    renpy.image("grpo 9994", Solid("#204060", xsize=100, ysize=100))
+
+    def cannonball_effect_capture(restored=False):
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        expected = ((32, 64, 96) if restored else
+                    ((32, 64, 96), (223, 191, 159), (88, 112, 136), (16, 24, 32))[cannonball_effect_mode])
+        actual = image.get_at((350, 250))[:3]
+        assert all(abs(a - b) <= 2 for a, b in zip(actual, expected)), (cannonball_effect_mode, restored, actual, expected)
+        outside = image.get_at((290, 190))[:3]
+        assert all(abs(a - b) <= 2 for a, b in zip(outside, (16, 24, 32))), outside
+
+    def cannonball_dim_capture():
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        expected = (26, 32, 39) if cannonball_dim_test else (128, 160, 192)
+        actual = image.get_at((20, 20))[:3]
+        assert all(abs(a - b) <= 2 for a, b in zip(actual, expected)), (actual, expected)
+        if renpy.get_screen("preferences") is not None:
+            panel = tuple(image.get_at((x, 130))[:3] for x in range(200, 250, 10))
+            if cannonball_dim_test:
+                # The menu itself is translucent; only its underlying scene darkens.
+                artwork = pygame.image.load(renpy.file(rscript_ui_image("confscrn", "bg")))
+                for x, before, after in zip(range(200, 250, 10), store.cannonball_dim_panel, panel):
+                    alpha = sum(artwork.get_at((x - 141, y))[3] for y in (23, 24)) / 510.
+                    expected_panel = tuple(c + (dim - bg) * (1 - alpha)
+                                           for c, dim, bg in zip(before, (26, 32, 39), (128, 160, 192)))
+                    assert all(abs(a - b) <= 3 for a, b in zip(after, expected_panel)), (after, expected_panel)
+                renpy.screenshot("/tmp/cannonball-menu-dim.png")
+            else:
+                store.cannonball_dim_panel = panel
 
     def cannonball_click_position():
         import io
@@ -74,11 +110,10 @@ init 100 python:
         if not check:
             store.cannonball_choice_portraits = portraits
             return
-        # Inserting a card can split the raster batch and change edge sampling.
-        # A replaced portrait would change most of this full-scene sample.
+        # Only the focused portrait changes; it is not replaced by its card.
         changed = sum(max(abs(a - b) for a, b in zip(before, after)) > 20
                       for before, after in zip(store.cannonball_choice_portraits, portraits))
-        assert changed < 100, (cannonball_choice_index, changed)
+        assert 100 < changed < 2600, (cannonball_choice_index, changed)
         scene = renpy.game.context().scene_lists
         preview = scene.get_displayable_by_tag(IMAGE_LAYER, "rscript_click_preview")
         assert preview is not None and preview.get_placement()[:2] == (205, 490), (preview, cannonball_choice_index)
@@ -90,8 +125,26 @@ init 100 python:
         if cannonball_choice_index == 5:
             renpy.screenshot("/tmp/cannonball-3160-choice-fixed.png")
 
+    def cannonball_choice_restored():
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        portraits = tuple(image.get_at((x, y))[:3] for y in range(0, 470, 8) for x in range(0, 800, 8))
+        changed = sum(max(abs(a - b) for a, b in zip(before, after)) > 20
+                      for before, after in zip(store.cannonball_choice_portraits, portraits))
+        assert changed < 100, (cannonball_choice_index, changed)
+        assert not renpy.showing("rscript_click_preview", layer=IMAGE_LAYER)
+
 screen rscript_click_extra(options):
-    if cannonball_timed_caption_test:
+    if cannonball_effect_test:
+        timer .2 action Function(renpy.set_mouse_pos, 350, 250)
+        timer .3 action Function(cannonball_click_motion)
+        timer .5 action Function(cannonball_effect_capture)
+        timer .6 action Function(renpy.set_mouse_pos, 0, 590)
+        timer .7 action Function(cannonball_click_motion)
+        timer .9 action Function(cannonball_effect_capture, True)
+        timer 1.0 action Return(7)
+    elif cannonball_timed_caption_test:
         timer .6 action Function(cannonball_timed_captions)
         timer .75 action Function(cannonball_click_motion)
         timer .9 action Function(cannonball_timed_captions, True)
@@ -101,7 +154,11 @@ screen rscript_click_extra(options):
         timer .5 action Function(cannonball_choice_move)
         timer .65 action Function(cannonball_click_motion)
         timer .9 action Function(cannonball_choice_capture, True)
-        timer 1.0 action Function(cannonball_click_select)
+        timer 1.0 action Function(renpy.set_mouse_pos, 0, 590)
+        timer 1.1 action Function(cannonball_click_motion)
+        timer 1.3 action Function(cannonball_choice_restored)
+        timer 1.4 action Function(cannonball_choice_move)
+        timer 1.5 action Function(cannonball_click_select)
     elif cannonball_test_select:
         timer .15 action Function(cannonball_click_position)
         timer .25 action Function(cannonball_click_select)
@@ -114,6 +171,11 @@ screen cannonball_menu_test(items):
     timer .7 action Function(cannonball_menu_frame, True)
     timer .8 action Function(cannonball_click_select)
     timer 3.0 action Function(renpy.quit, status=1)
+
+screen cannonball_dim_timer():
+    zorder 100
+    timer .3 action Function(cannonball_dim_capture)
+    timer .4 action Return(True)
 
 label before_main_menu:
     scene black onlayer black
@@ -153,7 +215,57 @@ label before_main_menu:
         call cannonball_choice_3160
         call cannonball_choice_2122
         call cannonball_choice_2121
+    call cannonball_hover_effects
+    call cannonball_menu_dim
     $ renpy.quit()
+
+label cannonball_hover_effects:
+    _cls 0 0
+    _rscript_number numenable 0 0
+    scene onlayer cg
+    scene onlayer master
+    scene expression Solid("#101820", xsize=800, ysize=600) onlayer black
+    $ rscript_click_link_is_preview = True
+    $ cannonball_effect_test = True
+    $ cannonball_test_select = False
+    $ folder[41] = "grpo"
+    _load 41 9994 300 200 0 0
+    while cannonball_effect_mode <= 3:
+        $ renpy.set_mouse_pos(0, 590)
+        # Both regular and system registrations must retain the effect operand.
+        if cannonball_effect_mode % 2:
+            _setclksys 41 7 cannonball_effect_mode 0
+        else:
+            _setclk 41 7 cannonball_effect_mode 0
+        _click 0 0
+        $ assert _r[0] == 7 and not rscript_click_modes
+        $ cannonball_effect_mode += 1
+    $ cannonball_effect_test = False
+    $ print("OK: native hover modes 0/1/2/3, alpha mask, mouse exit and reset")
+    return
+
+label cannonball_menu_dim:
+    _cls 0 0
+    $ process_draw_queue()
+    scene onlayer cg
+    scene onlayer master
+    scene expression Solid("#80a0c0", xsize=800, ysize=600) onlayer black
+    $ cannonball_dim_layout = rscript_layouts()["confscrn"]
+    $ cannonball_dim_strength = cannonball_dim_layout["background_dim"]
+    $ cannonball_dim_layout["background_dim"] = 0
+    show screen cannonball_dim_timer
+    call screen preferences
+    hide screen cannonball_dim_timer
+    $ cannonball_dim_layout["background_dim"] = cannonball_dim_strength
+    $ cannonball_dim_test = True
+    show screen cannonball_dim_timer
+    call screen preferences
+    hide screen cannonball_dim_timer
+    $ cannonball_dim_test = False
+    $ renpy.pause(.1, hard=True)
+    $ cannonball_dim_capture()
+    $ print("OK: native background dim, unchanged menu artwork and close restoration")
+    return
 
 label cannonball_choice_3160:
     $ cannonball_test_select = False
