@@ -23,12 +23,17 @@ default rscript_speaker_visible = False
 init python:
     def rscript_prepare_text(text):
         text = renpy.translation.translate_string(text)
-        text = rscript_prepare_wiki_text(text)
         if rscript_use_speaker_images or rscript_speaker_images_override:
-            speaker = renpy.re.match(r"^((?:\^m)*)\^g(\d{3})", text, flags=renpy.re.I)
+            # State/event controls do not consume the first displayable slot.
+            speaker = renpy.re.match(
+                r"^((?:\^[binm]|\^f[mg]|\^c[bgkopsrvwy]|"
+                r"\^s[0-9]|\^[dw][0-9]+)*)\^g([0-9]{3})",
+                text, flags=renpy.re.I)
             if speaker:
                 store.rscript_speaker = int(speaker.group(2))
                 text = speaker.group(1) + text[speaker.end():]
+        # Wiki markup must not hide a leading graphic inside a link tag.
+        text = rscript_prepare_wiki_text(text)
         return rscript_inline_graphics(text)
 
     def rscript_green_color():
