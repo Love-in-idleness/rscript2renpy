@@ -410,25 +410,34 @@ python early:
                 key=lambda item: (store.layer_zorder.get(item[0], item[0] * 2), item[0])):
             if not store.layer_enabled.get(layer, 1):
                 continue
-            if layer not in store.rscript_click_links or layer not in store.layer_info:
+            if layer not in store.layer_info:
                 continue
-            hover, x, y = store.rscript_click_links[layer]
+            link = store.rscript_click_links.get(layer)
+            if link is None and not store.rscript_click_link_is_preview:
+                continue
+            if store.rscript_click_link_is_preview:
+                x, y = store.layer_pos.get(layer, (0, 0))
+                hover = None
+            else:
+                hover, x, y = link
             folder = store.folder.get(layer, store.folder.get(0))
             if not folder:
                 continue
-            if store.rscript_click_grid:
+            if store.rscript_click_grid and not store.rscript_click_link_is_preview:
                 x *= store.layer_x_grid
                 y *= store.layer_y_grid
             idle = store.layer_info[layer]
-            hover_image = "%s %04d" % (folder, hover)
+            hover_image = "%s %04d" % (folder, hover) if hover is not None else idle
             # Native optional setlink artwork may be absent (not only -1).
             # Keep required idle resources visible as errors if they are missing.
             options.append((value, system, idle,
                             hover_image if renpy.has_image(hover_image, exact=True) else idle,
                             absolute(x), absolute(y)))
             layers[len(options) - 1] = layer
-            if layer in store.rscript_click_previews:
-                cg, px, py = store.rscript_click_previews[layer]
+            preview = (link if store.rscript_click_link_is_preview else
+                       store.rscript_click_previews.get(layer))
+            if preview is not None:
+                cg, px, py = preview
                 if store.rscript_click_grid:
                     px *= store.layer_x_grid
                     py *= store.layer_y_grid
@@ -483,7 +492,8 @@ python early:
         scene = renpy.game.context().scene_lists
         depth = dict(scene.get_zorder_list(IMAGE_LAYER)).get(tag,
                     store.layer_zorder.get(layer, layer * 2))
-        if layer in store.layer_info and scene.get_displayable_by_tag(IMAGE_LAYER, tag) is not None:
+        if (not store.rscript_click_link_is_preview and layer in store.layer_info
+                and scene.get_displayable_by_tag(IMAGE_LAYER, tag) is not None):
             renpy.show(tag, what=renpy.displayable(image or store.layer_info[layer]),
                        layer=IMAGE_LAYER, zorder=depth)
         renpy.hide("rscript_click_preview", layer=IMAGE_LAYER)
@@ -491,7 +501,7 @@ python early:
             image, x, y = preview
             renpy.show("rscript_click_preview", what=renpy.displayable(image),
                        layer=IMAGE_LAYER, zorder=depth + 1,
-                       at_list=[Transform(pos=(absolute(x), absolute(y)))])
+                       at_list=[Transform(pos=(absolute(x), absolute(y)), anchor=(0.0, 0.0))])
 
     renpy.register_statement("_click", parse = parse_click, execute = execute_click, lint = lint_undef)
 

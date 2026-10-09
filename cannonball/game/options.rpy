@@ -21,6 +21,8 @@ init -100 python:
     rscript_voice_groups = True
     # Cannonball.exe 41096e: click clock register counts 10 ms ticks.
     rscript_click_timer_unit = .01
+    # Native setlink attaches a separate hover card; the object is the hit area.
+    rscript_click_link_is_preview = True
     rscript_locmode_zero_all = True
     rscript_bgm_format = "bgm/Track%02d.wav"
     rscript_ctc_x, rscript_ctc_y = 770, 555

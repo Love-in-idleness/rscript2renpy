@@ -173,6 +173,15 @@ def main():
                     for asset in (original / "grpo").glob("%04d.*" % number):
                         if asset.suffix in {".png", ".webp"}:
                             shutil.copyfile(asset, game / "grpo" / asset.name)
+                for folder, numbers in (("grpe", (404,)),
+                                        ("grpo_cl", (1401, 1801, 741, 201, 601, 6, 7, 8, 9, 10))):
+                    for resources, output in ((original, game), (translated, game / "tl/zh")):
+                        for number in numbers:
+                            for asset in (resources / folder).glob("%04d.*" % number):
+                                if asset.suffix in {".png", ".webp"}:
+                                    destination = output / folder / asset.name
+                                    destination.parent.mkdir(parents=True, exist_ok=True)
+                                    shutil.copyfile(asset, destination)
                 for folder, details in report["layouts"].items():
                     for path, crop in details["images"].values():
                         shutil.copyfile(original / path, game / path)
