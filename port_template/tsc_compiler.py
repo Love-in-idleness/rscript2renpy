@@ -291,7 +291,8 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                     args.append("0")
                 if legacy and op in (60, 61):
                     # Cannonball.exe 43d122 / 43db4f: 100 ticks of 20 ms.
-                    lines.append("    # Legacy BGM fade %s: nonzero enables the native 2000 ms fade." % args[-1])
+                    if parameters[-1]:
+                        lines.append("    # Legacy BGM fade %s: nonzero enables the native 2000 ms fade." % args[-1])
                     args[-1] = "int(bool(%s))" % args[-1] if parameters[-1] >= 65536 else str(int(bool(parameters[-1])))
                     args.append("2000")
                 if legacy and op == 39:

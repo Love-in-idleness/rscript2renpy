@@ -79,6 +79,8 @@ def main():
         source.write_text(header + '*bgm_on 1 0\n*bgm_off @7\n*draw 1 3 50\n*draw 1 99 50\n*draw 1 @8 50\n*end\n')
         lowered = compile_scene(source, adapter="pre-codex")
         assert "_bgm_on 1 0 2000" in lowered
+        assert "# Legacy BGM fade 0:" not in lowered
+        assert "# Legacy BGM fade rscript_signed16(_r[7]):" in lowered
         assert "_bgm_off int(bool(rscript_signed16(_r[7]))) 2000" in lowered
         assert lowered.count("_draw 1 0 50") == 2
         assert "native normal-drawing alias" in lowered and "flattened" not in lowered
