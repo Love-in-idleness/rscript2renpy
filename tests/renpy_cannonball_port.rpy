@@ -30,6 +30,41 @@ python early:
             sprite = rscript_ui_image("confscrn", "save_f")
             assert sprite.crop == (0, 21, 85, 21)
         _preferences.language = None
+        # Each slot uses its saved chapter, not the current chapter's DT1.
+        _r[1] = 1
+        metadata = {}
+        rscript_save_json(metadata)
+        assert metadata["rscript_dt1"] == 1
+        _r[1] = 2
+        old_json, old_loadable, old_time = FileJson, FileLoadable, FileTime
+        try:
+            store.FileJson = lambda slot, key: metadata.get(key) if slot == 1 else None
+            store.FileLoadable = lambda slot: slot == 1
+            store.FileTime = lambda *args: "2026/10/09 12:34"
+            assert rscript_slot_image(1).lower().startswith("grps/dt1_0001.")
+            assert rscript_slot_image(2) is None
+            for page in (1, 10):
+                FilePage(page)()
+                assert rscript_page_image(str(page)).crop == (0, (page - 1) * 34, 38, 34)
+                assert bool(FilePagePrevious(max=10, auto=False, quick=False).get_sensitive()) == (page > 1)
+                assert FilePageNext(max=10, auto=False, quick=False).get_sensitive() == (page < 10)
+                for language in (None, "zh"):
+                    _preferences.language = language
+                    for mode, action_type in (("save", FileSave), ("load", FileLoad)):
+                        renpy.show_screen(mode)
+                        screen = renpy.get_screen(mode)
+                        screen.update()
+                        buttons = []
+                        screen.visit_all(lambda d: buttons.append(d) if isinstance(d, renpy.display.behavior.Button)
+                                         and isinstance(d.action, action_type) else None)
+                        assert len(buttons) == 10, (mode, buttons)
+                        assert buttons[0].style.xpos == 125 and buttons[0].style.ypos == 137
+                        assert buttons[5].style.xpos == 400 and buttons[5].style.ypos == 137
+                        renpy.hide_screen(mode)
+        finally:
+            store.FileJson, store.FileLoadable, store.FileTime = old_json, old_loadable, old_time
+            _preferences.language = None
+            FilePage(1)()
         # Native save sensitivity, autosave flag and direct screen key actions.
         store.save_enabled = store.roll_enabled = 1
         rscript_sync_permissions()

@@ -366,8 +366,9 @@ screen rscript_file_slots(mode):
             yalign 0.5
             $ items = layout["items"]
             $ bg = items["bg_" + mode]
-            $ slot_layout = rscript_layouts().get("saveconf", {}).get("items", {})
-            add rscript_image_path("grps/savescrn/bg_%s.png" % mode) xpos bg[0] ypos bg[1]
+            $ slot_config = rscript_layouts().get("saveconf", {})
+            $ slot_layout = slot_config.get("items", {})
+            add rscript_ui_image("savescrn", "bg_" + mode) xpos bg[0] ypos bg[1]
             for index in range(10):
                 $ item = items.get(str(index))
                 if item:
@@ -380,11 +381,12 @@ screen rscript_file_slots(mode):
                         ysize rscript_ui.get("slot_size", item[2:])[1]
                         background None
                         hover_background Solid("#ffffff20")
+                        padding (0, 0)
                         action slot_action
                         if "icon" in slot_layout:
-                            add rscript_image_path("grps/saveconf/icon.png") pos slot_layout["icon"][:2]
+                            add rscript_ui_image("saveconf", "icon") pos slot_layout["icon"][:2]
                         if "new" in slot_layout and FileNewest(slot):
-                            add rscript_image_path("grps/saveconf/new.png") pos slot_layout["new"][:2]
+                            add rscript_ui_image("saveconf", "new") pos slot_layout["new"][:2]
                         $ dt1_image = rscript_slot_image(slot)
                         if dt1_image:
                             add dt1_image
@@ -395,18 +397,18 @@ screen rscript_file_slots(mode):
                                 xysize preview[2:]
                         if FileLoadable(slot):
                             $ date_pos = rscript_ui.get("slot_date_pos", slot_layout.get("date", (0.98, 0.98)))
-                            text FileTime(slot, "%Y/%m/%d %H:%M"):
+                            text FileTime(slot, slot_config.get("date_format", "%Y/%m/%d %H:%M")):
                                 xpos date_pos[0]
                                 ypos date_pos[1]
                                 xanchor (0.0 if "slot_date_pos" in rscript_ui or "date" in slot_layout else 0.98)
                                 yanchor (0.0 if "slot_date_pos" in rscript_ui or "date" in slot_layout else 0.98)
                                 color rscript_ui.get("slot_date_color", "#ffffff")
-                                size 12
-                                outlines ([] if "slot_date_pos" in rscript_ui else [(1, "#000000", 0, 0)])
+                                size slot_config.get("date_size", 12)
+                                outlines slot_config.get("date_outlines", [] if "slot_date_pos" in rscript_ui else [(1, "#000000", 0, 0)])
             use rscript_grps_button("savescrn", "prev",
-                                     FilePagePrevious(max=10, wrap=True, auto=False, quick=False))
+                                     FilePagePrevious(max=10, wrap=layout.get("page_wrap", True), auto=False, quick=False))
             use rscript_grps_button("savescrn", "next",
-                                     FilePageNext(max=10, wrap=True, auto=False, quick=False))
+                                     FilePageNext(max=10, wrap=layout.get("page_wrap", True), auto=False, quick=False))
             if "number" in items:
                 $ number = items["number"]
                 $ page = FileCurrentPage()

@@ -15,7 +15,7 @@ from rscript_tsc import read_tsc
 from tsc_compiler import compile_scene, compile_overlays
 from tsc_vm import emit_vm
 from build_port import write_scenario
-from ui_layout import BUTTONS, PANE, extract_native_ui, native_layouts
+from ui_layout import BUTTONS, PANE, SAVE_BUTTONS, extract_native_ui, native_layouts
 from exe_ui import constant_positions, inspect_exe
 
 
@@ -84,7 +84,10 @@ def main():
             Image.new("RGBA", (width, 42), "#ffffff").save(base / "grps" / (source.upper() + ".png"))
         for source, size in (("CON_BASE", (518, 387)), ("TBOX_C01", (194, 18)),
                              ("TBOX_C08", (5, 30)), *(("con_%d" % n, (21, 42)) for n in (16, 17, 18)),
-                             *((source, (17, 34)) for name, source in PANE if name is not None)):
+                             *((source, (17, 34)) for name, source in PANE if name is not None),
+                             ("dat_bgs", (800, 600)), ("dat_bgl", (800, 600)), ("dat_no", (38, 340)),
+                             ("dat_re", (56, 52)), ("dat_p01", (40, 68)), ("dat_p02", (40, 68)),
+                             ("DT1_0001", (255, 60)), ("DT1_0002", (255, 60))):
             Image.new("RGBA", size, "#ffffff").save(base / "grps" / (source + ".png"))
         layout = native_layouts(base)
         assert layout["confscrn"]["size"] == (518, 387)
@@ -92,6 +95,14 @@ def main():
         assert layout["confscrn"]["images"]["save_f"][1] == (0, 21, 85, 21)
         assert layout["compane"]["items"]["hide"] == (179, 1, 17, 17)
         assert set(layout["compane"]["controls"]) == {"rev", "bak", "fow", "next", "voc", "hide"}
+        assert layout["savescrn"]["size"] == (800, 600)
+        assert layout["savescrn"]["items"]["0"] == (125, 137, 255, 60)
+        assert layout["savescrn"]["items"]["5"] == (400, 137, 255, 60)
+        assert layout["savescrn"]["items"]["9"] == (400, 405, 255, 60)
+        assert layout["savescrn"]["images"]["page10"][1] == (0, 306, 38, 34)
+        assert not layout["savescrn"]["page_wrap"]
+        for name, (source, x, y) in SAVE_BUTTONS.items():
+            assert layout["savescrn"]["items"][name][:2] == (x, y)
         Image.new("RGBA", (518, 387), "#000000").save(base / "grps/CON_BASE.webp")
         assert native_layouts(base)["confscrn"]["images"]["bg"][0].endswith(".webp")
         invalid = directory / "invalid.exe"
@@ -150,6 +161,10 @@ def main():
                             destination = game / "tl/zh" / patched.relative_to(translated)
                             destination.parent.mkdir(parents=True, exist_ok=True)
                             shutil.copyfile(patched, destination)
+                for number in (1, 2):
+                    for asset in (original / "grps").glob("DT1_%04d.*" % number):
+                        if asset.suffix in {".png", ".webp"}:
+                            shutil.copyfile(asset, game / "grps" / asset.name)
                 (game / "engine/native_ui.rpy").write_text('init 10 python:\n    rscript_ui["layouts"] = %r\n' % report["layouts"])
                 (game / "title_test.rpy").write_text(
                     "define rscript_test_native_title = True\nlabel _3000:\n    return\n")

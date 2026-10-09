@@ -100,6 +100,8 @@ init python:
     def rscript_page_image(page):
         if not page.isdigit():
             return None
+        if "page" + page in rscript_layouts().get("savescrn", {}).get("images", {}):
+            return rscript_ui_image("savescrn", "page" + page)
         number = int(page)
         # Khime names page artwork 0..9 (displaying 1..10); Forest uses 1..10.
         if renpy.loadable(rscript_image_path("grps/nonbl/0.png")):

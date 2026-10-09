@@ -6,7 +6,8 @@ init python:
         raise SystemExit(full)
     config.exception_handler = grps_capture_error
     def grps_capture():
-        paths = ("preferences.png", "compane.png", "font-picker.png")
+        paths = ("preferences.png", "compane.png", "font-picker.png",
+                 "save-empty.png", "save-dt1.png", "save-page10.png", "load-dt1.png")
         renpy.screenshot(os.path.join(config.basedir, paths[grps_capture_stage]))
         store.grps_capture_stage += 1
         if grps_capture_stage == 1:
@@ -16,6 +17,30 @@ init python:
             renpy.hide_screen("rscript_compane")
             renpy.show_screen("preferences")
             renpy.show_screen("rscript_font_picker")
+        elif grps_capture_stage == 3:
+            if config.name != "CannonBall":
+                renpy.quit()
+            renpy.hide_screen("rscript_font_picker")
+            renpy.hide_screen("preferences")
+            store.main_menu = False
+            store.save_enabled = 1
+            rscript_sync_permissions()
+            FilePage(1)()
+            renpy.show_screen("save")
+        elif grps_capture_stage == 4:
+            renpy.take_screenshot()
+            for slot, chapter in ((1, 1), (6, 2)):
+                _r[1] = chapter
+                FileSave(slot, confirm=False)()
+                assert FileLoadable(slot) and FileJson(slot, key="rscript_dt1") == chapter
+                assert rscript_slot_image(slot) is not None
+            _r[1] = 9999
+        elif grps_capture_stage == 5:
+            FilePage(10)()
+        elif grps_capture_stage == 6:
+            renpy.hide_screen("save")
+            FilePage(1)()
+            renpy.show_screen("load")
         else:
             renpy.quit()
         renpy.restart_interaction()

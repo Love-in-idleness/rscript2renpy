@@ -23,13 +23,17 @@ BUTTONS = {
 PANE = (("rev", "tbox_c02"), ("bak", "tbox_c03"), ("fow", "tbox_c04"),
         ("next", "tbox_c05"), ("voc", "tbox_c06"), (None, "tbox_c09"),
         (None, "tbox_c10"), ("hide", "tbox_c07"))
+# Save-page constructor 4092a0..409902; ten slots at 409460..4094ce.
+SAVE_BUTTONS = {"exit": ("dat_re", 653, 503),
+                "prev": ("dat_p01", 510, 499), "next": ("dat_p02", 577, 499)}
 
 
 def native_layouts(resources, positions=None):
     resources = Path(resources)
     files = {p.stem.lower(): p for p in (resources / "grps").iterdir() if p.suffix.lower() == ".png"}
     files.update({p.stem.lower(): p for p in (resources / "grps").iterdir() if p.suffix.lower() == ".webp"})
-    layouts = {name: {"items": {}, "images": {}, "controls": {}} for name in ("confscrn", "compane")}
+    layouts = {name: {"items": {}, "images": {}, "controls": {}}
+               for name in ("confscrn", "compane", "savescrn", "saveconf")}
 
     def add(folder, name, source, x, y, states=1):
         path = files.get(source)
@@ -42,7 +46,7 @@ def native_layouts(resources, positions=None):
         height //= states
         layout = layouts[folder]
         for state in range(states):
-            key = name + ("_f" if state else "")
+            key = name + ("_f" if state == 1 else "_%d" % state if state else "")
             layout["items"][key] = (x, y, width, height)
             layout["images"][key] = (str(path.relative_to(resources)), (0, state * height, width, height) if states > 1 else None)
         if name in UI_ACTIONS.get(folder, {}):
@@ -70,6 +74,24 @@ def native_layouts(resources, positions=None):
         else:
             width = 0  # Native loader's missing optional image has width zero.
         x += width + 1
+    layouts["savescrn"]["size"] = add("savescrn", "bg_save", "dat_bgs", 0, 0)
+    if add("savescrn", "bg_load", "dat_bgl", 0, 0) != layouts["savescrn"]["size"]:
+        raise ValueError("native save/load canvases differ")
+    for name, (source, x, y) in SAVE_BUTTONS.items():
+        add("savescrn", name, source, x, y, 2)
+    # Native pages are 0..9; the Ren'Py page names are 1..10.
+    add("savescrn", "number", "dat_no", 545, 499, 10)
+    images = layouts["savescrn"]["images"]
+    number_source, crop = images["number"]
+    for index in range(10):
+        images["page%d" % (index + 1)] = (number_source, (0, index * crop[3], crop[2], crop[3]))
+    layouts["savescrn"]["page_wrap"] = False
+    for index in range(10):
+        layouts["savescrn"]["items"][str(index)] = (
+            125 + (index // 5) * 275, 137 + (index % 5) * 67, 255, 60)
+    # Slot constructor 402150: DT1 at (0,0), timestamp at (110,40), 16px white.
+    layouts["saveconf"].update(items={"thmb": (0, 0, 255, 60), "date": (110, 40)},
+                               date_size=16, date_outlines=[], date_format="%Y/%m/%d %H:%M")
     return layouts
 
 
@@ -87,7 +109,7 @@ def extract_native_ui(exe, resources):
     report["profile"] = "cannonball-pe32-native-ui"
     report["unresolved"] = ["CON_06 is present in resources but is not loaded by the native menu constructor",
                             "TBOX_C09/C10 are referenced optional controls without converted images",
-                            "Save/load page artwork and original backlog presentation are not yet ported"]
+                            "Original backlog presentation is not yet ported"]
     bound = {Path(path).stem.lower() for layout in report["layouts"].values()
              for path, crop in layout["images"].values()}
     report["unbound_resource_references"] = sorted(set(report["resource_references"]) - bound)

@@ -38,8 +38,13 @@ python3 cannonball/build_cannonball_rscript.py \
 控制条仍由原脚本 `cmploc` 定位。`CON_06` 虽存在，但原菜单构造函数没有加载它，
 不据文件名凭空增加控件。
 
+存读档页同样使用原图 `dat_bgs/dat_bgl`、`dat_p01/dat_p02`、`dat_no` 和
+`dat_re`：两列各五槽、十页，首尾页不循环翻页。槽位按存档元数据中的章节编号
+显示 `DT1_XXXX` 原图，不使用当前章节替代其他存档；缺图或旧存档无编号时才
+回退截图。存档、读档与覆盖确认复用 Ren'Py 原生动作，赛车段的存档禁用规则不变。
+
 静态证据：菜单构造位于 `0x405F00..0x407260`，控制条构造位于
-`0x40AC30..0x40B72D`；对象的 `SetPos` 调用给出坐标，图像构造函数与回调绑定
+`0x40AC30..0x40B72D`，存读档页构造位于 `0x4092A0..0x409902`；对象的 `SetPos` 调用给出坐标，图像构造函数与回调绑定
 确定状态帧和动作。已验证 EXE 的 SHA-256 为
 `df4b5b6dffc7002370d0772869baaba551b08fca970e92609ca64b08174f89ba`。
 
@@ -68,7 +73,7 @@ python3 tools/inspect_rscript_ui.py /path/to/Cannonball.exe /path/to/CannonBall
   `load effect 9`。能加载图片不代表所有视觉效果已还原。
 - `numload/numreng/numenable/numloc/numset/num` 保留参数、启用状态、范围、位置
   与数值更新，显示使用普通文字回退；原生数字皮肤、偏移与计数动画尚未还原。
-- 原图存读档页与历史文本页尚未还原，仍用公共回退界面；EXE 检查报告明确列出。
+- 原历史文本页尚未还原，仍用公共回退界面；EXE 检查报告明确列出。
   `TBOX_C09/C10` 在原程序中有可选加载路径，但当前资源没有对应图像，不生成假按钮。
   剧情内 `setclk/setlink/click` 图片选项仍由原脚本控制。
 - 临时寄存器按执行时保存值；完整 16 位 VM 溢出及所有算术边界仍待原引擎对照。
