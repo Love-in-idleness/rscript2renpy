@@ -308,6 +308,10 @@ python early:
                 renpy.show_screen("preferences")
                 preference_screen = renpy.get_screen("preferences")
                 preference_screen.update()
+                menu_texts = []
+                preference_screen.visit_all(lambda d: menu_texts.append("".join(d.text))
+                    if isinstance(d, renpy.text.text.Text) else None)
+                assert ("Text Settings" in menu_texts) == (not rscript_use_speaker_images)
                 confirmations = []
                 preference_screen.visit_all(lambda d: confirmations.append(d.action)
                     if isinstance(d, renpy.display.behavior.Button)
@@ -331,6 +335,14 @@ python early:
             store.rscript_grps_layout = original_layout
             _preferences.language = original_language
             del translators[fixture_language]
+        renpy.show_screen("rscript_title_preferences")
+        title_screen = renpy.get_screen("rscript_title_preferences")
+        title_screen.update()
+        title_texts = []
+        title_screen.visit_all(lambda d: title_texts.append("".join(d.text))
+            if isinstance(d, renpy.text.text.Text) else None)
+        assert "Text Display" in title_texts
+        renpy.hide_screen("rscript_title_preferences")
         # <NN> chooses the requested skin for both prompts and answers, without
         # discarding translated text or disturbing Forest image-only choices.
         assert rscript_menu_panel("<01> 甲<02>乙 ", "sel_a") == ("sel_a01", " 甲<02>乙 ")

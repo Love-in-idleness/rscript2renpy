@@ -163,10 +163,11 @@ screen preferences(title_mode=False):
     modal True
     key "game_menu" action Return()
     $ layout = rscript_layouts().get("confscrn")
-    textbutton "Text Settings":
-        xalign 0.5
-        yalign 0.97
-        action ShowMenu("rscript_text_preferences")
+    if rscript_ui.get("game_text_settings", True):
+        textbutton "Text Settings":
+            xalign 0.5
+            yalign 0.97
+            action ShowMenu("rscript_text_preferences")
     if layout and "bg" in layout["items"]:
         fixed:
             xysize layout["size"]

@@ -26,6 +26,7 @@ init python:
         "selected_plain_folders": ("confscrn",),
         "activate_sound": {"confscrn": "wav/0001.ogg", "savescrn": "wav/0001.ogg"},
         "title_wiki": False,
+        "game_text_settings": False,
         "numeric_choices": True,
         "compane_hide_auto": True,
         "compane_invert": True,
