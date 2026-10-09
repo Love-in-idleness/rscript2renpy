@@ -7,6 +7,7 @@ import shutil
 import signal
 import subprocess
 import sys
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
@@ -123,6 +124,15 @@ def main():
                     pass
                 else:
                     raise AssertionError("Khime must not silently flatten non-text patch changes")
+            Image.new("RGB", (17, 13), "red").save(project / "game/grpo/0707.webp")
+            translated_image = project / "game/tl/asset_test/grpo/0707.png"
+            translated_image.parent.mkdir(parents=True)
+            Image.new("RGB", (11, 9), "blue").save(translated_image)
+            Image.new("RGB", (19, 15), "green").save(translated_image.with_suffix(".webp"))
+            # Translation PNG must beat a base WebP when no patch WebP exists.
+            translated_png = project / "game/tl/png_test/grpo/0707.png"
+            translated_png.parent.mkdir(parents=True)
+            Image.new("RGB", (7, 5), "yellow").save(translated_png)
             for filename in ("text_features.rpy", "touch_controls.rpy", "gui.rpy"):
                 assert (project / "game" / "engine" / filename).read_bytes() == \
                     (ROOT / "port_template/game" / filename).read_bytes()

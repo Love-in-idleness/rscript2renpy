@@ -58,10 +58,10 @@ def _supported(command: str, field: str, value: int,
         # install_base converts source .msk masks to these PNG names.
         found = any((resources / prefix / candidate).is_file()
                     for prefix in (Path(), Path("images"))
-                    for candidate in (relative, relative.with_suffix(".msk")))
+                    for candidate in (relative.with_suffix(".webp"), relative, relative.with_suffix(".msk")))
         if not found and command == "_effect":
             # Image registration lowercases tags, not actual resource filenames.
-            found = any(path.name.lower() == mask
+            found = any(path.name.lower() in (mask, str(Path(mask).with_suffix(".webp")))
                         for prefix in (Path(), Path("images"))
                         for path in (resources / prefix / "grps").glob("*")
                         if path.is_file())

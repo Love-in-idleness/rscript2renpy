@@ -25,6 +25,18 @@ python early:
         assert tuple(getattr(persistent, field) for field in fields) == defaults
         language = _preferences.language
         try:
+            for selected, expected in ((None, "grpo/0707.webp"),
+                                       ("asset_test", "tl/asset_test/grpo/0707.webp"),
+                                       ("png_test", "tl/png_test/grpo/0707.png")):
+                _preferences.language = selected
+                assert rscript_image_path("grpo/0707.png") == expected
+                assert rscript_image_path("grpo/0707.webp") == expected
+                image = renpy.get_registered_image("grpo 0707")
+                image.find_target()
+                assert image.raw_target.filename == expected, image.raw_target
+        finally:
+            _preferences.language = language
+        try:
             for expression in ("'^cw８月１１日・月曜日'", "''",
                                "{'zh': '^cw８月１１日·星期一'}.get(_preferences.language, '^cw８月１１日・月曜日')"):
                 lex = renpy.lexer.Lexer([("oload-check", 1, "1 625 550 0 0 " + expression, [])])
@@ -124,7 +136,7 @@ python early:
             for first in (0, 1):
                 images = {"grps/nonbl/%d.png" % number
                           for number in range(first, first + 10)}
-                renpy.loadable = lambda path: path in images
+                renpy.loadable = lambda path, **kwargs: path in images
                 for page in range(1, 11):
                     assert rscript_page_image(str(page)) == (
                         "grps/nonbl/%d.png" % (page - 1 + first))
@@ -235,8 +247,8 @@ python early:
             store.queue_draw = lambda *args, **kwargs: None
             store.process_draw_queue = lambda: None
             store.jump_back_point = 1
-            renpy.loadable = lambda path: (not os.path.splitext(path)[0].endswith("9999")
-                                           if path.startswith("voice/") else old_loadable(path))
+            renpy.loadable = lambda path, **kwargs: (not os.path.splitext(path)[0].endswith("9999")
+                                           if path.startswith("voice/") else old_loadable(path, **kwargs))
             voice = SimpleNamespace(VoiceNo=1, Repeat=0, Fade=0, Pan=0)
             execute_say((None, None, repr("unvoiced")), interact=False)
             assert voice_button_count() == 2

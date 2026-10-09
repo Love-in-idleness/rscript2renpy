@@ -93,7 +93,7 @@ screen rscript_font_picker():
             xalign 0.5
             yalign 0.5
             $ bg = layout["items"]["bg"]
-            add "grps/%s/bg.png" % folder pos bg[:2]
+            add rscript_image_path("grps/%s/bg.png" % folder) pos bg[:2]
             $ row = layout["items"].get("list", (20, 30, 300, 20))
             $ footer = layout["items"].get("exit", (0, layout["size"][1] - 40, 0, 0))
             viewport:
@@ -106,9 +106,9 @@ screen rscript_font_picker():
                     spacing 2
                     for path in rscript_fonts():
                         textbutton path.rsplit("/", 1)[-1]:
-                            background "grps/%s/list.png" % folder
-                            hover_background ("grps/%s/list_f.png" % folder if "list_f" in layout["items"] else None)
-                            selected_background ("grps/%s/list_f.png" % folder if "list_f" in layout["items"] else None)
+                            background rscript_image_path("grps/%s/list.png" % folder)
+                            hover_background (rscript_image_path("grps/%s/list_f.png" % folder) if "list_f" in layout["items"] else None)
+                            selected_background (rscript_image_path("grps/%s/list_f.png" % folder) if "list_f" in layout["items"] else None)
                             text_size min(18, row[3])
                             padding (2, 0)
                             selected path == rscript_current_font()
@@ -128,8 +128,8 @@ screen rscript_grps_button(folder, name, button_action, enabled=True, selected=N
     $ items = rscript_layouts().get(folder, {}).get("items", {})
     $ item = items.get(name)
     if item:
-        $ idle_image = "grps/%s/%s.png" % (folder, name)
-        $ focused_image = ("grps/%s/%s_f.png" % (folder, name)
+        $ idle_image = rscript_image_path("grps/%s/%s.png" % (folder, name))
+        $ focused_image = (rscript_image_path("grps/%s/%s_f.png" % (folder, name))
                            if name + "_f" in items else idle_image)
         $ focused = items.get(name + "_f", item)
         $ focused_display = Transform(focused_image,
@@ -137,7 +137,7 @@ screen rscript_grps_button(folder, name, button_action, enabled=True, selected=N
                                       yoffset=focused[1] - item[1])
         $ plain_selected = (folder in rscript_ui.get("selected_plain_folders", ()) and (name.startswith(("scm_", "msp_", "msk_")) or name.endswith(("_on", "_off"))))
         $ disabled_name = name + ("_off" if name + "_off" in items else "_c")
-        $ disabled_image = ("grps/%s/%s.png" % (folder, disabled_name)
+        $ disabled_image = (rscript_image_path("grps/%s/%s.png" % (folder, disabled_name))
                             if disabled_name in items else idle_image)
         imagebutton:
             idle (focused_display if plain_selected else idle_image)
@@ -174,7 +174,7 @@ screen preferences(title_mode=False):
             xalign 0.5
             yalign 0.5
             $ bg = layout["items"]["bg"]
-            add "grps/confscrn/bg.png" xpos bg[0] ypos bg[1]
+            add rscript_image_path("grps/confscrn/bg.png") xpos bg[0] ypos bg[1]
 
             for name, spec in layout.get("controls", {}).items():
                 if not (title_mode and spec[0] in ("save", "load", "close", "quit")):
@@ -201,10 +201,10 @@ screen preferences(title_mode=False):
                         style "rscript_volume_bar"
                         value Preference(setting)
                         base_bar Solid("#00000000")
-                        thumb "grps/confscrn/%s_vol.png" % prefix
-                        hover_thumb ("grps/confscrn/%s_vol_f.png" % prefix
+                        thumb rscript_image_path("grps/confscrn/%s_vol.png" % prefix)
+                        hover_thumb (rscript_image_path("grps/confscrn/%s_vol_f.png" % prefix)
                                      if prefix + "_vol_f" in layout["items"] else
-                                     "grps/confscrn/%s_vol.png" % prefix)
+                                     rscript_image_path("grps/confscrn/%s_vol.png" % prefix))
                         xpos track[0]
                         ypos track[1]
                         xsize track[2]
@@ -242,16 +242,16 @@ screen rscript_compane():
             $ items = layout["items"]
             if "bg" in items and not rscript_ui.get("compane_bar_background", False):
                 $ bg = items["bg"]
-                add "grps/compane/bg.png" xpos bg[0] ypos bg[1]
+                add rscript_image_path("grps/compane/bg.png") xpos bg[0] ypos bg[1]
             $ track = rscript_ui.get("compane_track", items.get("slide_lev"))
             if track and "slide" in items:
                 if track[3] > track[2]:
                     vbar:
                         style "rscript_volume_bar"
                         value FieldValue(persistent, "rscript_textbox_opacity", range=1.0)
-                        base_bar ("grps/compane/bg.png" if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
-                        thumb "grps/compane/slide.png"
-                        hover_thumb ("grps/compane/slide_f.png" if "slide_f" in items else "grps/compane/slide.png")
+                        base_bar (rscript_image_path("grps/compane/bg.png") if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
+                        thumb rscript_image_path("grps/compane/slide.png")
+                        hover_thumb rscript_image_path("grps/compane/slide_f.png" if "slide_f" in items else "grps/compane/slide.png")
                         thumb_offset (2 if rscript_ui.get("compane_bar_background", False) else 0)
                         bar_invert rscript_ui.get("compane_invert", False)
                         xpos track[0]
@@ -262,9 +262,9 @@ screen rscript_compane():
                     bar:
                         style "rscript_volume_bar"
                         value FieldValue(persistent, "rscript_textbox_opacity", range=1.0)
-                        base_bar ("grps/compane/bg.png" if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
-                        thumb "grps/compane/slide.png"
-                        hover_thumb ("grps/compane/slide_f.png" if "slide_f" in items else "grps/compane/slide.png")
+                        base_bar (rscript_image_path("grps/compane/bg.png") if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
+                        thumb rscript_image_path("grps/compane/slide.png")
+                        hover_thumb rscript_image_path("grps/compane/slide_f.png" if "slide_f" in items else "grps/compane/slide.png")
                         thumb_offset (2 if rscript_ui.get("compane_bar_background", False) else 0)
                         bar_invert rscript_ui.get("compane_invert", False)
                         xpos track[0]
@@ -292,7 +292,7 @@ screen rscript_choice(items, prompt=None):
                     xysize rscript_ui.get("prompt_size", question["size"])
                     $ body = question["items"]["body"]
                     $ textpos = rscript_ui.get("prompt_text_pos", question["items"].get("text", (20, 10)))
-                    add "grps/%s/body.png" % prompt_folder:
+                    add rscript_image_path("grps/%s/body.png" % prompt_folder):
                         xpos (0 if rscript_ui.get("choice_center_art", False) else body[0])
                         ypos (0 if rscript_ui.get("choice_center_art", False) else body[1])
                     text rscript_menu_text(prompt_text):
@@ -314,10 +314,10 @@ screen rscript_choice(items, prompt=None):
                         $ body = answer["items"]["body"]
                         $ textpos = rscript_ui.get("choice_text_pos", answer["items"].get("text", (20, 10)))
                         imagebutton:
-                            idle "grps/%s/body.png" % selected_folder
-                            hover ("grps/%s/body_f.png" % selected_folder
+                            idle rscript_image_path("grps/%s/body.png" % selected_folder)
+                            hover (rscript_image_path("grps/%s/body_f.png" % selected_folder)
                                    if "body_f" in answer["items"] else
-                                   "grps/%s/body.png" % selected_folder)
+                                   rscript_image_path("grps/%s/body.png" % selected_folder))
                             focus_mask True
                             xpos (0.5 if rscript_ui.get("choice_center_art", False) else body[0])
                             ypos (0.5 if rscript_ui.get("choice_center_art", False) else body[1])
@@ -356,7 +356,7 @@ screen rscript_file_slots(mode):
             $ items = layout["items"]
             $ bg = items["bg_" + mode]
             $ slot_layout = rscript_layouts().get("saveconf", {}).get("items", {})
-            add "grps/savescrn/bg_%s.png" % mode xpos bg[0] ypos bg[1]
+            add rscript_image_path("grps/savescrn/bg_%s.png" % mode) xpos bg[0] ypos bg[1]
             for index in range(10):
                 $ item = items.get(str(index))
                 if item:
@@ -371,9 +371,9 @@ screen rscript_file_slots(mode):
                         hover_background Solid("#ffffff20")
                         action slot_action
                         if "icon" in slot_layout:
-                            add "grps/saveconf/icon.png" pos slot_layout["icon"][:2]
+                            add rscript_image_path("grps/saveconf/icon.png") pos slot_layout["icon"][:2]
                         if "new" in slot_layout and FileNewest(slot):
-                            add "grps/saveconf/new.png" pos slot_layout["new"][:2]
+                            add rscript_image_path("grps/saveconf/new.png") pos slot_layout["new"][:2]
                         $ dt1_image = rscript_slot_image(slot)
                         if dt1_image:
                             add dt1_image

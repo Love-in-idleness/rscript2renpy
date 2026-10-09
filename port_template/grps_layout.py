@@ -1,8 +1,13 @@
 """Read CodeX canvas metadata for reusable Ren'Py menu layouts."""
 
 from pathlib import Path
-import struct
 import xml.etree.ElementTree as ET
+from PIL import Image
+
+
+def ui_image(folder, name):
+    return next((path for suffix in (".webp", ".png")
+                 if (path := folder / (name + suffix)).is_file()), None)
 
 # Native names shared by CodeX archives. Metadata supplies geometry, not actions.
 UI_ACTIONS = {
@@ -39,9 +44,9 @@ def collect_layout(resources: Path, fallback: Path | None = None) -> dict:
     choices = []
     for prefix in ("sel_a", "sel_q"):
         choices.extend(path.name for path in sorted(root.glob(prefix + "*"))
-                       if (path / "body.png").is_file())
+                       if ui_image(path, "body"))
     textboxes = [path.name for path in sorted(root.glob("tbox*"))
-                 if (path / "back.png").is_file()]
+                 if ui_image(path, "back")]
     required = {"confscrn", "compane", "savescrn", *choices, *textboxes}
     folders = required | {str(path.parent.relative_to(root)) for path in root.rglob(".meta.xml")}
     for folder in sorted(folders):
@@ -50,7 +55,7 @@ def collect_layout(resources: Path, fallback: Path | None = None) -> dict:
             continue
         metadata = source / ".meta.xml"
         if not metadata.is_file():
-            if any(source.glob("*.png")):
+            if any(path.suffix.lower() in {".png", ".webp"} for path in source.iterdir()):
                 raise ValueError("%s needs .meta.xml to position its UI assets" % source)
             continue
         canvas = ET.parse(metadata).getroot()
@@ -59,16 +64,13 @@ def collect_layout(resources: Path, fallback: Path | None = None) -> dict:
             if item.get("empty") == "1":
                 continue
             name = (item.text or "").strip()
-            image = source / (name + ".png")
-            if not image.is_file() and fallback is not None:
-                image = fallback / "grps" / folder / (name + ".png")
-            if not image.is_file():
+            image = ui_image(source, name)
+            if image is None and fallback is not None:
+                image = ui_image(fallback / "grps" / folder, name)
+            if image is None:
                 continue
-            with image.open("rb") as stream:
-                header = stream.read(24)
-            if header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR":
-                raise ValueError("invalid UI PNG: %s" % image)
-            width, height = struct.unpack(">II", header[16:24])
+            with Image.open(image) as decoded:
+                width, height = decoded.size
             items[name] = (int(item.get("x")), int(item.get("y")), width, height)
         layouts[folder] = {
             "size": (int(canvas.findtext("Width")), int(canvas.findtext("Height"))),

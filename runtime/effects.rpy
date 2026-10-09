@@ -864,7 +864,7 @@ init python:
 
 
 
-        return ImageDissolve("grps/ef%02d.png" % effect,
+        return ImageDissolve(rscript_image_path("grps/ef%02d.png" % effect),
                             rscript_update_duration(effect, step, wait),
                             ramplen = 64, reverse = True)
 

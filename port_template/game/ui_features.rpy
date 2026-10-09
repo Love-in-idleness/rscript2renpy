@@ -38,7 +38,7 @@ init python:
         return Return(value)
 
     def rscript_textbox_background():
-        path = "grps/tbox%02d/back.png" % store.cur_textbox
+        path = rscript_image_path("grps/tbox%02d/back.png" % store.cur_textbox)
         background = path if renpy.loadable(path) else Solid("#000000d0")
         origin = rscript_layouts().get("tbox%02d" % store.cur_textbox, {}).get("items", {}).get("back", (0, 0))
         return Transform(background, xoffset=origin[0], yoffset=origin[1],
@@ -54,7 +54,7 @@ init python:
                 return None
         except (TypeError, ValueError, IndexError):
             return None
-        path = "grps/sel_a%02d/body.png" % number
+        path = rscript_image_path("grps/sel_a%02d/body.png" % number)
         return number if renpy.loadable(path) else None
 
     def rscript_menu_panel(caption, prefix):
@@ -81,17 +81,17 @@ init python:
         # Keep side-story artwork in the save, not the currently active game UI.
         images = FileJson(slot, key="rscript_slot_images")
         if isinstance(images, Sequence) and not isinstance(images, str) and images and all(
-                isinstance(path, str) and renpy.loadable(path) for path in images):
+                isinstance(path, str) and renpy.loadable(rscript_image_path(path)) for path in images):
             zoom = FileJson(slot, key="rscript_slot_zoom")
             if not isinstance(zoom, (int, float)) or zoom <= 0:
                 zoom = 1.0
-            return HBox(*(Transform(Image(path), zoom=zoom) for path in images), spacing=0)
+            return HBox(*(Transform(Image(rscript_image_path(path)), zoom=zoom) for path in images), spacing=0)
         # Keep existing Forest saves readable; all new saves use the shared key.
         number = FileJson(slot, key="rscript_dt1")
         if number is None:
             number = FileJson(slot, key="forest_dt1")
         if isinstance(number, int) and number > 0:
-            path = "grps/dt1_%04d.png" % number
+            path = rscript_image_path("grps/dt1_%04d.png" % number)
             if renpy.loadable(path):
                 return path
         return None
@@ -101,9 +101,9 @@ init python:
             return None
         number = int(page)
         # Khime names page artwork 0..9 (displaying 1..10); Forest uses 1..10.
-        if renpy.loadable("grps/nonbl/0.png"):
+        if renpy.loadable(rscript_image_path("grps/nonbl/0.png")):
             number -= 1
-        path = "grps/nonbl/%d.png" % number
+        path = rscript_image_path("grps/nonbl/%d.png" % number)
         return path if renpy.loadable(path) else None
 
     def rscript_preference_action(setting, value):
@@ -190,7 +190,7 @@ screen say(who, what, center=False):
         xsize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[0]
         ysize textbox.get("size", rscript_ui.get("textbox_size", (800, 138)))[1]
         if "front" in textbox.get("items", {}):
-            add "grps/tbox%02d/front.png" % cur_textbox:
+            add rscript_image_path("grps/tbox%02d/front.png" % cur_textbox):
                 pos textbox["items"]["front"][:2]
                 alpha persistent.rscript_textbox_opacity
         if rscript_use_speaker_images or rscript_speaker_images_override or rscript_ui.get("show_speaker", False):

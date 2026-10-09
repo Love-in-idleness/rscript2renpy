@@ -4,6 +4,19 @@ image cg white = "#FFFFFF"
 image white = "#FFFFFF"
 image nothing = "#0000"
 
+init -130 python:
+    def rscript_image_path(path):
+        base, ext = os.path.splitext(path)
+        if ext.lower() not in (".webp", ".png", ".jpg", ".bmp"):
+            return path
+        # Language overrides take precedence over the base game's format.
+        for prefix in renpy.loader.get_prefixes():
+            for suffix in (".webp", ".png", ".jpg", ".bmp"):
+                candidate = prefix + base + suffix
+                if renpy.loadable(candidate, tl=False):
+                    return candidate
+        return path
+
 init python:
     class RScriptRasterVisibility:
         def __init__(self, layer):
@@ -44,7 +57,7 @@ init python:
 
 init python hide:
 
-    img_extensions = [".png", ".jpg", ".bmp", ".webp"]
+    img_extensions = [".webp", ".png", ".jpg", ".bmp"]
     registered_tags = set()
 
     for _, fn in renpy.loader.listdirfiles(common = False):
@@ -68,6 +81,6 @@ init python hide:
 
         image_tag = " ".join(split)
         if image_tag not in registered_tags:
-            renpy.image(image_tag, fn)
+            renpy.image(image_tag, DynamicImage("[rscript_image_path(%r)]" % ("/".join(split) + ".png")))
             registered_tags.add(image_tag)
 # Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc

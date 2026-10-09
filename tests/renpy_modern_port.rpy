@@ -206,7 +206,7 @@ python early:
             renpy.display_menu = old_menu
         old_loadable = renpy.loadable
         try:
-            renpy.loadable = lambda path: path in {"voice/1/0001.wav", "wav/0033.wav"}
+            renpy.loadable = lambda path, **kwargs: path in {"voice/1/0001.wav", "wav/0033.wav"}
             assert rscript_audio_file("voice", 10001) == "voice/1/0001.wav"
             assert rscript_audio_file("se", 33) == "wav/0033.wav"
         finally:
@@ -510,7 +510,7 @@ python early:
             store.queue_draw = lambda *args, **kwargs: None
             store.process_draw_queue = lambda: None
             renpy.say = lambda who, what, **kwargs: calls.append((who.name, what, kwargs['interact']))
-            renpy.loadable = lambda path: path == "voice/1/0001.wav" or old_loadable(path)
+            renpy.loadable = lambda path, **kwargs: path == "voice/1/0001.wav" or old_loadable(path, **kwargs)
             renpy.music.play = lambda *args, **kwargs: None
             store.jump_back_point = 1  # No rollback log exists in command-mode tests.
             execute_voice(SimpleNamespace(VoiceNo=10001, Repeat=0, Fade=0, Pan=0))

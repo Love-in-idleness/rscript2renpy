@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 import sys
 from contextlib import redirect_stdout
 from io import StringIO
+from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -201,8 +202,7 @@ def main() -> None:
 
         conf = resources / "grps" / "confscrn"
         conf.mkdir()
-        (conf / "bg.png").write_bytes(
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x03\x20\x00\x00\x02\x58")
+        Image.new("RGB", (800, 600)).save(conf / "bg.png")
         try:
             collect_layout(resources)
         except ValueError as error:
@@ -214,6 +214,17 @@ def main() -> None:
             '<Item x="4" y="2" flag="40">bg</Item></Items></Canvas>',
             encoding="utf-8")
         assert collect_layout(resources)["confscrn"]["items"]["bg"] == (4, 2, 800, 600)
+        Image.new("RGB", (640, 480)).save(conf / "bg.webp")
+        assert collect_layout(resources)["confscrn"]["items"]["bg"] == (4, 2, 640, 480)
+        (conf / "bg.png").unlink()
+        assert collect_layout(resources)["confscrn"]["items"]["bg"] == (4, 2, 640, 480)
+        patch = root / "ui-patch/grps/confscrn"
+        patch.mkdir(parents=True)
+        (patch / ".meta.xml").write_bytes((conf / ".meta.xml").read_bytes())
+        Image.new("RGB", (320, 240)).save(patch / "bg.png")
+        assert collect_layout(root / "ui-patch", fallback=resources)["confscrn"]["items"]["bg"] == (4, 2, 320, 240)
+        Image.new("RGB", (800, 600)).save(conf / "bg.png")
+        (conf / "bg.webp").unlink()
         (conf / ".meta.xml").write_text(
             '<Canvas><Width>800</Width><Height>600</Height><Items>'
             '<Item x="4" y="2" flag="40">bg</Item>'
