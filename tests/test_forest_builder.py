@@ -68,7 +68,8 @@ def main() -> None:
     entry = (ROOT / "port_template/game/script.rpy").read_text()
     assert "label splashscreen:" in entry
     assert "for number in rscript_boot_movies:" in entry
-    assert "rscript_boot_movies = (2, 1)" in FOREST_COMPAT
+    assert "define rscript_boot_movies = (2, 1)" in (ROOT / "port_template/game/ui_features.rpy").read_text()
+    assert "rscript_boot_movies =" not in (ROOT / "forest/game/forest_compat.rpy").read_text()
     assert 'obsolete.suffix.lower() in {".mpg", ".webm"}' in (ROOT / "port_template/port_resources.py").read_text()
     assert '"mov/%04d.webm"' not in builder
     assert '"mov/%04d.mpg"' in (ROOT / "runtime" / "03_rscript_gfx.rpy").read_text(

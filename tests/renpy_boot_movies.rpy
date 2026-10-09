@@ -11,5 +11,15 @@ label _0000:
         if not persistent.boot_return_test:
             persistent.boot_return_test = True
             renpy.full_restart()
+        original_loadable = renpy.loadable
+        try:
+            # Simulate one missing movie, then both; other resources stay loadable.
+            for available, expected in (({"mov/0001.mpg"}, ["mov/0001.mpg"]), (set(), [])):
+                renpy.loadable = lambda filename, *args, **kwargs: filename in available if filename.startswith("mov/") else original_loadable(filename, *args, **kwargs)
+                persistent.boot_movie_calls = []
+                renpy.call_in_new_context("splashscreen")
+                assert persistent.boot_movie_calls == expected, persistent.boot_movie_calls
+        finally:
+            renpy.loadable = original_loadable
         print("OK: native startup movies play in order only on launch")
         renpy.quit(save=False)

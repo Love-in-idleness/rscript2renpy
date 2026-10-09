@@ -1,7 +1,7 @@
 # Shared presentation policies; adapters supply only actual game differences.
 init offset = -110
 define rscript_ui = {}
-define rscript_boot_movies = ()
+define rscript_boot_movies = (2, 1)
 
 init python:
     def rscript_migrate_ui_preferences():

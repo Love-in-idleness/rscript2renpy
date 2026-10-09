@@ -24,6 +24,10 @@ python3 evermaiden/build_evermaiden_rscript.py \
 
 生成器只读取当前 `modern-36/modern` 命令式 TSC 及转换后的资源；不读取、
 执行或依赖 EXE / DLL，不要求旧 Ren'Py 工程。原始 MPG 直接复制。
+启动时复用公共 `splashscreen`，依次播放 `mov/0002.mpg`、`mov/0001.mpg`；
+返回标题不重播。`0011/0012` 保留剧情及鉴赏中的原脚本调用，不加入启动序列。
+顺序依据原程序的启动消息分派：`startup_jp.exe` 的 `0x4411BE`、`0x4411E1`
+分别选择 0002、0001（静态检查，不执行 EXE）；普通生成仍不依赖 EXE。
 仓库保存原图标 `assets/L42_EM.ico`，生成器通过公共 `install_icon` 派生
 Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标，统一使用同一图案。
 版权说明见根目录 `THIRD_PARTY_NOTICES.md`；生成图标不代表这些平台已完成打包测试。
@@ -125,6 +129,8 @@ CG 浏览中的 `locmap 0 0 0 0 1` 是等待鼠标点击，不是地图选项：
   `enabl` 排队及全层恢复、隐藏中替换图像，以及 CG 移动后重新加载标题的图层状态。
   `grow` 加色混合与操作说明的实际画面仍需人工确认。
 - 鉴赏回归命令：`python3 -B tests/test_modern_port.py /opt/apps/renpy /path/to/prepared-resources`。
+  追加 `--render` 在 Xvfb 临时工程验证启动视频调用顺序与返回标题不重播；
+  视频播放入口被替代记录，不解码原视频，不证明实际视频/音频或安卓播放正常。
   临时工程执行真实的 `0001/0201/0301` 转换脚本，以小型替代图片和模拟点击检查
   打开 CG、左键下一张、右键退出、鉴赏页返回 `TOP2`、背景图层及黑色遮罩状态，
   并检查不存在的 `850x` 不成为预览。这不是实景像素或实际鼠标操作验证。

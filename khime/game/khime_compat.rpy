@@ -81,7 +81,6 @@ init -100 python:
     rscript_folder_zero_all = True
 
 init python:
-    rscript_boot_movies = (2, 1)
     rscript_ui.update({"textbox_size": (800, 163)})
 
 screen choice(items):

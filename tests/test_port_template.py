@@ -74,6 +74,8 @@ def main() -> None:
             assert (project / name).read_bytes() == notice
         assert (project / "game" / "engine" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()
+        assert 'define rscript_boot_movies = (2, 1)' in (project / 'game/engine/ui_features.rpy').read_text()
+        assert 'if renpy.loadable(filename):' in (project / 'game/engine/script.rpy').read_text()
         assert (project / "game" / "scr" / "0000.rpy").is_file()
         scene = (project / "game" / "scr" / "0000.rpy").read_text(
             encoding="utf-8")

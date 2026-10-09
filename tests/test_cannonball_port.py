@@ -55,8 +55,10 @@ def main():
     with TemporaryDirectory(prefix="cannonball-test-") as directory:
         directory = Path(directory)
         base, patch, project = (directory / name for name in ("base", "zh", "project"))
-        for folder in ("scr", "grpe", "grpo", "grps", "bgm", "voice", "wav/wav", "backup"):
+        for folder in ("scr", "grpe", "grpo", "grps", "bgm", "voice", "wav/wav", "mov", "backup"):
             (base / folder).mkdir(parents=True)
+        for number in (1, 2):
+            (base / 'mov' / ('%04d.mpg' % number)).write_bytes(b'unplayed fixture')
         (patch / "scr").mkdir(parents=True)
         header = ";@gsc-byte-format legacy-28\n;@gsc-schema pre-codex\n"
         body = ('*se 7\n*gosub 1\n*se_on 0 0 0\n'
@@ -148,6 +150,10 @@ def main():
         assert (game / "grps/TBOX01B.png").is_file()
         assert (game / "wav/wav/0001.ogg").is_file()
         assert "wav/wav/%04d.ogg" in (game / "engine/audio_paths.rpy").read_text()
+        assert 'define rscript_boot_movies = (2, 1)' in (game / 'engine/ui_features.rpy').read_text()
+        assert 'rscript_boot_movies =' not in (game / 'engine/options.rpy').read_text()
+        for number in (1, 2):
+            assert (game / 'mov' / ('%04d.mpg' % number)).read_bytes() == b'unplayed fixture'
         assert not list(game.glob("*.rpy"))
         for name in ("07_rscript_legacy.rpy", "character.rpy", "images.rpy"):
             assert (game / "engine" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
@@ -216,6 +222,20 @@ def main():
                                    "SDL_VIDEODRIVER": "x11", "SDL_AUDIODRIVER": "dummy",
                                    "RENPY_SKIP_SPLASHSCREEN": "1", "RENPY_PERFORMANCE_TEST": "0",
                                    "RENPY_PATH_TO_SAVES": str(directory / "render-sdk-saves")})
+                for suffix in ('.rpy', '.rpyc'):
+                    (game / 'scr' / ('click_render_test' + suffix)).unlink(missing_ok=True)
+                shutil.copyfile(ROOT / 'tests/renpy_boot_movies.rpy', game / 'scr/0000.rpy')
+                (game / 'scr/0000.rpyc').unlink(missing_ok=True)
+                result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),
+                                         str(project), 'run', '--savedir', str(directory / 'boot-saves')],
+                                        check=True, timeout=45, capture_output=True, text=True,
+                                        env=os.environ | {
+                                            'SDL_VIDEODRIVER': 'x11', 'SDL_AUDIODRIVER': 'dummy',
+                                            'RENPY_SKIP_SPLASHSCREEN': '', 'RENPY_SKIP_MAIN_MENU': '1',
+                                            'RENPY_PERFORMANCE_TEST': '0',
+                                            'RENPY_PATH_TO_SAVES': str(directory / 'boot-sdk-saves')})
+                assert 'OK: native startup movies play in order only on launch' in result.stdout, result.stdout + result.stderr
+                print('OK: CannonBall startup movies and return to title')
         if len(sys.argv) > 3:
             base, patch = map(Path, sys.argv[2:4])
             files = compile_overlays(base, [("zh", patch)], adapter="pre-codex")

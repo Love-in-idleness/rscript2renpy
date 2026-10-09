@@ -441,7 +441,7 @@ python early:
                 rscript_click_focus(19, "grpo_map 0109", kwargs["previews"][2])
                 return 0
             renpy.call_screen = cancel_focused
-            execute_click(SimpleNamespace(Cancel=1))
+            execute_click(SimpleNamespace(Cancel=1, Timer=0, PreserveRange=0))
             assert _r[0] == 0
             assert "rscript_click_preview" not in dict(scene.get_zorder_list(IMAGE_LAYER))
             refs = []

@@ -19,8 +19,10 @@ def main():
     with TemporaryDirectory(prefix="modern-port-") as directory:
         directory = Path(directory)
         base, patch, project = [directory / name for name in ("base", "zh", "project")]
-        for folder in ("scr", "grpe", "grpo", "grpo_ex", "grps", "bgm", "voice", "wav", *IMAGE_FOLDERS):
+        for folder in ("scr", "grpe", "grpo", "grpo_ex", "grps", "bgm", "voice", "wav", "mov", *IMAGE_FOLDERS):
             (base / folder).mkdir(parents=True)
+        for number in (1, 2, 11, 12):
+            (base / 'mov' / ('%04d.mpg' % number)).write_bytes(b'unplayed fixture')
         (patch / "scr").mkdir(parents=True)
         for number in (9, 12, 13, 109, 112, 113, 1070, 1080, 1090):
             shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png',
@@ -119,6 +121,10 @@ def main():
                 assert image.size == size, (name, image.size)
         assert 'define config.window_icon = "icon.png"' in (game / 'engine/options.rpy').read_text()
         assert 'define config.version = "1.3"' in (game / 'engine/port_version.rpy').read_text()
+        assert 'define rscript_boot_movies = (2, 1)' in (game / 'engine/ui_features.rpy').read_text()
+        assert 'rscript_boot_movies =' not in (game / 'engine/options.rpy').read_text()
+        for number in (1, 2, 11, 12):
+            assert (game / 'mov' / ('%04d.mpg' % number)).read_bytes() == b'unplayed fixture'
         # A repeated build produces identical icon inputs, without --force.
         from build_port import install_icon
         install_icon(ROOT / 'evermaiden/assets/L42_EM.ico', project)
@@ -156,6 +162,19 @@ def main():
                                 '--savedir', str(directory / 'gallery-saves')], check=True,
                                env=os.environ | {'SDL_AUDIODRIVER': 'dummy',
                                                  'RENPY_PATH_TO_SAVES': str(directory / 'gallery-sdk-saves')})
+            if '--render' in sys.argv:
+                shutil.copyfile(ROOT / 'tests/renpy_boot_movies.rpy', game / 'scr/0000.rpy')
+                (game / 'scr/0000.rpyc').unlink(missing_ok=True)
+                result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),
+                                         str(project), 'run', '--savedir', str(directory / 'boot-saves')],
+                                        check=True, timeout=45, capture_output=True, text=True,
+                                        env=os.environ | {
+                                            'SDL_VIDEODRIVER': 'x11', 'SDL_AUDIODRIVER': 'dummy',
+                                            'RENPY_SKIP_SPLASHSCREEN': '', 'RENPY_SKIP_MAIN_MENU': '1',
+                                            'RENPY_PERFORMANCE_TEST': '0',
+                                            'RENPY_PATH_TO_SAVES': str(directory / 'boot-sdk-saves')})
+                assert 'OK: native startup movies play in order only on launch' in result.stdout, result.stdout + result.stderr
+                print('OK: Evermaiden startup movies and return to title')
         print('OK: modern shared lowering, complete language/DLC routes and PCM assets')
 
 

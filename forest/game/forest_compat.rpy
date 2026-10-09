@@ -21,7 +21,6 @@ init python:
     config.self_closing_custom_text_tags["forest_g"] = rscript_g_tag
     config.self_closing_custom_text_tags["forest_a"] = rscript_a_tag
 
-    rscript_boot_movies = (2, 1)
     rscript_ui.update({
         "selected_plain_folders": ("confscrn",),
         "activate_sound": {"confscrn": "wav/0001.ogg", "savescrn": "wav/0001.ogg"},

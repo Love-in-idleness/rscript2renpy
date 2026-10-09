@@ -5,7 +5,9 @@ label splashscreen:
     scene black onlayer black
     python:
         for number in rscript_boot_movies:
-            renpy.movie_cutscene("mov/%04d.mpg" % number)
+            filename = "mov/%04d.mpg" % number
+            if renpy.loadable(filename):
+                renpy.movie_cutscene(filename)
     return
 
 label start:

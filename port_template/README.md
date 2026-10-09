@@ -89,8 +89,9 @@ Khime 通过 `build` 调用同一写入机制。写入运行时、界面和剧�
 `game/grps_ui.rpy` 提供原图设置、图片选项、dt1 存读档及控制条。
 适配层只在后续 init 更新 `rscript_ui` 的实际布局/状态图差异；
 字幕速度与透明度统一使用 `persistent.rscript_*`，兼容旧 Forest 存档插图键。
-指定 `rscript_boot_movies` 即可按顺序在 splashscreen 播放原始 MPG，
-返回标题不重新播放；默认没有启动视频。
+公共 `splashscreen` 默认依次播放 `mov/0002.mpg`、`mov/0001.mpg`，
+返回标题不重新播放；只播放实际存在的文件，没有 `mov` 的工程也能启动。
+游戏适配层无需重复配置。特殊游戏仍可覆盖 `rscript_boot_movies`，空元组可禁用。
 `rscript_folder_zero_all` 和 `rscript_click_grid` 声明方言的全层目录与网格坐标语义。
 图片选项通过 `rscript_asset_NNN` 读取寄存器并选择 `sel_aNN/body.png`，
 公共层继续识别旧 `forest_asset_NNN`。
