@@ -48,7 +48,7 @@ def _supported(command: str, field: str, value: int,
         return value == 1, "not implemented"
     if command in ("_update", "_effect"):
         if command == "_update" and value >= 100:
-            return False, "compound zoom transition not implemented"
+            return value < 300, "compound zoom family not implemented"
         if value == 0 or (command == "_update" and value in range(1, 5)):
             return True, ""
         if value < 11:

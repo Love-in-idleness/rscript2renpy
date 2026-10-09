@@ -13,6 +13,15 @@ init 100 python:
     renpy.image("grpo 9982", Solid("#00ff00", xsize=100, ysize=80))
     renpy.image("missing_dynamic", DynamicImage("grps/nonexistent-dynamic.png"))
 
+    class EffectsTimeProbe(renpy.Displayable):
+        def __init__(self, child, when):
+            super(EffectsTimeProbe, self).__init__()
+            self.child, self.when = child, when
+        def render(self, width, height, st, at):
+            return renpy.render(self.child, width, height, self.when, self.when)
+        def visit(self):
+            return [self.child]
+
     def effects_test_pixel(expected):
         import io
         import pygame_sdl2 as pygame
@@ -95,6 +104,17 @@ label _0000:
     _action
     _cls 20 10
     $ assert 20 not in store.layer_info and 20 not in store.layer_pos
+    python:
+        for effect, phase in ((116, .155), (216, .205)):
+            zoom = RScriptCompoundZoom(effect,
+                old_widget=Solid("#f00", xsize=800, ysize=600),
+                new_widget=Solid("#00f", xsize=800, ysize=600))
+            for when, expected in ((0, (255, 0, 0)), (phase - .005, (255, 0, 0)),
+                                   (phase, (0, 0, 255)), (zoom.delay, (0, 0, 255))):
+                renpy.show("zoom_probe", what=EffectsTimeProbe(zoom, when))
+                renpy.pause(.1, hard=True)
+                effects_test_pixel(expected)
+            renpy.hide("zoom_probe")
     # Same ordering as music list < tone < lyrics. Check actual framebuffer,
     # not only scene metadata; screens must contain transparent hit masks.
     $ store.folder[11] = store.folder[40] = "grpo"

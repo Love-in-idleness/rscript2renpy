@@ -254,6 +254,9 @@ python early:
         elif effect == 4:
             trans = Fade(ef_time, 0.0, ef_time, color = "#000000")
 
+        elif 100 <= effect < 300:
+            trans = renpy.curry(RScriptCompoundZoom)(effect)
+
         elif effect >= 11:
             trans = rscript_ef(effect, step, wait)
 

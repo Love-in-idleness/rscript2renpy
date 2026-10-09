@@ -98,7 +98,8 @@ python early:
                     (1, 0, 16, .176), (1, 16, 0, 0),
                     (2, 16, 16, .240), (2, 1, 16, 0),
                     (3, 16, 16, .544), (4, 16, 16, .544),
-                    (11, 16, 16, .496)):
+                    (11, 16, 16, .496), (116, 16, 0, .310),
+                    (216, 1, 999, .410)):
                 execute_update(SimpleNamespace(Effect=effect, Step=step, Wait=wait))
                 assert isclose(transitions[-1].delay, expected), (effect, transitions[-1].delay)
             store.rscript_update_timing = "legacy"
@@ -109,6 +110,10 @@ python early:
             renpy.with_statement = original_with
             store.rscript_update_timing = "codex-ms"
         assert rscript_arc_position((0, 0), (100, 0), 0, 1) == (0, 0)
+        assert rscript_zoom_crop(1280, 720, 1, 0) == (0, 0, 1280, 720)
+        assert rscript_zoom_crop(1280, 720, 1, 600) == (0, 618, 182, 102)
+        assert rscript_zoom_crop(1280, 720, 6, 600) == (1098, 309, 182, 102)
+        assert rscript_zoom_crop(1280, 720, 0, 2000) == (610, 343, 60, 34)
         for direction in (-1, 1):
             middle = rscript_arc_position((0, 0), (100, 0), .5, direction)
             assert abs(middle[0] - 50) < .001 and middle[1] == direction * 50

@@ -452,8 +452,46 @@ transform grayscale(img):
 
 init python:
 
+    def rscript_zoom_crop(width, height, locate, level):
+        # startup_jp.exe 43ba20 / 4542c0: keypad centre, clamped integer crop.
+        anchors = ((.5, .5), (0, 1), (.5, 1), (1, 1), (0, .5),
+                   (.5, .5), (1, .5), (0, 0), (.5, 0), (1, 0))
+        x, y = anchors[locate] if 0 <= locate <= 9 else anchors[0]
+        w, h = max(1, width * 100 // (100 + level)), max(1, height * 100 // (100 + level))
+        return (min(width - w, max(0, int(width * x) - w // 2)),
+                min(height - h, max(0, int(height * y) - h // 2)), w, h)
+
+    class RScriptCompoundZoom(renpy.display.transition.Transition):
+        def __init__(self, effect, old_widget=None, new_widget=None):
+            kind, anchors = divmod(effect, 100)
+            if kind not in (1, 2):
+                raise ValueError("Unsupported compound update: %s" % effect)
+            self.increment, self.limit = (20, 600) if kind == 1 else (50, 2000)
+            self.frames = self.limit // self.increment + 1
+            super(RScriptCompoundZoom, self).__init__(self.frames * .010)
+            self.old_widget, self.new_widget = old_widget, new_widget
+            self.old_locate, self.new_locate = divmod(anchors, 10)
+            self.events = False
+
+        def render(self, width, height, st, at):
+            if st >= self.delay or renpy.game.less_updates:
+                return renpy.display.transition.null_render(self, width, height, st, at)
+            frame = min(2 * self.frames - 1, int(st / .005))
+            second = frame >= self.frames
+            index = frame - self.frames if second else frame
+            level = self.limit - index * self.increment if second else index * self.increment
+            widget = self.new_widget if second else self.old_widget
+            crop = rscript_zoom_crop(width, height,
+                                    self.new_locate if second else self.old_locate, level)
+            image = Transform(widget, crop=crop, xysize=(width, height))
+            result = renpy.render(image, width, height, st, at)
+            renpy.redraw(self, .005)
+            return result
+
     def rscript_update_duration(effect, step, wait):
         if store.rscript_update_timing == "codex-ms":
+            if 100 <= effect < 300:
+                return .310 if effect < 200 else .410
             # Native 43b390: zero selects 10 steps; waits are milliseconds.
             step = step or 10
             if effect == 2:
