@@ -33,7 +33,7 @@ def native_layouts(resources, positions=None):
     files = {p.stem.lower(): p for p in (resources / "grps").iterdir() if p.suffix.lower() == ".png"}
     files.update({p.stem.lower(): p for p in (resources / "grps").iterdir() if p.suffix.lower() == ".webp"})
     layouts = {name: {"items": {}, "images": {}, "controls": {}}
-               for name in ("confscrn", "compane", "savescrn", "saveconf")}
+               for name in ("confscrn", "compane", "savescrn", "saveconf", "sel_a", "sel_q")}
 
     def add(folder, name, source, x, y, states=1):
         path = files.get(source)
@@ -92,6 +92,11 @@ def native_layouts(resources, positions=None):
     # Slot constructor 402150: DT1 at (0,0), timestamp at (110,40), 16px white.
     layouts["saveconf"].update(items={"thmb": (0, 0, 255, 60), "date": (110, 40)},
                                date_size=16, date_outlines=[], date_format="%Y/%m/%d %H:%M")
+    # 409fea/40a08b load SEL_Q/SEL_A; 40a03c/40a0d6 set caption offsets.
+    layouts["sel_q"]["size"] = add("sel_q", "body", "sel_q", 0, 0)
+    layouts["sel_q"]["items"]["text"] = (20, 14)
+    layouts["sel_a"]["size"] = add("sel_a", "body", "sel_a", 0, 0, 2)
+    layouts["sel_a"]["items"]["text"] = (20, 11)
     return layouts
 
 

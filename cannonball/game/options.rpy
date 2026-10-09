@@ -30,5 +30,6 @@ init -100 python:
                   "textbox_size": (800, 135),
                   "textbox_background": "grps/TBOX%02dB.png",
                   "game_text_settings": False,
+                  "choice_spacing": 0, "choice_text_size": 24, "prompt_text_size": 24,
                   "restricted_image_folders": ("grpo_r1", "grpo_rc"),
                   "wait_image": "grps tbox_w"}

@@ -38,6 +38,10 @@ python3 cannonball/build_cannonball_rscript.py \
 控制条仍由原脚本 `cmploc` 定位。`CON_06` 虽存在，但原菜单构造函数没有加载它，
 不据文件名凭空增加控件。
 
+普通文字选项使用 `SEL_A` 的上下两帧（普通/悬停），问题框使用 `SEL_Q`，
+由公共选择界面读取原图集切片；不再只识别目录式 `sel_a/body.png`。
+文字位置与 24px 字号依据 `0x409F20..0x40A141` 的选择控件构造配置。
+
 存读档页同样使用原图 `dat_bgs/dat_bgl`、`dat_p01/dat_p02`、`dat_no` 和
 `dat_re`：两列各五槽、十页，首尾页不循环翻页。槽位按存档元数据中的章节编号
 显示 `DT1_XXXX` 原图，不使用当前章节替代其他存档；缺图或旧存档无编号时才
@@ -120,7 +124,10 @@ python3 -B tests/test_cannonball_port.py /path/to/renpy-sdk \
 追加 `--render` 可在 Xvfb 隔离工程验证实际超时、提前鼠标选择、剩余时间、
 移动后的选项位置/层次与零宽条形图；提供实际资源时，还逐个点击 `3160`
 的五个角色并检查独立悬停说明图的位置/清除。截图写到
-`/tmp/cannonball-3160-choice-fixed.png`；这不是完整赛车、战斗或路线游玩验证。
+`/tmp/cannonball-3160-choice-fixed.png`。另覆盖 `2121` 日中文字选项框的显示、
+悬停和点击，以及 `2122` 对应的实际 `1071/1072` 脚本：检查移动后的两行文字
+在普通/悬停状态都可见。快照分别为 `/tmp/cannonball-2121-choice-frames.png`
+与 `/tmp/cannonball-2122-captions.png`；这不是完整赛车、战斗或路线游玩验证。
 隔离实际菜单渲染：
 
 ```bash

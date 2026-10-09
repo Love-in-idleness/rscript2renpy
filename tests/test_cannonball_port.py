@@ -110,8 +110,13 @@ def main():
                              ("DT1_0001", (255, 60)), ("DT1_0002", (255, 60)),
                              ("BAR01", (468, 11)), ("BAR02", (336, 36)), ("BAR03", (336, 36))):
             Image.new("RGBA", size, "#ffffff").save(base / "grps" / (source + ".png"))
+        Image.new("RGBA", (520, 100), "#ffffff").save(base / "grps/SEL_A.png")
+        Image.new("RGBA", (520, 56), "#ffffff").save(base / "grps/SEL_Q.png")
         layout = native_layouts(base)
         assert layout["confscrn"]["size"] == (518, 387)
+        assert layout["sel_a"]["size"] == (520, 50)
+        assert layout["sel_a"]["images"]["body_f"][1] == (0, 50, 520, 50)
+        assert layout["sel_q"]["size"] == (520, 56)
         assert layout["confscrn"]["items"]["save"] == (157, 330, 85, 21)
         assert layout["confscrn"]["images"]["save_f"][1] == (0, 21, 85, 21)
         assert layout["compane"]["items"]["hide"] == (179, 1, 17, 17)
@@ -166,14 +171,14 @@ def main():
                 assert not unsupported["layouts"] and "Unsupported EXE" in unsupported["unresolved"][0]
                 title_files = compile_overlays(original, [("zh", translated)], adapter="pre-codex")
                 for name, text in title_files.items():
-                    if Path(name).stem in {"0000", "0001", "0002", "1011"}:
+                    if Path(name).stem in {"0000", "0001", "0002", "1011", "1071", "1072"}:
                         destination = game / name
                         write_scenario(text, destination, original, force=True)
                 for number in (2, 3, 10, *range(11, 30)):
                     for asset in (original / "grpo").glob("%04d.*" % number):
                         if asset.suffix in {".png", ".webp"}:
                             shutil.copyfile(asset, game / "grpo" / asset.name)
-                for folder, numbers in (("grpe", (404,)),
+                for folder, numbers in (("grpe", (404,)), ("grpo_r1", (801, 802, 811)),
                                         ("grpo_cl", (1401, 1801, 741, 201, 601, 6, 7, 8, 9, 10))):
                     for resources, output in ((original, game), (translated, game / "tl/zh")):
                         for number in numbers:

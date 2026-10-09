@@ -303,7 +303,7 @@ screen rscript_choice(items, prompt=None):
                     xysize rscript_ui.get("prompt_size", question["size"])
                     $ body = question["items"]["body"]
                     $ textpos = rscript_ui.get("prompt_text_pos", question["items"].get("text", (20, 10)))
-                    add rscript_image_path("grps/%s/body.png" % prompt_folder):
+                    add rscript_ui_image(prompt_folder, "body"):
                         xpos (0 if rscript_ui.get("choice_center_art", False) else body[0])
                         ypos (0 if rscript_ui.get("choice_center_art", False) else body[1])
                     text rscript_menu_text(prompt_text):
@@ -325,10 +325,10 @@ screen rscript_choice(items, prompt=None):
                         $ body = answer["items"]["body"]
                         $ textpos = rscript_ui.get("choice_text_pos", answer["items"].get("text", (20, 10)))
                         imagebutton:
-                            idle rscript_image_path("grps/%s/body.png" % selected_folder)
-                            hover (rscript_image_path("grps/%s/body_f.png" % selected_folder)
+                            idle rscript_ui_image(selected_folder, "body")
+                            hover (rscript_ui_image(selected_folder, "body_f")
                                    if "body_f" in answer["items"] else
-                                   rscript_image_path("grps/%s/body.png" % selected_folder))
+                                   rscript_ui_image(selected_folder, "body"))
                             focus_mask True
                             xpos (0.5 if rscript_ui.get("choice_center_art", False) else body[0])
                             ypos (0.5 if rscript_ui.get("choice_center_art", False) else body[1])

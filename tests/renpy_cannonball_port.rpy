@@ -21,6 +21,9 @@ python early:
         assert rscript_layouts()["compane"]["items"]["hide"] == (179, 1, 17, 17)
         for language in (None, "zh"):
             _preferences.language = language
+            assert rscript_ui_image("sel_a", "body").crop == (0, 0, 520, 50)
+            assert rscript_ui_image("sel_a", "body_f").crop == (0, 50, 520, 50)
+            assert rscript_menu_panel("answer", "sel_a") == ("sel_a", "answer")
             renpy.show_screen("preferences")
             renpy.get_screen("preferences").update()
             renpy.hide_screen("preferences")

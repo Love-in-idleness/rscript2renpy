@@ -80,20 +80,25 @@ transform rscript_white_out:
 
 
 transform move_instant(xpos, ypos, anchor, dur):
+    alpha 1.0
     xpos xpos
     ypos ypos
     anchor anchor
 
 transform move_linear(xpos, ypos, anchor, dur):
+    alpha 1.0
     linear dur xpos xpos ypos ypos anchor anchor
 
 transform move_accel(xpos, ypos, anchor, dur):
+    alpha 1.0
     easeout_cubic dur xpos xpos ypos ypos anchor anchor
 
 transform move_decel(xpos, ypos, anchor, dur):
+    alpha 1.0
     easein_cubic dur xpos xpos ypos ypos anchor anchor
 
 transform move_shake_h(xpos, ypos, anchor, dur):
+    alpha 1.0
     block:
         linear FRAME * 3 xoffset -(config.screen_width / 32)
         linear FRAME * 3 xoffset (config.screen_width / 32)
@@ -101,6 +106,7 @@ transform move_shake_h(xpos, ypos, anchor, dur):
     easeout FRAME * 3 xoffset 0
 
 transform move_shake_h_sm(xpos, ypos, anchor, dur):
+    alpha 1.0
     block:
         linear FRAME * 3 xoffset -(config.screen_width / 192)
         linear FRAME * 3 xoffset (config.screen_width / 192)
@@ -108,6 +114,7 @@ transform move_shake_h_sm(xpos, ypos, anchor, dur):
     easeout FRAME * 3 xoffset 0
 
 transform move_shake_v(xpos, ypos, anchor, dur):
+    alpha 1.0
     block:
         linear FRAME * 3 yoffset -(config.screen_height / 32)
         linear FRAME * 3 yoffset (config.screen_height / 32)
@@ -115,6 +122,7 @@ transform move_shake_v(xpos, ypos, anchor, dur):
     easeout FRAME * 3 yoffset 0
 
 transform move_shake_v_sm(xpos, ypos, anchor, dur):
+    alpha 1.0
     block:
         linear FRAME * 3 yoffset -(config.screen_height / 192)
         linear FRAME * 3 yoffset (config.screen_height / 192)
@@ -841,10 +849,11 @@ init python:
         if effect not in effects and effect not in (5, 6):
             raise Exception("Move effect %d not defined." % effect)
 
-        trans = Transform(xpos = xpos, ypos = ypos, anchor = anchor)
+        # Replacing _oload's fade must not inherit its initial alpha=0.
+        trans = Transform(xpos = xpos, ypos = ypos, anchor = anchor, alpha = 1.0)
         if effect in (5, 6):
             # Native 413e40 -> 44d3c0: opposite half-circle paths, not shakes.
-            ef = Transform(function=renpy.curry(rscript_arc_move)(
+            ef = Transform(alpha=1.0, function=renpy.curry(rscript_arc_move)(
                 origin, (xpos, ypos), anchor, dur, 1 if effect == 5 else -1))
         else:
             ef = effects[effect](xpos, ypos, anchor, dur)

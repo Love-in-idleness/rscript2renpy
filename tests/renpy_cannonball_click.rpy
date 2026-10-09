@@ -1,6 +1,7 @@
 # Disposable graphical regression; never installed into a player's project.
 default cannonball_test_select = False
 default cannonball_choice_index = 0
+default cannonball_timed_caption_test = False
 
 init 100 python:
     def cannonball_click_error(info):
@@ -26,6 +27,34 @@ init 100 python:
         pos = pygame.mouse.get_pos()
         # Xvfb warping changes position without reliably emitting mouse motion.
         pygame.event.post(pygame.event.Event(pygame.MOUSEMOTION, pos=pos, rel=(0, 0), buttons=(0, 0, 0)))
+
+    def cannonball_timed_captions(hover=False):
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        counts = [sum(min(image.get_at((x, y))[:3]) > 180
+                      for y in range(top, top + 30) for x in range(170, 450))
+                  for top in (95, 140)]
+        renpy.screenshot("/tmp/cannonball-2122-captions.png")
+        assert all(count > 100 for count in counts), (counts, layer_pos[42], layer_pos[44])
+        if not hover:
+            renpy.set_mouse_pos(180, 145)
+
+    def cannonball_menu_frame(hover=False):
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        # Two 520x50 cropped frames centered at x=140, y=210 and y=260.
+        renpy.screenshot("/tmp/cannonball-2121-choice-frames.png")
+        for y in (214, 264):
+            assert image.get_at((160, y))[2] > 90, image.get_at((160, y))
+        pixel = image.get_at((600, 280))[:3]
+        expected = (0, 0, 0) if not hover else (0, 108, 128)
+        assert all(abs(a - b) <= 3 for a, b in zip(pixel, expected)), (pixel, expected)
+        if hover:
+            renpy.screenshot("/tmp/cannonball-2121-choice-frames.png")
+        else:
+            renpy.set_mouse_pos(600, 280)
 
     def cannonball_click_select():
         import pygame_sdl2 as pygame
@@ -62,7 +91,12 @@ init 100 python:
             renpy.screenshot("/tmp/cannonball-3160-choice-fixed.png")
 
 screen rscript_click_extra(options):
-    if cannonball_choice_index:
+    if cannonball_timed_caption_test:
+        timer .6 action Function(cannonball_timed_captions)
+        timer .75 action Function(cannonball_click_motion)
+        timer .9 action Function(cannonball_timed_captions, True)
+        timer 1.0 action Function(cannonball_click_select)
+    elif cannonball_choice_index:
         timer .3 action Function(cannonball_choice_capture)
         timer .5 action Function(cannonball_choice_move)
         timer .65 action Function(cannonball_click_motion)
@@ -71,6 +105,14 @@ screen rscript_click_extra(options):
     elif cannonball_test_select:
         timer .15 action Function(cannonball_click_position)
         timer .25 action Function(cannonball_click_select)
+    timer 3.0 action Function(renpy.quit, status=1)
+
+screen cannonball_menu_test(items):
+    use rscript_choice(items)
+    timer .3 action Function(cannonball_menu_frame)
+    timer .5 action Function(cannonball_click_motion)
+    timer .7 action Function(cannonball_menu_frame, True)
+    timer .8 action Function(cannonball_click_select)
     timer 3.0 action Function(renpy.quit, status=1)
 
 label before_main_menu:
@@ -109,6 +151,8 @@ label before_main_menu:
     $ print("OK: native timed click expires, early mouse selection retains time, moved hit areas/depth and zero-width bar render")
     if renpy.has_image("grpo_cl 1401", exact=True):
         call cannonball_choice_3160
+        call cannonball_choice_2122
+        call cannonball_choice_2121
     $ renpy.quit()
 
 label cannonball_choice_3160:
@@ -148,4 +192,46 @@ label cannonball_choice_3160:
         $ cannonball_choice_index += 1
     $ cannonball_choice_index = 0
     $ print("OK: real 3160 artwork, five portrait hit areas and independent hover cards")
+    return
+
+label cannonball_choice_2122:
+    $ rscript_click_link_is_preview = True
+    $ cannonball_timed_caption_test = True
+    _cls 0 0
+    _locmode 0 0 0
+    $ folder.update({number: "grpo_r1" for number in range(35, 46)})
+    $ cannonball_caption_languages = [None, "zh"]
+    while cannonball_caption_languages:
+        $ _preferences.language = cannonball_caption_languages.pop(0)
+        $ renpy.set_mouse_pos(0, 590)
+        $ _r[1001] = 200
+        $ _r[1002] = 2
+        $ _r[1014] = -1
+        _gosub 1071
+        _oload 44 171 95 0 0 {'zh': '笔直往前冲！'}.get(_preferences.language, 'このままつっこむ！')
+        _oload 42 171 95 0 0 {'zh': '躲开太空垃圾'}.get(_preferences.language, 'デブリをかわす')
+        _gosub 1072
+        _click 0 0
+        $ assert _r[0] == 2, _r[0]
+    $ cannonball_timed_caption_test = False
+    $ print("OK: real JP/ZH 1071/1072 moving choices keep both captions visible, including hover")
+    return
+
+label cannonball_choice_2121:
+    _cls 0 0
+    _rscript_number numenable 0 0
+    $ process_draw_queue()
+    $ renpy.set_mouse_pos(0, 590)
+    $ cannonball_menu_languages = [None, "zh"]
+    while cannonball_menu_languages:
+        $ _preferences.language = cannonball_menu_languages.pop(0)
+        python:
+            from types import SimpleNamespace
+            captions = (("听从弗克茜的指示", "一口气加速") if _preferences.language == "zh" else
+                        ("フォクシィの指示に従う", "一気に加速する"))
+            items = [SimpleNamespace(caption=caption, action=Return(index)) for index, caption in enumerate(captions)]
+        call screen cannonball_menu_test(items)
+        $ assert _return == 1, _return
+        $ renpy.set_mouse_pos(0, 590)
+    $ print("OK: JP/ZH 2121 text choices render native frame crops, hover and click")
     return
