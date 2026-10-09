@@ -25,10 +25,10 @@ init python:
         text = renpy.translation.translate_string(text)
         text = rscript_prepare_wiki_text(text)
         if rscript_use_speaker_images or rscript_speaker_images_override:
-            speaker = renpy.re.match(r"^\^g(\d{3})", text, flags=renpy.re.I)
+            speaker = renpy.re.match(r"^((?:\^m)*)\^g(\d{3})", text, flags=renpy.re.I)
             if speaker:
-                store.rscript_speaker = int(speaker.group(1))
-                text = text[speaker.end():]
+                store.rscript_speaker = int(speaker.group(2))
+                text = speaker.group(1) + text[speaker.end():]
         return rscript_inline_graphics(text)
 
     def rscript_green_color():
