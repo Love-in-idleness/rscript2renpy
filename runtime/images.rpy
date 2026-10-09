@@ -4,6 +4,26 @@ image cg white = "#FFFFFF"
 image white = "#FFFFFF"
 image nothing = "#0000"
 
+init 100 python:
+    _rscript_system_styles = config.init_system_styles
+
+    def rscript_system_styles():
+        # Ren'Py resets error styles after init; retain its system font setup.
+        _rscript_system_styles()
+        style._image_error.color = "#00000000"
+        style._image_error.outlines = []
+
+    config.init_system_styles = rscript_system_styles
+    config.missing_show = lambda name, what, layer: Null()
+
+    def rscript_missing_image(filename):
+        # Missing files are blank; existing images retain normal error handling.
+        if not renpy.loader.loadable(filename, directory="images"):
+            return im.Image("engine/gui/rscript_empty.svg")
+        return None
+
+    config.missing_image_callback = rscript_missing_image
+
 init -130 python:
     def rscript_image_path(path):
         base, ext = os.path.splitext(path)

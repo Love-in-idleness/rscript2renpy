@@ -440,7 +440,7 @@ python early:
                 elif mode == 3:
                     hover_image = Transform(idle, alpha=0.0)
             # Native optional setlink artwork may be absent (not only -1).
-            # Keep required idle resources visible as errors if they are missing.
+            # Missing idle artwork stays blank under the shared image policy.
             options.append((value, system, idle,
                             hover_image if not isinstance(hover_image, str) or renpy.has_image(hover_image, exact=True) else idle,
                             absolute(x), absolute(y)))

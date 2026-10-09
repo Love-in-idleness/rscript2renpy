@@ -61,11 +61,12 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 24
+        assert len(installed) == 25
         assert (project / "game" / "engine" / "rscript_wrap.py").is_file()
         assert all(path.is_file() for path in installed)
         assert (project / "game" / "engine" / "gui" / "rscript_cursor.png").is_file()
         assert (project / "game" / "engine" / "gui" / "rscript_dither.svg").is_file()
+        assert (project / "game" / "engine" / "gui" / "rscript_empty.svg").is_file()
         old = project / "game/01_defines.rpy"
         old.write_text("old layout\n", encoding="utf-8")
         try:

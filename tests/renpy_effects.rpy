@@ -11,6 +11,7 @@ init 100 python:
     renpy.image("grpo 9980", Solid("#ff0000", xsize=100, ysize=80))
     renpy.image("grpo 9981", Solid("#0000ff", xsize=100, ysize=80))
     renpy.image("grpo 9982", Solid("#00ff00", xsize=100, ysize=80))
+    renpy.image("missing_dynamic", DynamicImage("grps/nonexistent-dynamic.png"))
 
     def effects_test_pixel(expected):
         import io
@@ -18,6 +19,16 @@ init 100 python:
         image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
         actual = image.get_at((20, 20))[:3]
         assert all(abs(a - b) <= 3 for a, b in zip(actual, expected)), (actual, expected)
+
+    def effects_test_missing_images():
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        renpy.screenshot("/tmp/rscript-missing-images.png")
+        for y in range(8, 160, 8):
+            for x in range(8, 792, 8):
+                actual = image.get_at((x, y))[:3]
+                assert all(abs(a - b) <= 3 for a, b in zip(actual, (32, 64, 96))), (x, y, actual)
 
 screen effects_test_wakeup():
     # A modal click screen blocks the pause behavior underneath it.
@@ -31,6 +42,18 @@ label _0000:
     $ store.layer_x_grid = store.layer_y_grid = 1
     # Real shader compilation and framebuffer blending, including destination invert.
     show expression Solid("#204060") as effect_test_background
+    # Cover raw references too, not only images loaded by RScript commands.
+    show grpo_r1 0520 as missing_reference
+    show expression renpy.displayable("grpo_r1 0521") as missing_displayable
+    show expression Image("grps/nonexistent.png") as missing_file
+    show missing_dynamic
+    $ assert rscript_missing_image("engine/gui/rscript_cursor.png") is None
+    $ renpy.pause(0.1, hard=True)
+    $ effects_test_missing_images()
+    hide missing_reference
+    hide missing_displayable
+    hide missing_file
+    hide missing_dynamic
     _effect 101 1
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((223, 191, 159))
