@@ -59,21 +59,21 @@ def main():
         patch_ui.mkdir(parents=True)
         (patch_ui / '.meta.xml').write_text('<Canvas><Width>64</Width><Height>24</Height><Items><Item x="9" y="4">qload</Item></Items></Canvas>')
         header = ';@gsc-byte-format modern-36\n;@gsc-schema modern\n'
-        source = ('*flagset 1 3 1\n*dynsel "Question" 0\n'
+        source = (':L_000000\n*flagset 1 3 1\n*dynsel "Question" 0\n'
                   '*dynans "Always" 1 0 0\n*dynans "Once" 2 5024 0\n'
                   '*dynans "Unlocked" 3 5025 1\n*dyndo 2 0 1\n'
                   '*se 2 33\n*se_on 2 0 0 0\n*locmode 0 1 1 0\n'
-                  '*insub 0 0 0 0 0 0 0 0 0 0 0\n'
+                  '*insub L_000000 0 0 0 0 0 0 0 0 0 0\n'
                   '*TXT 0 10001 0 0 "Alice" "|漢字[かんじ]^nA^cyB" 0\n'
                   ':END\n*return 0\n')
         (base / 'scr/0000.tsc').write_text(header + source, encoding='utf-8')
         trailer = (struct.pack('<4I', 0, 1, 0, 6) + b'\0REP\0').hex()
         (base / 'scr/0001.tsc').write_text(
-            header + ';@gsc-trailer-header 8 5\n;@gsc-trailer ' + trailer + '\n*wait 1\n*end\n')
+            header + ';@gsc-trailer-header 8 5\n;@gsc-trailer ' + trailer + '\n*wait 1\n:L_000006\n*end\n')
         numeric = directory / '1125.tsc'
         trailer = (struct.pack('<4I', 0, 1, 0, 6) + b'\0' + b'8011\0').hex()
         numeric.write_text(header + ';@gsc-trailer-header 8 6\n;@gsc-trailer '
-                           + trailer + '\n*wait 1\n*end\n')
+                           + trailer + '\n*wait 1\n:L_000006\n*end\n')
         assert 'label _g_1125_8011:' in compile_scene(numeric)
         jump_source = directory / '0201.tsc'
         jump_source.write_text(header + '*locmap 0 0 0 0 1\n*jump 1 "REP"\n')

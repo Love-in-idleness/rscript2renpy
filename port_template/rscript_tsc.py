@@ -269,6 +269,8 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
                 raise ValueError(f"{path}: line {line_no}: malformed datablock")
             index = _number(tokens[1][0], "D", line_no)
             count = _number(tokens[2][0], "D", line_no)
+            if count > 32767:
+                raise ValueError(f"{path}: line {line_no}: data-block count exceeds signed 16-bit engine limit")
             if index != len(data_blocks) or len(tokens) != count + 3:
                 raise ValueError(f"{path}: line {line_no}: malformed datablock")
             data_blocks.append(tuple(_number(token, "S", line_no)
@@ -325,10 +327,12 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
                     string_indices[token] = len(strings)
                     strings.append(token)
                 operands.append(string_indices[token])
-            elif opcode in (3, 4, 5) or (opcode == 14 and 2 <= index <= 6):
+            elif (opcode in (3, 4, 5, 200) and index == 0) or (opcode == 14 and 2 <= index <= 6):
                 if quoted or token not in labels:
                     raise ValueError(f"{path}: line {line_no}: unknown label {token}")
                 operands.append(labels[token])
+                if opcode == 200 and labels[token] >= offset:
+                    raise ValueError(f"{path}: line {line_no}: insub must point inside GSC code")
             else:
                 if quoted:
                     raise ValueError(f"{path}: line {line_no}: numeric operand cannot be quoted")
@@ -336,13 +340,15 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
         size = 2 + sum(2 if kind in "HS" else 4 for kind in kinds)
         instructions.append(Instruction(item_offset, opcode, tuple(kinds),
                                         tuple(operands), size))
+        if opcode == 18 and operands[1] != 0 and operands[1] >= len(data_blocks):
+            raise ValueError(f"{path}: line {line_no}: data block is outside its table")
 
     names = []
-    if trailer and any(trailer):
+    if trailer_header[0] > 4 or (trailer and any(trailer)):
         # Some shipped scripts have short/long all-zero trailer padding,
         # with no symbols. It is not a named-entry table to validate.
         table_size, name_size = trailer_header
-        if table_size < 4 or table_size % 4 or name_size < 1 or len(trailer) < 2 * table_size + name_size:
+        if table_size < 4 or table_size % 4 or name_size < 1 or len(trailer or b'') < 2 * table_size + name_size:
             raise ValueError(f"{path}: malformed named-entry tables")
         # startup_jp.exe 0x404e00: parallel name/code-offset arrays; index 0
         # is reserved. Header word 7 sizes EACH table, not their sum.
@@ -351,10 +357,16 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
         blob = trailer[2 * table_size:2 * table_size + name_size]
         for name_offset, code_offset in zip(name_offsets[1:], code_offsets[1:]):
             end = blob.find(b'\0', name_offset)
-            if end < 0 or code_offset > offset:
+            if end < 0:
                 raise ValueError(f"{path}: invalid named-entry offset")
             name = blob[name_offset:end].decode(encoding or 'CP932')
             if name:
-                names.append((name, code_offset))
+                label = f"L_{code_offset:06x}"
+                if label not in labels:
+                    raise ValueError(f"{path}: missing named-entry label {label}; regenerate TSC with current LiarsoftTool")
+                target = labels[label]
+                if target >= offset:
+                    raise ValueError(f"{path}: named entry must point inside GSC code")
+                names.append((name, target))
     return RScriptTsc(path, offset, tuple(strings), tuple(data_blocks),
                      tuple(instructions), encoding or "CP932", tuple(names))

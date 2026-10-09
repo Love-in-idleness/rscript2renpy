@@ -197,7 +197,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         elif op == 16:
             lines.append("    return" if early else "    _return %s" % operands[0])
         elif op == 18:
-            data = tsc.data(values[1])
+            data = () if not early and values[1] == 0 else tsc.data(values[1])
             if early:
                 lines.extend("    $ _r[(%s) + %d] = %d" % (operands[0], index, value)
                              for index, value in enumerate(data))
@@ -243,7 +243,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             lines.append("    _%s_folder %s %r" %
                          (prefix, operands[0], tsc.string(values[1])))
         elif op == 200:
-            target = label(scene, values[0]) if scene_prefix else "L_%06x" % values[0]
+            target = label(scene, values[0])
             lines.append("    _insub %s %s" % (target, " ".join(operands[1:])))
         elif op == 202:
             lines.append("    _flagset %s" % " ".join(operands))

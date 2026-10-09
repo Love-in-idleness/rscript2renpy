@@ -3,6 +3,7 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
+import struct
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
 from tsc_compiler import compile_scene
@@ -45,6 +46,35 @@ def main():
                           '*return @2\n*end\n', encoding="utf-8")
         result = compile_scene(source, adapter="modern")
         assert "_return _r[2]\n    _end" in result
+        modern = ";@gsc-byte-format modern-36\n;@gsc-schema modern\n"
+        trailer = (struct.pack('<4I', 0, 1, 0, 46) + b'\0TOP1\0').hex()
+        named = modern + ';@gsc-trailer-header 8 6\n;@gsc-trailer ' + trailer + '\n'
+        named += '*insub L_00002e 0 0 0 0 0 0 0 0 0 0\n:L_00002e\n*return 0\n'
+        source.write_text(named, encoding="utf-8")
+        assert read_tsc(source, "modern").named_entries == (("TOP1", 46),)
+        source.write_text(named.replace(':L_00002e', '*wait 1\n:L_00002e'), encoding="utf-8")
+        relocated = read_tsc(source, "modern")
+        assert relocated.named_entries == (("TOP1", 52),)
+        assert relocated.instructions()[0].operands[0] == 52
+        result = compile_scene(source, adapter="modern")
+        assert 'label _g_0000_TOP1:' in result and '_insub _0000_L_000034' in result
+        for invalid, message in (
+                (named.replace(':L_00002e\n', ''), 'unknown label'),
+                (named.replace('*insub L_00002e 0 0 0 0 0 0 0 0 0 0\n:L_00002e\n', ''),
+                 'missing named-entry label'),
+                (modern + '*data 0 1\n*end\n', 'data block is outside'),
+                (modern + '*datablock 0 32768\n*end\n', 'signed 16-bit'),
+                (modern + '*insub done 0 0 0 0 0 0 0 0 0 0\n:done\n', 'inside GSC code')):
+            source.write_text(invalid, encoding="utf-8")
+            try:
+                read_tsc(source, "modern")
+            except ValueError as error:
+                assert message in str(error), error
+            else:
+                raise AssertionError("unsafe code/data reference accepted")
+        source.write_text(modern + '*data 0 0\n*end\n', encoding="utf-8")
+        assert read_tsc(source, "modern").instructions()
+        assert '_data 0' in compile_scene(source, adapter="modern")
         try:
             compile_scene(source, language_texts={"bad-name": {}})
         except ValueError as error:
