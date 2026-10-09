@@ -64,10 +64,13 @@ def main():
                  'missing named-entry label'),
                 (modern + '*data 0 1\n*end\n', 'data block is outside'),
                 (modern + '*datablock 0 32768\n*end\n', 'signed 16-bit'),
+                (early + ';@gsc-trailer-header 4 1\n*end\n', 'does not support trailer'),
+                (early + ';@gsc-trailer 0000\n*end\n', 'does not support trailer'),
+                (modern + ';@gsc-trailer-header 4 1\n;@gsc-trailer-header 4 1\n*end\n', 'duplicate trailer'),
                 (modern + '*insub done 0 0 0 0 0 0 0 0 0 0\n:done\n', 'inside GSC code')):
             source.write_text(invalid, encoding="utf-8")
             try:
-                read_tsc(source, "modern")
+                read_tsc(source, "forest" if invalid.startswith(early) else "modern")
             except ValueError as error:
                 assert message in str(error), error
             else:

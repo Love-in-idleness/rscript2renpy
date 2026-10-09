@@ -377,10 +377,10 @@ def main() -> None:
     assert 'screen preferences(title_mode=False):' in FOREST_COMPAT
     assert 'title_mode and spec[0] in ("save", "load", "close", "quit")' in FOREST_COMPAT
     assert 'if kind in ("save", "load", "quick_save", "quick_load"):' in FOREST_COMPAT
-    assert 'return bool(save_enabled) and not rscript_touch_locked()' in FOREST_COMPAT
+    assert 'return rscript_permission("save")' in FOREST_COMPAT
     assert 'style rscript_volume_bar is bar:' in FOREST_COMPAT
     assert '"grps/nonbl/%d.png" % number' in FOREST_COMPAT
-    assert 'renpy.loadable("grps/nonbl/0.png")' in FOREST_COMPAT
+    assert 'renpy.loadable(rscript_image_path("grps/nonbl/0.png"))' in FOREST_COMPAT
     assert 'data["rscript_dt1"] = int(store._r[1])' in FOREST_COMPAT
     assert 'FileJson(slot, key="forest_dt1")' in FOREST_COMPAT
     assert 'grps/dt1_%04d.png' in FOREST_COMPAT

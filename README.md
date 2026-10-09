@@ -33,8 +33,26 @@ Forest、Khime 和试验性 Evermaiden 共用 `runtime/`、`port_template/`，�
 [LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool) 完成资源预处理，
 包括递归解包 XFL/LWG、GSC→TSC、WCG/LIM→PNG，以及封装 WAV→OGG。
 运行时和生成器都不链接或调用 LiarsoftTool。Forest 生成器只读取
-LiarsoftTool 2.1 当前生成的命令式 TSC（`*TXT`、`*load`、标签等），不接受
+当前 LiarsoftTool 生成的命令式 TSC（本次验证版本 2.2.2；`*TXT`、`*load`、标签等），不接受
 旧版 `;@gsc-structure-v1` 转储或 GSC 输入。
+
+升级工具后，可单独重建已解包目录的 `scr/*.tsc`，而不重新处理图像、音频或封包：
+
+```bash
+python3 tools/refresh_tsc.py /path/to/Forest \
+    --liarsofttool /path/to/LiarsoftTool/build/liarsofttool \
+    --encoding cp932 --dialect forest --force
+```
+
+此预处理工具显式调用 LiarsoftTool，先在临时目录导出并校验整批脚本，再逐文件
+原子替换 TSC；原 GSC 不变。已有 TSC 必须加 `--force`；手工 TSC 修改会被覆盖。
+写入阶段不是整批事务，磁盘或权限错误仍可能中断安装。相同编码/方言的多个资源目录
+可一起传入；编码需明确指定：日文 `cp932`，中文 `gbk`，本机 Forest 英文补丁仍是
+`cp932`，俄文补丁使用 `cp1251`。不能仅凭语言标签判断原 GSC 编码；混合编码的
+未翻译文本也不会自动修正。方言参数分别为 Forest 的 `forest`、Khime 的 `khime`、Evermaiden
+的 `modern`、CannonBall/Khime 外传的 `legacy`，不按语言猜测。
+TSC 正文始终是 UTF-8，旧 `;@gsc-text-encoding` 注释不影响读取。
+命名入口和 `insub` 目标必须保留新版生成的标签；不回退使用旧数值地址。
 
 ### 安装通用运行时
 
@@ -71,7 +89,7 @@ CannonBall 的老式 CodeX 方言、日中整场景覆盖和已知回退见
 
 ### Forest 生成器
 
-项目提供《Forest》专用生成器。先使用 LiarsoftTool 2.1 解包、转换
+项目提供《Forest》专用生成器。先使用当前 LiarsoftTool 解包、转换
 用户自行准备的原版资源，并为剧本生成可编辑 TSC：
 
 ```bash
@@ -235,7 +253,7 @@ The project contains a Forest-specific generator. It never downloads or
 bundles proprietary Forest data. Prepare an extracted resource directory with
 at least `scr/`, `grps/`, the other `grp*` directories, and converted OGG audio;
 then create an empty Ren'Py project. The generator requires Python 3, Pillow,
-and LiarsoftTool 2.1 for editable TSC input.
+and current LiarsoftTool (validated with 2.2.2) for editable TSC input.
 Prepare both converted resources and current command-based TSC files first:
 
 ```bash

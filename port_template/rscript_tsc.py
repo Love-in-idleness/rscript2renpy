@@ -196,13 +196,13 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
     """Read current LiarsoftTool command TSC; old metadata dumps are rejected."""
     path = Path(path)
     byte_format = None
-    encoding = None
     schema = None
     labels = {}
     sources = []
     data_blocks = []
     offset = 0
     trailer_header = (4, 1)
+    has_trailer_header = False
     trailer = None
 
     def validate_dialect():
@@ -228,9 +228,7 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             byte_format = line.removeprefix(";@gsc-byte-format ")
             continue
         if line.startswith(";@gsc-text-encoding "):
-            if encoding is not None:
-                raise ValueError(f"{path}: duplicate TSC text encoding")
-            encoding = line.removeprefix(";@gsc-text-encoding ")
+            # Like LiarsoftTool, ignore obsolete encoding declarations in UTF-8 source.
             continue
         if line.startswith(";@gsc-schema "):
             if schema is not None:
@@ -238,6 +236,9 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             schema = line.removeprefix(";@gsc-schema ")
             continue
         if line.startswith(";@gsc-trailer-header "):
+            if has_trailer_header:
+                raise ValueError(f"{path}: duplicate trailer header")
+            has_trailer_header = True
             sizes = line.split()[1:]
             if len(sizes) != 2:
                 raise ValueError(f"{path}: malformed trailer header")
@@ -312,6 +313,8 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
         offset += 2 + sum(2 if kind in "HS" else 4 for kind in kinds)
 
     validate_dialect()
+    if byte_format == "legacy-28" and (has_trailer_header or trailer is not None):
+        raise ValueError(f"{path}: legacy-28 does not support trailer metadata")
     # Current LiarsoftTool TSC is UTF-8; GSC byte encoding belongs to its CLI.
 
     strings = [""]
@@ -359,7 +362,8 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             end = blob.find(b'\0', name_offset)
             if end < 0:
                 raise ValueError(f"{path}: invalid named-entry offset")
-            name = blob[name_offset:end].decode(encoding or 'CP932')
+            # Opaque GSC trailer bytes are separate from the UTF-8 TSC body.
+            name = blob[name_offset:end].decode('CP932')
             if name:
                 label = f"L_{code_offset:06x}"
                 if label not in labels:
@@ -369,4 +373,4 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
                     raise ValueError(f"{path}: named entry must point inside GSC code")
                 names.append((name, target))
     return RScriptTsc(path, offset, tuple(strings), tuple(data_blocks),
-                     tuple(instructions), encoding or "CP932", tuple(names))
+                     tuple(instructions), "UTF-8", tuple(names))

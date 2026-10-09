@@ -136,7 +136,7 @@ def main() -> None:
         assert 729 + 24 + 8 == 800 - layout["compane"]["size"][0]
         click = (project / "game" / "engine" / "ui_features.rpy").read_text(encoding="utf-8")
         assert 'key "game_menu" action (Return(0) if cancel else Function(rscript_open_game_menu))' in click
-        assert 'key "rollback" action Rollback()' in click
+        assert 'key "rollback" action rscript_ui_action(("rollback",))' in click
         assert "rscript_text what:" in click
         assert "xalign 0.5" in click and "text_align 0.5" in click
         assert "execute_append((None, repr(eval(value))))" in (
