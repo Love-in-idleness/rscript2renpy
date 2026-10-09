@@ -11,9 +11,10 @@ sys.path.insert(0, str(ROOT / "port_template"))
 from build_port import assemble_port, validate_resources
 from port_resources import parse_language_options
 from tsc_compiler import compile_overlays
+from ui_layout import extract_native_ui, native_layouts
 
 
-def build_cannonball(resources, project, force=False, languages=()):
+def build_cannonball(resources, project, force=False, languages=(), exe=None):
     resources, project = Path(resources).resolve(), Path(project).resolve()
     marker, patches = parse_language_options(list(languages))
     for directory in (resources, *(directory for _, directory in patches)):
@@ -25,6 +26,15 @@ def build_cannonball(resources, project, force=False, languages=()):
     if not any((resources / se_directory).glob("*.ogg")):
         raise FileNotFoundError("converted sound effects missing: %s" % (resources / se_directory))
     scenes = compile_overlays(resources, patches, adapter="pre-codex")
+    if exe is not None:
+        report = extract_native_ui(exe, resources)
+        if not report["layouts"]:
+            raise ValueError("EXE build not supported for automatic UI extraction; run tools/inspect_rscript_ui.py for references")
+        layouts = report["layouts"]
+        for message in report["unresolved"]:
+            print("NOTE: " + message)
+    else:
+        layouts = native_layouts(resources)
     with TemporaryDirectory(prefix="cannonball-port-") as temporary:
         temporary = Path(temporary)
         prepared = temporary / "resources"
@@ -43,6 +53,8 @@ def build_cannonball(resources, project, force=False, languages=()):
         (overlay / "audio_paths.rpy").write_text(
             'init -99 python:\n    rscript_se_format = %r\n' % (se_directory + "/%04d.ogg"),
             encoding="utf-8")
+        (overlay / "native_ui.rpy").write_text(
+            'init 10 python:\n    rscript_ui["layouts"] = %r\n' % layouts, encoding="utf-8")
         assemble_port(prepared, project, scenes, overlay.parent, marker, patches, force=force)
     print("Wrote %s: %d original scenes, %d language packages" %
           (project, len(list((resources / "scr").glob("*.tsc"))), len(patches)))
@@ -54,10 +66,11 @@ def main():
     parser.add_argument("resources", type=Path)
     parser.add_argument("project", type=Path)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--exe", type=Path, help="optional read-only native UI extraction and verification")
     parser.add_argument("--language", action="append", default=[], metavar="NAME[=PATCH_DIR]")
     args = parser.parse_args()
     try:
-        build_cannonball(args.resources, args.project, args.force, args.language)
+        build_cannonball(args.resources, args.project, args.force, args.language, args.exe)
     except (OSError, ValueError) as error:
         parser.error(str(error))
 

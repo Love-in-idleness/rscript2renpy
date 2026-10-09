@@ -5,6 +5,7 @@ define rscript_grps_language_layouts = {}
 init python:
     def rscript_layouts():
         layouts = dict(rscript_grps_layout)
+        layouts.update(rscript_ui.get("layouts", {}))
         for folder, patch in rscript_grps_language_layouts.get(_preferences.language, {}).items():
             base = layouts.get(folder, {})
             layouts[folder] = dict(base, **patch)
@@ -12,8 +13,18 @@ init python:
                 layouts[folder][field] = dict(base.get(field, {}), **patch.get(field, {}))
         return layouts
 
+    def rscript_ui_image(folder, name):
+        source = rscript_layouts().get(folder, {}).get("images", {}).get(name)
+        if source is None:
+            return rscript_image_path("grps/%s/%s.png" % (folder, name))
+        path, crop = source
+        image = rscript_image_path(path)
+        return Crop(crop, image) if crop else image
+
     def rscript_ui_action(spec):
         kind, args = spec[0], spec[1:]
+        if rscript_ui_sensitive(kind) is False:
+            return NullAction()
         if kind == "preference":
             return rscript_preference_action(*args)
         if kind == "effects":
@@ -23,7 +34,7 @@ init python:
         if kind == "voice_stop":
             return SetField(persistent, "rscript_stop_voice_on_advance", args[0])
         return {
-            "choice_back": lambda: rscript_rev_action(not rscript_touch_locked()),
+            "choice_back": rscript_rev_action,
             "rollback": Rollback, "rollforward": RollForward,
             "fast_skip": lambda: Skip(fast=True), "skip": Skip,
             "auto": lambda: [Function(rscript_ensure_auto_delay), Preference("auto-forward", "toggle")],
@@ -37,9 +48,9 @@ init python:
 
     def rscript_ui_sensitive(kind):
         if kind in ("save", "load", "quick_save", "quick_load"):
-            return bool(save_enabled) and not rscript_touch_locked()
-        if kind == "rollback":
-            return bool(roll_enabled) and not rscript_touch_locked()
+            return rscript_permission("save")
+        if kind in ("rollback", "choice_back"):
+            return rscript_permission("roll")
         if kind == "preferences":
             return bool(menu_enabled) and not rscript_touch_locked()
         if kind == "voice":
@@ -60,7 +71,7 @@ init python:
 
     def rscript_rev_action(enabled=True):
         # The native action also disables expired or missing rollback targets.
-        return RollbackToIdentifier(store.jump_back_point if enabled else None)
+        return RollbackToIdentifier(store.jump_back_point if enabled and rscript_permission("roll") else None)
 
     def rscript_save_json(data):
         data["rscript_dt1"] = int(store._r[1])
@@ -128,8 +139,8 @@ screen rscript_grps_button(folder, name, button_action, enabled=True, selected=N
     $ items = rscript_layouts().get(folder, {}).get("items", {})
     $ item = items.get(name)
     if item:
-        $ idle_image = rscript_image_path("grps/%s/%s.png" % (folder, name))
-        $ focused_image = (rscript_image_path("grps/%s/%s_f.png" % (folder, name))
+        $ idle_image = rscript_ui_image(folder, name)
+        $ focused_image = (rscript_ui_image(folder, name + "_f")
                            if name + "_f" in items else idle_image)
         $ focused = items.get(name + "_f", item)
         $ focused_display = Transform(focused_image,
@@ -137,7 +148,7 @@ screen rscript_grps_button(folder, name, button_action, enabled=True, selected=N
                                       yoffset=focused[1] - item[1])
         $ plain_selected = (folder in rscript_ui.get("selected_plain_folders", ()) and (name.startswith(("scm_", "msp_", "msk_")) or name.endswith(("_on", "_off"))))
         $ disabled_name = name + ("_off" if name + "_off" in items else "_c")
-        $ disabled_image = (rscript_image_path("grps/%s/%s.png" % (folder, disabled_name))
+        $ disabled_image = (rscript_ui_image(folder, disabled_name)
                             if disabled_name in items else idle_image)
         imagebutton:
             idle (focused_display if plain_selected else idle_image)
@@ -174,7 +185,7 @@ screen preferences(title_mode=False):
             xalign 0.5
             yalign 0.5
             $ bg = layout["items"]["bg"]
-            add rscript_image_path("grps/confscrn/bg.png") xpos bg[0] ypos bg[1]
+            add rscript_ui_image("confscrn", "bg") xpos bg[0] ypos bg[1]
 
             for name, spec in layout.get("controls", {}).items():
                 if not (title_mode and spec[0] in ("save", "load", "close", "quit")):
@@ -201,10 +212,10 @@ screen preferences(title_mode=False):
                         style "rscript_volume_bar"
                         value Preference(setting)
                         base_bar Solid("#00000000")
-                        thumb rscript_image_path("grps/confscrn/%s_vol.png" % prefix)
-                        hover_thumb (rscript_image_path("grps/confscrn/%s_vol_f.png" % prefix)
+                        thumb rscript_ui_image("confscrn", prefix + "_vol")
+                        hover_thumb (rscript_ui_image("confscrn", prefix + "_vol_f")
                                      if prefix + "_vol_f" in layout["items"] else
-                                     rscript_image_path("grps/confscrn/%s_vol.png" % prefix))
+                                     rscript_ui_image("confscrn", prefix + "_vol"))
                         xpos track[0]
                         ypos track[1]
                         xsize track[2]
@@ -220,8 +231,8 @@ screen preferences(title_mode=False):
                 textbutton "Music" action Preference("music mute", "toggle")
                 textbutton "Sound" action Preference("sound mute", "toggle")
                 textbutton "Voice" action Preference("voice mute", "toggle")
-                textbutton "Save" action ShowMenu("save")
-                textbutton "Load" action ShowMenu("load")
+                textbutton "Save" action rscript_ui_action(("save",)) sensitive rscript_permission("save")
+                textbutton "Load" action rscript_ui_action(("load",)) sensitive rscript_permission("save")
                 textbutton "Main Menu" action rscript_main_menu_action()
                 textbutton "Quit" action rscript_quit_action()
                 textbutton "Back" action Return()
@@ -242,7 +253,7 @@ screen rscript_compane():
             $ items = layout["items"]
             if "bg" in items and not rscript_ui.get("compane_bar_background", False):
                 $ bg = items["bg"]
-                add rscript_image_path("grps/compane/bg.png") xpos bg[0] ypos bg[1]
+                add rscript_ui_image("compane", "bg") xpos bg[0] ypos bg[1]
             $ track = rscript_ui.get("compane_track", items.get("slide_lev"))
             if track and "slide" in items:
                 if track[3] > track[2]:
@@ -250,8 +261,8 @@ screen rscript_compane():
                         style "rscript_volume_bar"
                         value FieldValue(persistent, "rscript_textbox_opacity", range=1.0)
                         base_bar (rscript_image_path("grps/compane/bg.png") if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
-                        thumb rscript_image_path("grps/compane/slide.png")
-                        hover_thumb rscript_image_path("grps/compane/slide_f.png" if "slide_f" in items else "grps/compane/slide.png")
+                        thumb rscript_ui_image("compane", "slide")
+                        hover_thumb rscript_ui_image("compane", "slide_f" if "slide_f" in items else "slide")
                         thumb_offset (2 if rscript_ui.get("compane_bar_background", False) else 0)
                         bar_invert rscript_ui.get("compane_invert", False)
                         xpos track[0]
@@ -263,8 +274,8 @@ screen rscript_compane():
                         style "rscript_volume_bar"
                         value FieldValue(persistent, "rscript_textbox_opacity", range=1.0)
                         base_bar (rscript_image_path("grps/compane/bg.png") if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
-                        thumb rscript_image_path("grps/compane/slide.png")
-                        hover_thumb rscript_image_path("grps/compane/slide_f.png" if "slide_f" in items else "grps/compane/slide.png")
+                        thumb rscript_ui_image("compane", "slide")
+                        hover_thumb rscript_ui_image("compane", "slide_f" if "slide_f" in items else "slide")
                         thumb_offset (2 if rscript_ui.get("compane_bar_background", False) else 0)
                         bar_invert rscript_ui.get("compane_invert", False)
                         xpos track[0]
@@ -279,7 +290,7 @@ screen rscript_compane():
 screen rscript_choice(items, prompt=None):
     modal True
     key "game_menu" action Function(rscript_open_game_menu)
-    key "rollback" action Rollback()
+    key "rollback" action rscript_ui_action(("rollback",))
     vbox:
         xalign 0.5
         yalign rscript_ui.get("choice_yalign", 0.42)

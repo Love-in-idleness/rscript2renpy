@@ -117,7 +117,7 @@ def main() -> None:
         assert 'grps/dt1_%04d.png' in save_ui
         assert 'key "game_menu" action Function(rscript_open_game_menu)' in (
             project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
-        assert 'key "rollback" action Rollback()' in (
+        assert 'key "rollback" action rscript_ui_action(("rollback",))' in (
             project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert 'text rscript_menu_text(caption):' in (
             project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")

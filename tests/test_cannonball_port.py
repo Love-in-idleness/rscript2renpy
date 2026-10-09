@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import sys
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "cannonball"))
@@ -14,9 +15,14 @@ from rscript_tsc import read_tsc
 from tsc_compiler import compile_scene, compile_overlays
 from tsc_vm import emit_vm
 from build_port import write_scenario
+from ui_layout import BUTTONS, PANE, extract_native_ui, native_layouts
+from exe_ui import constant_positions, inspect_exe
 
 
 def main():
+    assert constant_positions([(1, "lea edi,[esi+0x68]"), (2, "mov eax,DWORD PTR [edi]"),
+                               (3, "push 0x14a"), (4, "push 0x110"),
+                               (5, "call DWORD PTR [eax+0x78]")], 0, 6) == {0x68: (272, 330)}
     # A temporary captures the value at execution time, not a live expression.
     namespace = {"_r": {7: 12}, "rscript_vm_temps": {}}
     temps = {}
@@ -73,6 +79,29 @@ def main():
         assert "_preferences.language == 'zh'" in files["scr/0000.rpy"]
         for name in ("grpe/0901.png", "grpo/0002.png", "grps/TBOX01B.png", "grps/tbox_w.png", "backup/private.png"):
             shutil.copyfile(ROOT / "runtime/gui/rscript_cursor.png", base / name)
+        for source, _, _, _ in BUTTONS.values():
+            width = 108 if source == "con_07c" else 85 if source.startswith("con_07") or source in {"con_14", "con_15"} else 80 if source in {"con_10", "con_11", "con_12"} else 140
+            Image.new("RGBA", (width, 42), "#ffffff").save(base / "grps" / (source.upper() + ".png"))
+        for source, size in (("CON_BASE", (518, 387)), ("TBOX_C01", (194, 18)),
+                             ("TBOX_C08", (5, 30)), *(("con_%d" % n, (21, 42)) for n in (16, 17, 18)),
+                             *((source, (17, 34)) for name, source in PANE if name is not None)):
+            Image.new("RGBA", size, "#ffffff").save(base / "grps" / (source + ".png"))
+        layout = native_layouts(base)
+        assert layout["confscrn"]["size"] == (518, 387)
+        assert layout["confscrn"]["items"]["save"] == (157, 330, 85, 21)
+        assert layout["confscrn"]["images"]["save_f"][1] == (0, 21, 85, 21)
+        assert layout["compane"]["items"]["hide"] == (179, 1, 17, 17)
+        assert set(layout["compane"]["controls"]) == {"rev", "bak", "fow", "next", "voc", "hide"}
+        Image.new("RGBA", (518, 387), "#000000").save(base / "grps/CON_BASE.webp")
+        assert native_layouts(base)["confscrn"]["images"]["bg"][0].endswith(".webp")
+        invalid = directory / "invalid.exe"
+        invalid.write_bytes(b"MZ")
+        try:
+            inspect_exe(invalid, base)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("truncated EXE accepted")
         for name in ("bgm/Track01.wav", "voice/0001.ogg", "wav/wav/0001.ogg"):
             (base / name).write_bytes(b"unplayed fixture")
         build_cannonball(base, project, languages=["jp", "zh=" + str(patch)])
@@ -93,6 +122,16 @@ def main():
         if len(sys.argv) > 1:
             if len(sys.argv) > 3:
                 original, translated = map(Path, sys.argv[2:4])
+                report = extract_native_ui(original / "Cannonball.exe", original)
+                assert report["layouts"] == native_layouts(original)
+                assert len(report["layouts"]["confscrn"]["controls"]) == 20
+                assert "tbox_c08" in report["resource_references"]
+                assert "tbox%02db" in report["resource_references"]
+                assert "con_06a" not in report["resource_references"]
+                unknown = directory / "unknown.exe"
+                unknown.write_bytes((original / "Cannonball.exe").read_bytes() + b"\0")
+                unsupported = extract_native_ui(unknown, original)
+                assert not unsupported["layouts"] and "Unsupported EXE" in unsupported["unresolved"][0]
                 title_files = compile_overlays(original, [("zh", translated)], adapter="pre-codex")
                 for name, text in title_files.items():
                     if Path(name).stem in {"0000", "0001", "0002"}:
@@ -102,6 +141,16 @@ def main():
                     for asset in (original / "grpo").glob("%04d.*" % number):
                         if asset.suffix in {".png", ".webp"}:
                             shutil.copyfile(asset, game / "grpo" / asset.name)
+                for folder, details in report["layouts"].items():
+                    for path, crop in details["images"].values():
+                        shutil.copyfile(original / path, game / path)
+                        # Translation lookup must prefer PNG over the base WebP.
+                        patched = translated / Path(path).with_suffix(".png")
+                        if patched.is_file():
+                            destination = game / "tl/zh" / patched.relative_to(translated)
+                            destination.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copyfile(patched, destination)
+                (game / "engine/native_ui.rpy").write_text('init 10 python:\n    rscript_ui["layouts"] = %r\n' % report["layouts"])
                 (game / "title_test.rpy").write_text(
                     "define rscript_test_native_title = True\nlabel _3000:\n    return\n")
             shutil.copyfile(ROOT / "tests/renpy_cannonball_port.rpy", game / "legacy_test.rpy")

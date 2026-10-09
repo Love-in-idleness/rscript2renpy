@@ -101,7 +101,7 @@ screen rscript_touch_controls():
             xalign 0.995
             yalign 0.01
 
-            textbutton "Back" action Rollback() sensitive roll_enabled and not rscript_touch_locked()
+            textbutton "Back" action Rollback(force=False) sensitive roll_enabled and _rollback and not rscript_touch_locked()
             textbutton "Skip" action Skip()
             textbutton "Auto" action [Function(rscript_ensure_auto_delay), Preference("auto-forward", "toggle")]
             textbutton "Hide" action HideInterface()

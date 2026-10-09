@@ -30,6 +30,10 @@ python early:
             for name in ("back", "skip", "auto", "hide", "screenshot", "menu"):
                 assert widget(name) is not None, name
             assert widget("back").is_sensitive()
+            assert widget("back").action.kwargs["force"] is False
+            store._rollback = False
+            assert not widget("back").is_sensitive()
+            store._rollback = True
             assert widget("menu").is_sensitive()
             store.roll_enabled = store.menu_enabled = 0
             assert not widget("back").is_sensitive()

@@ -30,6 +30,37 @@ python3 cannonball/build_cannonball_rscript.py \
 标题在指定 `*folder` 之前就加载图片，因此初始对象图层目录配置为 `grpo`；
 此默认值由公共运行时读取，其他游戏仍保留各自的初始化行为。
 
+## 原程序界面与可选 EXE 静态检查
+
+这版菜单和对话控制栏在 `Cannonball.exe` 中硬编码创建，不使用 `.meta.xml`。
+已按原程序的资源选择、对象坐标、两帧纵向图集、音量/透明度滑条和按钮回调接入
+公共模板；不裁切或改名资源文件。右键菜单为 518×387，居中显示，剧情中的
+控制条仍由原脚本 `cmploc` 定位。`CON_06` 虽存在，但原菜单构造函数没有加载它，
+不据文件名凭空增加控件。
+
+静态证据：菜单构造位于 `0x405F00..0x407260`，控制条构造位于
+`0x40AC30..0x40B72D`；对象的 `SetPos` 调用给出坐标，图像构造函数与回调绑定
+确定状态帧和动作。已验证 EXE 的 SHA-256 为
+`df4b5b6dffc7002370d0772869baaba551b08fca970e92609ca64b08174f89ba`。
+
+只读检查并自动提取已确认的界面数据：
+
+```bash
+python3 tools/inspect_rscript_ui.py /path/to/Cannonball.exe /path/to/CannonBall
+```
+
+输出 JSON 包括 EXE 校验值、资源引用及地址、可用布局、未绑定资源和未实现项。
+生成时可追加 `--exe /path/to/Cannonball.exe`，自动检查布局后使用提取结果。
+工具不执行或携带 EXE，不修改原资源；检查步骤需要本机 `objdump`。
+不提供 EXE 时使用仓库已确认的配置，因此普通生成和最终游戏仍不依赖 EXE。
+当前自动布局/动作识别只支持已验证的这版 CannonBall 二进制；其他 PE32 游戏
+先列资源引用，不猜坐标或回调，不能把报告当成所有引擎版本的通用行为。
+后续移植应先检查该报告及原程序初始化，而不是等待用户逐个发现漏项。
+
+赛车画面（实际显示 `grpo_r1`/`grpo_rc` 对象）禁止回退与存档，包含快捷键、
+控制条、普通存档、快存和自动存档；退出该画面后按 `sysmode` 恢复。
+回退边界禁止重新回到已结束的锁定段。原脚本禁用菜单时仍不可打开右键菜单。
+
 ## 已知限制与验证边界
 
 - 老式 BGM 淡入淡出参数的原生时长未确认，目前显式降为无淡入淡出，并在对应
@@ -37,8 +68,9 @@ python3 cannonball/build_cannonball_rscript.py \
   `load effect 9`。能加载图片不代表所有视觉效果已还原。
 - `numload/numreng/numenable/numloc/numset/num` 保留参数、启用状态、范围、位置
   与数值更新，显示使用普通文字回退；原生数字皮肤、偏移与计数动画尚未还原。
-- 当前转换资源没有菜单布局 `.meta.xml`，通用系统菜单使用回退界面；剧情内
-  `setclk/setlink/click` 图片选项仍由原脚本控制。不能声称已还原所有原图系统菜单。
+- 原图存读档页与历史文本页尚未还原，仍用公共回退界面；EXE 检查报告明确列出。
+  `TBOX_C09/C10` 在原程序中有可选加载路径，但当前资源没有对应图像，不生成假按钮。
+  剧情内 `setclk/setlink/click` 图片选项仍由原脚本控制。
 - 临时寄存器按执行时保存值；完整 16 位 VM 溢出及所有算术边界仍待原引擎对照。
 - 跨语言中途切换、存档兼容、完整路线、音频时序和安卓实机仍需游玩验证。
 
@@ -52,6 +84,15 @@ python3 -B tests/test_cannonball_port.py /path/to/renpy-sdk \
 该测试覆盖方言边界、正文/菜单/音效顺序、VM 临时值、数字控件状态、大小写资源
 路径和完整补丁路由；提供实际资源时还会在隔离工程执行日中标题脚本至“开始”
 跳转，不开游戏窗口、不播放音频、不读取正式存档。它不是视觉或完整游玩验证。
+测试还检查 EXE 提取与无 EXE 配置一致、状态切片、菜单/控制条构建及权限恢复。
+隔离实际菜单渲染：
+
+```bash
+SDL_VIDEODRIVER=x11 xvfb-run -a python3 tests/run_grps_capture.py \
+    /path/to/renpy-sdk /path/to/CannonBall /tmp/cannonball-ui-check --game cannonball
+```
+
+该测试不执行原剧情，截图只证明独立控件渲染，不证明原游戏时序或完整操作路径。
 正式生成后还需执行 `renpy.sh /path/to/renpy/CannonBall lint`；动态自定义跳转
 和原脚本死分支可能产生 unreachable 提示，不能把这些提示当作路线正确性的证明。
 

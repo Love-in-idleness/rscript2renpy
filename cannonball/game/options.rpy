@@ -24,4 +24,6 @@ init -100 python:
     rscript_ui = {"show_speaker": True, "speaker_pos": (0, 7),
                   "textbox_size": (800, 135),
                   "textbox_background": "grps/TBOX%02dB.png",
+                  "game_text_settings": False,
+                  "restricted_image_folders": ("grpo_r1", "grpo_rc"),
                   "wait_image": "grps tbox_w"}

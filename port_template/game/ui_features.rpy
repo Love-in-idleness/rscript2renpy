@@ -29,8 +29,9 @@ init python:
         if value == 0:
             return rscript_quit_action()
         if value == 1:
-            return ShowMenu("save")
+            return rscript_ui_action(("save",))
         if value == 2:
+            # The original title's explicit Load link works with sysmode save=0.
             return ShowMenu("load")
         if value == 3:
             return ShowMenu("preferences" if store.menu_enabled else
@@ -133,7 +134,7 @@ screen rscript_click_screen(options, previews=None, cancel=False, layers=None):
     default preview = None
     modal True
     key "game_menu" action (Return(0) if cancel else Function(rscript_open_game_menu))
-    key "rollback" action Rollback()
+    key "rollback" action rscript_ui_action(("rollback",))
     for index, (value, system, idle_image, hover_image, x, y) in enumerate(options):
         $ native_layer = (layers or {}).get(index)
         $ info_image = (previews or {}).get(index)

@@ -16,6 +16,44 @@ python early:
         assert predict_load(load) == ["grpo 0002"]
         execute_load(load)
         assert layer_info[1] == "grpo 0002"
+        process_draw_queue()
+        assert rscript_layouts()["confscrn"]["size"] == (518, 387)
+        assert rscript_layouts()["compane"]["items"]["hide"] == (179, 1, 17, 17)
+        for language in (None, "zh"):
+            _preferences.language = language
+            renpy.show_screen("preferences")
+            renpy.get_screen("preferences").update()
+            renpy.hide_screen("preferences")
+            renpy.show_screen("rscript_compane")
+            renpy.get_screen("rscript_compane").update()
+            renpy.hide_screen("rscript_compane")
+            sprite = rscript_ui_image("confscrn", "save_f")
+            assert sprite.crop == (0, 21, 85, 21)
+        _preferences.language = None
+        # Native save sensitivity, autosave flag and direct screen key actions.
+        store.save_enabled = store.roll_enabled = 1
+        rscript_sync_permissions()
+        assert config.save and store._autosave and store._rollback
+        renpy.show("layer80", what=Solid("#ffffff"), layer=IMAGE_LAYER)
+        layer_info[80] = "grpo_r1 0001"
+        rscript_sync_permissions()
+        assert not config.save and not store._autosave and not store._rollback
+        assert not FileSave(1).get_sensitive()
+        assert isinstance(rscript_ui_action(("rollback",)), NullAction)
+        assert isinstance(rscript_ui_action(("quick_save",)), NullAction)
+        assert rscript_rev_action().identifier is None
+        assert isinstance(rscript_system_action(1), NullAction)
+        renpy.hide("layer80", layer=IMAGE_LAYER)
+        rscript_sync_permissions()
+        assert config.save and store._autosave and store._rollback
+        layer_info.pop(80)
+        store.save_enabled = store.roll_enabled = 0
+        rscript_sync_permissions()
+        assert not config.save and not store._autosave and not store._rollback
+        assert isinstance(rscript_system_action(1), NullAction)
+        assert isinstance(rscript_system_action(2), ShowMenu)
+        store.save_enabled = store.roll_enabled = 1
+        rscript_sync_permissions()
         image = renpy.get_registered_image("grps tbox01b")
         image.find_target()
         assert image.raw_target.filename == "grps/TBOX01B.png", image.raw_target
