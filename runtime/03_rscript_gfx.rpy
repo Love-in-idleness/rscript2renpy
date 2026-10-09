@@ -503,10 +503,14 @@ python early:
         return args
 
     def execute_locmode(args):
-        store.layer_anchor[args.Layer] = (
+        anchor = (
         0.0 if args.Xmode == 0 else 0.5,
         0.0 if args.Ymode == 0 else 0.5
       )
+        # Cannonball.exe 417110 resets every object, including unloaded ones.
+        layers = range(1, 100) if args.Layer == 0 and store.rscript_locmode_zero_all else [args.Layer]
+        for layer in layers:
+            store.layer_anchor[layer] = anchor
 
     renpy.register_statement("_locmode", parse = parse_locmode, execute = execute_locmode, lint = lint_undef)
 

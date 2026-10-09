@@ -19,6 +19,9 @@ init -100 python:
     rscript_use_speaker_images = True
     rscript_voice_format = "voice/%04d.ogg"
     rscript_voice_groups = True
+    # Cannonball.exe 41096e: click clock register counts 10 ms ticks.
+    rscript_click_timer_unit = .01
+    rscript_locmode_zero_all = True
     rscript_bgm_format = "bgm/Track%02d.wav"
     rscript_ctc_x, rscript_ctc_y = 770, 555
     rscript_ui = {"show_speaker": True, "speaker_pos": (0, 7),

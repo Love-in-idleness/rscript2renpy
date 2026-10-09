@@ -132,11 +132,13 @@ screen rscript_locmap_screen(cancel=False):
     key "dismiss" action Return(1)
     key "game_menu" action (Return(0) if cancel else NullAction())
 
-screen rscript_click_screen(options, previews=None, cancel=False, layers=None):
+screen rscript_click_screen(options, previews=None, cancel=False, layers=None, countdown=None):
     default preview = None
     modal True
     key "game_menu" action (Return(0) if cancel else Function(rscript_open_game_menu))
     key "rollback" action rscript_ui_action(("rollback",))
+    if countdown is not None:
+        timer countdown["unit"] repeat True action Function(rscript_click_tick, countdown)
     for index, (value, system, idle_image, hover_image, x, y) in enumerate(options):
         $ native_layer = (layers or {}).get(index)
         $ info_image = (previews or {}).get(index)
@@ -148,6 +150,7 @@ screen rscript_click_screen(options, previews=None, cancel=False, layers=None):
             focus_mask renpy.displayable(idle_image)
             xpos x
             ypos y
+            anchor (layer_anchor.get(native_layer, (0.0, 0.0)) if native_layer is not None else (0.0, 0.0))
             hovered (Function(rscript_click_focus, native_layer, hover_image, info_image) if native_layer is not None else SetScreenVariable("preview", info_image))
             unhovered (Function(rscript_click_focus, native_layer) if native_layer is not None else SetScreenVariable("preview", None))
             action rscript_system_action(value, system)

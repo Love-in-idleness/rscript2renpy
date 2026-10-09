@@ -424,7 +424,8 @@ python early:
             # Native optional setlink artwork may be absent (not only -1).
             # Keep required idle resources visible as errors if they are missing.
             options.append((value, system, idle,
-                            hover_image if renpy.has_image(hover_image, exact=True) else idle, x, y))
+                            hover_image if renpy.has_image(hover_image, exact=True) else idle,
+                            absolute(x), absolute(y)))
             layers[len(options) - 1] = layer
             if layer in store.rscript_click_previews:
                 cg, px, py = store.rscript_click_previews[layer]
@@ -436,15 +437,44 @@ python early:
                     previews[len(options) - 1] = (image, px, py)
         if not options:
             raise Exception("RScript click has no active image regions")
+        countdown = rscript_click_countdown(o)
         try:
             store._r[0] = renpy.call_screen("rscript_click_screen", options=options,
                                            previews=previews, layers=layers,
+                                           countdown=countdown,
                                            cancel=bool(o.Cancel) if o is not None else False)
         finally:
+            if countdown is not None:
+                store._r[countdown["register"]] = rscript_click_remaining(countdown) & 65535
             for layer in layers.values():
                 rscript_click_focus(layer)
         if store.rscript_click_autoreset:
             execute_resetclk(None)
+
+    def rscript_click_countdown(o):
+        if o is None or not o.Timer or not store.rscript_click_timer_unit:
+            return None
+        import time
+        initial = rscript_signed16(store._r[o.Timer])
+        args = RScriptArguments(Layer=0, Value=initial, Animate=0)
+        # Native click's second operand retains num0's existing range when set.
+        if not o.Timeout:
+            rscript_number_apply("numreng", RScriptArguments(
+                Layer=0, Minimum=0, Maximum=initial, Mode=4, Digits=0))
+        rscript_number_apply("num", args)
+        return {"register": o.Timer, "initial": initial, "started": time.monotonic(),
+                "unit": store.rscript_click_timer_unit}
+
+    def rscript_click_remaining(countdown):
+        import time
+        return countdown["initial"] - int((time.monotonic() - countdown["started"]) / countdown["unit"])
+
+    def rscript_click_tick(countdown):
+        remaining = rscript_click_remaining(countdown)
+        rscript_number_apply("num", RScriptArguments(Layer=0, Value=max(0, remaining), Animate=0))
+        if remaining < 0:
+            # Native 4109b5: expiration selects r0=0, not the cancel action.
+            renpy.end_interaction(0)
 
     def rscript_click_focus(layer, image=None, preview=None):
         # Input lives on screens; native artwork stays in the master scene.

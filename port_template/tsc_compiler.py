@@ -125,7 +125,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         for name in entries.get(item.offset, ()):
             lines.append("label _g_%s_%s:" % (scene, name))
         op, values = item.opcode, item.operands
-        operands = [packed(value) if kind == E else str(value)
+        operands = [packed(value, word16=legacy) if kind == E else str(value)
                     for kind, value in zip(item.kinds, values)]
         if modern and op in {49, 55, 97, 98, 107, 108, 132}:
             lines.append("    # CodeX %s %s: shared runtime uses adapter defaults; native layout/style state is not implemented." %
@@ -141,7 +141,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             # Entry height: ceil(34px * 1.25) + 1px gap = 44px.
             operands[3] = "517+44*khime_zero_unlocked()"
         if op & 0xf000:
-            lines.extend("    " + line for line in emit_vm(op, values, temps, snapshot=legacy))
+            lines.extend("    " + line for line in emit_vm(op, values, temps, snapshot=legacy, word16=legacy))
         elif op == 9:
             if legacy:
                 lines.append("    $ rscript_vm_temps[%d] = renpy.random.randrange(0x8000)" % values[0])
@@ -249,10 +249,10 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             lines.append("    _flagset %s" % " ".join(operands))
         elif legacy and op == 111:
             # Cannonball.exe 0x417f40: signed multiply/divide, result in r0.
-            lines.append("    $ _r[0] = rscript_muldev(%s)" % ", ".join(operands))
+            lines.append("    $ _r[0] = rscript_muldev(%s) & 65535" % ", ".join(operands))
         elif legacy and op in {130, 131, 132, 134, 135, 136}:
             if op in {130, 131, 135, 136}:
-                lines.append("    # Legacy numeric widget: original operands retained; native skin/counting animation uses a static text fallback.")
+                lines.append("    # Legacy numeric widget: native Bar/Fix artwork; Num digit skins/counting animation use a static fallback.")
             lines.append("    _rscript_number %s %s" % (
                 {130: "numload", 131: "numreng", 132: "numenable",
                  134: "numloc", 135: "numset", 136: "num"}[op], " ".join(operands)))
@@ -271,13 +271,13 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         elif op in KHIME_COMMANDS and (not early or op in {70, 71, 72, 73, 75}):
             def adapter_statement(parameters):
                 args = operands if parameters == values else [
-                    packed(value) if kind == E else str(value)
+                    packed(value, word16=legacy) if kind == E else str(value)
                     for kind, value in zip(item.kinds, parameters)]
                 return "_%s_%s %s" % (prefix, KHIME_COMMANDS[op], " ".join(args))
             emit_operand_variants(lines, patch_operands, item, adapter_statement)
         elif op in commands:
             def statement(parameters):
-                args = [packed(value) if kind == E else str(value)
+                args = [packed(value, word16=legacy) if kind == E else str(value)
                         for kind, value in zip(item.kinds, parameters)]
                 command = commands[op]
                 if zero and op in (20, 60):

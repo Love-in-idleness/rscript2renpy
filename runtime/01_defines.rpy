@@ -62,6 +62,8 @@ init:
     default folder = dict(getattr(store, "rscript_initial_folders", {}))
     define rscript_folder_zero_all = False
     define rscript_click_grid = False
+    define rscript_click_timer_unit = 0.0
+    define rscript_locmode_zero_all = False
     default rscript_click_values = {}
     default rscript_click_links = {}
     default rscript_click_previews = {}

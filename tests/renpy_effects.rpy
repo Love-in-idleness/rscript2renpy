@@ -19,6 +19,10 @@ init 100 python:
         actual = image.get_at((20, 20))[:3]
         assert all(abs(a - b) <= 3 for a, b in zip(actual, expected)), (actual, expected)
 
+screen effects_test_wakeup():
+    # A modal click screen blocks the pause behavior underneath it.
+    timer .1 repeat True action Function(renpy.end_interaction, True)
+
 label _0000:
     window hide
     $ renpy.hide_screen("rscript_compane")
@@ -58,6 +62,7 @@ label _0000:
     _load 40 9982 0 0 0 0
     _tonedep 40
     _tone 50 0
+    show screen effects_test_wakeup
     show screen rscript_click_screen(options=[(1, False, "grpo 9980", "grpo 9981", 0, 0)], layers={0: 11})
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((0, 255, 0))
@@ -71,6 +76,7 @@ label _0000:
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((255, 0, 0))
     hide screen rscript_click_screen
+    hide screen effects_test_wakeup
     _tone 0 0
     _cls 11 0
     _cls 40 0

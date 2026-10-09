@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 import sys
+import textwrap
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,7 +14,7 @@ sys.path.insert(0, str(ROOT / "cannonball"))
 from build_cannonball_rscript import build_cannonball
 from rscript_tsc import read_tsc
 from tsc_compiler import compile_scene, compile_overlays
-from tsc_vm import emit_vm
+from tsc_vm import emit_vm, packed
 from build_port import write_scenario
 from ui_layout import BUTTONS, PANE, SAVE_BUTTONS, extract_native_ui, native_layouts
 from exe_ui import constant_positions, inspect_exe
@@ -32,6 +33,25 @@ def main():
     for line in emit_vm(0xa400, (1, 0, 3), temps, snapshot=True):
         exec(line.removeprefix("$ "), namespace)
     assert namespace["rscript_vm_temps"] == {0: 12, 1: 15}
+    # Execute the runtime helpers, not a second implementation in the test.
+    helpers = (ROOT / "runtime/07_rscript_legacy.rpy").read_text().split("python early:\n")[1].split("    def parse_rscript_number")[0]
+    exec(textwrap.dedent(helpers), namespace)
+    for family, left, right, expected in (
+            (10, 100, 65535, 99), (10, 65535, 1, 0), (11, 0, 1, 65535),
+            (12, 256, 256, 0), (5, 65535, 0, 0), (8, 65535, 0, 1),
+            (4, -1, 65535, 1), (9, -1, 65535, 0),
+            (13, 65529, 3, 65534), (14, 65529, 3, 65535),
+            (13, 32768, 65535, 32768), (2, 4, 5, 1), (3, 4, 5, 1)):
+        for line in emit_vm(family << 12, (0, left, right), {}, snapshot=True, word16=True):
+            exec(line.removeprefix("$ "), namespace)
+        assert namespace["rscript_vm_temps"][0] == expected, (family, left, right)
+    for opcode, operands in ((0xf000, (0, -1)), (0x1800, (0, 7, -1))):
+        for line in emit_vm(opcode, operands, {}, snapshot=True, word16=True):
+            exec(line.removeprefix("$ "), namespace)
+        assert namespace["rscript_vm_temps"][0] == 65535
+    assert namespace["_r"][7] == 65535
+    assert eval(packed(0x10007, word16=True), namespace) == -1
+    assert packed(0x10007) == "_r[7]"  # Other adapters retain their semantics.
     with TemporaryDirectory(prefix="cannonball-test-") as directory:
         directory = Path(directory)
         base, patch, project = (directory / name for name in ("base", "zh", "project"))
@@ -87,7 +107,8 @@ def main():
                              *((source, (17, 34)) for name, source in PANE if name is not None),
                              ("dat_bgs", (800, 600)), ("dat_bgl", (800, 600)), ("dat_no", (38, 340)),
                              ("dat_re", (56, 52)), ("dat_p01", (40, 68)), ("dat_p02", (40, 68)),
-                             ("DT1_0001", (255, 60)), ("DT1_0002", (255, 60))):
+                             ("DT1_0001", (255, 60)), ("DT1_0002", (255, 60)),
+                             ("BAR01", (468, 11)), ("BAR02", (336, 36)), ("BAR03", (336, 36))):
             Image.new("RGBA", size, "#ffffff").save(base / "grps" / (source + ".png"))
         layout = native_layouts(base)
         assert layout["confscrn"]["size"] == (518, 387)
@@ -145,7 +166,7 @@ def main():
                 assert not unsupported["layouts"] and "Unsupported EXE" in unsupported["unresolved"][0]
                 title_files = compile_overlays(original, [("zh", translated)], adapter="pre-codex")
                 for name, text in title_files.items():
-                    if Path(name).stem in {"0000", "0001", "0002"}:
+                    if Path(name).stem in {"0000", "0001", "0002", "1011"}:
                         destination = game / name
                         write_scenario(text, destination, original, force=True)
                 for number in (2, 3, 10, *range(11, 30)):
@@ -172,6 +193,14 @@ def main():
             subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), str(project), "cannonballtest",
                             "--savedir", str(directory / "saves")], check=True, timeout=60,
                            env=os.environ | {"RENPY_PATH_TO_SAVES": str(directory / "sdk-saves")})
+            if "--render" in sys.argv:
+                shutil.copyfile(ROOT / "tests/renpy_cannonball_click.rpy", game / "scr/click_render_test.rpy")
+                subprocess.run(["xvfb-run", "-a", str(Path(sys.argv[1]) / "renpy.sh"), str(project),
+                                "run", "--savedir", str(directory / "render-saves")],
+                               check=True, timeout=30, env=os.environ | {
+                                   "SDL_VIDEODRIVER": "x11", "SDL_AUDIODRIVER": "dummy",
+                                   "RENPY_SKIP_SPLASHSCREEN": "1", "RENPY_PERFORMANCE_TEST": "0",
+                                   "RENPY_PATH_TO_SAVES": str(directory / "render-sdk-saves")})
         if len(sys.argv) > 3:
             base, patch = map(Path, sys.argv[2:4])
             files = compile_overlays(base, [("zh", patch)], adapter="pre-codex")

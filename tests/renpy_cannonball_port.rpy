@@ -114,10 +114,73 @@ python early:
         command("numenable 1 0")
         process_draw_queue()
         assert not renpy.showing("rscript_number_1", layer=IMAGE_LAYER)
+        # Native BarNN fills use numset's bar offset, not the digit offset.
+        command("numload 0 0 1 0")
+        command("numreng 0 0 500 0 0")
+        command("numloc 0 150 64")
+        command("numset 0 0 0 16 1")
+        command("numenable 0 1")
+        command("num 0 250 0")
+        process_draw_queue()
+        bar = rscript_number_displayable(rscript_numbers[0]).children[0]
+        assert bar.crop == (0, 0, 234, 11), bar.crop
+        assert (bar.xpos, bar.ypos) == (16, 1)
+        # Clock units/range retention, timeout and early-selection remainder.
+        import time
+        old_clock = time.monotonic
+        clock = [10.0]
+        time.monotonic = lambda: clock[0]
+        try:
+            _r[1000] = 500
+            clock_args = RScriptArguments(Timer=1000, Timeout=1, Cancel=0)
+            countdown = rscript_click_countdown(clock_args)
+            assert rscript_numbers[0]["Maximum"] == 500
+            clock[0] = 10.371
+            assert rscript_click_remaining(countdown) == 463
+            rscript_click_tick(countdown)
+            assert rscript_numbers[0]["Value"] == 463
+            clock[0] = 15.001
+            assert rscript_click_remaining(countdown) == 0
+            clock[0] = 15.011
+            old_end = renpy.end_interaction
+            ended = []
+            try:
+                renpy.end_interaction = ended.append
+                rscript_click_tick(countdown)
+                assert ended == [0] and rscript_numbers[0]["Value"] == 0
+            finally:
+                renpy.end_interaction = old_end
+            assert rscript_click_countdown(RScriptArguments(Timer=0)) is None
+            _r[1000] = 100
+            rscript_click_countdown(RScriptArguments(Timer=1000, Timeout=0))
+            assert rscript_numbers[0]["Maximum"] == 100
+        finally:
+            time.monotonic = old_clock
+        # locmode 0 must reset even unloaded actors left centered by dialogue.
+        layer_anchor[12] = layer_anchor[30] = (.5, .5)
+        execute_locmode(RScriptArguments(Layer=0, Xmode=0, Ymode=0))
+        assert layer_anchor[12] == layer_anchor[30] == (0, 0)
+        # Moving a lower layer must not sink it behind every other picture.
+        layer_zorder[1] = 82
+        move_layer(1, 150, 84, 0, 0)
+        process_draw_queue()
+        assert dict(renpy.game.context().scene_lists.get_zorder_list(IMAGE_LAYER))["layer1"] == 82
+        layer_anchor[1] = (.5, .5)
+        renpy.show_screen("rscript_click_screen", options=[(7, False, "grpo 0002", "grpo 0002", absolute(150), absolute(84))], layers={0: 1})
+        click_screen = renpy.get_screen("rscript_click_screen")
+        click_screen.update()
+        buttons = []
+        click_screen.visit_all(lambda d: buttons.append(d) if isinstance(d, renpy.display.behavior.Button) else None)
+        assert buttons[0].style.xanchor == .5 and buttons[0].style.yanchor == .5
+        assert isinstance(buttons[0].style.xpos, absolute)
+        renpy.hide_screen("rscript_click_screen")
         for language, expected in ((None, "body"), ("zh", "译文")):
             _preferences.language = language
             text = rscript_prepare_text("^g001" + expected)
             assert text == expected and store.rscript_speaker == 1
+            parsed, centered = parse_rscript_text(repr("^m^g001" + expected), True)
+            assert centered and parsed == expected and store.rscript_speaker == 1
+            assert "rscript_g=" not in parsed
             renpy.show_screen("say", who=None, what=text)
             renpy.get_screen("say").update()
             widget = renpy.get_widget("say", "what")
@@ -125,6 +188,33 @@ python early:
             assert widget.style.size == 29
             renpy.hide_screen("say")
         if getattr(store, "rscript_test_native_title", False):
+            old_load, old_clear = store.loadcls, store.execute_gload
+            old_pause, old_play, old_stop = renpy.pause, renpy.music.play, renpy.music.stop
+            try:
+                store.loadcls = lambda *args, **kwargs: None
+                store.execute_gload = lambda *args: None
+                renpy.pause = lambda *args, **kwargs: False
+                renpy.music.play = renpy.music.stop = lambda *args, **kwargs: None
+                # The real 1011 loop must finish for shrinking, growing and mixed gauges.
+                for language in (None, "zh"):
+                    _preferences.language = language
+                    for old, target in (((130, 150, 180), (80, 140, 160)),
+                                        ((80, 140, 160), (130, 150, 180)),
+                                        ((130, 140, 160), (80, 150, 150))):
+                        _r[102] = 0
+                        for offset, value in enumerate(old):
+                            _r[1024 + offset] = value
+                        for offset, value in enumerate(target):
+                            _r[1021 + offset] = value
+                        renpy.call_in_new_context("_1011")
+                        actual = tuple(_r[1024 + i] for i in range(3))
+                        assert actual == target, (language, old, target, actual)
+                        assert all(_r[990 - i] == 0 for i in range(3))  # Native scratch cleanup ran.
+                print("OK: actual JP/ZH 1011 decrement/increment/mixed loops terminate")
+            finally:
+                store.loadcls, store.execute_gload = old_load, old_clear
+                renpy.pause, renpy.music.play, renpy.music.stop = old_pause, old_play, old_stop
+                _preferences.language = None
             pause, transition, play, call_screen = renpy.pause, renpy.with_statement, renpy.music.play, renpy.call_screen
             exception_handler = config.exception_handler
             def fail(traceback):

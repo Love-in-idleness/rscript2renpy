@@ -466,6 +466,9 @@ init python:
     def rscript_show_layer(name, at_list=None, **kwargs):
         transforms = list(at_list or [])
         if name.startswith("layer") and name[5:].isdigit():
+            number = int(name[5:])
+            # Moves/effects must retain native depth, not renpy.show's default 0.
+            kwargs.setdefault("zorder", store.layer_zorder.get(number, number * 2))
             visibility = (RScriptRasterVisibility if isinstance(kwargs.get("what"), renpy.display.image.ImageReference)
                           else renpy.curry(rscript_layer_visibility))
             transforms.append(Transform(function=visibility(int(name[5:]))))
