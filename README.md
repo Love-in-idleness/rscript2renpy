@@ -21,7 +21,7 @@ Forest、Khime 和试验性 Evermaiden 共用 `runtime/`、`port_template/`，�
 三个生成器统一调用公共 early/modern 编译器与工程装配流程；不迁移旧文件布局
 或 `persistent.forest_*` 设置。旧布局需重新生成到新工程目录。
 
-除通用鼠标光标、Forest Android 应用图标、Khime 和 Evermaiden 应用图标外，本项目不包含
+除通用鼠标光标、Forest Android 应用图标、Khime、Evermaiden 和 CannonBall 应用图标外，本项目不包含
 游戏剧本、图像、音频、视频或可执行文件。
 用户必须从自己合法持有的游戏副本中准备其余资源。
 
@@ -201,7 +201,7 @@ No new GitHub Releases or versioned release packages will be published.
 Runtime behavior depends on the source game's CodeX dialect, so each new game
 still requires verification.
 
-Apart from the shared mouse cursor and Forest, Khime and Evermaiden application
+Apart from the shared mouse cursor and Forest, Khime, Evermaiden and CannonBall application
 icons, this repository contains engine-side support only. It does not contain game
 scripts, other images, audio, movies, executables, or other proprietary game
 data.

@@ -17,6 +17,10 @@ python3 cannonball/build_cannonball_rscript.py \
 资源相对位置；解释器、配置与公共界面统一位于 `game/engine/`。
 同名图像优先使用 WebP，语言补丁优先于原版。原始 MPG 和普通 PCM WAV
 直接保留，不引入 FFmpeg。音效支持当前资源的 `wav/wav` 和扁平 `wav` 两种位置。
+仓库保存原图标 `assets/2.ico`，生成器复用公共 `install_icon`，统一派生
+Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标。原图为 64×64，
+高分辨率图标为缩放版本；版权说明见根目录 `THIRD_PARTY_NOTICES.md`。
+生成图标不代表各平台已完成打包或实机验证。
 启动时复用公共 `splashscreen`，依次播放 `mov/0002.mpg`、`mov/0001.mpg`；
 返回标题不重播。原程序启动消息分派在 `0x419E8B`、`0x419EAE` 分别选择
 0002、0001；这是静态依据，生成及运行均不依赖 EXE。

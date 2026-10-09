@@ -47,6 +47,14 @@ and derives the window, macOS, Android, iOS and web icons from that same image.
 These assets are not covered by MIT; all rights remain with the original
 copyright holder. Attribution does not establish redistribution permission.
 
+## CannonBall application icon
+
+`cannonball/assets/2.ico` is the original CannonBall application icon,
+supplied from `CannonBall/2.ico`. The generator copies the ICO unchanged
+and derives the window, macOS, Android, iOS and web icons from that same image.
+These assets are not covered by MIT; all rights remain with the original
+copyright holder. Attribution does not establish redistribution permission.
+
 ## Forest fonts
 
 `port_template/fonts/simhei.ttf` (SimHei Regular, version 5.04) is included to match

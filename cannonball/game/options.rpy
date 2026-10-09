@@ -1,4 +1,5 @@
 define config.name = "CannonBall"
+define config.window_icon = "icon.png"
 define config.save_directory = "CannonBall-rscript2renpy"
 define config.has_sound = True
 define config.has_music = True

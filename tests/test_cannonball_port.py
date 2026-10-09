@@ -160,6 +160,18 @@ def main():
             (base / name).write_bytes(b"unplayed fixture")
         build_cannonball(base, project, languages=["jp", "zh=" + str(patch)])
         game = project / "game"
+        icon_source = ROOT / "cannonball/assets/2.ico"
+        assert (project / "icon.ico").read_bytes() == icon_source.read_bytes()
+        with Image.open(icon_source) as original, Image.open(game / "icon.png") as window:
+            assert window.convert("RGBA").tobytes() == original.convert("RGBA").tobytes()
+        for name, size in (("icon.icns", (1024, 1024)), ("ios-icon.png", (1024, 1024)),
+                           ("web-icon.png", (512, 512)), ("android-icon_foreground.png", (432, 432)),
+                           ("android-icon_background.png", (432, 432))):
+            with Image.open(project / name) as image:
+                assert image.size == size, (name, image.size)
+        assert 'define config.window_icon = "icon.png"' in (game / "engine/options.rpy").read_text()
+        from build_port import install_icon
+        install_icon(icon_source, project)  # Identical inputs don't require --force.
         assert not (game / "backup").exists()
         assert (game / "grps/TBOX01B.png").is_file()
         assert (game / "wav/wav/0001.ogg").is_file()

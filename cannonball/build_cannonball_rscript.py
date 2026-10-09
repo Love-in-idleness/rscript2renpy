@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import assemble_port, validate_resources
+from build_port import assemble_port, validate_resources, install_icon
 from port_resources import parse_language_options
 from tsc_compiler import compile_overlays
 from ui_layout import extract_native_ui, native_layouts
@@ -56,6 +56,7 @@ def build_cannonball(resources, project, force=False, languages=(), exe=None):
         (overlay / "native_ui.rpy").write_text(
             'init 10 python:\n    rscript_ui["layouts"] = %r\n' % layouts, encoding="utf-8")
         assemble_port(prepared, project, scenes, overlay.parent, marker, patches, force=force)
+    install_icon(Path(__file__).parent / "assets/2.ico", project, force)
     print("Wrote %s: %d original scenes, %d language packages" %
           (project, len(list((resources / "scr").glob("*.tsc"))), len(patches)))
     return scenes
