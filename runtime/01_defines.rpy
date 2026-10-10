@@ -70,6 +70,9 @@ init:
     define rscript_click_timer_unit = 0.0
     define rscript_locmode_zero_all = False
     define rscript_mode_rebuild = False
+    define rscript_native_text_metrics = False
+    define rscript_line_spacing_default = 7
+    define rscript_font_slots = {}
     default rscript_click_values = {}
     default rscript_click_links = {}
     default rscript_click_previews = {}

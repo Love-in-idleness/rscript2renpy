@@ -52,8 +52,17 @@ python early:
                 prefix = self.style.prefix
                 self.style = self.rscript_style.copy()
                 self.style.font = font
+                slot_font = getattr(store, "rscript_font_slots", {}).get(box.get("font_slot"))
+                if slot_font and renpy.loadable(slot_font):
+                    self.style.font = slot_font
                 self.style.size = size
-                self.style.line_spacing = spacing
+                self.style.line_spacing = (spacing - getattr(store, "rscript_line_spacing_default", 7)
+                    if "pitch" in box and getattr(store, "rscript_native_text_metrics", False) else spacing)
+                if "alignment" in box and not self.rscript_style.text_align:
+                    self.style.text_align = box["alignment"]
+                    rect = box.get("text_rect")
+                    if rect and box["alignment"]:
+                        self.style.min_width = rect[2]
                 if "color" in box:
                     self.style.color = box["color"]
                 if prefix is not None:
@@ -113,6 +122,20 @@ python early:
 
     class RScriptTextSegment(_rscript_native_segment):
         rscript_native = _rscript_native_segment
+        def glyphs(self, s, layout, level=0):
+            glyphs = super(RScriptTextSegment, self).glyphs(s, layout, level)
+            text = _rscript_layout_stack[-1][1] if _rscript_layout_stack else None
+            if (isinstance(text, RScriptText) and text.rscript_kind == "say" and
+                    getattr(store, "rscript_native_text_metrics", False) and "pitch" in rscript_textbox_state()):
+                line, char = rscript_textbox_state()["pitch"]
+                scale = persistent.rscript_text_size / float(store.rscript_base_text_size)
+                for glyph in glyphs:
+                    if glyph.ruby < 2:
+                        # 457062/457086: advance + char pitch; size + line pitch.
+                        glyph.advance += layout.scale(char * scale)
+                        glyph.line_spacing = max(1, math.ceil(self.size + layout.scale(line * scale)))
+            return glyphs
+
         def take_style(self, style, layout, context=None):
             # Native hyperlink_text inherits the default font, not the
             # surrounding text. Wiki links must only add link presentation;
@@ -137,6 +160,9 @@ python early:
                     box = rscript_textbox_state()
                     if "ruby" in box:
                         scale = box["ruby"][1] / float(box.get("size", getattr(store, "rscript_base_text_size", 22)))
+                        slot_font = getattr(store, "rscript_font_slots", {}).get(box["ruby"][0])
+                        if slot_font and renpy.loadable(slot_font):
+                            self.font = slot_font
                 self.size = max(layout.scale(1), self.size * scale)
                 self.kerning *= scale
                 self.color = color

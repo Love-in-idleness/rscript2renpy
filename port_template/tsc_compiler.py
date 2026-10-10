@@ -127,9 +127,12 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         op, values = item.opcode, item.operands
         operands = [packed(value, word16=legacy) if kind == E else str(value)
                     for kind, value in zip(item.kinds, values)]
-        if modern and op in {55, 97, 98, 107, 108}:
-            lines.append("    # CodeX %s %s: shared runtime uses adapter defaults; native layout/style state is not implemented." %
-                         (commands.get(op, str(op)), " ".join(operands)))
+        if modern and op == 55:
+            lines.append("    # CodeX makesave: native in-memory execution snapshot is not implemented; Ren'Py saves its current state.")
+        if modern and op == 108:
+            lines.append("    # CodeX texruby %s: font slot/size retained; native offset uses the shared interline ruby placement." % " ".join(operands))
+        if modern and op == 97 and values[1] != 2:
+            lines.append("    # CodeX texfont slot %s needs a port font-slot mapping; unmapped slots use the player font." % operands[1])
         if modern and op == 38 and values[3]:
             lines.append("    # CodeX locmode Mode %s ignored; only the X/Y origin is implemented." % operands[3])
         if modern and op == 213:

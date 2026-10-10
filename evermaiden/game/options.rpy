@@ -29,6 +29,10 @@ init -100 python:
     rscript_folder_zero_all = True
     rscript_click_grid = True
     rscript_mode_rebuild = True
+    rscript_native_text_metrics = True
+    rscript_line_spacing_default = -7
+    # 433e22 appends the configured player font after the two fixed slots.
+    rscript_font_slots = {2: None}
     rscript_bgm_format = "bgm/Track%02d.ogg"
     rscript_se_format = "wav/%04d.ogg"
     rscript_ctc_x = 1080

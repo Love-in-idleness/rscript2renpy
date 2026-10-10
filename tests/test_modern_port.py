@@ -81,6 +81,16 @@ def main():
         jump_source.write_text(header + '*locmap 0 0 0 0 1\n*jump 1 "REP"\n')
         lowered = compile_scene(jump_source, adapter='modern')
         assert '_jump 1%REP' in lowered and '_locmap 0 0 0 0 1' in lowered
+        layout_source = directory / '0500.tsc'
+        layout_source.write_text(header + '*mode 0 1\n*texfont 0 2\n*texmode 0 0\n'
+            '*texpich 0 11 0\n*numenable 0 0\n*texruby 0 0 13 9\n*makesave\n')
+        layout_lowered = compile_scene(layout_source, adapter='modern')
+        for instruction in ('_mode 0 1', '_texfont 0 2', '_texmode 0 0',
+                            '_texpich 0 11 0', '_numenable 0 0'):
+            assert instruction in layout_lowered
+        assert 'adapter defaults' not in layout_lowered
+        assert 'in-memory execution snapshot is not implemented' in layout_lowered
+        assert 'native offset uses the shared interline ruby placement' in layout_lowered
         (patch / 'scr/0000.tsc').write_text(header + '*wait 2\n' + source.replace('Question', '问题'), encoding='utf-8')
         (patch / 'scr/5000.tsc').write_text(header + '*end\n')
         pcm = base / 'wav/0033.wav'

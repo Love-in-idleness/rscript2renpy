@@ -68,6 +68,50 @@ python early:
         command(parse_texcolor, execute_texcolor, "0 1")
         styled.refresh_settings()
         assert styled.style.size == 32 and styled.rscript_settings != signature
+        command(parse_texpich, execute_texpich, "0 11 0")
+        pitched = RScriptText("漢字^n漢字^n漢字".replace("^n", "\n"))
+        pitched.refresh_settings()
+        pitch_layout = renpy.text.text.Layout(pitched, 1280, 720, {}, size_only=True, drawable_res=False)
+        baseline = sorted({g.y for p in pitch_layout.paragraph_glyphs for g in p})
+        assert [baseline[i + 1] - baseline[i] for i in range(2)] == [43, 43], baseline
+        command(parse_texpich, execute_texpich, "0 11 3")
+        pitched.refresh_settings()
+        char_layout = renpy.text.text.Layout(pitched, 1280, 720, {}, size_only=True, drawable_res=False)
+        assert char_layout.paragraph_glyphs[0][0].advance == pitch_layout.paragraph_glyphs[0][0].advance + 3
+        persistent.rscript_text_size = 64
+        pitched.refresh_settings()
+        scaled = renpy.text.text.Layout(pitched, 1280, 720, {}, size_only=True, drawable_res=False)
+        baseline = sorted({g.y for p in scaled.paragraph_glyphs for g in p})
+        assert baseline[1] - baseline[0] == 86, baseline
+        persistent.rscript_text_size = 32
+        command(parse_texpich, execute_texpich, "0 11 0")
+        command(parse_texmode, execute_texmode, "0 1")
+        pitched.refresh_settings()
+        assert pitched.style.text_align == .5 and pitched.style.min_width == 898
+        command(parse_texmode, execute_texmode, "0 2")
+        pitched.refresh_settings()
+        assert pitched.style.text_align == 1.0
+        centered = RScriptText("^m居中", text_align=.5)
+        centered.refresh_settings()
+        assert centered.style.text_align == .5
+        command(parse_texmode, execute_texmode, "0 0")
+        command(parse_texfont, execute_texfont, "0 2")
+        pitched.refresh_settings()
+        assert pitched.style.font == rscript_current_font()
+        store.rscript_font_slots[5] = "fonts/NotoSerifCJK-Regular.ttc"
+        command(parse_texfont, execute_texfont, "0 5")
+        pitched.refresh_settings()
+        assert pitched.style.font == store.rscript_font_slots[5]
+        command(parse_texruby, execute_texruby, "0 5 13 9")
+        annotated = RScriptText("{rb}漢字{/rb}{rt}かんじ{/rt}")
+        annotated.refresh_settings()
+        annotation = renpy.text.text.Layout(annotated, 1280, 720, {}, size_only=True, drawable_res=False)
+        assert next(segment for p in annotation.paragraphs for segment, _ in p if segment.ruby_top).font == store.rscript_font_slots[5]
+        command(parse_texruby, execute_texruby, "0 0 13 9")
+        del store.rscript_font_slots[5]
+        command(parse_texfont, execute_texfont, "0 2")
+        command(parse_texpich, execute_texpich, "2 11 0")
+        assert all(rscript_textboxes[i]["pitch"] == (11, 0) for i in (1, 2, 3))
         renpy.show_screen("say", who="Alice", what=sample)
         renpy.get_screen("say").update()
         assert renpy.get_widget("say", "window").style.ypos == 503

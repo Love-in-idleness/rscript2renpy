@@ -10,6 +10,12 @@ python early:
         state.update(values)
         store.rscript_textboxes[box] = state
 
+    def rscript_set_text_style(box, **values):
+        # 42a410/42a460/42aad0: nonzero selects all three auxiliary boxes.
+        boxes = (1, 2, 3) if box and getattr(store, "rscript_native_text_metrics", False) else (box,)
+        for selected in boxes:
+            rscript_set_textbox(selected, **values)
+
     def rscript_wait_transform(trans, st, at):
         state = rscript_textbox_state()
         pos = state.get("wait_pos")
@@ -303,17 +309,17 @@ python early:
         colors = ("#000000", "#FFFFFF", "#79F1F2", "#B73333", "#FFDE00",
                   "#F8B1EF", "#7FDFA5", "#C187F6", "#FAA25A")
         color = colors[args.Color] if 0 <= args.Color < len(colors) else colors[0]
-        rscript_set_textbox(args.Box, color=color)
+        rscript_set_text_style(args.Box, color=color)
 
     renpy.register_statement("_texcolor", parse = parse_texcolor, execute = execute_texcolor, lint = lint_undef)
 
 
 
     def parse_texfont(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "Slot"])
 
-    def execute_texfont(o):
-        pass
+    def execute_texfont(args):
+        rscript_set_text_style(args.Box, font_slot=args.Slot)
 
     renpy.register_statement("_texfont", parse = parse_texfont, execute = execute_texfont, lint = lint_undef)
 
@@ -330,31 +336,32 @@ python early:
 
 
     def parse_texmode(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "Mode"])
 
-    def execute_texmode(o):
-        pass
+    def execute_texmode(args):
+        # 456c5a/456ce9: 1 centers, 2 right-aligns; other values left-align.
+        rscript_set_text_style(args.Box, alignment={1: 0.5, 2: 1.0}.get(args.Mode, 0.0))
 
     renpy.register_statement("_texmode", parse = parse_texmode, execute = execute_texmode, lint = lint_undef)
 
 
 
     def parse_texpich(lex):
-        return (lex.rest(),)
+        return rscript_arguments(lex, ["Box", "LinePitch", "CharPitch"])
 
-    def execute_texpich(o):
-        pass
+    def execute_texpich(args):
+        rscript_set_text_style(args.Box, pitch=(args.LinePitch, args.CharPitch))
 
     renpy.register_statement("_texpich", parse = parse_texpich, execute = execute_texpich, lint = lint_undef)
 
 
 
     def parse_texruby(lex):
-        return rscript_arguments(lex, ["Box", "Mode", "Size", "Offset"])
+        return rscript_arguments(lex, ["Box", "FontSlot", "Size", "Offset"])
 
     def execute_texruby(args):
-        # Retain mode/offset for the remaining native placement variants.
-        rscript_set_textbox(args.Box, ruby=(args.Mode, args.Size, args.Offset))
+        # 46ad7e/46a1e8: the first ruby operand selects a font, not alignment.
+        rscript_set_text_style(args.Box, ruby=(args.FontSlot, args.Size, args.Offset))
 
     renpy.register_statement("_texruby", parse = parse_texruby, execute = execute_texruby, lint = lint_undef)
 
@@ -364,7 +371,7 @@ python early:
         return rscript_arguments(lex, ["Box", "Size"])
 
     def execute_texsize(args):
-        rscript_set_textbox(args.Box, size=max(1, args.Size))
+        rscript_set_text_style(args.Box, size=max(1, args.Size))
 
     renpy.register_statement("_texsize", parse = parse_texsize, execute = execute_texsize, lint = lint_undef)
 
