@@ -129,8 +129,6 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
                     for kind, value in zip(item.kinds, values)]
         if modern and op == 55:
             lines.append("    # CodeX makesave: native in-memory execution snapshot is not implemented; Ren'Py saves its current state.")
-        if modern and op == 108:
-            lines.append("    # CodeX texruby %s: font slot/size retained; native offset uses the shared interline ruby placement." % " ".join(operands))
         if modern and op == 97 and values[1] != 2:
             lines.append("    # CodeX texfont slot %s needs a port font-slot mapping; unmapped slots use the player font." % operands[1])
         if modern and op == 38 and values[3]:

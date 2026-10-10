@@ -107,6 +107,35 @@ python early:
         annotated.refresh_settings()
         annotation = renpy.text.text.Layout(annotated, 1280, 720, {}, size_only=True, drawable_res=False)
         assert next(segment for p in annotation.paragraphs for segment, _ in p if segment.ruby_top).font == store.rscript_font_slots[5]
+        def ruby_layout(value):
+            text = RScriptText(value)
+            text.refresh_settings()
+            return text, renpy.text.text.Layout(text, 1280, 720, {}, size_only=True, drawable_res=False)
+        text, layout = ruby_layout("{rb}漢字{/rb}{rt}あい{/rt}")
+        glyphs = layout.paragraph_glyphs[0]
+        base = [g for g in glyphs if g.ruby == 1]
+        reading = [g for g in glyphs if g.ruby == 2]
+        original_positions = [(g.x, g.y) for g in base]
+        assert all(g.y == round(base[0].y - base[0].ascent + g.ascent - 9) for g in reading)
+        command(parse_texruby, execute_texruby, "0 5 13 4")
+        _, moved = ruby_layout("{rb}漢字{/rb}{rt}あい{/rt}")
+        assert [g.y for g in moved.paragraph_glyphs[0] if g.ruby == 2] == [g.y + 5 for g in reading]
+        assert [(g.x, g.y) for g in moved.paragraph_glyphs[0] if g.ruby == 1] == original_positions
+        persistent.rscript_say_line_chars = 2
+        command(parse_texruby, execute_texruby, "0 5 13 9")
+        _, multiline = ruby_layout("{rb}漢字漢字{/rb}{rt}あいうえ{/rt}")
+        glyphs = multiline.paragraph_glyphs[0]
+        base = [g for g in glyphs if g.ruby == 1]
+        reading = [g for g in glyphs if g.ruby == 2]
+        assert base[0].y == base[1].y < base[2].y == base[3].y
+        assert reading[0].y == reading[1].y < reading[2].y == reading[3].y
+        persistent.rscript_text_size = 64
+        _, doubled = ruby_layout("{rb}漢字漢字{/rb}{rt}あいうえ{/rt}")
+        larger = doubled.paragraph_glyphs[0]
+        assert all(g.y == round(larger[0].y - larger[0].ascent + g.ascent - 18)
+                   for g in larger if g.ruby == 2 and g.y == min(t.y for t in larger if t.ruby == 2))
+        persistent.rscript_text_size = 32
+        persistent.rscript_say_line_chars = 28
         command(parse_texruby, execute_texruby, "0 0 13 9")
         del store.rscript_font_slots[5]
         command(parse_texfont, execute_texfont, "0 2")

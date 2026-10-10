@@ -90,7 +90,8 @@ def main():
             assert instruction in layout_lowered
         assert 'adapter defaults' not in layout_lowered
         assert 'in-memory execution snapshot is not implemented' in layout_lowered
-        assert 'native offset uses the shared interline ruby placement' in layout_lowered
+        assert '_texruby 0 0 13 9' in layout_lowered
+        assert 'native offset uses the shared interline ruby placement' not in layout_lowered
         (patch / 'scr/0000.tsc').write_text(header + '*wait 2\n' + source.replace('Question', '问题'), encoding='utf-8')
         (patch / 'scr/5000.tsc').write_text(header + '*end\n')
         pcm = base / 'wav/0033.wav'
@@ -173,6 +174,18 @@ def main():
                                env=os.environ | {'SDL_AUDIODRIVER': 'dummy',
                                                  'RENPY_PATH_TO_SAVES': str(directory / 'gallery-sdk-saves')})
             if '--render' in sys.argv:
+                shutil.copyfile(ROOT / 'tests/renpy_modern_ruby.rpy', game / 'scr/0000.rpy')
+                (game / 'scr/0000.rpyc').unlink(missing_ok=True)
+                result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),
+                                         str(project), 'run', '--savedir', str(directory / 'ruby-saves')],
+                                        check=True, timeout=45, capture_output=True, text=True,
+                                        env=os.environ | {
+                                            'SDL_VIDEODRIVER': 'x11', 'SDL_AUDIODRIVER': 'dummy',
+                                            'RENPY_RENDERER': 'gl2', 'RENPY_SKIP_SPLASHSCREEN': '1',
+                                            'RENPY_SKIP_MAIN_MENU': '1', 'RENPY_PERFORMANCE_TEST': '0',
+                                            'RENPY_PATH_TO_SAVES': str(directory / 'ruby-sdk-saves')})
+                assert 'OK: native modern ruby drawable layout' in result.stdout, result.stdout + result.stderr
+                print('OK: native modern ruby drawable layout and clipping headroom')
                 shutil.copyfile(ROOT / 'tests/renpy_boot_movies.rpy', game / 'scr/0000.rpy')
                 (game / 'scr/0000.rpyc').unlink(missing_ok=True)
                 result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),

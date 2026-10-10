@@ -2,6 +2,7 @@ default persistent.rscript_say_line_chars = 19
 default persistent.rscript_oload_line_chars = 20
 
 python early:
+    import builtins
     import math
     from engine import rscript_wrap
 
@@ -15,7 +16,24 @@ python early:
         renpy.text.text.textsupport.linebreak_nobreak)
     _rscript_native_segment = getattr(renpy.text.text.TextSegment,
                                      "rscript_native", renpy.text.text.TextSegment)
+    _rscript_native_ruby = getattr(renpy.text.text.textsupport.place_ruby,
+                                  "rscript_native", renpy.text.text.textsupport.place_ruby)
     _rscript_layout_stack = []
+
+    def rscript_native_ruby_enabled(text):
+        return (isinstance(text, RScriptText) and text.rscript_kind == "say" and
+                getattr(store, "rscript_native_text_metrics", False) and
+                "ruby" in rscript_textbox_state())
+
+    def rscript_place_ruby(glyphs, ruby_offset, altruby_offset, width, height):
+        _rscript_native_ruby(glyphs, ruby_offset, altruby_offset, width, height)
+        if _rscript_layout_stack:
+            layout, text = _rscript_layout_stack[-1]
+            if rscript_native_ruby_enabled(text):
+                box = rscript_textbox_state()
+                scale = persistent.rscript_text_size / float(store.rscript_base_text_size)
+                rscript_wrap.place_native_ruby(glyphs, layout.scale(box["ruby"][2] * scale),
+                    layout.rscript_ruby_advances)
 
     def rscript_text_settings(kind, base_size):
         return (gui.text_font, base_size,
@@ -82,9 +100,10 @@ python early:
         rscript_native = _rscript_native_layout
         def __init__(self, text, width, height, renders, size_only=False,
                      splits_from=None, drawable_res=True):
+            self.rscript_ruby_advances = {}
             _rscript_layout_stack.append((self, text))
             try:
-                if (isinstance(text, RScriptText) and splits_from is None and
+                if (isinstance(text, RScriptText) and not rscript_native_ruby_enabled(text) and splits_from is None and
                         any(kind == renpy.TEXT_TAG and value == "rt"
                             for kind, value in text.tokens)):
                     # Measure with the native shaper first. Resolved anonymous
@@ -117,6 +136,10 @@ python early:
                         text.style = new_style
                 super(RScriptLayout, self).__init__(text, width, height, renders,
                     size_only=size_only, splits_from=splits_from, drawable_res=drawable_res)
+                if size_only and self.has_ruby and rscript_native_ruby_enabled(text):
+                    rscript_place_ruby(builtins.list(g for p in self.paragraph_glyphs for g in p),
+                        self.scale_int(text.style.ruby_style.yoffset),
+                        self.scale_int(text.style.altruby_style.yoffset), *self.size)
             finally:
                 _rscript_layout_stack.pop()
 
@@ -125,6 +148,10 @@ python early:
         def glyphs(self, s, layout, level=0):
             glyphs = super(RScriptTextSegment, self).glyphs(s, layout, level)
             text = _rscript_layout_stack[-1][1] if _rscript_layout_stack else None
+            if text is not None and rscript_native_ruby_enabled(text):
+                # The SDK replaces end-of-line advances with Glyph.width.
+                # Retain the shaped cell advance before that and char pitch.
+                layout.rscript_ruby_advances.update((id(g), g.advance) for g in glyphs if g.ruby == 1)
             if (isinstance(text, RScriptText) and text.rscript_kind == "say" and
                     getattr(store, "rscript_native_text_metrics", False) and "pitch" in rscript_textbox_state()):
                 line, char = rscript_textbox_state()["pitch"]
@@ -183,13 +210,16 @@ python early:
             rect = rscript_textbox_state().get("text_rect")
             if rect and rect[2] > 0:
                 limit = min(limit, layout.scale(rect[2]))
-        for index in rscript_wrap.glyph_breaks(glyphs, limit):
+        for index in rscript_wrap.glyph_breaks(glyphs, limit,
+                ruby_atomic=not rscript_native_ruby_enabled(text)):
             glyphs[index].split = 1
 
     renpy.text.text.Layout = RScriptLayout
     renpy.text.text.TextSegment = RScriptTextSegment
     rscript_linebreak.rscript_native = _rscript_native_nobreak
     renpy.text.text.textsupport.linebreak_nobreak = rscript_linebreak
+    rscript_place_ruby.rscript_native = _rscript_native_ruby
+    renpy.text.text.textsupport.place_ruby = rscript_place_ruby
     renpy.register_sl_displayable("rscript_text", RScriptText, "text",
                                   scope=True, replaces=True) \
         .add_property("kind") \

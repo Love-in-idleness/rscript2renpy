@@ -6,7 +6,7 @@ from itertools import product
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "runtime"))
-from rscript_wrap import NO_LINE_START, NO_LINE_END, glyph_breaks, normalize_boundaries
+from rscript_wrap import NO_LINE_START, NO_LINE_END, glyph_breaks, normalize_boundaries, place_native_ruby
 
 
 def wrap(text, limit, advances=None):
@@ -47,6 +47,25 @@ def main():
     assert glyph_breaks(ruby, 3) == [6]  # Reading adds no inline width.
     assert glyph_breaks(ruby, 2) == [6]  # Starts inside edge: whole base hangs.
     assert glyph_breaks(ruby, 1) == [1, 6]  # Never split/orphan the annotation.
+    assert glyph_breaks(ruby, 1, ruby_atomic=False) == [1, 2, 6]
+    def glyph(ruby, x, y, width, ascent=10):
+        return SimpleNamespace(ruby=ruby, x=x, y=y, advance=width, ascent=ascent)
+    base = [glyph(1, 0, 10, 10), glyph(1, 10, 10, 10)]
+    short = [glyph(2, 0, 0, 2, 4), glyph(2, 0, 0, 2, 4)]
+    place_native_ruby(base + short, 9)
+    assert [(g.x, g.y) for g in short] == [(4, -5), (14, -5)]
+    long = [glyph(2, 0, 0, 8, 4) for _ in range(3)]
+    place_native_ruby(base + long, 9)
+    assert [g.x for g in long] == [-2, 6, 14]
+    # Ceil allocation is recursive: 2/5 to row one, then 2/3 to row two.
+    base = [glyph(1, 0, 10, 10), glyph(1, 10, 10, 10),
+            glyph(1, 0, 30, 10), glyph(1, 10, 30, 10), glyph(1, 0, 50, 10)]
+    reading = [glyph(2, 0, 0, 2, 4) for _ in range(4)]
+    place_native_ruby(base + reading, 9)
+    assert [g.y for g in reading] == [-5, -5, 15, 15]
+    assert [g.y for g in base] == [10, 10, 30, 30, 50]
+    place_native_ruby([], 9)
+    place_native_ruby([glyph(0, 0, 0, 0), glyph(2, 0, 0, 0)], 9)
     # Exhaustively check forward progress and preservation, including zero width.
     for length in range(1, 6):
         for chars in product("甲（。“\u200b", repeat=length):

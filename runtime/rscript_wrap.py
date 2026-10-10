@@ -11,7 +11,7 @@ NO_LINE_END = frozenset(
 )
 
 
-def glyph_breaks(glyphs, limit):
+def glyph_breaks(glyphs, limit, ruby_atomic=True):
     """Return indices of line starts. Never mutate advances or discard glyphs."""
     units = []
     index = 0
@@ -20,7 +20,7 @@ def glyph_breaks(glyphs, limit):
         start = index
         advance = first.advance
         index += 1
-        if getattr(first, "ruby", 0) == 1:
+        if getattr(first, "ruby", 0) == 1 and ruby_atomic:
             # Native ruby flags: 1 = base, 2/3 = annotation above it.
             # Keep the pair indivisible; annotation does not advance the pen.
             while index < len(glyphs) and getattr(glyphs[index], "ruby", 0) == 1:
@@ -70,6 +70,48 @@ def glyph_breaks(glyphs, limit):
         width = advance
         hanging = False
     return [units[index][0] for index in starts]
+
+
+def place_native_ruby(glyphs, offset, advances=None):
+    """46afa0: distribute short readings; centre long ones; split by body rows.
+
+    Glyph.y is a baseline, whereas CodeX positions glyph cells. Ascent converts
+    between them; widths are final advances, never ink bounding boxes.
+    """
+    advances = advances or {}
+    index = 0
+    while index < len(glyphs):
+        before = index
+        body, reading = [], []
+        while index < len(glyphs) and glyphs[index].ruby == 1:
+            body.append(glyphs[index])
+            index += 1
+        while index < len(glyphs) and glyphs[index].ruby == 2:
+            reading.append(glyphs[index])
+            index += 1
+        if not body or not reading:
+            if index == before:
+                index += 1
+            continue
+        start = 0
+        while start < len(body):
+            end = start + 1
+            while end < len(body) and body[end].y == body[start].y:
+                end += 1
+            # Native recursion rounds up the current row's proportional share.
+            count = (len(reading) * (end - start) + len(body) - start - 1) // (len(body) - start)
+            row, reading = reading[:count], reading[count:]
+            if row:
+                first, last = body[start], body[end - 1]
+                span = last.x + advances.get(id(last), last.advance) - first.x
+                width = sum(g.advance for g in row)
+                cell = span // len(row)
+                x = first.x - (width - span) // 2 if width > span else first.x + cell // 2
+                for glyph in row:
+                    glyph.x = int(x if width > span else x - glyph.advance // 2)
+                    glyph.y = round(first.y - first.ascent + glyph.ascent - offset)
+                    x += glyph.advance if width > span else cell
+            start = end
 
 
 def normalize_boundaries(tokens, text_type, paragraph_type, displayable_type):
