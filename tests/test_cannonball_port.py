@@ -28,14 +28,20 @@ def main():
         "tl/zh/scr/6101.rpy": "    _say '^g033宰了弗克斯巴特。^g这次定要宰了她。'\n",
         "scr/6101.rpy": "    _say '^g033フォックスバットを、殺そう。^n今度こそ、殺そう。'\n",
         "scr/0000.rpy": "    _say '^g63150種類くらいかなあ？'\n",
+        "tl/zh/scr/2108.rpy": "    _oload 44 171 95 0 0 '１１３０'\n    _oload 42 171 95 0 0 '１１３０'\n",
+        "scr/2108.rpy": "    _oload 44 171 95 0 0 '１１３０'\n",
     }
     corrected = originals.copy()
     correct_text_controls(corrected)
-    assert corrected["scr/2402.rpy"] == originals["scr/2402.rpy"]
+    assert "_say '^g063^cw150種類くらいかなあ？'" in corrected["scr/2402.rpy"]
+    assert "_say '^g063^cw40個くらいかなあ？'" in corrected["scr/2402.rpy"]
     assert corrected["tl/zh/scr/2402.rpy"] == originals["tl/zh/scr/2402.rpy"]
     assert "_say '^g033宰了弗克斯巴特。^n这次定要宰了她。'" in corrected["tl/zh/scr/6101.rpy"]
     assert corrected["scr/6101.rpy"] == originals["scr/6101.rpy"]
     assert corrected["scr/0000.rpy"] == originals["scr/0000.rpy"]
+    assert "    _oload 44 171 95 0 0 '１１３０（正确）'\n" in corrected["tl/zh/scr/2108.rpy"]
+    assert "    _oload 42 171 95 0 0 '１１３０'\n" in corrected["tl/zh/scr/2108.rpy"]
+    assert corrected["scr/2108.rpy"] == originals["scr/2108.rpy"]
     assert all(flatten_unsupported_text_controls(text) == text for text in corrected.values())
     again = corrected.copy()
     correct_text_controls(again)

@@ -86,8 +86,9 @@ def main():
         assert prepare("^g" + spelling + "正文") == "正文"
         assert store.rscript_speaker == number
         assert namespace["rscript_inline_graphics"]("^g" + spelling + "尾") == "{rscript_g=%03d:22}尾" % number
-    parsed, _ = parse(repr("^g39^cw150"), True)
-    assert store.rscript_speaker == 39 and "150" in parsed
+    for number, body in (("39", "150"), ("063", "150"), ("063", "40")):
+        parsed, _ = parse(repr("^g" + number + "^cw" + body), True)
+        assert store.rscript_speaker == int(number) and body in parsed
     namespace.update(rscript_inline_base_size=22, rscript_ui={},
                      rscript_text_image_path=lambda name: "grps/" + name + ".png",
                      Transform=lambda path, **kwargs: (path, kwargs))

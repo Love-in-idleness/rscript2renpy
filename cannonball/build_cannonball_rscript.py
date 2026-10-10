@@ -15,8 +15,10 @@ from ui_layout import extract_native_ui, native_layouts
 
 
 def correct_text_controls(scenes):
-    # Correct only confirmed translation typos, not numeric ^g arguments.
+    # Exact source errors only; numeric body text needs a delimiter after ^g.
     corrections = (
+        ("scr/2402.rpy", "^g63150種類くらいかなあ？", "^g063^cw150種類くらいかなあ？"),
+        ("scr/2402.rpy", "^g6340個くらいかなあ？", "^g063^cw40個くらいかなあ？"),
         ("tl/zh/scr/6101.rpy", "^g033宰了弗克斯巴特。^g这次定要宰了她。",
          "^g033宰了弗克斯巴特。^n这次定要宰了她。"),
     )
@@ -26,6 +28,12 @@ def correct_text_controls(scenes):
             new = ("    # CannonBall source typo corrected: %s -> %s\n" %
                    (before, after)) + "    _say %r\n" % after
             scenes[filename] = scenes[filename].replace(old, new)
+    filename = "tl/zh/scr/2108.rpy"
+    if filename in scenes:
+        old = "    _oload 44 171 95 0 0 '１１３０'\n"
+        new = ("    # CannonBall zh patch: mark the correct 1130 choice.\n"
+               "    _oload 44 171 95 0 0 '１１３０（正确）'\n")
+        scenes[filename] = scenes[filename].replace(old, new, 1)
 
 
 def build_cannonball(resources, project, force=False, languages=(), exe=None):
