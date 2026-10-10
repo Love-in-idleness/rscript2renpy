@@ -1,7 +1,5 @@
 # Bridge RScript permissions to native saves, autosaves and keyboard rollback.
 init python:
-    rscript_native_save_enabled = config.save
-
     def rscript_permission(kind):
         if not bool(getattr(store, kind + "_enabled")) or rscript_touch_locked():
             return False
@@ -15,6 +13,10 @@ init python:
                     return False
         return True
 
+    class FileSave(FileSave):
+        def get_sensitive(self):
+            return rscript_permission("save") and super().get_sensitive()
+
     def rscript_sync_permissions():
         if renpy.predicting():
             return
@@ -24,6 +26,6 @@ init python:
             renpy.block_rollback()
         store._rollback = rollback
         store._autosave = rscript_permission("save")
-        config.save = rscript_native_save_enabled and store._autosave
+        # config.save also gates loading: restrict writes, not the save backend.
 
     config.interact_callbacks.append(rscript_sync_permissions)

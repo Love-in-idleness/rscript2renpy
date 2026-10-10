@@ -166,6 +166,7 @@ def main():
                 for driver, marker in (("renpy_rev_controls", "OK: native menu updates rev target"),
                                        ("renpy_effects", "OK: native object effects"),
                                        ("renpy_registers", "OK: native bounded register reset"),
+                                       ("renpy_save_permissions", "OK: native title and in-game loads preserve save permissions"),
                                        ("renpy_end", "OK: native end discards nested story calls"),
                                        ("renpy_boot_movies", "OK: native startup movies play in order only on launch")):
                     shutil.copy2(ROOT / "tests" / (driver + ".rpy"),

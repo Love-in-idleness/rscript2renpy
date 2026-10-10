@@ -75,7 +75,7 @@ python early:
         renpy.show("layer80", what=Solid("#ffffff"), layer=IMAGE_LAYER)
         layer_info[80] = "grpo_r1 0001"
         rscript_sync_permissions()
-        assert not config.save and not store._autosave and not store._rollback
+        assert config.save and not store._autosave and not store._rollback
         assert not FileSave(1).get_sensitive()
         assert isinstance(rscript_ui_action(("rollback",)), NullAction)
         assert isinstance(rscript_ui_action(("quick_save",)), NullAction)
@@ -87,7 +87,8 @@ python early:
         layer_info.pop(80)
         store.save_enabled = store.roll_enabled = 0
         rscript_sync_permissions()
-        assert not config.save and not store._autosave and not store._rollback
+        assert config.save and not store._autosave and not store._rollback
+        assert not FileSave(1).get_sensitive()
         assert isinstance(rscript_system_action(1), NullAction)
         assert isinstance(rscript_system_action(2), ShowMenu)
         store.save_enabled = store.roll_enabled = 1

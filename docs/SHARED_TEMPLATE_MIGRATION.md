@@ -94,6 +94,9 @@ CannonBall 的硬编码菜单与控制条按 EXE 静态证据接入，可选只�
 
 公共 `permissions.rpy` 将 `sysmode` 的 save/roll 标志同步到 Ren'Py 原生
 存档、自动存档和回退许可，菜单/点击键也使用同一权限入口。
+手动存档在原生 `FileSave` 动作上检查权限，自动存档使用 `_autosave`；不动态
+关闭 `config.save`，因为 Ren'Py 同时用它禁止读档访问。标题页只禁止右键菜单，
+其脚本中的显式读档按钮仍能读取已有存档；工程自身配置的 `config.save` 不被覆盖。
 覆盖层可指定 `restricted_image_folders`，这些目录的对象实际显示期间额外禁止
 存档与回退；只配置 CannonBall 的赛车资源，其他游戏不添加该限制。
 进入/离开回退锁定段时设回退边界，不允许结束后滚回赛车段；读档仍受原生存档规则管理。
