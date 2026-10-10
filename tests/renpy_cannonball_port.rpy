@@ -274,6 +274,7 @@ python early:
         if getattr(store, "rscript_test_native_title", False):
             old_load, old_clear = store.loadcls, store.execute_gload
             old_pause, old_play, old_stop = renpy.pause, renpy.music.play, renpy.music.stop
+            old_loadable = renpy.loadable
             try:
                 store.loadcls = lambda *args, **kwargs: None
                 store.execute_gload = lambda *args: None
@@ -295,9 +296,28 @@ python early:
                         assert actual == target, (language, old, target, actual)
                         assert all(_r[990 - i] == 0 for i in range(3))  # Native scratch cleanup ran.
                 print("OK: actual JP/ZH 1011 decrement/increment/mixed loops terminate")
+                played = []
+                renpy.music.play = lambda file, **kwargs: played.append((file, kwargs))
+                renpy.loadable = lambda file: file.startswith("voice/") or old_loadable(file)
+                for language in (None, "zh"):
+                    _preferences.language = language
+                    for character in (1, 20, 24):
+                        _r[6050] = character
+                        renpy.call_in_new_context("_9040")
+                        for kind in (1, 2, 3):
+                            for count in range(2, 8):
+                                _r[6100] = (610 + kind) * 10
+                                _r[6020 + kind] = count - 1
+                                expected = rscript_audio_file("voice", _r[6201 + (kind - 1) * 6 + count - 2])
+                                before = len(played)
+                                renpy.call_in_new_context("_9020")
+                                assert len(played) == before + 1
+                                assert played[-1] == (expected, dict(channel="rscript_voice", loop=False, if_changed=False))
+                print("OK: actual JP/ZH tail voice table -> all 18 card voice branches for three characters")
             finally:
                 store.loadcls, store.execute_gload = old_load, old_clear
                 renpy.pause, renpy.music.play, renpy.music.stop = old_pause, old_play, old_stop
+                renpy.loadable = old_loadable
                 _preferences.language = None
             pause, transition, play, call_screen = renpy.pause, renpy.with_statement, renpy.music.play, renpy.call_screen
             exception_handler = config.exception_handler

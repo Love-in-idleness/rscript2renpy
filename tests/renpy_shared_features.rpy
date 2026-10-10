@@ -238,6 +238,7 @@ python early:
         old_queue, old_process = store.queue_draw, store.process_draw_queue
         old_loadable, old_point = renpy.loadable, store.jump_back_point
         played = []
+        voice_loops = []
         def voice_button_count():
             renpy.show_screen("rscript_compane")
             panel = renpy.get_screen("rscript_compane")
@@ -249,7 +250,10 @@ python early:
             return len(buttons)
         try:
             renpy.say = lambda *args, **kwargs: None
-            renpy.music.play = lambda path, **kwargs: played.append(path)
+            def record_voice(path, **kwargs):
+                played.append(path)
+                voice_loops.append(kwargs.get("loop"))
+            renpy.music.play = record_voice
             renpy.pause = lambda *args, **kwargs: None
             store.queue_draw = lambda *args, **kwargs: None
             store.process_draw_queue = lambda: None
@@ -260,6 +264,7 @@ python early:
             execute_say((None, None, repr("unvoiced")), interact=False)
             assert voice_button_count() == 2
             execute_voice(voice)
+            assert voice_loops[-1] is False
             execute_say((None, None, repr("voiced")), interact=False)
             assert not rscript_voice_pending and rscript_last_voice == played[-1]
             assert voice_button_count() == 3
@@ -286,6 +291,10 @@ python early:
             execute_voice_off(SimpleNamespace(Fade=0))
             execute_say((None, None, repr("after standalone voice")), interact=False)
             assert voice_button_count() == 2
+            voice.Repeat = 999
+            execute_voice(voice)
+            assert voice_loops[-1] is True
+            execute_voice_off(SimpleNamespace(Fade=0))
         finally:
             renpy.say, renpy.music.play, renpy.pause = old_say, old_play, old_pause
             store.queue_draw, store.process_draw_queue = old_queue, old_process

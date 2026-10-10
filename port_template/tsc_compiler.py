@@ -125,6 +125,8 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         for name in entries.get(item.offset, ()):
             lines.append("label _g_%s_%s:" % (scene, name))
         op, values = item.opcode, item.operands
+        if legacy and op == 66 and item.kinds[0] != E and values[0] > 65535:
+            raise ValueError("%s: packed legacy voice reference was exported as a literal; regenerate TSC with current LiarsoftTool" % source)
         operands = [packed(value, word16=legacy) if kind == E else str(value)
                     for kind, value in zip(item.kinds, values)]
         if modern and op == 55:

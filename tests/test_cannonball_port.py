@@ -128,9 +128,18 @@ def main():
                 text = text.replace('"answer" "" "" "" ""', '"answer" "" "" "" "" 0 0 0')
             source.write_text(header.replace("pre-codex", schema) + text)
             assert "_say '^g001body'" in compile_scene(source, adapter="pre-codex")
-        source.write_text(header.replace("pre-codex", "rscript18") + '*voice 71737 0 0 0\n*vm 0xf000 0 -1\n*end\n')
+        source.write_text(header.replace("pre-codex", "rscript18") + '*voice 31001 0 0 0\n*vm 0xf000 0 -1\n*end\n')
         assert read_tsc(source, "legacy").instructions()[1].operands == (0, -1)
-        assert "_voice 71737 0 0 0" in compile_scene(source, adapter="pre-codex")
+        assert "_voice 31001 0 0 0" in compile_scene(source, adapter="pre-codex")
+        source.write_text(header.replace("pre-codex", "rscript18") + '*voice 71737 0 0 0\n*end\n')
+        try:
+            compile_scene(source, adapter="pre-codex")
+        except ValueError as error:
+            assert "regenerate TSC" in str(error)
+        else:
+            raise AssertionError("stale packed voice ID was accepted as a literal")
+        source.write_text(header.replace("pre-codex", "early") + '*voice @6201 0 0 0\n*end\n')
+        assert "_voice rscript_signed16(_r[6201]) 0 0 0" in compile_scene(source, adapter="pre-codex")
         source.write_text(header + body)
         try:
             read_tsc(source, "forest")
@@ -240,7 +249,7 @@ def main():
                 assert not unsupported["layouts"] and "Unsupported EXE" in unsupported["unresolved"][0]
                 title_files = compile_overlays(original, [("zh", translated)], adapter="pre-codex")
                 for name, text in title_files.items():
-                    if Path(name).stem in {"0000", "0001", "0002", "1011", "1071", "1072"}:
+                    if Path(name).stem in {"0000", "0001", "0002", "1011", "1071", "1072", "9020", "9040"}:
                         destination = game / name
                         write_scenario(text, destination, original, force=True)
                 for number in (2, 3, 10, *range(11, 30)):
@@ -300,6 +309,13 @@ def main():
                 print('OK: CannonBall startup movies and return to title')
         if len(sys.argv) > 3:
             base, patch = map(Path, sys.argv[2:4])
+            voices = [item for item in read_tsc(base / "scr/9020.tsc", "legacy").instructions()
+                      if item.opcode == 66]
+            assert [item.operands[0] for item in voices] == list(range(65536 + 6201, 65536 + 6219))
+            assert all(item.kinds[0] == "E" for item in voices)
+            for number in read_tsc(base / "scr/9040.tsc", "legacy").data(1):
+                group, item = divmod(number, 10000)
+                assert (base / "voice" / str(group) / ("%04d.ogg" % item)).is_file()
             files = compile_overlays(base, [("zh", patch)], adapter="pre-codex")
             assert len(list((base / "scr").glob("*.tsc"))) == 626
             assert len(list((patch / "scr").glob("*.tsc"))) == 437

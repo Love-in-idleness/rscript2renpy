@@ -19,7 +19,7 @@ python early:
         store.rscript_voice_pending = True
         if renpy.loadable(voice_file):
             store.rscript_last_voice = voice_file
-            renpy.music.play(voice_file, channel = "rscript_voice", loop = False, if_changed = False)
+            renpy.music.play(voice_file, channel = "rscript_voice", loop = repeat == 999, if_changed = False)
         else:
             renpy.log("RScript: missing voice %s" % voice_file)
 
