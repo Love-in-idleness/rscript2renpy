@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT / "port_template"))
 sys.path.insert(0, str(ROOT / "kagerou"))
 from rscript_tsc import read_tsc
 from tsc_compiler import compile_scene, compile_overlays
-from build_kagerou_rscript import missing_voices
+from build_kagerou_rscript import BONUS_SCENES, missing_voices, validate_edition
 
 
 def main():
@@ -18,6 +18,17 @@ def main():
         base, patch = directory / "base", directory / "zh"
         for root in (base, patch):
             (root / "scr").mkdir(parents=True)
+        try:
+            validate_edition(base)
+        except ValueError as error:
+            assert 'ハチポチ特典' in str(error)
+        else:
+            raise AssertionError('unpatched edition accepted')
+        for name in BONUS_SCENES:
+            (base / ('scr/%s.tsc' % name)).touch()
+        validate_edition(base)
+        for name in BONUS_SCENES:
+            (base / ('scr/%s.tsc' % name)).unlink()
         source = base / "scr/1000.tsc"
         source.write_text(';@gsc-byte-format modern-36\n;@gsc-schema rscript19\n'
             '*folder 1 "grpo_bu"\n*locmode 1 1 0 0\n'
@@ -52,11 +63,11 @@ def main():
     if len(sys.argv) > 1:
         patches = [('zh', Path(sys.argv[2]))] if len(sys.argv) > 2 else []
         scenes = compile_overlays(Path(sys.argv[1]), patches, adapter='kagerou')
-        assert len([p for p in scenes if p.startswith('scr/')]) == 147
+        assert len([p for p in scenes if p.startswith('scr/')]) == 162
         if patches:
-            assert len([p for p in scenes if p.startswith('tl/zh/')]) == 140
+            assert len([p for p in scenes if p.startswith('tl/zh/')]) == len(list((patches[0][1] / 'scr').glob('*.tsc')))
         assert not any('unlifted opcode' in content for content in scenes.values())
-        print('OK: 147 original scenes and optional 140-scene Chinese overlay')
+        print('OK: 162 bonus-edition scenes and optional Chinese overlay')
     print('OK: isolated EXCMD dialect, text operands, SE schema variants and fallback scenes')
 
 

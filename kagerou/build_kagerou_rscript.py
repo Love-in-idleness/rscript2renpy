@@ -17,6 +17,15 @@ from rscript_tsc import read_tsc
 from native import NativeImage
 
 
+BONUS_SCENES = ("0059", "0201", "0301", "0302", *("%04d" % n for n in range(1501, 1512)))
+
+
+def validate_edition(resources):
+    missing = [name for name in BONUS_SCENES if not (resources / "scr" / (name + ".tsc")).is_file()]
+    if missing:
+        raise ValueError("Kagerou requires ハチポチ特典; missing TSC scenes: " + ", ".join(missing))
+
+
 def missing_voices(resources, patches=()):
     missing = set()
     for directory in (resources, *(p for _, p in patches)):
@@ -37,8 +46,9 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
     for directory in (resources, *(p for _, p in patches)):
         if project == directory or project.is_relative_to(directory):
             raise ValueError("output must not be inside original/patch resources")
+    validate_edition(resources)
     validate_resources(resources,
-        directories=("scr", "grpe", "grpo", "grpo_bu", "grps", "bgm", "voice", "wav"),
+        directories=("scr", "grpe", "grpo", "grpo_bu", "grpo_ex", "grps", "bgm", "voice", "wav"),
         files=("grps/tbox01/back.png",),
         patterns=("grpe/9001.png", "bgm/*.ogg", "voice/*/*.ogg", "wav/*.ogg"))
     image = NativeImage(exe or resources / "kagerou.exe")
@@ -50,7 +60,7 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
                          for alternate in (False, True)]
     scenes = compile_overlays(resources, patches, adapter="kagerou")
     warnings = ["EXCMD inactive draw (4,50): pixel algorithm unverified; normal rendering.",
-                "Native extras galleries and inactive-character pixel effect are not implemented.",
+                "Bonus-script galleries require playthrough verification; native music gallery is not implemented.",
                 "Native transition fidelity and saved CFG layout require manual verification."]
     absent_voices = missing_voices(resources, patches)
     if absent_voices:
@@ -78,7 +88,7 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
                       force=force or not project.exists())
     shutil.copy2(Path(__file__).parent / "native.py", project / "game/engine/kagerou_native.py")
     (project / "kagerou-build.json").write_text(json.dumps({
-        "adapter": "kagerou", "exe_sha256": image.sha256,
+        "adapter": "kagerou", "edition": "ハチポチ特典", "exe_sha256": image.sha256,
         "original_scenes": len(list((resources / "scr").glob("*.tsc"))),
         "languages": [name for name, _ in patches],
         "character_x": positions, "warnings": warnings,

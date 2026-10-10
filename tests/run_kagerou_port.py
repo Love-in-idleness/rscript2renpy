@@ -18,7 +18,7 @@ def main():
         game.mkdir()
         shutil.copytree(source / 'game/engine', game / 'engine',
                         ignore=shutil.ignore_patterns('*.rpyc', '__pycache__'))
-        for folder in ('fonts', 'gui', 'scr', 'tl', 'grpe', 'grpo', 'grpo_bu',
+        for folder in ('fonts', 'gui', 'scr', 'tl', 'grpe', 'grpo', 'grpo_bu', 'grpo_ex', 'grpo_cut',
                        'grps', 'bgm', 'voice', 'wav', 'mov'):
             path = source / 'game' / folder
             if path.exists():

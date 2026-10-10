@@ -111,16 +111,15 @@ def main():
         rejects(image.read, 0x400000, 4)
         rejects(image.handler, 256)
         report = inspect(root, patch)
-        assert report["scripts"]["scenes"] == 147
-        assert report["scripts"]["schemas"] == {"modern": 87, "rscript19": 60}
-        assert report["scripts"]["excmd_modes"] == {"0": 555, "1": 238, "2": 68}
+        assert report["scripts"]["scenes"] == 162
+        assert report["scripts"]["schemas"] == {"modern": 98, "rscript19": 64}
+        assert report["scripts"]["excmd_modes"] == {"0": 590, "1": 263, "2": 83}
         assert report["startup_movies"] == [dict(path="mov/0002.mpg", exists=True),
                                              dict(path="mov/0001.mpg", exists=False)]
         if patch:
-            assert report["patch"]["scripts"]["scenes"] == 140
-            assert report["patch"]["scripts"]["excmd_modes"] == report["scripts"]["excmd_modes"]
-            assert report["patch"]["fallback_scenes"] == \
-                ["0000.tsc", "0001.tsc", "0040.tsc", "0050.tsc", "0051.tsc", "0099.tsc", "9999.tsc"]
+            assert set(report["patch"]["fallback_scenes"]) == \
+                ({p.name for p in (root / "scr").glob("*.tsc")} -
+                 {p.name for p in (patch / "scr").glob("*.tsc")})
             assert report["patch"]["text_byte_changes"] == \
                 [dict(address="0x456d4a", before=128, after=134),
                  dict(address="0x45d0f3", before=128, after=134)]
@@ -130,7 +129,7 @@ def main():
         cli = subprocess.run(arguments, capture_output=True, text=True, check=True)
         assert json.loads(cli.stdout) == report
         assert before == (snapshot(root), snapshot(patch) if patch else None)
-        print("OK: native tables, 147 original scenes, optional patch, unchanged input hashes")
+        print("OK: native tables, 162 bonus-edition scenes, optional patch, unchanged input hashes")
     print("OK: EXCMD call model, queued refresh, focus depths, guards and TSC audit")
 
 
