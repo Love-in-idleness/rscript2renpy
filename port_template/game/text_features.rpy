@@ -27,10 +27,10 @@ init python:
             # State/event controls do not consume the first displayable slot.
             speaker = renpy.re.match(
                 r"^((?:\^[binm]|\^f[mg]|\^c[bgkopsrvwy]|"
-                r"\^s[0-9]|\^[dw][0-9]+)*)\^g([0-9]{3})",
+                r"\^s[0-9]|\^[dw][0-9]+)*)\^g([ \t]*-?[0-9]+)",
                 text, flags=renpy.re.I)
             if speaker:
-                store.rscript_speaker = int(speaker.group(2))
+                store.rscript_speaker = int(speaker.group(2), 10) & 0xffff
                 text = speaker.group(1) + text[speaker.end():]
         # Wiki markup must not hide a leading graphic inside a link tag.
         text = rscript_prepare_wiki_text(text)
@@ -85,6 +85,7 @@ init python:
     def rscript_g_tag(tag, argument):
         try:
             number, text_size = argument.split(":", 1)
+            number = "%03d" % (int(number, 10) & 0xffff)
             zoom = persistent.rscript_text_size / float(rscript_inline_base_size)
             zoom *= rscript_ui.get("inline_zoom", 1.0)
         except (AttributeError, TypeError, ValueError):
@@ -121,9 +122,9 @@ init python:
 
     def rscript_inline_graphics(text):
         text = renpy.re.sub(
-            r"\^g(\d{3})",
-            lambda match: "{rscript_g=%s:%d}" %
-            (match.group(1), persistent.rscript_text_size), text, flags=renpy.re.I)
+            r"\^g([ \t]*-?[0-9]+)",
+            lambda match: "{rscript_g=%03d:%d}" %
+            (int(match.group(1), 10) & 0xffff, persistent.rscript_text_size), text, flags=renpy.re.I)
         return renpy.re.sub(
             r"\^a(\d{3})",
             lambda match: "{rscript_a=%s:%d}" %
@@ -169,7 +170,7 @@ init python:
         renpy.save_persistent()
 
     def rscript_wiki_plain(text):
-        text = renpy.re.sub(r"\^g\d{3}", "", text)
+        text = renpy.re.sub(r"\^g[ \t]*-?[0-9]+", "", text, flags=renpy.re.I)
         text = renpy.re.sub(r"\^a\d{3}", "", text)
         text = renpy.re.sub(r"\^c[bgkopsrvwy]|\^f[mg]", "", text, flags=renpy.re.I)
         text = text.replace("^n", "")

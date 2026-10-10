@@ -32,7 +32,8 @@ def main():
         rscript_prepare_wiki_text=lambda s: s,
         rscript_green_color=lambda: "#FFFFFF")
     load_functions(ROOT / "port_template/game/text_features.rpy",
-                   {"rscript_prepare_text", "rscript_inline_graphics", "rscript_menu_text"}, namespace)
+                   {"rscript_prepare_text", "rscript_inline_graphics", "rscript_menu_text",
+                    "rscript_wiki_plain", "rscript_g_tag"}, namespace)
     load_functions(ROOT / "runtime/01_util.rpy",
                    {"parse_rscript_text", "rscript_style_controls", "rscript_text_palette"}, namespace)
     prepare = namespace["rscript_prepare_text"]
@@ -71,6 +72,29 @@ def main():
     store.rscript_speaker = None
     result = namespace["rscript_menu_text"]("^cy^g999选项")
     assert "rscript_g=999" in result and store.rscript_speaker is None
+    for spelling in ("39", "039", "0039", "00039", " \t0039", "65575", "-65497"):
+        store.rscript_speaker = None
+        assert prepare("^G" + spelling + "正文") == "正文"
+        assert store.rscript_speaker == 39
+        parsed, _ = parse(repr("正文^G" + spelling + "尾"), True)
+        assert parsed == "正文{rscript_g=039:22}尾"
+        store.rscript_speaker = None
+        assert namespace["rscript_menu_text"]("^g" + spelling + "选项") == "{rscript_g=039:22}选项"
+        assert store.rscript_speaker is None
+        assert namespace["rscript_wiki_plain"]("前^G" + spelling + "后") == "前后"
+    for spelling, number in (("63", 63), ("0", 0), ("1000", 1000), ("003912", 3912)):
+        assert prepare("^g" + spelling + "正文") == "正文"
+        assert store.rscript_speaker == number
+        assert namespace["rscript_inline_graphics"]("^g" + spelling + "尾") == "{rscript_g=%03d:22}尾" % number
+    parsed, _ = parse(repr("^g39^cw150"), True)
+    assert store.rscript_speaker == 39 and "150" in parsed
+    namespace.update(rscript_inline_base_size=22, rscript_ui={},
+                     rscript_text_image_path=lambda name: "grps/" + name + ".png",
+                     Transform=lambda path, **kwargs: (path, kwargs))
+    namespace["renpy"].TEXT_DISPLAYABLE = "displayable"
+    tag = namespace["rscript_g_tag"]
+    assert tag("rscript_g", "0039:22") == [("displayable", ("grps/gf039.png", {"zoom": 1.0}))]
+    assert tag("rscript_g", "bad:22") == []
     print("shared leading-control/nameplate parser: PASS")
 
 

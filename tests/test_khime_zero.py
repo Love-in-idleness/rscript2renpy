@@ -62,6 +62,12 @@ def main():
         assert "'zh': '^g008译文'" in content
         assert "_osize 21 int(round((20)*1.25))" in content
         assert "_khime_zero_gload 655 0" in content
+        (zero / "scr/2001.tsc").write_text(story.replace("^g008", "^G0008"))
+        (patch / "scr/2001.tsc").write_text(story.replace("^g008", "^g8").replace("body", "译文"))
+        aliases = prepare_zero(zero, [("zh", patch)])
+        assert "^G0008body" in aliases and "^g8译文" in aliases
+        (zero / "scr/2001.tsc").write_text(story)
+        (patch / "scr/2001.tsc").write_text(story.replace("body", "译文"))
         project = base / "project"
         build_khime(resources, project, languages=["jp", "zh=" + str(main_patch)],
                     zero_resources=zero, zero_languages=["zh=" + str(patch)])

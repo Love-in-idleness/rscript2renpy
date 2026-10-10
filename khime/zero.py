@@ -59,7 +59,8 @@ def prepare_zero(resources: Path, patches) -> str:
                 else:
                     required.add(track)
         for text in tsc.strings:
-            required.update("grps/gf%s.png" % n for n in re.findall(r"\^g(\d{3})", text))
+            required.update("grps/gf%03d.png" % (int(n, 10) & 0xffff)
+                            for n in re.findall(r"\^g([ \t]*-?[0-9]+)", text, re.I))
         missing = sorted(name for name in required if not any(
             (p / name).is_file() or (name.endswith(".png") and
                                     (p / name).with_suffix(".bmp").is_file())

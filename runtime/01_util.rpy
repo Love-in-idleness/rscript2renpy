@@ -163,7 +163,7 @@ python early:
         text = eval(text)
         # Both switch tables in Khime accept upper/lowercase controls.
         text = renpy.re.sub(
-            r"\^(?:[ag][0-9]{3}|[cf][a-z]|[binm]|[dw][0-9]+|s[0-9]|v[-0-9]+)",
+            r"\^(?:g[ \t]*-?[0-9]+|a[0-9]{3}|[cf][a-z]|[binm]|[dw][0-9]+|s[0-9]|v[-0-9]+)",
             lambda match: match.group().lower(), text, flags=renpy.re.I)
         text = rscript_prepare_text(text)
         # Shared by say, append, text objects and choices, not just modern TXT.

@@ -6,8 +6,8 @@ import re
 import tokenize
 
 
-CONTROL = re.compile(r"\^(?:[ag][0-9]{3}|s[0-9]|v[-0-9]+|[agdsw][0-9]+|[cf][A-Za-z]|[A-Za-z])", re.I)
-SUPPORTED = re.compile(r"\^(?:[binm]|[dw][0-9]+|s[0-9]|v[-0-9]+|[ag][0-9]{3}|c[bgkopsrvwy]|f[mg])\Z", re.I)
+CONTROL = re.compile(r"\^(?:g[ \t]*-?[0-9]+|a[0-9]{3}|s[0-9]|v[-0-9]+|[agdsw][0-9]+|[cf][A-Za-z]|[A-Za-z])", re.I)
+SUPPORTED = re.compile(r"\^(?:[binm]|[dw][0-9]+|s[0-9]|v[-0-9]+|g[ \t]*-?[0-9]+|a[0-9]{3}|c[bgkopsrvwy]|f[mg])\Z", re.I)
 TEXT_COMMANDS = {"_say", "_append", "_oload", "_khime_say", "_khime_append",
                  "_rscript_say", "_rscript_append"}
 

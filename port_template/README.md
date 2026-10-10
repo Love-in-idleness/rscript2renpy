@@ -116,6 +116,10 @@ Forest、Khime、Evermaiden 共用 `build_port.validate_resources` 和
 共有设置名为 `persistent.rscript_*`，游戏通过 `rscript_base_text_size`、
 `rscript_inline_base_size`、`rscript_use_speaker_images` 配置差异。
 `^gNNN`、`^aNNN` 使用公共内联标签，Wiki 图片链接由适配层提供数字到 URL 的映射。
+`^g` 消费随后全部连续 ASCII 十进制数字并按整数选择图片，例如 `^g39`、
+`^g039`、`^g0039` 均选择 `gf039`；数字位数不固定。图片编号后紧邻数字正文时，
+应使用原控制码分隔（例如 `^g039^cw150`），不按图片存在性猜测断点。
+参数读取允许前置空格/制表符和负号，图片选择使用低 16 位，与已核对的原程序一致。
 字体、GUI、语言资源安装不再引用 `forest/`。
 语音通道、缺失音频检查及持久化寄存器落盘已进入公共运行时。
 详细分层、移植边界和测试命令见 [分层说明](../docs/SHARED_TEMPLATE_MIGRATION.md)。

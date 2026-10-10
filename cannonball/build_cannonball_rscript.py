@@ -15,12 +15,8 @@ from ui_layout import extract_native_ui, native_layouts
 
 
 def correct_text_controls(scenes):
-    # Exact source typos: keep three-digit ^g parsing and original resources intact.
+    # Correct only confirmed translation typos, not numeric ^g arguments.
     corrections = (
-        ("scr/2402.rpy", "^g63150種類くらいかなあ？", "^g063150種類くらいかなあ？"),
-        ("scr/2402.rpy", "^g6340個くらいかなあ？", "^g06340個くらいかなあ？"),
-        ("tl/zh/scr/2402.rpy", "^g63大概150种吧？", "^g063大概150种吧？"),
-        ("tl/zh/scr/2402.rpy", "^g63大概40个吧？", "^g063大概40个吧？"),
         ("tl/zh/scr/6101.rpy", "^g033宰了弗克斯巴特。^g这次定要宰了她。",
          "^g033宰了弗克斯巴特。^n这次定要宰了她。"),
     )

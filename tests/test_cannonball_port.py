@@ -31,10 +31,8 @@ def main():
     }
     corrected = originals.copy()
     correct_text_controls(corrected)
-    assert "_say '^g063150種類くらいかなあ？'" in corrected["scr/2402.rpy"]
-    assert "_say '^g06340個くらいかなあ？'" in corrected["scr/2402.rpy"]
-    assert "_say '^g063大概150种吧？'" in corrected["tl/zh/scr/2402.rpy"]
-    assert "_say '^g063大概40个吧？'" in corrected["tl/zh/scr/2402.rpy"]
+    assert corrected["scr/2402.rpy"] == originals["scr/2402.rpy"]
+    assert corrected["tl/zh/scr/2402.rpy"] == originals["tl/zh/scr/2402.rpy"]
     assert "_say '^g033宰了弗克斯巴特。^n这次定要宰了她。'" in corrected["tl/zh/scr/6101.rpy"]
     assert corrected["scr/6101.rpy"] == originals["scr/6101.rpy"]
     assert corrected["scr/0000.rpy"] == originals["scr/0000.rpy"]

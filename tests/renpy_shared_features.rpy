@@ -221,6 +221,11 @@ python early:
             assert rscript_speaker == 707 and "{rscript_g=707:" in parsed
             parsed, centered = parse_rscript_text(repr("^m^g707甲"), True)
             assert centered and parsed == "甲" and rscript_speaker == 707
+            for number in ("707", "0707", "000707"):
+                parsed, centered = parse_rscript_text(repr("^m^G" + number + "甲^g" + number + "乙"), True)
+                assert centered and rscript_speaker == 707
+                assert parsed == "甲{rscript_g=707:%d}乙" % persistent.rscript_text_size
+                assert "{rscript_g=707:" in rscript_menu_text("^g" + number + "选项")
             rscript_dialogue_end()
             assert not rscript_speaker_visible
         assert renpy.music.channel_defined("rscript_voice")

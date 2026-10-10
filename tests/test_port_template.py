@@ -99,6 +99,10 @@ def main() -> None:
         assert "'^cg绿'" in lowered and "'^n日本'" in lowered
         numeric_body = "    _say '^g999１２３^g001123^a601２^s12'\n"
         assert flatten_unsupported_text_controls(numeric_body) == numeric_body
+        for command in ("_say", "_append", "_oload 1 0 0 0 0"):
+            for number in ("39", "0039", "63", "1000", " \t-1"):
+                text = "    %s %r\n" % (command, "^G" + number + "正文")
+                assert flatten_unsupported_text_controls(text) == text
         assert "    pass\n" in scene
         assert flatten_unsupported_effects(scene, resources) == scene
         assert flatten_unsupported_effects("    _cls 42 14\n", resources) == "    _cls 42 14\n"
