@@ -28,6 +28,7 @@ init -100 python:
     rscript_voice_groups = True
     rscript_folder_zero_all = True
     rscript_click_grid = True
+    rscript_mode_rebuild = True
     rscript_bgm_format = "bgm/Track%02d.ogg"
     rscript_se_format = "wav/%04d.ogg"
     rscript_ctc_x = 1080

@@ -127,7 +127,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         op, values = item.opcode, item.operands
         operands = [packed(value, word16=legacy) if kind == E else str(value)
                     for kind, value in zip(item.kinds, values)]
-        if modern and op in {49, 55, 97, 98, 107, 108, 132}:
+        if modern and op in {55, 97, 98, 107, 108}:
             lines.append("    # CodeX %s %s: shared runtime uses adapter defaults; native layout/style state is not implemented." %
                          (commands.get(op, str(op)), " ".join(operands)))
         if modern and op == 38 and values[3]:

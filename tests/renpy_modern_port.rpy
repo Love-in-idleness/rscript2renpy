@@ -75,6 +75,32 @@ python early:
         renpy.hide_screen("say")
         store.rscript_textboxes.clear()
         store.rscript_compane_position = None
+        # Native mode rebuilds objects; CG and non-selected groups survive.
+        renpy.show("mode_background", what=Solid("#123"), layer=CG_LAYER)
+        folder[1] = folder[2] = "grpe"
+        loadcls(1, 0, cg=1020)
+        loadcls(2, 0, cg=1020)
+        store.layer_groups.update({1: 2, 2: 3})
+        command(parse_mode, execute_mode, "102 1")
+        assert 1 not in layer_info and 2 in layer_info
+        assert not renpy.showing("layer1", layer=IMAGE_LAYER)
+        assert renpy.showing("mode_background", layer=CG_LAYER)
+        command(parse_mode, execute_mode, "0 1")
+        assert all(layer_mode[i] == 1 for i in range(1, 100))
+        assert 2 not in layer_info
+        store.rscript_numbers[0] = {"Enabled": 1, "Value": 7}
+        command(parse_numenable, execute_numenable, "0 0")
+        assert rscript_numbers[0]["Enabled"] == 0
+        store.in_queue = True
+        _r[10] = 1
+        command(parse_numenable, execute_numenable, "0 _r[10]")
+        _r[10] = 0
+        assert rscript_numbers[0]["Enabled"] == 0
+        store.in_queue = False
+        process_draw_queue()
+        assert rscript_numbers[0]["Enabled"] == 1
+        command(parse_numenable, execute_numenable, "0 0")
+        renpy.hide("mode_background", layer=CG_LAYER)
         lex = renpy.lexer.Lexer([("test", 1, "1 3 7", [])])
         lex.advance()
         execute_flagset(parse_flagset(lex))

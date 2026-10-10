@@ -69,6 +69,7 @@ init:
     define rscript_click_native_effects = False
     define rscript_click_timer_unit = 0.0
     define rscript_locmode_zero_all = False
+    define rscript_mode_rebuild = False
     default rscript_click_values = {}
     default rscript_click_links = {}
     default rscript_click_previews = {}
@@ -76,6 +77,7 @@ init:
     default rscript_click_autoreset = True
     default layer_zorder = {}
     default layer_enabled = {}
+    default layer_mode = {}
     default layer_info = {}
     default layer_groups = {}
     default layer_pos = {}

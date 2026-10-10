@@ -329,7 +329,12 @@ python early:
 
 
     def execute_mode(args):
-        pass
+        # 43c3b0/412b00: rebuild every selected object, including unloaded ones.
+        layers = range(1, 100) if args.Layer == 0 else rscript_selected_layers(args.Layer)
+        for layer in layers:
+            store.layer_mode[layer] = args.Mode
+            if store.rscript_mode_rebuild:
+                loadcls(layer, 0, clear=True)
 
     renpy.register_statement("_mode", parse = parse_mode, execute = execute_mode, lint = lint_undef)
 
@@ -643,7 +648,9 @@ python early:
 
 
     def execute_numenable(args):
-        pass
+        execute_rscript_number(("numenable", RScriptArguments(
+            Layer=args.NumLayerNo, Enabled=args.Mode)))
+        process_draw_queue()
 
     renpy.register_statement("_numenable", parse = parse_numenable, execute = execute_numenable, lint = lint_undef)
 # Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc
