@@ -12,6 +12,7 @@ python early:
         assert rscript_compane_position == (585, 572)
         assert renpy.has_label('_0000') and renpy.has_label('_g_0001_omakemenu')
         assert renpy.loadable(rscript_audio_file('voice', 40002))
+        assert rscript_click_link_is_preview
         def command(parser, executor, text):
             lex = renpy.lexer.Lexer([('kagerou-test', 1, text, [])])
             lex.advance()
@@ -32,6 +33,21 @@ python early:
         assert renpy.showing('layer1', layer=IMAGE_LAYER)
         command(kagerou_parse_words, kagerou_excmd, '1 1 0 0 0')
         assert not renpy.showing('layer1', layer=IMAGE_LAYER)
+        # 0099's real choice cards use setclk without any setlink.
+        command(parse_load, execute_load, '21 8011 232 130 0 0')
+        command(parse_load, execute_load, '22 8012 399 130 0 0')
+        process_draw_queue()
+        command(parse_setclk, execute_setclk, '21 1 2 0')
+        command(parse_setclk, execute_setclk, '22 2 2 0')
+        old_call_screen = renpy.call_screen
+        captured = []
+        try:
+            renpy.call_screen = lambda name, **kwargs: captured.append((name, kwargs)) or 2
+            command(parse_click, execute_click, '0 0 0')
+            assert [item[:2] for item in captured[-1][1]['options']] == [(1, False), (2, False)]
+            assert _r[0] == 2 and not rscript_click_values
+        finally:
+            renpy.call_screen = old_call_screen
         old_say = renpy.say
         calls = []
         try:
