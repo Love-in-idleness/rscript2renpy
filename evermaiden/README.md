@@ -1,39 +1,54 @@
-# Evermaiden（试验性移植）
+# Evermaiden 移植说明
 
-本适配重新以当前 Khime / Forest 的公共模板为基础，不使用旧 Evermaiden
-工程或旧生成器。专用覆盖层仅设置 1280×720 画布、32px 字号、28 个全角字宽、
+[返回主说明](../README.md) · [通用模板](../port_template/README.md)
+
+## 概述
+
+本实验性适配使用公共 `runtime/` 与 `port_template/`，不使用旧 Evermaiden
+工程或旧生成器。专用覆盖层设置 1280×720 画布、32px 字号、28 个全角字宽、
 姓名/正文坐标、音频编号与全层目录语义。现代 TSC lowering、命名入口、动态选项、
 语音分组、字体设置、存读档及触屏控制均在公共层。
 
-默认行距为 −7px（补偿 Noto 字体的额外垂直度量，实际正文基线间距 42px），
-注音按原脚本的 13px/32px 比例放在现有行间，不撑大正文行距。
-旧工程继承的默认 7px 行距会迁移一次；其他自定义行距保留。
-中文 `5000` 的三行注音对话用原生布局测得高 133px，位于底部控制栏上方。
+仓库不包含原游戏、汉化或 DLC 资源。以下命令均在仓库根目录执行。
 
-## 生成
+## 准备资源
 
-先用当前 **LiarsoftTool** 在自己合法持有的资源副本中进行转换：
+需要 Python 3、Pillow、Ren'Py 8 SDK，以及当前
+[LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool)。
+先在合法持有的游戏副本中完成解包和转换；中文示例按当前 GBK 补丁编写，
+其他版本需按实际编码选择：
 
 ```bash
 liarsofttool -R --unpack-only --gsc-to-tsc /path/to/Evermaiden
 liarsofttool -R --unpack-only --gsc-to-tsc -e gbk /path/to/Evermaiden.zh
+```
+
+生成器只读取当前 `modern-36/modern` 命令式 TSC 及转换后的资源，不接受旧转储
+或 GSC；不读取、执行或依赖 EXE / DLL，不要求旧 Ren'Py 工程。
+资源目录包括 `scr/grpe/grpo/grpo_ex/grps/bgm/voice/wav`，以及
+`grpo_bg/grpo_bu0/grpo_bu1/grpo_cu/grpo_ef/grpo_map`；保留图像元数据。
+普通 PCM WAV 保留；含 Ogg 的封装 WAV 由 LiarsoftTool 提取后使用 Ogg。
+原始 MPG 直接复制，不重新编码。通用预处理见
+[主说明](../README.md#依赖与资源预处理)。
+
+## 生成工程
+
+```bash
 python3 evermaiden/build_evermaiden_rscript.py \
     /path/to/Evermaiden /path/to/renpy-project \
     --language jp --language zh=/path/to/Evermaiden.zh
 ```
 
-生成器只读取当前 `modern-36/modern` 命令式 TSC 及转换后的资源；不读取、
-执行或依赖 EXE / DLL，不要求旧 Ren'Py 工程。原始 MPG 直接复制。
-启动时复用公共 `splashscreen`，依次播放 `mov/0002.mpg`、`mov/0001.mpg`；
-返回标题不重播。`0011/0012` 保留剧情及鉴赏中的原脚本调用，不加入启动序列。
-顺序依据原程序的启动消息分派：`startup_jp.exe` 的 `0x4411BE`、`0x4411E1`
-分别选择 0002、0001（静态检查，不执行 EXE）；普通生成仍不依赖 EXE。
-仓库保存原图标 `assets/L42_EM.ico`，生成器通过公共 `install_icon` 派生
-Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标，统一使用同一图案。
-版权说明见根目录 `THIRD_PARTY_NOTICES.md`；生成图标不代表这些平台已完成打包测试。
-资源目录包括 `scr/grpe/grpo/grpo_ex/grps/bgm/voice/wav`，以及
-`grpo_bg/grpo_bu0/grpo_bu1/grpo_cu/grpo_ef/grpo_map`。
-普通 PCM WAV 保留；含 Ogg 的封装 WAV 由 LiarsoftTool 提取后使用 Ogg。
+输出目录无需预先创建；默认拒绝覆盖不同内容的文件，确认重建时加 `--force`。
+不迁移旧 `images/scenario/audio` 布局或根目录旧运行时，检测到时明确报错，
+即使 `--force` 也不混合两套运行时；请使用新的输出目录，不会移动或删除旧文件。
+新适配使用独立存档目录 `Evermaiden-shared-rscript2renpy`，不迁移旧适配进度。
+
+输出剧本在 `game/scr/`，中文覆盖在 `game/tl/zh/scr/`；图像、声音、视频保留
+原目录名和相对位置，不加 `images/` 或 `audio/` 中间层。解释器、公共菜单、
+游戏补丁、版本和语言配置统一在 `game/engine/`。
+
+## 语言补丁
 
 `--language NAME` 仅命名基准语言；`NAME=PATCH_DIR` 添加语言补丁。
 此适配采用**整场景覆盖**，不同于 Forest 的正文对齐：补丁能修改指令、偏移、
@@ -41,14 +56,24 @@ Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标，统一使用同�
 其他语言下偷偷执行。命名回想入口 `REP001` 等也按语言路由。
 请只加载可信补丁；游戏中切换语言不保证处于不同剧情结构的旧存档仍然兼容。
 
-`--force` 允许覆盖不同内容的生成文件，不用于混合两套运行时。
-不迁移旧 `images/scenario/audio` 布局或根目录旧运行时，检测到时明确报错，
-请使用新的输出工程目录；不会移动或删除旧文件。
-新适配使用独立存档目录 `Evermaiden-shared-rscript2renpy`，不迁移旧适配进度。
+## 适配说明
 
-输出剧本在 `game/scr/`，中文覆盖在 `game/tl/zh/scr/`；图像、声音、视频保留
-原目录名和相对位置，不加 `images/` 或 `audio/` 中间层。解释器、公共菜单、
-游戏补丁、版本和语言配置统一在 `game/engine/`。
+默认行距为 −7px（补偿 Noto 字体的额外垂直度量，实际正文基线间距 42px），
+注音按原脚本的 13px/32px 比例放在现有行间，不撑大正文行距。
+旧工程继承的默认 7px 行距会迁移一次；其他自定义行距保留。
+中文 `5000` 的三行注音对话用原生布局测得高 133px，位于底部控制栏上方。
+
+启动时复用公共 `splashscreen`，依次播放 `mov/0002.mpg`、`mov/0001.mpg`；
+返回标题不重播。`0011/0012` 保留剧情及鉴赏中的原脚本调用，不加入启动序列。
+顺序依据原程序的启动消息分派：`startup_jp.exe` 的 `0x4411BE`、`0x4411E1`
+分别选择 0002、0001（静态检查，不执行 EXE）；普通生成仍不依赖 EXE。
+仓库保存原图标 [L42_EM.ico](assets/L42_EM.ico)，生成器通过公共 `install_icon`
+派生 Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标，统一使用同一图案。
+共用光标、图标与字体授权见 [第三方声明](../THIRD_PARTY_NOTICES.md)；
+生成图标不代表这些平台已完成打包测试。
+
+### 原程序界面与点击行为
+
 公共元数据绑定覆盖 `compane` 的全部 13 个按钮，以及设置页字体选择、
 播放/静音、语音停止、速度、跳过、滑条和底部动作；字体列表复用 `fontwnd` 图片与坐标。
 
@@ -86,12 +111,23 @@ CG 浏览中的 `locmap 0 0 0 0 1` 是等待鼠标点击，不是地图选项：
 `*jump 1 3` 不可继续使用，应为 `*jump 1 "TOP2"`。
 `tone/tonedep` 都在绘制队列中按顺序执行，避免清除遮罩后又按旧状态重新加回黑色遮罩。
 
-## 已知边界
+## 验证与限制
+
+```bash
+python3 -B tests/test_modern_port.py /path/to/renpy-sdk
+/path/to/renpy-sdk/renpy.sh /path/to/renpy-project lint
+```
+
+提供实际资源与 `--render` 的检查方式见下方历史验证记录。
+算法、SDK 无图形检查、lint 与完整游玩、画面、音频、Android 实机验证必须分开看待。
+
+### 已知边界
 
 - 动态选项按 flag 过滤并将结果写入寄存器 0；超过 5 项时每页 4 个答案加
   `dynnext` 翻页按钮，末页回到首页。按皮肤元数据还原无 `selmap` 时的原生排布：
   5px 间隔、标题左偏 30px、按画布高度定位。实际 `dyndo 2 0 1` 原地显示，
-  不是运动分支；`Effect=0` 的进入／退出运动和外部 `selmap` 坐标尚未实现。
+  不是运动分支；`Effect=0` 的进入／退出运动已由公共层实现，外部 `selmap`
+  坐标尚未实现。动画时序与原游戏的实际观感仍需人工对照。
 - 现代 `TXT/TXA` 保留最后一个操作数的等待开关（`startup_jp.exe` 静态调用链
   `0x437681/0x437799 → 0x43fa40/0x43f8e0 → 0x43f710`），避免给 `TXT 0` 后的
   `hit` 重复添加点击等待。
@@ -107,11 +143,10 @@ CG 浏览中的 `locmap 0 0 0 0 1` 是等待鼠标点击，不是地图选项：
   `bgr_on.png` 显示 OFF（后台继续播放）；不能按文件后缀理解静音状态。
   `vocst_off/on` 同样分别表示点击停止／不停止语音。实际窗口失焦行为仍需桌面验证。
 - 原字体选择窗口使用便携的字体文件列表，不复刻系统字体枚举和双列预览。
-- 验证命令：`python3 -B tests/test_modern_port.py /opt/apps/renpy`，以及
-  `/opt/apps/renpy/renpy.sh /path/to/renpy-project lint`。算法、SDK 无图形检查、lint
-  与完整游玩/画面/音频/Android 实机验证必须分开看待。
 
-## 本次验证（2026-10-08）
+### 历史验证记录（2026-10-08）
+
+以下是该次资源样本和环境的记录，不代表每次生成自动完成了这些验证。
 
 - 用当前 LiarsoftTool 重新转换原版 205 个场景、中文补丁 208 个场景；新增
   `0502/5000/5010` DLC 场景保留为中文语言包的整场景覆盖。
@@ -143,4 +178,4 @@ CG 浏览中的 `locmap 0 0 0 0 1` 是等待鼠标点击，不是地图选项：
 `python3 -B tests/run_grps_capture.py /opt/apps/renpy /path/to/prepared-resources /tmp/grps-preview`。
 它输出设置页、控制条、字体窗口截图。本次尝试因 SDL 无可用视频设备失败，未取得像素验证结果。
 
-仓库不包含 Evermaiden 原游戏/汉化/DLC 资源，不创建发布包。
+不发布游戏本体或构建后的游戏包。

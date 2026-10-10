@@ -1,8 +1,34 @@
-# CannonBall（实验性移植）
+# CannonBall 移植说明
 
-移植以 `runtime/` 与 `port_template/` 为基础，通用能力补在公共层，
+[返回主说明](../README.md) · [通用模板](../port_template/README.md)
+
+## 概述
+
+本实验性移植以 `runtime/` 与 `port_template/` 为基础，通用能力补在公共层，
 游戏专用差异保留在 `cannonball/`。资源由用户自行提供并使用 LiarsoftTool
 预先转换；原版和中文补丁目录只读使用，不将游戏资源纳入仓库。
+以下命令均在仓库根目录执行。
+
+## 准备资源
+
+需要 Python 3、Pillow、Ren'Py 8 SDK，以及当前
+[LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool)。
+先在合法持有的游戏副本中完成解包和转换；中文示例按当前 GBK 补丁编写，
+其他版本需按实际编码选择：
+
+```bash
+liarsofttool -R --unpack-only --gsc-to-tsc /path/to/CannonBall
+liarsofttool -R --unpack-only --gsc-to-tsc -e gbk /path/to/CannonBall.zh
+```
+
+本作接受当前 LiarsoftTool 的 `legacy-28` 命令式 TSC，包括 `early`、
+`early-short-select`、`pre-codex` 与本作末尾脚本的 `rscript18` schema。
+此适配不放宽 Forest 或现代游戏的格式要求；不接收旧转储、raw 回退或 GSC。
+输入需有 `scr/grpe/grpo/grps/bgm/voice/wav`，包括标题 `grpe/0901.*`、
+`bgm/Track01.wav` 和 `voice` 下的 OGG；有启动视频时保留 `mov`。
+原始 MPG 和普通 PCM WAV 直接保留，不引入 FFmpeg。封装 Ogg 的 WAV 必须先
+由 LiarsoftTool 提取；音效支持 `wav/wav` 和扁平 `wav` 两种位置。
+通用预处理见 [主说明](../README.md#依赖与资源预处理)。
 
 ## 生成工程
 
@@ -12,32 +38,37 @@ python3 cannonball/build_cannonball_rscript.py \
     --language jp --language zh=/path/to/CannonBall.zh
 ```
 
-重建现有工程时追加 `--force`。生成器不依赖 EXE，也不会复制原游戏存档或
+输出目录无需预先创建；默认拒绝覆盖不同内容的文件，确认重建时加 `--force`。
+不迁移旧文件布局或混合运行时，需使用新输出目录。
+生成器不依赖 EXE，也不会复制原游戏存档或
 补丁备份目录。输出保留 `scr`、`grp*`、`bgm`、`voice`、`wav`、`mov` 的名称与
 资源相对位置；解释器、配置与公共界面统一位于 `game/engine/`。
-同名图像优先使用 WebP，语言补丁优先于原版。原始 MPG 和普通 PCM WAV
-直接保留，不引入 FFmpeg。音效支持当前资源的 `wav/wav` 和扁平 `wav` 两种位置。
-仓库保存原图标 `assets/2.ico`，生成器复用公共 `install_icon`，统一派生
-Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标。原图为 64×64，
-高分辨率图标为缩放版本；版权说明见根目录 `THIRD_PARTY_NOTICES.md`。
-生成图标不代表各平台已完成打包或实机验证。
-启动时复用公共 `splashscreen`，依次播放 `mov/0002.mpg`、`mov/0001.mpg`；
-返回标题不重播。原程序启动消息分派在 `0x419E8B`、`0x419EAE` 分别选择
-0002、0001；这是静态依据，生成及运行均不依赖 EXE。
+同名图像优先使用 WebP，语言补丁优先于原版。
+
+## 语言补丁
 
 中文补丁按**整场景覆盖**生成，保留其自身分支、等待和新增场景，不仅替换对话。
 未覆盖的场景回退原版；只有补丁存在的场景在其他语言下会明确拒绝访问。
 语言资源位于 `game/tl/zh/`；语言标签使用与其他生成器相同的
 `--language NAME` 和 `--language NAME=PATCH_DIR` 参数。
 
-本作接受当前 LiarsoftTool 的 `legacy-28` 命令式 TSC，包括 `early`、
-`early-short-select`、`pre-codex` 与本作末尾脚本的 `rscript18` schema。
-此适配不放宽 Forest 或现代游戏的格式要求；不接收旧转储、raw 回退或 GSC。
+请只加载可信补丁；中途切换语言与旧存档兼容性仍需验证。
+
+## 适配说明
+
+仓库保存原图标 [2.ico](assets/2.ico)，生成器复用公共 `install_icon`，统一派生
+Windows、macOS、Linux 窗口、Android、iOS 和 Web 图标。原图为 64×64，
+高分辨率图标为缩放版本。共用光标、图标与字体授权见
+[第三方声明](../THIRD_PARTY_NOTICES.md)；生成图标不代表各平台已完成打包或实机验证。
+启动时复用公共 `splashscreen`，依次播放 `mov/0002.mpg`、`mov/0001.mpg`；
+返回标题不重播。原程序启动消息分派在 `0x419E8B`、`0x419EAE` 分别选择
+0002、0001；这是静态依据，生成及运行均不依赖 EXE。
+
 本作 `TXT` 的正文取第一个字符串，不能误用第二个陈旧字符串。
 标题在指定 `*folder` 之前就加载图片，因此初始对象图层目录配置为 `grpo`；
 此默认值由公共运行时读取，其他游戏仍保留各自的初始化行为。
 
-## 原程序界面与可选 EXE 静态检查
+### 原程序界面与可选 EXE 静态检查
 
 这版菜单和对话控制栏在 `Cannonball.exe` 中硬编码创建，不使用 `.meta.xml`。
 已按原程序的资源选择、对象坐标、两帧纵向图集、音量/透明度滑条和按钮回调接入
@@ -85,7 +116,7 @@ python3 tools/inspect_rscript_ui.py /path/to/Cannonball.exe /path/to/CannonBall
 控制条、普通存档、快存和自动存档；退出该画面后按 `sysmode` 恢复。
 回退边界禁止重新回到已结束的锁定段。原脚本禁用菜单时仍不可打开右键菜单。
 
-## 赛车与战斗的公共运行时适配
+### 赛车与战斗的公共运行时适配
 
 本方言的 VM 临时值和寄存器写入按 16 位截断；大小比较使用有符号值，
 除法向零截断，余数跟随被除数的符号。命令读取寄存器时还原有符号参数，
@@ -107,7 +138,7 @@ python3 tools/inspect_rscript_ui.py /path/to/Cannonball.exe /path/to/CannonBall
 图片选项的透明点击区域使用像素坐标与对象锚点，不盖住原场景中的文本。
 `^m^gNNN` 只居中正文，文首姓名图片仍使用独立姓名牌布局。
 
-## 已知限制与验证边界
+## 验证与限制
 
 静态证据与剩余降级清单见 [NATIVE_EFFECTS.md](NATIVE_EFFECTS.md)。
 
@@ -176,7 +207,7 @@ SDL_VIDEODRIVER=x11 xvfb-run -a python3 tests/run_grps_capture.py \
 正式生成后还需执行 `renpy.sh /path/to/renpy/CannonBall lint`；动态自定义跳转
 和原脚本死分支可能产生 unreachable 提示，不能把这些提示当作路线正确性的证明。
 
-## 中文补丁的流程差异：暂缓评估
+### 中文补丁的流程差异：暂缓评估
 
 2026-10-09 对照当前原版与中文补丁的命令式 TSC，确认补丁并非只有文字替换。
 以下是静态脚本差异，不是实际游玩结果，也不能据此认定翻译组主动修改了剧情；
@@ -197,7 +228,7 @@ SDL_VIDEODRIVER=x11 xvfb-run -a python3 tests/run_grps_capture.py \
 补丁自身的指令与分支，避免仅对齐译文而抹掉这些差异；此处是适配要求，
 当前生成器已采用整场景覆盖，但跨语言切换、存档兼容性和实际路线影响待验证。
 
-## 已排除的问题
+### 已排除的问题
 
 中文 `3024.tsc` 先前因字符串未终止而只输出 raw 回退数据，不能将其缺少命令
 误判为补丁删除逻辑。用户已修复；2026-10-09 复查确认现在是
@@ -208,3 +239,5 @@ SDL_VIDEODRIVER=x11 xvfb-run -a python3 tests/run_grps_capture.py \
 字符串终止符将声明的 25 字节恢复为 27 字节，输出有效命令式 TSC 和明确警告。
 原 GSC 未改写，不再依靠单独手修 TSC；重新导出的日中脚本已通过生成器测试和
 工程 lint，尚未进行原游戏或移植游戏的实际路线验证。
+
+不发布游戏本体或构建后的游戏包。
