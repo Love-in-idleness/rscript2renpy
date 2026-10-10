@@ -12,8 +12,8 @@ default persistent.kagerou_text_focus = 0
 default persistent.kagerou_character_focus = 0
 
 init -100 python:
-    rscript_base_text_size = 18
-    rscript_inline_base_size = 18
+    rscript_base_text_size = 24
+    rscript_inline_base_size = 24
     rscript_native_text_metrics = True
     rscript_initial_folders = dict.fromkeys(range(100), "grpo")
     rscript_voice_groups = True

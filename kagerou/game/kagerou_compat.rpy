@@ -10,6 +10,9 @@ python early:
         from engine.kagerou_native import text_geometry
         geometry = text_geometry(persistent.kagerou_direction, persistent.kagerou_size,
                                  persistent.kagerou_snap)
+        # Keep the chosen font size when rotating; native rectangle presets still apply.
+        geometry["size"] = text_geometry(0, persistent.kagerou_size,
+                                         persistent.kagerou_snap)["size"]
         persistent.rscript_text_size = geometry["size"]
         store.rscript_base_text_size = geometry["size"]
         persistent.rscript_say_line_chars = 1000  # The audited pixel rectangle is the limit.

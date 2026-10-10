@@ -7,10 +7,10 @@ python early:
         renpy.display.screen.prepare_screens()
         kagerou_init_textbox()
         assert (config.screen_width, config.screen_height) == (800, 600)
-        assert persistent.rscript_text_size == 18 and persistent.kagerou_direction == 1
+        assert persistent.rscript_text_size == 24 and persistent.kagerou_direction == 1
         assert rscript_textbox_state()['text_rect'] == (400, 20, 360, 513)
         assert rscript_compane_position == (585, 572)
-        assert renpy.has_label('_0000') and renpy.has_label('_g_0001_omakemenu')
+        assert all(renpy.has_label(name) for name in ('_0000', '_0059', '_0201', '_0301', '_0302', '_g_0001_TOP2'))
         assert renpy.loadable(rscript_audio_file('voice', 40002))
         assert rscript_click_link_is_preview
         def command(parser, executor, text):
@@ -93,11 +93,11 @@ python early:
         text.refresh_settings()
         assert text.style.outlines
         # Real native shaping: vertical columns use the rectangle's height as their limit.
-        sample = RScriptText('甲乙丙丁' * 30, size=18, vertical=True)
+        sample = RScriptText('甲乙丙丁' * 30, size=24, vertical=True)
         sample.refresh_settings()
         layout = renpy.text.text.Layout(sample, 513, 360, {}, size_only=True,
                                        drawable_res=False)
-        assert layout.size[0] <= 531 and layout.size[1] < 360, layout.size
+        assert layout.size[0] <= 537 and layout.size[1] < 360, layout.size
         assert sample.style.shaper == 'harfbuzz'
         assert all(segment.vertical for paragraph in layout.paragraphs
                    for segment, content in paragraph)
@@ -106,6 +106,14 @@ python early:
         text = renpy.get_widget('say', 'what')
         text.refresh_settings()
         assert text.style.xpos == 114 and not text.style.vertical and text.style.size == 24, (text.style.xpos, text.style.vertical, text.style.size, rscript_textbox_state())
+        kagerou_set_text_setting('direction', 1)
+        for size, expected in enumerate((24, 18, 12)):
+            kagerou_set_text_setting('size', size)
+            for direction in (0, 1, 0):
+                kagerou_set_text_setting('direction', direction)
+                text.refresh_settings()
+                assert persistent.rscript_text_size == text.style.size == expected
+                assert rscript_textbox_state()['size'] == expected
         kagerou_set_text_setting('direction', 1)
         kagerou_set_text_setting('size', 2)
         assert persistent.rscript_text_size == 12
