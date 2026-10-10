@@ -24,6 +24,7 @@ GitHub Release 或版本包。生成成功、自动测试和 lint 均不代表�
 | Khime Kusaritop（含可选 Khime Zero） | [khime/README.md](khime/README.md) |
 | Evermaiden | [evermaiden/README.md](evermaiden/README.md) |
 | CannonBall | [cannonball/README.md](cannonball/README.md) |
+| KagerouTouryuuki（逆向适配中） | [kagerou/README.md](kagerou/README.md) |
 
 ### 依赖与资源预处理
 
@@ -135,6 +136,7 @@ repository, not Git branches. Run command examples from the repository root.
 - [Khime Kusaritop and optional Khime Zero](khime/README.md).
 - [Evermaiden](evermaiden/README.md).
 - [CannonBall](cannonball/README.md).
+- [KagerouTouryuuki](kagerou/README.md) — native analysis in progress; no playable builder yet.
 
 ### Dependencies and resource preparation
 
