@@ -335,10 +335,22 @@ python early:
             assert rscript_menu_panel("<02>literal", "sel_a", skin=0)[1] == "<02>literal"
             old_layouts = dict(rscript_grps_layout)
             try:
-                rscript_grps_layout.update({"sel_a02": {"items": {"body": (0, 0, 30, 10)}},
-                                           "sel_q02": {"items": {"body": (0, 0, 30, 10)}}})
+                rscript_grps_layout.update({"sel_a02": {"size": (720, 50), "items": {"body": (0, 0, 720, 50)}},
+                                           "sel_q02": {"size": (700, 60), "items": {"body": (0, 0, 700, 60)}}})
                 assert rscript_menu_panel("literal", "sel_a", skin=2) == ("sel_a02", "literal")
                 assert rscript_menu_panel("literal", "sel_q", skin=2) == ("sel_q02", "literal")
+                entries = [SimpleNamespace(caption="Answer", action=True) for _ in range(3)]
+                assert rscript_dynamic_geometry(entries, "Prompt") is None
+                store.rscript_dynamic_skin = 2
+                assert rscript_dynamic_geometry(entries, "Prompt") == [(260, 175), (280, 240), (280, 295), (280, 350)]
+                assert rscript_dynamic_geometry(entries, None) == [(260, 175), (280, 240), (280, 295), (280, 350)]
+                # Filtered captions are not clickable rows; over-tall menus pin to top.
+                entries.insert(0, SimpleNamespace(caption="Caption", action=None))
+                assert len(rscript_dynamic_geometry(entries, "Prompt")) == 4
+                assert rscript_dynamic_geometry(entries * 5, "Prompt")[0] == (260, 0)
+                store.rscript_dynamic_skin = 99
+                assert rscript_dynamic_geometry(entries, "Prompt") is None
+                store.rscript_dynamic_skin = None
             finally:
                 rscript_grps_layout.clear()
                 rscript_grps_layout.update(old_layouts)

@@ -15,6 +15,11 @@ init 100 python:
         items = menu.scope["items"]
         expected = (["0", "1", "2", "3", "Next"] if modern_dynamic_page == 0 else ["4", "5", "Next"])
         assert [item.caption for item in items] == expected, (modern_dynamic_page, [item.caption for item in items])
+        positions = rscript_dynamic_geometry(items, rscript_choice_prompt)
+        assert positions[0] == (250, 125 if modern_dynamic_page == 0 else 180), positions
+        assert positions[1] == (280, 180 if modern_dynamic_page == 0 else 235), positions
+        if modern_dynamic_page == 0:
+            renpy.screenshot("/tmp/rscript-modern-choice.png")
         modern_dynamic_page += 1
         return renpy.run(items[-1 if modern_dynamic_page == 1 else 0].action)
 

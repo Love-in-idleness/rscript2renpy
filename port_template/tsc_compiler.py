@@ -134,7 +134,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         if modern and op == 38 and values[3]:
             lines.append("    # CodeX locmode Mode %s ignored; only the X/Y origin is implemented." % operands[3])
         if modern and op == 213:
-            lines.append("    # CodeX dyndo %s: paging/skin retained; native transition/motion uses the shared choice screen." % " ".join(operands))
+            lines.append("    # CodeX dyndo %s: native fallback geometry retained; selmap coordinates and Effect=0 motion are not implemented." % " ".join(operands))
         if zero_title and source.stem == "0101" and (
                 (op == 30 and values[:2] == (46, 9006)) or
                 (op == 75 and values[:2] == (46, 9106))):

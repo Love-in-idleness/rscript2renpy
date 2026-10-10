@@ -56,6 +56,12 @@ def main():
                 shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png', pane / (name + '.png'))
             (pane / '.meta.xml').write_text('<Canvas><Width>1280</Width><Height>720</Height><Items>' + ''.join('<Item x="0" y="0">%s</Item>' % name for name in names) + '</Items></Canvas>')
         from PIL import Image
+        for folder, color in (('sel_q00', '#56789a'), ('sel_a00', '#345678')):
+            pane = base / 'grps' / folder
+            pane.mkdir()
+            Image.new('RGB', (720, 50), color).save(pane / 'body.png')
+            (pane / '.meta.xml').write_text('<Canvas><Width>720</Width><Height>50</Height><Items>'
+                '<Item x="0" y="0">body</Item><Item x="40" y="5">text</Item></Items></Canvas>')
         Image.new('RGB', (2, 3), '#123456').save(unknown / 'opaque.bmp')
         patch_ui = patch / 'grps/compane'
         patch_ui.mkdir(parents=True)
@@ -187,8 +193,19 @@ def main():
                 assert result.returncode == 0, result.stdout + result.stderr
                 assert 'OK: native modern ruby drawable layout' in result.stdout, result.stdout + result.stderr
                 assert 'OK: native dynamic-choice paging through real menu actions' in result.stdout, result.stdout + result.stderr
+                with Image.open('/tmp/rscript-modern-choice.png') as capture:
+                    def pixel(x, y):
+                        return capture.getpixel((round(x * capture.width / 1280),
+                                                 round(y * capture.height / 720)))[:3]
+                    assert pixel(500, 150) == (86, 120, 154)  # prompt at y=125
+                    for y in (180, 235, 290, 345, 400):
+                        assert pixel(500, y + 25) == (52, 86, 120), (y, pixel(500, y + 25))
+                        assert pixel(500, y + 52) == (18, 52, 86), (y, pixel(500, y + 52))
+                    assert pixel(265, 150) == (86, 120, 154)
+                    assert pixel(265, 205) == (18, 52, 86)  # answers are 30px right of prompt
                 print('OK: native modern ruby drawable layout and clipping headroom')
                 print('OK: native dynamic-choice paging through real menu actions')
+                print('OK: dynamic-choice framebuffer positions and five-pixel gaps')
                 shutil.copyfile(ROOT / 'tests/renpy_boot_movies.rpy', game / 'scr/0000.rpy')
                 (game / 'scr/0000.rpyc').unlink(missing_ok=True)
                 result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),

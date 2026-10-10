@@ -79,6 +79,28 @@ init python:
             folder = None
         return folder, caption
 
+    def rscript_dynamic_geometry(items, prompt):
+        # 408974..408afe: native fallback when no selmapNN is present.
+        if store.rscript_dynamic_skin is None:
+            return None
+        panels = [(prompt or "", "sel_q")]
+        panels.extend((item.caption, "sel_a") for item in items if item.action is not None)
+        sizes = []
+        for caption, prefix in panels:
+            folder, _ = rscript_menu_panel(caption, prefix, store.rscript_dynamic_skin)
+            if folder is None:
+                return None
+            key = "prompt_size" if prefix == "sel_q" else "choice_size"
+            sizes.append(rscript_ui.get(key, rscript_layouts()[folder]["size"]))
+        width, height = config.screen_width, config.screen_height
+        total = sizes[0][1] + sum(size[1] + 5 for size in sizes[1:])
+        top = max(0, height * 80 // 100 - total) // 2
+        positions = []
+        for index, (w, h) in enumerate(sizes):
+            positions.append(((width - w) // 2 - (30 if index == 0 else 0), top))
+            top += h + 5
+        return positions
+
     def rscript_slot_image(slot):
         from collections.abc import Sequence
         # Keep side-story artwork in the save, not the currently active game UI.

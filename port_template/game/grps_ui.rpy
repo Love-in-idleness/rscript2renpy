@@ -293,61 +293,81 @@ screen rscript_choice(items, prompt=None):
     modal True
     key "game_menu" action Function(rscript_open_game_menu)
     key "rollback" action rscript_ui_action(("rollback",))
-    vbox:
-        xalign 0.5
-        yalign rscript_ui.get("choice_yalign", 0.42)
-        spacing rscript_ui.get("choice_spacing", 4)
-        if prompt:
-            $ prompt_folder, prompt_text = rscript_menu_panel(prompt, "sel_q", rscript_dynamic_skin)
-            if prompt_folder:
-                $ question = rscript_layouts()[prompt_folder]
+    $ answers = [item for item in items if item.action is not None]
+    $ positions = rscript_dynamic_geometry(items, prompt)
+    if positions is not None:
+        fixed:
+            if prompt:
                 fixed:
-                    xysize rscript_ui.get("prompt_size", question["size"])
-                    $ body = question["items"]["body"]
-                    $ textpos = rscript_ui.get("prompt_text_pos", question["items"].get("text", (20, 10)))
-                    add rscript_ui_image(prompt_folder, "body"):
-                        xpos (0 if rscript_ui.get("choice_center_art", False) else body[0])
-                        ypos (0 if rscript_ui.get("choice_center_art", False) else body[1])
-                    text rscript_menu_text(prompt_text):
-                        xpos textpos[0]
-                        ypos rscript_ui.get("prompt_text_yalign", textpos[1])
-                        yanchor rscript_ui.get("prompt_text_yalign", 0.0)
-                        color rscript_ui.get("prompt_text_color", "#ffffff")
-                        font rscript_current_font()
-                        size rscript_ui.get("prompt_text_size", gui.text_size)
-            else:
-                text rscript_menu_text(prompt_text) xalign 0.5 color "#ffffff" font rscript_current_font()
-        for item in items:
-            if item.action is not None:
-                $ selected_folder, caption = rscript_menu_panel(item.caption, "sel_a", rscript_dynamic_skin)
-                if selected_folder:
-                    $ answer = rscript_layouts()[selected_folder]
-                    fixed:
-                        xysize rscript_ui.get("choice_size", answer["size"])
-                        $ body = answer["items"]["body"]
-                        $ textpos = rscript_ui.get("choice_text_pos", answer["items"].get("text", (20, 10)))
-                        imagebutton:
-                            idle rscript_ui_image(selected_folder, "body")
-                            hover (rscript_ui_image(selected_folder, "body_f")
-                                   if "body_f" in answer["items"] else
-                                   rscript_ui_image(selected_folder, "body"))
-                            focus_mask True
-                            xpos (0.5 if rscript_ui.get("choice_center_art", False) else body[0])
-                            ypos (0.5 if rscript_ui.get("choice_center_art", False) else body[1])
-                            xanchor (0.5 if rscript_ui.get("choice_center_art", False) else 0.0)
-                            yanchor (0.5 if rscript_ui.get("choice_center_art", False) else 0.0)
-                            action item.action
-                        if caption:
-                            text rscript_menu_text(caption):
-                                xpos textpos[0]
-                                ypos rscript_ui.get("choice_text_yalign", textpos[1])
-                                yanchor rscript_ui.get("choice_text_yalign", 0.0)
-                                color "#ffffff"
-                                font rscript_current_font()
-                                size rscript_ui.get("choice_text_size", gui.text_size)
-                                outlines rscript_ui.get("choice_outlines", [])
-                else:
-                    textbutton rscript_menu_text(caption) action item.action text_font rscript_current_font()
+                    pos positions[0]
+                    fit_first True
+                    use rscript_choice_prompt(prompt)
+            for index, item in enumerate(answers, 1):
+                fixed:
+                    pos positions[index]
+                    fit_first True
+                    use rscript_choice_answer(item)
+    else:
+        vbox:
+            xalign 0.5
+            yalign rscript_ui.get("choice_yalign", 0.42)
+            spacing rscript_ui.get("choice_spacing", 4)
+            if prompt:
+                use rscript_choice_prompt(prompt)
+            for item in answers:
+                use rscript_choice_answer(item)
+
+screen rscript_choice_prompt(prompt):
+    $ prompt_folder, prompt_text = rscript_menu_panel(prompt, "sel_q", rscript_dynamic_skin)
+    if prompt_folder:
+        $ question = rscript_layouts()[prompt_folder]
+        fixed:
+            xysize rscript_ui.get("prompt_size", question["size"])
+            $ body = question["items"]["body"]
+            $ textpos = rscript_ui.get("prompt_text_pos", question["items"].get("text", (20, 10)))
+            add rscript_ui_image(prompt_folder, "body"):
+                xpos (0 if rscript_ui.get("choice_center_art", False) else body[0])
+                ypos (0 if rscript_ui.get("choice_center_art", False) else body[1])
+            text rscript_menu_text(prompt_text):
+                xpos textpos[0]
+                ypos rscript_ui.get("prompt_text_yalign", textpos[1])
+                yanchor rscript_ui.get("prompt_text_yalign", 0.0)
+                color rscript_ui.get("prompt_text_color", "#ffffff")
+                font rscript_current_font()
+                size rscript_ui.get("prompt_text_size", gui.text_size)
+    else:
+        text rscript_menu_text(prompt_text) xalign 0.5 color "#ffffff" font rscript_current_font()
+
+screen rscript_choice_answer(item):
+    $ selected_folder, caption = rscript_menu_panel(item.caption, "sel_a", rscript_dynamic_skin)
+    if selected_folder:
+        $ answer = rscript_layouts()[selected_folder]
+        fixed:
+            xysize rscript_ui.get("choice_size", answer["size"])
+            $ body = answer["items"]["body"]
+            $ textpos = rscript_ui.get("choice_text_pos", answer["items"].get("text", (20, 10)))
+            imagebutton:
+                idle rscript_ui_image(selected_folder, "body")
+                hover (rscript_ui_image(selected_folder, "body_f")
+                       if "body_f" in answer["items"] else
+                       rscript_ui_image(selected_folder, "body"))
+                focus_mask True
+                xpos (0.5 if rscript_ui.get("choice_center_art", False) else body[0])
+                ypos (0.5 if rscript_ui.get("choice_center_art", False) else body[1])
+                xanchor (0.5 if rscript_ui.get("choice_center_art", False) else 0.0)
+                yanchor (0.5 if rscript_ui.get("choice_center_art", False) else 0.0)
+                action item.action
+            if caption:
+                text rscript_menu_text(caption):
+                    xpos textpos[0]
+                    ypos rscript_ui.get("choice_text_yalign", textpos[1])
+                    yanchor rscript_ui.get("choice_text_yalign", 0.0)
+                    color "#ffffff"
+                    font rscript_current_font()
+                    size rscript_ui.get("choice_text_size", gui.text_size)
+                    outlines rscript_ui.get("choice_outlines", [])
+    else:
+        textbutton rscript_menu_text(caption) action item.action text_font rscript_current_font()
 
 screen save():
     tag menu
