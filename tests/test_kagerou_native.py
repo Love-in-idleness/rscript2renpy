@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "kagerou"))
-from native import NativeImage, excmd_calls
+from native import NativeImage, excmd_calls, text_geometry
 from inspect_kagerou import inspect, inspect_scripts
 
 
@@ -28,6 +28,19 @@ def snapshot(root):
 
 
 def main():
+    vertical = text_geometry(1, 0, 0)
+    assert vertical == dict(size=18, text_rect=(400, 20, 360, 513),
+                            pitch=(9, 0), ruby=(0, 9, 9), vertical=True)
+    assert text_geometry(0, 0, 0)["text_rect"] == (114, 30, 646, 480)
+    assert text_geometry(1, 2, 8)["text_rect"] == (20, 188, 240, 342)
+    for direction in range(2):
+        for size in range(3):
+            for snap in range(9):
+                x, y, w, h = text_geometry(direction, size, snap)["text_rect"]
+                assert 0 <= x <= 800 - w and 0 <= y <= 600 - h
+    rejects(text_geometry, 2, 0, 0)
+    rejects(text_geometry, 1, 3, 0)
+    rejects(text_geometry, 1, 0, 9)
     settings = dict(x=200, inactive_style=False, queued=True)
     calls = excmd_calls((0, 1, 3011, 0, 0), **settings)
     assert calls[:2] == [(0x41dda0, 1, 3011, 0, 200, 0, 0), ("register", 20, 1)]
@@ -81,6 +94,11 @@ def main():
         assert image.handler(255) == 0x41d29d
         assert image.handler(0x51) == 0x41c9ae
         assert image.handler(0x14) == 0x41c5e9
+        # The constants used by the renderer are checked against actual instructions.
+        assert image.read(0x4303e2, 2) == b'\x6a\x12'  # vertical font 18
+        assert image.read(0x4303f1, 10) == b'\x68\x01\x02\0\0\x68\x68\x01\0\0'
+        assert image.read(0x42bfce, 7) == b'\x68\x26\x02\0\0\x6a\0'  # (0,550)
+        assert image.read(0x42c2be, 10) == b'\x68\x3c\x02\0\0\x68\x49\x02\0\0'
         assert image.draw_handler(4) == 0x408ea6  # Internal image mode 3, not mode 4.
         assert image.draw_handler(0) == 0x408ed0
         assert [image.character_x(n, layout=0, alternate=False) for n in range(1, 7)] == \

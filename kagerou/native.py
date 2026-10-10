@@ -14,6 +14,29 @@ AUDITED_EXES = {
     "0d024e5cfe6c70f5a9a9149df5fbf040dfb7d97cdeefba03a13625d121dea8de": "Chinese patch",
 }
 
+# 43027f..43042b presets; 43045c..4307ae interleaved X/Y stack tables.
+TEXT_PRESETS = (
+    ((24, 646, 480, 10, 9), (18, 494, 360, 8, 8), (12, 342, 240, 6, 6)),
+    ((18, 360, 513, 9, 9), (16, 320, 456, 8, 8), (12, 240, 342, 6, 6)),
+)
+TEXT_ORIGINS = (
+    (((114, 30),) * 3 + ((77, 30),) * 3 + ((20, 30),) * 3,
+     tuple((x, y) for x in (266, 153, 20) for y in (30, 75, 150)),
+     tuple((x, y) for x in (418, 229, 20) for y in (30, 155, 270))),
+    (((400, 20),) * 3 + ((220, 20),) * 3 + ((20, 20),) * 3,
+     tuple((x, y) for x in (440, 240, 20) for y in (20, 42, 65)),
+     tuple((x, y) for x in (520, 280, 20) for y in (20, 104, 188))),
+)
+
+
+def text_geometry(direction, size, snap):
+    if direction not in (0, 1) or size not in (0, 1, 2) or not 0 <= snap <= 8:
+        raise ValueError("invalid native text preset")
+    font, width, height, pitch, ruby = TEXT_PRESETS[direction][size]
+    x, y = TEXT_ORIGINS[direction][size][snap]
+    return dict(size=font, text_rect=(x, y, width, height), pitch=(pitch, 0),
+                ruby=(0, ruby, ruby), vertical=bool(direction))
+
 
 class NativeImage:
     def __init__(self, path):

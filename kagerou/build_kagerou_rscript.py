@@ -45,9 +45,12 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
     # Fresh-process layout preset 0; persisted native CFG is not imported.
     positions = {slot: image.character_x(slot, layout=0, alternate=False)
                  for slot in range(1, 8)}
+    character_layouts = [[{slot: image.character_x(slot, layout=layout, alternate=alternate)
+                           for slot in range(1, 8)} for layout in range(9)]
+                         for alternate in (False, True)]
     scenes = compile_overlays(resources, patches, adapter="kagerou")
     warnings = ["EXCMD inactive draw (4,50): pixel algorithm unverified; normal rendering.",
-                "Native extras galleries and original settings artwork are not implemented.",
+                "Native extras galleries and inactive-character pixel effect are not implemented.",
                 "Native transition fidelity and saved CFG layout require manual verification."]
     absent_voices = missing_voices(resources, patches)
     if absent_voices:
@@ -68,7 +71,8 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
         for source in (Path(__file__).parent / "game").glob("*.rpy"):
             (overlay / source.name).symlink_to(source)
         (overlay / "native_positions.rpy").write_text(
-            'define kagerou_character_x = %r\n' % positions, encoding="utf-8")
+            'define kagerou_character_x = %r\n'
+            'define kagerou_character_layouts = %r\n' % (positions, character_layouts), encoding="utf-8")
         # A new project's own base files are replaced by this adapter's overlay.
         assemble_port(prepared, project, scenes, overlay.parent, marker, patches,
                       force=force or not project.exists())

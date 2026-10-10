@@ -7,9 +7,9 @@ python early:
         renpy.display.screen.prepare_screens()
         kagerou_init_textbox()
         assert (config.screen_width, config.screen_height) == (800, 600)
-        assert persistent.rscript_text_size == 24
-        assert persistent.rscript_say_line_chars == 26
-        assert rscript_textbox_state()['text_rect'] == (114, 30, 646, 480)
+        assert persistent.rscript_text_size == 18 and persistent.kagerou_direction == 1
+        assert rscript_textbox_state()['text_rect'] == (400, 20, 360, 513)
+        assert rscript_compane_position == (585, 572)
         assert renpy.has_label('_0000') and renpy.has_label('_g_0001_omakemenu')
         assert renpy.loadable(rscript_audio_file('voice', 40002))
         def command(parser, executor, text):
@@ -44,7 +44,11 @@ python early:
             kagerou_append(repr(('追加', 0)))
             assert calls[-1][0].endswith('次の段落{fast}追加') and not calls[-1][1]
             kagerou_say(repr(('', '【女】^n台詞', 1)))
-            assert '追加{fast}\n\u3000\n【女】\n台詞' in calls[-1][0]
+            assert '追加{fast}\n\u3000\n{/alpha}【女】\n台詞' in calls[-1][0]
+            assert calls[-1][0].startswith('{alpha=0.5019607843}')
+            kagerou_set_text_setting('text_focus', 1)
+            assert '{alpha=' not in kagerou_page_text()
+            kagerou_set_text_setting('text_focus', 0)
             kagerou_tclsmode('1')
             kagerou_say(repr(('', '単独', 1)))
             assert calls[-1][0] == '単独'
@@ -61,9 +65,46 @@ python early:
         renpy.get_screen('say').update()
         window = renpy.get_widget('say', 'window')
         assert window.style.xminimum == window.style.xmaximum == 800
-        assert renpy.get_widget('say', 'what').style.xpos == 114
-        assert renpy.get_widget('say', 'what').style.ypos == 30
+        text = renpy.get_widget('say', 'what')
+        text.refresh_settings()
+        assert text.style.xpos == 760 and text.style.ypos == 20
+        assert text.style.vertical and text.style.xanchor == 1.0
+        assert text.style.outlines
+        kagerou_set_text_setting('shadow', 1)
+        text.refresh_settings()
+        assert not text.style.outlines
+        kagerou_set_text_setting('shadow', 0)
+        text.refresh_settings()
+        assert text.style.outlines
+        # Real native shaping: vertical columns use the rectangle's height as their limit.
+        sample = RScriptText('甲乙丙丁' * 30, size=18, vertical=True)
+        sample.refresh_settings()
+        layout = renpy.text.text.Layout(sample, 513, 360, {}, size_only=True,
+                                       drawable_res=False)
+        assert layout.size[0] <= 531 and layout.size[1] < 360, layout.size
+        assert sample.style.shaper == 'harfbuzz'
+        assert all(segment.vertical for paragraph in layout.paragraphs
+                   for segment, content in paragraph)
+        kagerou_set_text_setting('direction', 0)
+        renpy.get_screen('say').update()
+        text = renpy.get_widget('say', 'what')
+        text.refresh_settings()
+        assert text.style.xpos == 114 and not text.style.vertical and text.style.size == 24, (text.style.xpos, text.style.vertical, text.style.size, rscript_textbox_state())
+        kagerou_set_text_setting('direction', 1)
+        kagerou_set_text_setting('size', 2)
+        assert persistent.rscript_text_size == 12
+        assert rscript_textbox_state()['text_rect'] == (520, 20, 240, 342)
+        kagerou_set_text_setting('snap', 8)
+        assert rscript_textbox_state()['text_rect'] == (20, 188, 240, 342)
+        kagerou_set_text_setting('size', 0)
+        kagerou_set_text_setting('snap', 0)
         renpy.hide_screen('say')
+        for screen_name in ('kagerou_compane', 'kagerou_excompane', 'kagerou_history'):
+            renpy.show_screen(screen_name)
+            renpy.get_screen(screen_name).update()
+            renpy.hide_screen(screen_name)
+        renpy.call_in_new_context('_kagerou_test_call')
+        assert store.kagerou_test_returned
         # Only inspect the entry sequence: this command never plays movies or enters start.
         assert renpy.has_label('splashscreen') and rscript_boot_movies == (2, 1)
         node = renpy.game.script.lookup('splashscreen')
@@ -79,6 +120,16 @@ python early:
             assert movies == ['mov/0002.mpg']
         finally:
             renpy.movie_cutscene = old_movie
-        print('OK: Kagerou entry, resources, EXCMD queue/depth/clear, whole-page TXT/TXA and screen')
+        print('OK: Kagerou call operands, resources, EXCMD, vertical presets, text focus and panes')
         return False
     renpy.arguments.register_command('kageroutest', check_kagerou_port)
+
+label _kagerou_test_call:
+    $ _r[10] = 8765
+    _gosub _r[10] 0 0 0 0 0 0 0 0 0 0
+    $ store.kagerou_test_returned = True
+    return
+
+label _8765:
+    $ assert _r[10] == 0
+    _return 0

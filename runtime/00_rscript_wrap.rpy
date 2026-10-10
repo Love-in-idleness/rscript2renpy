@@ -74,6 +74,14 @@ python early:
                 if slot_font and renpy.loadable(slot_font):
                     self.style.font = slot_font
                 self.style.size = size
+                if "vertical" in box:
+                    self.style.vertical = box["vertical"]
+                    if box["vertical"]:
+                        self.style.shaper = "harfbuzz"
+                    rect = box["text_rect"]
+                    self.style.pos = (rect[0] + rect[2], rect[1]) if box["vertical"] else rect[:2]
+                    self.style.xanchor = 1.0 if box["vertical"] else 0.0
+                    self.style.xmaximum, self.style.ymaximum = rect[2:]
                 self.style.line_spacing = (spacing - getattr(store, "rscript_line_spacing_default", 7)
                     if "pitch" in box and getattr(store, "rscript_native_text_metrics", False) else spacing)
                 if "alignment" in box and not self.rscript_style.text_align:
@@ -83,6 +91,8 @@ python early:
                         self.style.min_width = rect[2]
                 if "color" in box:
                     self.style.color = box["color"]
+                if "outlines" in box:
+                    self.style.outlines = box["outlines"]
                 if prefix is not None:
                     self.style.set_prefix(prefix)
                 self.update()
@@ -178,6 +188,10 @@ python early:
                 metrics = {name: getattr(self, name) for name in names}
                 color = self.color
             super(RScriptTextSegment, self).take_style(style, layout, context)
+            if shared and context is None and "vertical" in rscript_textbox_state():
+                # SDK TextSegment does not inherit style.vertical; the font
+                # needs vertical glyph forms before the final layout rotation.
+                self.vertical = style.vertical
             if linked or ruby:
                 for name, value in metrics.items():
                     setattr(self, name, value)
@@ -208,8 +222,9 @@ python early:
         limit = (fullwidth or layout.scale(text.style.size)) * chars
         if text.rscript_kind == "say":
             rect = rscript_textbox_state().get("text_rect")
-            if rect and rect[2] > 0:
-                limit = min(limit, layout.scale(rect[2]))
+            extent = rect[3 if text.style.vertical else 2] if rect else 0
+            if extent > 0:
+                limit = min(limit, layout.scale(extent))
         for index in rscript_wrap.glyph_breaks(glyphs, limit,
                 ruby_atomic=not rscript_native_ruby_enabled(text)):
             glyphs[index].split = 1

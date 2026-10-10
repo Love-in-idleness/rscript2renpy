@@ -9,9 +9,9 @@ from tempfile import TemporaryDirectory
 
 
 def main():
-    if len(sys.argv) != 3:
-        raise SystemExit('usage: run_kagerou_port.py PROJECT RENPY_SDK')
-    source, sdk = (Path(p).resolve() for p in sys.argv[1:])
+    if len(sys.argv) not in (3, 4):
+        raise SystemExit('usage: run_kagerou_port.py PROJECT RENPY_SDK [CAPTURE_DIRECTORY]')
+    source, sdk = (Path(p).resolve() for p in sys.argv[1:3])
     with TemporaryDirectory(prefix='kagerou-sdk-') as directory:
         project = Path(directory)
         game = project / 'game'
@@ -27,6 +27,21 @@ def main():
         subprocess.run([str(sdk / 'renpy.sh'), str(project), 'kageroutest',
                         '--savedir', str(project / 'test-saves')], check=True,
                        env=os.environ | {'RENPY_PATH_TO_SAVES': str(project / 'sdk-saves')})
+        if len(sys.argv) == 4:
+            shutil.copy2(Path(__file__).with_name('renpy_kagerou_capture.rpy'), game / 'capture.rpy')
+            command = [str(sdk / 'renpy.sh'), str(project), 'run',
+                       '--savedir', str(project / 'test-saves')]
+            environment = os.environ | {'RENPY_PATH_TO_SAVES': str(project / 'sdk-saves'),
+                'SDL_AUDIODRIVER': 'dummy', 'RENPY_PERFORMANCE_TEST': '0',
+                'RENPY_SKIP_SPLASHSCREEN': '1'}
+            if shutil.which('xvfb-run'):
+                command = ['xvfb-run', '-a', *command]
+                environment['SDL_VIDEODRIVER'] = 'x11'
+            subprocess.run(command, check=True, timeout=45, env=environment)
+            destination = Path(sys.argv[3]).resolve()
+            destination.mkdir(parents=True, exist_ok=True)
+            for name in ('vertical.png', 'horizontal.png'):
+                shutil.copy2(project / name, destination / name)
 
 
 if __name__ == '__main__':
