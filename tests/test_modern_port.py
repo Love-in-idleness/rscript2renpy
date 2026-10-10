@@ -206,6 +206,19 @@ def main():
                 print('OK: native modern ruby drawable layout and clipping headroom')
                 print('OK: native dynamic-choice paging through real menu actions')
                 print('OK: dynamic-choice framebuffer positions and five-pixel gaps')
+                assert 'OK: dynamic-choice entry, paging without re-entry, selected exit and cleanup' in result.stdout, result.stdout + result.stderr
+                for phase in ('enter', 'exit'):
+                    with Image.open('/tmp/rscript-modern-motion-%s.png' % phase) as capture:
+                        def pixel(x, y):
+                            return capture.getpixel((round(x * capture.width / 1280),
+                                                     round(y * capture.height / 720)))[:3]
+                        if phase == 'enter':
+                            assert pixel(50, 205) == (52, 86, 120)  # Moving in from left.
+                            assert pixel(950, 205) == (18, 52, 86)
+                        else:
+                            assert pixel(300, 260) == (52, 86, 120)  # Chosen row stays.
+                            assert pixel(300, 315) == (18, 52, 86)  # Other row leaves right.
+                print('OK: dynamic-choice motion through GL2 framebuffer and native actions')
                 shutil.copyfile(ROOT / 'tests/renpy_boot_movies.rpy', game / 'scr/0000.rpy')
                 (game / 'scr/0000.rpyc').unlink(missing_ok=True)
                 result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),

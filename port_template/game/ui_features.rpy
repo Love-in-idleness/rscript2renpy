@@ -4,6 +4,8 @@ define rscript_ui = {}
 define rscript_boot_movies = (2, 1)
 
 init python:
+    from functools import partial as rscript_partial
+
     def rscript_migrate_ui_preferences():
         if getattr(persistent, "rscript_opacity_migrated", False):
             return
@@ -79,8 +81,7 @@ init python:
             folder = None
         return folder, caption
 
-    def rscript_dynamic_geometry(items, prompt):
-        # 408974..408afe: native fallback when no selmapNN is present.
+    def rscript_dynamic_sizes(items, prompt):
         if store.rscript_dynamic_skin is None:
             return None
         panels = [(prompt or "", "sel_q")]
@@ -92,6 +93,13 @@ init python:
                 return None
             key = "prompt_size" if prefix == "sel_q" else "choice_size"
             sizes.append(rscript_ui.get(key, rscript_layouts()[folder]["size"]))
+        return sizes
+
+    def rscript_dynamic_geometry(items, prompt):
+        # 408974..408afe: native fallback when no selmapNN is present.
+        sizes = rscript_dynamic_sizes(items, prompt)
+        if sizes is None:
+            return None
         width, height = config.screen_width, config.screen_height
         total = sizes[0][1] + sum(size[1] + 5 for size in sizes[1:])
         top = max(0, height * 80 // 100 - total) // 2
@@ -100,6 +108,58 @@ init python:
             positions.append(((width - w) // 2 - (30 if index == 0 else 0), top))
             top += h + 5
         return positions
+
+    def rscript_dynamic_paths(items, prompt, mode, selected=None):
+        import math
+        positions = rscript_dynamic_geometry(items, prompt)
+        if positions is None:
+            return None
+        sizes = rscript_dynamic_sizes(items, prompt)
+        paths = []
+        for index, ((x, y), (w, h)) in enumerate(zip(positions, sizes)):
+            if mode == 2:
+                start, end = (x, -h), (x, config.screen_height)
+            elif mode == 3:
+                start, end = (x, config.screen_height), (x, -h)
+            elif mode == 4:
+                start, end = (-w, y), (config.screen_width, y)
+            elif mode == 5:
+                start, end = (config.screen_width, y), (-w, y)
+            else:
+                # Mode=0 without selmap, Mode=1, and native default branch.
+                start = (x, positions[0][1]) if index else (x, y)
+                end = (x, config.screen_height) if index else (x, y)
+            exiting = selected is not None
+            start, end = ((x, y), end) if exiting else (start, (x, y))
+            if exiting and index == selected + 1:
+                end = start  # Selected answer stays until every other panel exits.
+            distance = int(math.hypot(end[0] - start[0], end[1] - start[1]))
+            speed = (distance // (5 if exiting else 10)) & 0xffff
+            # shortcut: sub-speed moves snap; revisit if a native layout uses tiny displacements.
+            steps = (distance // speed) & 0xffff if speed else 0
+            paths.append((start, end, steps, exiting and index != 0))
+        return paths
+
+    def rscript_dynamic_position(path, elapsed):
+        import math
+        start, end, steps, sine = path
+        tick = int(elapsed / rscript_dynamic_tick)
+        if not steps or tick > steps:
+            return end
+        if tick == 0:
+            return start
+        # 44d070 / 44d880: quantized Q16 sin/cos table, then truncating division.
+        index = ((0x4000 // steps) * (steps - tick + 1) // 255) % 255
+        angle = index / 256.0 * 6.283185308
+        sample = int((math.sin(angle) if sine else math.cos(angle)) * 65535)
+        if sine:
+            return tuple(b + int((a - b) * sample / 65535) for a, b in zip(start, end))
+        return tuple(a + int((b - a) * sample / 65535) for a, b in zip(start, end))
+
+    def rscript_dynamic_transform(path, normal, trans, st, at):
+        x, y = rscript_dynamic_position(path, st)
+        trans.xoffset, trans.yoffset = x - normal[0], y - normal[1]
+        return rscript_dynamic_tick
 
     def rscript_slot_image(slot):
         from collections.abc import Sequence

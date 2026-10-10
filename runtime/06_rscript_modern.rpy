@@ -3,6 +3,7 @@ default rscript_choice_prompt = None
 default rscript_dynamic_answers = []
 default rscript_dynamic_next = None
 default rscript_dynamic_skin = None
+define -120 rscript_dynamic_tick = 0.05
 
 python early:
     def parse_rscript_expression(lex):
@@ -53,6 +54,23 @@ python early:
         lex.expect_eol()
         return args
 
+    def rscript_dynamic_animate(options, args, result=None):
+        from types import SimpleNamespace
+        if (args.Effect != 0 or not _preferences.transitions or renpy.is_skipping()
+                or not renpy.has_screen("rscript_dynamic_motion")):
+            return  # A runtime-only installation keeps the host's static menu.
+        items = [SimpleNamespace(caption=caption, action=NullAction()) for caption, _ in options]
+        selected = next((index for index, (_, value) in enumerate(options) if value == result), None)
+        paths = rscript_dynamic_paths(items, store.rscript_choice_prompt, args.Mode, selected)
+        if paths is not None and any(path[2] for path in paths):
+            # No call_screen checkpoint: the menu owns the choice's roll-forward data.
+            renpy.show_screen("rscript_dynamic_motion", items=items,
+                              prompt=store.rscript_choice_prompt, paths=paths, _transient=True)
+            try:
+                renpy.ui.interact(mouse="menu", type="transition")
+            finally:
+                renpy.hide_screen("rscript_dynamic_motion")
+
     def execute_dyndo(args):
         options = [(caption, result) for caption, result, flag, inverted
                    in store.rscript_dynamic_answers
@@ -60,19 +78,25 @@ python early:
         # 409750: up to five answers, otherwise four + next, wrapping at the end.
         next_page = ("rscript_dynamic_next",)
         page = 0
+        entered = False
         store.rscript_dynamic_skin = args.Layout
         try:
             while options:
                 visible = options if len(options) <= 5 else options[page:page + 4] + [
                     (store.rscript_dynamic_next or "次へ", next_page)]
+                if not entered:
+                    rscript_dynamic_animate(visible, args)
+                    entered = True
                 result = renpy.display_menu(visible)
                 if result != next_page:
+                    rscript_dynamic_animate(visible, args, result)
                     store._r[0] = result
                     break
                 page = page + 4 if page + 4 < len(options) else 0
             else:
                 store._r[0] = 0
         finally:
+            renpy.hide_screen("rscript_dynamic_motion")
             store.rscript_dynamic_skin = None
             store.rscript_choice_prompt = None
 

@@ -289,10 +289,15 @@ screen rscript_compane():
                     use rscript_grps_button("compane", name, rscript_ui_action(spec),
                                              enabled=rscript_ui_sensitive(spec[0]))
 
-screen rscript_choice(items, prompt=None):
+screen rscript_choice(items, prompt=None, motion=None):
     modal True
-    key "game_menu" action Function(rscript_open_game_menu)
-    key "rollback" action rscript_ui_action(("rollback",))
+    if motion is None:
+        key "game_menu" action Function(rscript_open_game_menu)
+        key "rollback" action rscript_ui_action(("rollback",))
+    else:
+        key "game_menu" action NullAction()
+        key "rollback" action NullAction()
+        key "dismiss" action NullAction()
     $ answers = [item for item in items if item.action is not None]
     $ positions = rscript_dynamic_geometry(items, prompt)
     if positions is not None:
@@ -300,13 +305,17 @@ screen rscript_choice(items, prompt=None):
             if prompt:
                 fixed:
                     pos positions[0]
+                    if motion is not None:
+                        at Transform(function=rscript_partial(rscript_dynamic_transform, motion[0], positions[0]))
                     fit_first True
                     use rscript_choice_prompt(prompt)
             for index, item in enumerate(answers, 1):
                 fixed:
                     pos positions[index]
+                    if motion is not None:
+                        at Transform(function=rscript_partial(rscript_dynamic_transform, motion[index], positions[index]))
                     fit_first True
-                    use rscript_choice_answer(item)
+                    use rscript_choice_answer(item, enabled=motion is None)
     else:
         vbox:
             xalign 0.5
@@ -338,7 +347,13 @@ screen rscript_choice_prompt(prompt):
     else:
         text rscript_menu_text(prompt_text) xalign 0.5 color "#ffffff" font rscript_current_font()
 
-screen rscript_choice_answer(item):
+screen rscript_dynamic_motion(items, prompt, paths):
+    modal True
+    zorder 200
+    use rscript_choice(items, prompt, motion=paths)
+    timer (max(path[2] + 1 for path in paths) * rscript_dynamic_tick) action Return()
+
+screen rscript_choice_answer(item, enabled=True):
     $ selected_folder, caption = rscript_menu_panel(item.caption, "sel_a", rscript_dynamic_skin)
     if selected_folder:
         $ answer = rscript_layouts()[selected_folder]
@@ -347,6 +362,7 @@ screen rscript_choice_answer(item):
             $ body = answer["items"]["body"]
             $ textpos = rscript_ui.get("choice_text_pos", answer["items"].get("text", (20, 10)))
             imagebutton:
+                sensitive enabled
                 idle rscript_ui_image(selected_folder, "body")
                 hover (rscript_ui_image(selected_folder, "body_f")
                        if "body_f" in answer["items"] else
@@ -367,7 +383,7 @@ screen rscript_choice_answer(item):
                     size rscript_ui.get("choice_text_size", gui.text_size)
                     outlines rscript_ui.get("choice_outlines", [])
     else:
-        textbutton rscript_menu_text(caption) action item.action text_font rscript_current_font()
+        textbutton rscript_menu_text(caption) action item.action sensitive enabled text_font rscript_current_font()
 
 screen save():
     tag menu

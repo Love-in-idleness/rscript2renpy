@@ -20,6 +20,8 @@ init -130 python:
 init -100 python:
     rscript_screen_size = (1280, 720)
     rscript_update_timing = "codex-ms"
+    # startup_jp.exe config 4eb058+1b4 -> 452680: 42ms UI timer.
+    rscript_dynamic_tick = 0.042
     rscript_base_text_size = 32
     rscript_inline_base_size = 32
     # 0500.tsc: texruby 0 0 13 9; annotations fit between body lines.

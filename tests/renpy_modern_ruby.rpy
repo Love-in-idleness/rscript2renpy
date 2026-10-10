@@ -6,6 +6,10 @@ init 100 python:
     config.exception_handler = modern_ruby_exception
     config.autosave_on_choice = False
     modern_dynamic_page = 0
+    modern_motion_phases = []
+    modern_motion_started = None
+    modern_motion_capture = False
+    modern_motion_page = 0
 
     def modern_dynamic_pick():
         global modern_dynamic_page
@@ -23,8 +27,34 @@ init 100 python:
         modern_dynamic_page += 1
         return renpy.run(items[-1 if modern_dynamic_page == 1 else 0].action)
 
+    def modern_motion_pick():
+        import time
+        global modern_motion_started, modern_motion_capture, modern_motion_page
+        overlay = renpy.get_screen("rscript_dynamic_motion")
+        if overlay is not None:
+            paths = overlay.scope["paths"]
+            phase = "exit" if paths[-1][3] else "enter"
+            if phase == "exit":
+                assert renpy.game.log.current.forward == 4
+            if not modern_motion_phases or modern_motion_phases[-1] != phase:
+                modern_motion_phases.append(phase)
+                modern_motion_started, modern_motion_capture = time.monotonic(), False
+            if time.monotonic() - modern_motion_started >= .15 and not modern_motion_capture:
+                assert renpy.get_screen("choice") is None
+                renpy.screenshot("/tmp/rscript-modern-motion-%s.png" % phase)
+                modern_motion_capture = True
+            return
+        menu = renpy.get_screen("choice")
+        if menu is not None:
+            items = menu.scope["items"]
+            modern_motion_page += 1
+            return renpy.run(items[-1 if modern_motion_page == 1 else 0].action)
+
 screen modern_dynamic_driver():
     timer .05 repeat True action Function(modern_dynamic_pick)
+
+screen modern_motion_driver():
+    timer .025 repeat True action Function(modern_motion_pick)
 
 label _0000:
     window hide
@@ -63,4 +93,19 @@ label _0000:
         assert _r[0] == 4 and modern_dynamic_page == 2
         assert rscript_dynamic_skin is None and rscript_choice_prompt is None
         print("OK: native dynamic-choice paging through real menu actions")
+    _dynsel ("Motion", 0)
+    _dynnext "Next"
+    python:
+        _preferences.transitions = 2
+        for number in range(6):
+            execute_dynans(repr((str(number), number, 0, 0)))
+    show screen modern_motion_driver
+    _dyndo 0 0 4
+    hide screen modern_motion_driver
+    python:
+        assert _r[0] == 4 and modern_motion_page == 2
+        assert modern_motion_phases == ["enter", "exit"], modern_motion_phases
+        assert renpy.get_screen("rscript_dynamic_motion") is None
+        assert rscript_dynamic_skin is None and rscript_choice_prompt is None
+        print("OK: dynamic-choice entry, paging without re-entry, selected exit and cleanup")
         renpy.quit()

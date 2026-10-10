@@ -344,6 +344,31 @@ python early:
                 store.rscript_dynamic_skin = 2
                 assert rscript_dynamic_geometry(entries, "Prompt") == [(260, 175), (280, 240), (280, 295), (280, 350)]
                 assert rscript_dynamic_geometry(entries, None) == [(260, 175), (280, 240), (280, 295), (280, 350)]
+                assert rscript_dynamic_tick == .042
+                for mode, start, end in ((0, (280, 175), (280, 720)),
+                                         (1, (280, 175), (280, 720)),
+                                         (2, (280, -50), (280, 720)),
+                                         (3, (280, 720), (280, -50)),
+                                         (4, (-720, 240), (1280, 240)),
+                                         (5, (1280, 240), (-720, 240))):
+                    incoming = rscript_dynamic_paths(entries, "Prompt", mode)
+                    outgoing = rscript_dynamic_paths(entries, "Prompt", mode, selected=1)
+                    assert incoming[1][:2] == (start, (280, 240)), incoming
+                    assert outgoing[1][:2] == ((280, 240), end), outgoing
+                    assert outgoing[2][:2] == ((280, 295), (280, 295))
+                    assert outgoing[1][3] and not outgoing[0][3]
+                    assert incoming[1][2] >= 10 and outgoing[1][2] >= 5
+                incoming = rscript_dynamic_paths(entries, "Prompt", 4)
+                outgoing = rscript_dynamic_paths(entries, "Prompt", 4, selected=1)
+                assert incoming[1][2] == 10 and outgoing[1][2] == 5
+                assert rscript_dynamic_position(incoming[1], 0) == (-720, 240)
+                assert rscript_dynamic_position(incoming[1], .042 * 11) == (280, 240)
+                assert rscript_dynamic_position(outgoing[1], .042 * 6) == (1280, 240)
+                # At half-time, entry is decelerating; answer exit is accelerating.
+                assert rscript_dynamic_position(incoming[1], .042 * 6)[0] > -220
+                assert rscript_dynamic_position(outgoing[1], .042 * 3)[0] < 780
+                assert rscript_dynamic_position(((0, 0), (1, 1), 0, False), 0) == (1, 1)
+                assert rscript_dynamic_paths(entries, None, 1)[0][2] == 0
                 # Filtered captions are not clickable rows; over-tall menus pin to top.
                 entries.insert(0, SimpleNamespace(caption="Caption", action=None))
                 assert len(rscript_dynamic_geometry(entries, "Prompt")) == 4
@@ -354,6 +379,51 @@ python early:
             finally:
                 rscript_grps_layout.clear()
                 rscript_grps_layout.update(old_layouts)
+            old_interact, old_transitions = renpy.ui.interact, _preferences.transitions
+            old_skipping = config.skipping
+            phases = []
+            try:
+                renpy.ui.interact = lambda **kwargs: phases.append(renpy.get_screen("rscript_dynamic_motion").scope["_kwargs"]["paths"])
+                _preferences.transitions, config.skipping = 2, None
+                execute_dynsel(repr(("Pages", 0)))
+                for number in range(6):
+                    execute_dynans(repr((str(number), number, 0, 0)))
+                calls = []
+                def pick_animated(options):
+                    calls.append(options)
+                    return options[-1][1] if len(calls) == 1 else options[0][1]
+                renpy.display_menu = pick_animated
+                execute_dyndo(SimpleNamespace(Effect=0, Layout=0, Mode=4))
+                assert len(phases) == 2 and len(phases[0]) == 6 and len(phases[1]) == 4
+                assert phases[1][1][2] == 0 and _r[0] == 4
+                phases.clear()
+                _preferences.transitions = 0
+                execute_dyndo(SimpleNamespace(Effect=0, Layout=0, Mode=4))
+                _preferences.transitions, config.skipping = 2, "slow"
+                execute_dyndo(SimpleNamespace(Effect=0, Layout=0, Mode=4))
+                assert not phases
+                config.skipping = None
+                old_has_screen = renpy.has_screen
+                try:
+                    renpy.has_screen = lambda name: False
+                    execute_dyndo(SimpleNamespace(Effect=0, Layout=0, Mode=4))
+                    assert not phases  # tools/install_runtime.py alone has no UI template.
+                finally:
+                    renpy.has_screen = old_has_screen
+                def fail_motion(**kwargs):
+                    raise ValueError("motion cancelled")
+                renpy.ui.interact = fail_motion
+                try:
+                    execute_dyndo(SimpleNamespace(Effect=0, Layout=0, Mode=4))
+                except ValueError:
+                    pass
+                else:
+                    raise AssertionError("animation failure must propagate")
+                assert renpy.get_screen("rscript_dynamic_motion") is None
+                assert rscript_dynamic_skin is None and rscript_choice_prompt is None
+            finally:
+                renpy.ui.interact, _preferences.transitions = old_interact, old_transitions
+                config.skipping = old_skipping
             def fail_menu(options):
                 raise ValueError("cancelled")
             renpy.display_menu = fail_menu
