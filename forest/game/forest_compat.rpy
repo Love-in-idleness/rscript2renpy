@@ -14,6 +14,7 @@ default forest_input_locked = False
 init -90 python:
     rscript_use_speaker_images = True
     rscript_folder_zero_all = True
+    rscript_locmode_zero_all = True
     rscript_click_grid = True
 
 init python:

@@ -7,6 +7,25 @@ python early:
         assert rscript_update_duration(1, 16, 16) == 2.56
         assert rscript_update_duration(11, 16, 16) == 5.12
         renpy.game.context().init_phase = False
+        renpy.display.scenelists.init_layers()
+        renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
+        if rscript_use_speaker_images:
+            # Forest 0310 centers these objects; 0301/0302/0303 reset
+            # every origin after playback, including cleared objects.
+            for replay in range(2):
+                for layer in (9, 10, 11, 26):
+                    execute_locmode(RScriptArguments(Layer=layer, Xmode=1, Ymode=1))
+                execute_locmode(RScriptArguments(Layer=12, Xmode=0, Ymode=0))
+                assert layer_anchor[9] == (0.5, 0.5)
+                loadcls(0, 0, clear=True)
+                execute_locmode(RScriptArguments(Layer=0, Xmode=0, Ymode=0))
+                assert all(layer_anchor[layer] == (0.0, 0.0) for layer in (9, 10, 11, 26))
+                for layer, x in ((9, 45), (10, 229), (11, 413)):
+                    store.folder[layer] = "grpo"
+                    loadcls(layer, 0, cg=707, xpos=x, ypos=369)
+                    image = renpy.game.context().scene_lists.get_displayable_by_tag(IMAGE_LAYER, "layer%d" % layer)
+                    assert image.get_placement()[:4] == (x, 369, 0.0, 0.0), image.get_placement()
+                loadcls(0, 0, clear=True)
         # Exercise the real say boundary, not just the parser: old-style
         # substitution crashes on "33%。" and silently changes "100%%".
         assert config.old_substitutions is False
