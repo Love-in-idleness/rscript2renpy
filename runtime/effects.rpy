@@ -452,6 +452,53 @@ transform grayscale(img):
 
 init python:
 
+    def rscript_clear_frame(effect, tick):
+        import math
+        if effect == 31:
+            remaining = max(0, 10 - tick)
+            angle = (0x4000 // 9) * min(9, remaining) // 255
+            offset = 0 if tick == 0 else 150 - int(150 * int(math.sin(angle * math.tau / 256) * 65535) / 65535)
+            return (max(0., 1 - min(256, tick * 16) / 256.), offset, 0, 1)
+        if effect == 34:
+            if tick == 0:
+                return (1, 0, 0, 1)
+            level = max(0, 254 - tick * 12)
+            remaining = max(0, 21 - tick)
+            angle = (390 - ((0x8800 // 20 + 2) * remaining // 255)) % 255
+            offset = int(-250 * int(math.sin(angle * math.tau / 256) * 65535) / 65535) if remaining else 0
+            return (float(level > 0), offset, -level * 360 / 256., max(1, level * 100 // 256) / 100.)
+        raise ValueError("Unsupported native clear effect: %s" % effect)
+
+    class RScriptClearExit(renpy.Displayable):
+        def __init__(self, child, effect, pos=(0, 0), anchor=(0, 0)):
+            super(RScriptClearExit, self).__init__()
+            self.child, self.effect = renpy.displayable(child), effect
+            self.pos, self.anchor = pos, anchor
+
+        def render(self, width, height, st, at):
+            source = renpy.render(self.child, width, height, st, at)
+            w, h = map(int, source.get_size())
+            left, top = self.pos[0] - w * self.anchor[0], self.pos[1] - h * self.anchor[1]
+            alpha, offset, angle, zoom = rscript_clear_frame(self.effect, int(st / .05 + 1e-9))
+            if self.effect == 31:
+                split = w // 2
+                # shortcut: odd-width native split has a one-pixel seam; calibrate if a game uses it.
+                children = [Transform(self.child, crop=(0, 0, split, h),
+                                      pos=(absolute(left), absolute(top + offset)), alpha=alpha),
+                            Transform(self.child, crop=(split, 0, w - split, h),
+                                      pos=(absolute(left + split), absolute(top - offset)), alpha=alpha)]
+            else:
+                children = [Transform(self.child, anchor=(.5, .5), zoom=zoom, rotate=angle,
+                                      pos=(absolute(left + w / 2.), absolute(top + h / 2. + offset)), alpha=alpha)]
+            # Keep displaced fragments in source-space coordinates on the game canvas.
+            result = renpy.render(Fixed(*children, xysize=(config.screen_width, config.screen_height)), width, height, st, at)
+            if alpha:
+                renpy.redraw(self, .05)
+            return result
+
+        def visit(self):
+            return [self.child]
+
     def rscript_zoom_crop(width, height, locate, level):
         # startup_jp.exe 43ba20 / 4542c0: keypad centre, clamped integer crop.
         anchors = ((.5, .5), (0, 1), (.5, 1), (1, 1), (0, .5),
@@ -520,7 +567,8 @@ init python:
     def rscript_layer_visibility(layer, trans, st, at):
         # Keep the loaded image and its effects; enabl is visibility, not cls.
         trans.alpha = float(bool(store.layer_enabled.get(layer, 1)))
-        return 0.1
+        trans.u_blendmode, trans.u_blendlevel = store.layer_blend.get(layer, (0, 0))
+        return .05
 
     def rscript_show_layer(name, at_list=None, **kwargs):
         transforms = list(at_list or [])
@@ -530,7 +578,8 @@ init python:
             kwargs.setdefault("zorder", store.layer_zorder.get(number, number * 2))
             visibility = (RScriptRasterVisibility if isinstance(kwargs.get("what"), renpy.display.image.ImageReference)
                           else renpy.curry(rscript_layer_visibility))
-            transforms.append(Transform(function=visibility(int(name[5:]))))
+            transforms.append(Transform(shader="rscript.blend", u_blendmode=0, u_blendlevel=0,
+                                        function=visibility(number)))
         renpy.show(name, at_list=transforms, **kwargs)
 
     def rscript_selected_layers(layer):
@@ -582,15 +631,11 @@ init python:
         # Bare floats are *relative* positions in Ren'Py, not pixel offsets.
         xpos, ypos = absolute(xpos), absolute(ypos)
 
-        blend_mode, blend_level = store.layer_blend.get(layer, (0, 0))
-
         trans = Transform(
       xpos = xpos,
       ypos = ypos,
       anchor = anchor,
-      shader = ["rscript.blend", "rscript.colormode"],
-      u_blendmode = blend_mode,
-      u_blendlevel = blend_level,
+      shader = "rscript.colormode",
       u_colormode = color,
     )
 
@@ -801,6 +846,15 @@ init python:
                 queue_draw(rscript_show_layer, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [ef], layer = IMAGE_LAYER)
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
+
+        elif clear and effect in (31, 34):
+            if layer in store.layer_info:
+                trans.pos, trans.anchor = (absolute(0), absolute(0)), (0, 0)
+                queue_draw(rscript_show_layer, tag,
+                           what=RScriptClearExit(store.layer_info[layer], effect, (xpos, ypos), anchor),
+                           at_list=[trans], zorder=zorder, layer=IMAGE_LAYER)
+                queue_ef_pause(.8 if effect == 31 else 1.1)
+                queue_draw_delayed(renpy.hide, tag, layer=IMAGE_LAYER)
 
         elif effect == 28:
             if not clear:

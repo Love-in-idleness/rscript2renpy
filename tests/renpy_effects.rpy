@@ -29,6 +29,22 @@ init 100 python:
         actual = image.get_at((20, 20))[:3]
         assert all(abs(a - b) <= 3 for a, b in zip(actual, expected)), (actual, expected)
 
+    def effects_test_native_exit(when, effect=31):
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        samples = ([(220, 280, (255, 0, 0)), (270, 280, (255, 0, 0))] if when == 0 else
+                   [(220, 430, (116, 40, 60)), (270, 130, (116, 40, 60)), (220, 280, (32, 64, 96))] if when == .5 else
+                   [(220, 430, (32, 64, 96)), (270, 130, (32, 64, 96))])
+        if effect == 34:
+            offset = rscript_clear_frame(34, int(when / .05 + 1e-9))[1]
+            samples = [(250, 290 + offset, (255, 0, 0) if when < 1.1 else (32, 64, 96))]
+        for x, y, expected in samples:
+            actual = image.get_at((x, y))[:3]
+            if not all(abs(a - b) <= 3 for a, b in zip(actual, expected)):
+                pygame.image.save(image, "/tmp/rscript-native-exit.png")
+            assert all(abs(a - b) <= 3 for a, b in zip(actual, expected)), (when, x, y, actual, expected)
+
     def effects_test_missing_images():
         import io
         import pygame_sdl2 as pygame
@@ -98,12 +114,62 @@ label _0000:
     $ effects_test_pixel((32, 64, 96))
     _cls 20 15
     $ assert 20 not in store.layer_info and 20 not in store.layer_pos
+    # Native draw changes the already shown image, without replacing its position/effects.
+    _load 20 9980 0 0 0 0
+    $ assert isinstance(renpy.game.context().scene_lists.get_displayable_by_tag(IMAGE_LAYER, "layer20").function, RScriptRasterVisibility)
+    _draw 20 1 50
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((144, 32, 48))
+    _draw 20 2 50
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((160, 64, 96))
+    _draw 20 0 0
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((255, 0, 0))
+    _queue
+    _draw 20 1 100
+    $ assert store.layer_blend[20] == (0, 0)
+    _action
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((32, 64, 96))
+    _draw 20 0 0
+    _cls 20 0
     _queue
     _load 20 9990 0 0 19 0
     $ assert store.in_queue and store.draw_queue
     _action
     _cls 20 10
     $ assert 20 not in store.layer_info and 20 not in store.layer_pos
+    python:
+        assert rscript_clear_frame(31, 0) == (1, 0, 0, 1)
+        assert rscript_clear_frame(31, 1)[1] == 0
+        assert rscript_clear_frame(31, 10) == (.375, 150, 0, 1)
+        assert rscript_clear_frame(31, 16)[0] == 0
+        assert rscript_clear_frame(34, 0) == (1, 0, 0, 1)
+        assert rscript_clear_frame(34, 1) == (1, 12, -340.3125, .94)
+        assert rscript_clear_frame(34, 21) == (1, 0, -2.8125, .01)
+        assert rscript_clear_frame(34, 22)[0] == 0
+        for when in (0, .5, .8):
+            probe = RScriptClearExit(Solid("#ff0000", xsize=100, ysize=80), 31, (250, 290), (.5, .5))
+            renpy.show("clear_probe", what=EffectsTimeProbe(probe, when))
+            renpy.pause(.1, hard=True)
+            effects_test_native_exit(when)
+        renpy.hide("clear_probe")
+        for when in (0, .5, 1.1):
+            probe = RScriptClearExit(Solid("#ff0000", xsize=100, ysize=80), 34, (250, 290), (.5, .5))
+            renpy.show("clear_probe", what=EffectsTimeProbe(probe, when))
+            renpy.pause(.1, hard=True)
+            effects_test_native_exit(when, 34)
+        renpy.hide("clear_probe")
+        for effect in (31, 34):
+            loadcls(20, 0, cg=9990)
+            store.in_queue = True
+            loadcls(20, effect, clear=True)
+            assert (_queue_ef_pause, (.8 if effect == 31 else 1.1,), {}) in store.draw_queue
+            assert 20 not in store.layer_info and 20 not in store.layer_pos
+            store.in_queue = False
+            process_draw_queue()
+            assert not renpy.showing("layer20", layer=IMAGE_LAYER)
     python:
         for effect, phase in ((116, .155), (216, .205)):
             zoom = RScriptCompoundZoom(effect,

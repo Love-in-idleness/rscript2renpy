@@ -102,6 +102,10 @@ def main() -> None:
         assert "    pass\n" in scene
         assert flatten_unsupported_effects(scene, resources) == scene
         assert flatten_unsupported_effects("    _cls 42 14\n", resources) == "    _cls 42 14\n"
+        for effect in (31, 34):
+            source = "    _cls 42 %d\n" % effect
+            assert flatten_unsupported_effects(source, resources) == source
+            assert "flattened" in flatten_unsupported_effects("    _load 42 1 0 0 %d 0\n" % effect, resources)
         assert flatten_unsupported_effects("    _update 116 16 0\n", resources) == "    _update 116 16 0\n"
         assert "compound zoom family not implemented" in flatten_unsupported_effects(
             "    _update 316 16 0\n", resources)

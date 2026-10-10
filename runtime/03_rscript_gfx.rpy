@@ -361,6 +361,10 @@ python early:
         return args
 
     def execute_draw(args):
+        queue_draw(_execute_draw, args.resolved())
+        process_draw_queue()
+
+    def _execute_draw(args):
         layer_blend[args.Layer] = (args.Mode, args.Level)
 
     def lint_draw(args):
