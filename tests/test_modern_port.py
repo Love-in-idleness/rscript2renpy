@@ -56,6 +56,20 @@ def main():
                 shutil.copyfile(ROOT / 'runtime/gui/rscript_cursor.png', pane / (name + '.png'))
             (pane / '.meta.xml').write_text('<Canvas><Width>1280</Width><Height>720</Height><Items>' + ''.join('<Item x="0" y="0">%s</Item>' % name for name in names) + '</Items></Canvas>')
         from PIL import Image
+        for number, color, pos in ((0, '#e01234', (6, 8)), (1, '#1234e0', (2, 3))):
+            pane = base / 'grps' / ('wait%02d' % number)
+            pane.mkdir()
+            Image.new('RGBA', (8, 8), color).save(pane / 'body.png')
+            glow = Image.new('RGB', (32, 32), '#000000')
+            glow.paste('#ffffff', (20, 20, 28, 28))
+            glow.save(pane / 'grow.png')
+            (pane / '.meta.xml').write_text('<Canvas><Width>32</Width><Height>32</Height><Items>'
+                '<Item x="%d" y="%d">body</Item><Item x="0" y="0">grow</Item></Items></Canvas>' % pos)
+        translated_wait = patch / 'grps/wait00'
+        translated_wait.mkdir(parents=True)
+        Image.new('RGBA', (8, 8), '#12e034').save(translated_wait / 'body.png')
+        (translated_wait / '.meta.xml').write_text('<Canvas><Width>32</Width><Height>32</Height><Items>'
+            '<Item x="10" y="12">body</Item><Item x="0" y="0">grow</Item></Items></Canvas>')
         for folder, color in (('sel_q00', '#56789a'), ('sel_a00', '#345678')):
             pane = base / 'grps' / folder
             pane.mkdir()
@@ -219,6 +233,20 @@ def main():
                             assert pixel(300, 260) == (52, 86, 120)  # Chosen row stays.
                             assert pixel(300, 315) == (18, 52, 86)  # Other row leaves right.
                 print('OK: dynamic-choice motion through GL2 framebuffer and native actions')
+                assert 'OK: actual dialogue uses wait artwork, language metadata and waitlod' in result.stdout, result.stdout + result.stderr
+                for number, color, pos in ((0, (224, 18, 52), (6, 8)),
+                                          (1, (18, 224, 52), (10, 12)),
+                                          (2, (18, 52, 224), (2, 3))):
+                    with Image.open('/tmp/rscript-modern-wait-%d.png' % number) as capture:
+                        def pixel(x, y):
+                            return capture.getpixel((round(x * capture.width / 1280),
+                                                     round(y * capture.height / 720)))[:3]
+                        body = pixel(1080 + pos[0] + 4, 638 + pos[1] + 4)
+                        assert body == color, (number, body)
+                        background = pixel(1075, 638)
+                        assert pixel(1080, 638) == background  # Black glow is transparent.
+                        assert all(a > b for a, b in zip(pixel(1104, 662), background))  # Glow is actually drawn.
+                print('OK: real dialogue CTC artwork and language/skin switching through GL2')
                 shutil.copyfile(ROOT / 'tests/renpy_boot_movies.rpy', game / 'scr/0000.rpy')
                 (game / 'scr/0000.rpyc').unlink(missing_ok=True)
                 result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),

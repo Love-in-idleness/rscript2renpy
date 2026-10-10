@@ -10,6 +10,8 @@ init 100 python:
     modern_motion_started = None
     modern_motion_capture = False
     modern_motion_page = 0
+    modern_wait_page = 0
+    modern_wait_ready = None
 
     def modern_dynamic_pick():
         global modern_dynamic_page
@@ -50,11 +52,30 @@ init 100 python:
             modern_motion_page += 1
             return renpy.run(items[-1 if modern_motion_page == 1 else 0].action)
 
+    def modern_wait_pick():
+        import time
+        global modern_wait_page, modern_wait_ready
+        screen = renpy.get_screen("_ctc")
+        if screen is None:
+            return
+        if modern_wait_ready is None:
+            modern_wait_ready = time.monotonic()
+            return
+        if time.monotonic() - modern_wait_ready < .2:
+            return
+        renpy.screenshot("/tmp/rscript-modern-wait-%d.png" % modern_wait_page)
+        modern_wait_page += 1
+        modern_wait_ready = None
+        return True
+
 screen modern_dynamic_driver():
     timer .05 repeat True action Function(modern_dynamic_pick)
 
 screen modern_motion_driver():
     timer .025 repeat True action Function(modern_motion_pick)
+
+screen modern_wait_driver():
+    timer .2 repeat True action Function(modern_wait_pick)
 
 label _0000:
     window hide
@@ -108,4 +129,20 @@ label _0000:
         assert renpy.get_screen("rscript_dynamic_motion") is None
         assert rscript_dynamic_skin is None and rscript_choice_prompt is None
         print("OK: dynamic-choice entry, paging without re-entry, selected exit and cleanup")
+    hide ruby_probe
+    _tboxloc 0 0 503
+    _waitloc 0 1080 135
+    _waitlod 0 0
+    _waitcol 0 255 255 255
+    $ persistent.rscript_text_cps = 0
+    show screen modern_wait_driver
+    _rscript_say (None, "Wait artwork", 1)
+    $ renpy.change_language("zh")
+    _rscript_say (None, "Language artwork", 1)
+    _waitlod 0 1
+    _rscript_say (None, "Other skin", 1)
+    hide screen modern_wait_driver
+    python:
+        assert modern_wait_page == 3
+        print("OK: actual dialogue uses wait artwork, language metadata and waitlod")
         renpy.quit()

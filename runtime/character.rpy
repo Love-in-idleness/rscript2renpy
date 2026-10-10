@@ -10,8 +10,6 @@ init python:
 init:
 
     image rscript_ctc:
-        function rscript_wait_transform
-
         contains:
             rscript_wait_image()
             xpos (rscript_layouts().get("wait%02d" % rscript_textbox_state().get("wait_image", 0), {}).get("items", {}).get("body", (4, 5))[0] if hasattr(store, "rscript_layouts") else 4)
@@ -26,6 +24,9 @@ init:
             linear 35.0 / 30.0 alpha 1.0
             linear 35.0 / 30.0 alpha 0.0
             repeat
+
+        # The repeating position callback must not block installing the children.
+        function rscript_wait_transform
 
     define rscript_adv = ADVCharacter(kind = adv, ctc = "rscript_ctc", ctc_position = "fixed")
     define rscript_nvl = ADVCharacter(kind = rscript_adv)
