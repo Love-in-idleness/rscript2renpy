@@ -5,6 +5,21 @@ init 100 python:
         renpy.quit(status=1)
     config.exception_handler = modern_ruby_exception
     config.autosave_on_choice = False
+    modern_dynamic_page = 0
+
+    def modern_dynamic_pick():
+        global modern_dynamic_page
+        menu = renpy.get_screen("choice")
+        if menu is None:
+            return
+        items = menu.scope["items"]
+        expected = (["0", "1", "2", "3", "Next"] if modern_dynamic_page == 0 else ["4", "5", "Next"])
+        assert [item.caption for item in items] == expected, (modern_dynamic_page, [item.caption for item in items])
+        modern_dynamic_page += 1
+        return renpy.run(items[-1 if modern_dynamic_page == 1 else 0].action)
+
+screen modern_dynamic_driver():
+    timer .05 repeat True action Function(modern_dynamic_pick)
 
 label _0000:
     window hide
@@ -31,4 +46,16 @@ label _0000:
         assert layout.add_top > 0  # First-row annotation has drawable headroom.
         renpy.screenshot("/tmp/rscript-modern-ruby.png")
         print("OK: native modern ruby drawable layout and clipping headroom")
+    _dynsel ("Pages", 0)
+    _dynnext "Next"
+    python:
+        for number in range(6):
+            execute_dynans(repr((str(number), number, 0, 0)))
+    show screen modern_dynamic_driver
+    _dyndo 2 0 1
+    hide screen modern_dynamic_driver
+    python:
+        assert _r[0] == 4 and modern_dynamic_page == 2
+        assert rscript_dynamic_skin is None and rscript_choice_prompt is None
+        print("OK: native dynamic-choice paging through real menu actions")
         renpy.quit()

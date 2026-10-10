@@ -178,14 +178,17 @@ def main():
                 (game / 'scr/0000.rpyc').unlink(missing_ok=True)
                 result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),
                                          str(project), 'run', '--savedir', str(directory / 'ruby-saves')],
-                                        check=True, timeout=45, capture_output=True, text=True,
+                                        timeout=45, capture_output=True, text=True,
                                         env=os.environ | {
                                             'SDL_VIDEODRIVER': 'x11', 'SDL_AUDIODRIVER': 'dummy',
                                             'RENPY_RENDERER': 'gl2', 'RENPY_SKIP_SPLASHSCREEN': '1',
                                             'RENPY_SKIP_MAIN_MENU': '1', 'RENPY_PERFORMANCE_TEST': '0',
                                             'RENPY_PATH_TO_SAVES': str(directory / 'ruby-sdk-saves')})
+                assert result.returncode == 0, result.stdout + result.stderr
                 assert 'OK: native modern ruby drawable layout' in result.stdout, result.stdout + result.stderr
+                assert 'OK: native dynamic-choice paging through real menu actions' in result.stdout, result.stdout + result.stderr
                 print('OK: native modern ruby drawable layout and clipping headroom')
+                print('OK: native dynamic-choice paging through real menu actions')
                 shutil.copyfile(ROOT / 'tests/renpy_boot_movies.rpy', game / 'scr/0000.rpy')
                 (game / 'scr/0000.rpyc').unlink(missing_ok=True)
                 result = subprocess.run(['xvfb-run', '-a', str(Path(sys.argv[1]) / 'renpy.sh'),
