@@ -52,7 +52,7 @@ python3 tools/refresh_tsc.py /path/to/resources \
 ```
 
 按实际游戏选择 `--dialect`：Forest 为 `forest`，Khime 为 `khime`，Evermaiden
-为 `modern`，CannonBall 和 Khime Zero 为 `legacy`。编码必须根据输入文件指定，
+为 `modern`，CannonBall 和 Khime Zero 为 `legacy`，Kagerou 为 `kagerou`。编码必须根据输入文件指定，
 不能仅凭语言标签判断；相同编码与方言的多个资源目录可一起传入。
 该预处理工具显式调用 LiarsoftTool，在临时目录导出并校验整批脚本后逐文件
 原子替换；原 GSC 不变。已有 TSC 需加 `--force`，手工修改会被覆盖。
@@ -136,7 +136,7 @@ repository, not Git branches. Run command examples from the repository root.
 - [Khime Kusaritop and optional Khime Zero](khime/README.md).
 - [Evermaiden](evermaiden/README.md).
 - [CannonBall](cannonball/README.md).
-- [KagerouTouryuuki](kagerou/README.md) — native analysis in progress; no playable builder yet.
+- [KagerouTouryuuki](kagerou/README.md) — experimental builder with native evidence and explicit rendering limits.
 
 ### Dependencies and resource preparation
 

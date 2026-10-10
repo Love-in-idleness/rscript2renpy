@@ -211,10 +211,10 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
         if dialect == "legacy" and (byte_format != "legacy-28" or schema not in
                 ("early", "early-short-select", "pre-codex", "rscript18")):
             raise ValueError(f"{path}: legacy adapter requires a supported legacy-28 command TSC")
-        if dialect in ("khime", "modern") and (byte_format != "modern-36" or schema not in
+        if dialect in ("khime", "modern", "kagerou") and (byte_format != "modern-36" or schema not in
                 ("modern", "rscript19", "rscript18")):
             raise ValueError(f"{path}: modern adapter requires current modern-36 command TSC")
-        if dialect not in ("forest", "legacy", "khime", "modern"):
+        if dialect not in ("forest", "legacy", "khime", "modern", "kagerou"):
             raise ValueError(f"{path}: unknown dialect {dialect}")
 
     for line_no, line in enumerate(
@@ -286,7 +286,7 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
             opcode = _number(tokens[1][0], "H", line_no)
             if not opcode & 0xf000:
                 raise ValueError(f"{path}: line {line_no}: invalid VM opcode")
-            if dialect in ("khime", "modern") or schema == "rscript18":
+            if dialect in ("khime", "modern", "kagerou") or schema == "rscript18":
                 kinds = "HS" if opcode & 0xf000 == 0xf000 else "HSS"
             else:
                 kinds = "HH" if opcode & 0xf000 == 0xf000 else "HHH"
@@ -302,7 +302,8 @@ def read_tsc(path: str | Path, dialect: str = "forest") -> RScriptTsc:
                     "rscript18": RSCRIPT18_COMMANDS, "early": COMMANDS,
                     "early-short-select": EARLY_SHORT_SELECT_COMMANDS,
                     "pre-codex": PRE_CODEX_COMMANDS}[schema]
-                opcode, kinds = active[name]
+                # Kagerou 41d29d reads five expressions before 431320.
+                opcode, kinds = (255, "EEEEE") if dialect == "kagerou" and name == "excmd" else active[name]
             except KeyError as error:
                 raise ValueError(
                     f"{path}: line {line_no}: unsupported {dialect} command {name}") from error

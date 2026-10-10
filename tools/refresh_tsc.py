@@ -65,7 +65,7 @@ def main():
     parser.add_argument("resources", type=Path, nargs="+")
     parser.add_argument("--liarsofttool", required=True, type=Path)
     parser.add_argument("--encoding", required=True, choices=("cp932", "gbk", "cp1251"))
-    parser.add_argument("--dialect", required=True, choices=("forest", "khime", "modern", "legacy"))
+    parser.add_argument("--dialect", required=True, choices=("forest", "khime", "modern", "legacy", "kagerou"))
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     try:

@@ -59,7 +59,7 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
     legacy = adapter == "pre-codex"
     early = adapter in {"early", "pre-codex"}
     modern = adapter not in {"khime", "early", "pre-codex"}
-    dialect = "legacy" if legacy else "forest" if zero or early else "modern"
+    dialect = "kagerou" if adapter == "kagerou" else "legacy" if legacy else "forest" if zero or early else "modern"
     tsc = read_tsc(source, dialect)
     items = tsc.instructions()
     patch_texts = language_texts or {}
@@ -96,7 +96,12 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
         return patch_text_expression(patch_texts, item, kind, original)[0]
     scene = scene_name or ("khime_zero_" + source.stem if zero else scene_prefix + source.stem)
     commands = EARLY_COMMANDS if early else PASSTHROUGH if adapter == "khime" else MODERN_PASSTHROUGH
-    prefix = statement_prefix or ("khime" if adapter == "khime" else "rscript")
+    if adapter == "kagerou":
+        commands = dict(commands)
+        commands.update({33: "move", 42: "kagerou_tbox", 58: "kagerou_endscene",
+                         83: "kagerou_txcls", 102: "kagerou_tclsmode",
+                         255: "kagerou_excmd"})
+    prefix = statement_prefix or (adapter if adapter in {"khime", "kagerou"} else "rscript")
     targets = {item.operands[0] for item in items if item.opcode in (3, 4, 5, 200)}
     targets.update(offset for name, offset in tsc.named_entries)
     entries = {}
@@ -211,16 +216,18 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             lines.append("    _oload %s %s" %
                          (" ".join(operands[:5]), text(item, 5)))
         elif op == 62:
-            if not modern:
+            if not modern or (adapter == "kagerou" and len(operands) == 1):
                 lines.append("    _se 0 %s" % operands[-1])
             else:
                 lines.append("    _se %s" % " ".join(operands))
         elif op == 63:
             lines.append("    _se_on %s" % " ".join(
-                ["0"] + (operands if early else operands[-3:]) if not modern else operands))
+                ["0"] + (operands if early else operands[-3:]) if not modern or
+                (adapter == "kagerou" and len(operands) == 3) else operands))
         elif op == 64:
             lines.append("    _se_off %s" % ("0 " + operands[-1]
-                                           if not modern else " ".join(operands)))
+                                           if not modern or (adapter == "kagerou" and len(operands) == 1)
+                                           else " ".join(operands)))
         elif op == 81:
             original = tsc.string(values[4]) if legacy else instruction_strings(tsc, item)["say"]
             raw = patch_text_expression(patch_texts, item, "say", original)[0]
@@ -350,7 +357,8 @@ def compile_overlays(resources: Path, patches=(), *, adapter="modern") -> dict[s
             files[destination] = compile_scene(
                 source, adapter=adapter, scene_prefix=prefix)
             routes.setdefault(source.stem, []).append((language, prefix + source.stem))
-            for name, offset in read_tsc(source, "legacy" if adapter == "pre-codex" else "modern").named_entries:
+            for name, offset in read_tsc(source, "kagerou" if adapter == "kagerou" else
+                                         "legacy" if adapter == "pre-codex" else "modern").named_entries:
                 entry_routes.setdefault((source.stem, name), []).append((language, "_g_%s%s_%s" % (prefix, source.stem, name)))
     for scene, destinations in routes.items():
         lines = ["# Generated language-aware scene entry.", "label _%s:" % scene]
