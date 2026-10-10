@@ -89,7 +89,7 @@ label khime_zero_start:
 # Extend only the ordinary title's 9106 menu, not the alternate extras menu.
 init offset = 10
 screen rscript_click_extra(options):
-    if khime_zero_unlocked() and any(hover == "grpo_tp 9106" for _, _, _, hover, _, _ in options):
+    if khime_zero_unlocked() and any(idle == "grpo_tp 9006" for _, _, idle, _, _, _ in options):
         imagebutton:
             id "khime_zero_entry"
             idle "khime_zero grpo 0001"

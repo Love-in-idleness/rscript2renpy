@@ -429,6 +429,7 @@ python early:
             idle = store.layer_info[layer]
             hover_image = "%s %04d" % (folder, hover) if hover is not None else idle
             if store.rscript_click_native_effects:
+                hover_image = idle
                 mode = store.rscript_click_modes.get(layer, 0)
                 # Native 405cb0: invert, wash toward white (LUT row 64), or omit the body.
                 if mode == 1:
@@ -445,16 +446,23 @@ python early:
                             hover_image if not isinstance(hover_image, str) or renpy.has_image(hover_image, exact=True) else idle,
                             absolute(x), absolute(y)))
             layers[len(options) - 1] = layer
-            preview = (link if store.rscript_click_link_is_preview else
-                       store.rscript_click_previews.get(layer))
-            if preview is not None:
+            cards = []
+            links = ([link, store.rscript_click_previews.get(layer)]
+                     if store.rscript_click_link_is_preview and store.rscript_click_native_effects
+                     else [link if store.rscript_click_link_is_preview else
+                           store.rscript_click_previews.get(layer)])
+            for preview in links:
+                if preview is None or (store.rscript_click_native_effects and preview[0] in (0, -1, 0xffff)):
+                    continue
                 cg, px, py = preview
                 if store.rscript_click_grid:
                     px *= store.layer_x_grid
                     py *= store.layer_y_grid
                 image = "%s %04d" % (folder, cg)
                 if renpy.has_image(image, exact=True):
-                    previews[len(options) - 1] = (image, px, py)
+                    cards.append((image, px, py))
+            if cards:
+                previews[len(options) - 1] = cards[0] if len(cards) == 1 else tuple(cards)
         if not options:
             raise Exception("RScript click has no active image regions")
         countdown = rscript_click_countdown(o)
@@ -508,11 +516,14 @@ python early:
             renpy.show(tag, what=renpy.displayable(image or store.layer_info[layer]),
                        layer=IMAGE_LAYER, zorder=depth)
         renpy.hide("rscript_click_preview", layer=IMAGE_LAYER)
+        renpy.hide("rscript_click_preview1", layer=IMAGE_LAYER)
         if preview is not None and store.layer_enabled.get(layer, 1):
-            image, x, y = preview
-            renpy.show("rscript_click_preview", what=renpy.displayable(image),
-                       layer=IMAGE_LAYER, zorder=depth + 1,
-                       at_list=[Transform(pos=(absolute(x), absolute(y)), anchor=(0.0, 0.0))])
+            cards = [preview] if isinstance(preview[0], str) else preview
+            for index, (image, x, y) in enumerate(cards):
+                renpy.show("rscript_click_preview" + (str(index) if index else ""),
+                           what=renpy.displayable(image), layer=IMAGE_LAYER,
+                           zorder=depth + 1,
+                           at_list=[Transform(pos=(absolute(x), absolute(y)), anchor=(0.0, 0.0))])
 
     renpy.register_statement("_click", parse = parse_click, execute = execute_click, lint = lint_undef)
 

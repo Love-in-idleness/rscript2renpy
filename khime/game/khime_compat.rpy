@@ -79,6 +79,9 @@ python early:
 
 init -100 python:
     rscript_folder_zero_all = True
+    # KhimeDL_CHS.exe 40a000: links are separate cards, not hit coordinates.
+    rscript_click_link_is_preview = True
+    rscript_click_native_effects = True
 
 init python:
     rscript_ui.update({"textbox_size": (800, 163)})

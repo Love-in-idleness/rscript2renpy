@@ -168,7 +168,10 @@ def main():
                                        ("renpy_registers", "OK: native bounded register reset"),
                                        ("renpy_save_permissions", "OK: native title and in-game loads preserve save permissions"),
                                        ("renpy_end", "OK: native end discards nested story calls"),
-                                       ("renpy_boot_movies", "OK: native startup movies play in order only on launch")):
+                                       ("renpy_boot_movies", "OK: native startup movies play in order only on launch"),
+                                       ("renpy_khime_click", "OK: native Khime menu binding cleanup, song hit coordinates and two hover cards")):
+                    if driver == "renpy_khime_click" and name != "Khime":
+                        continue
                     shutil.copy2(ROOT / "tests" / (driver + ".rpy"),
                                  project / "game/scr/0000.rpy")
                     (project / "game/scr/0000.rpyc").unlink(missing_ok=True)

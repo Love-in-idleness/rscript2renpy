@@ -124,8 +124,10 @@ python early:
         old_screen = renpy.call_screen
         old_folder, old_info = dict(store.folder), dict(store.layer_info)
         old_grid = (layer_x_grid, layer_y_grid)
+        old_click_dialect = (rscript_click_link_is_preview, rscript_click_native_effects)
         captured = []
         try:
+            store.rscript_click_link_is_preview = store.rscript_click_native_effects = False
             store.folder[20] = "grpo"
             store.layer_info[20] = "idle image"
             store.layer_x_grid, store.layer_y_grid = 2, 3
@@ -137,6 +139,41 @@ python early:
             assert point[:4] == (3, True, "idle image", "grpo 0707")
             assert point[4:] == ((24, 102) if rscript_click_grid else (12, 34))
             assert captured[0][1]["previews"] == {0: ("grpo 1070", 0, 15 if rscript_click_grid else 5)}
+            # Khime: cleared title/gallery bindings must not reactivate when
+            # 0501 reuses layer 41 as a non-clickable confirmation caption.
+            store.rscript_click_link_is_preview = store.rscript_click_native_effects = True
+            store.layer_x_grid = store.layer_y_grid = 1
+            store.rscript_click_autoreset = False
+            from types import SimpleNamespace
+            execute_queue(None)
+            for layer in (41, 42, 43):
+                store.folder[layer] = "grpo"
+                loadcls(layer, 0, cg=707, xpos=531, ypos=31 + (layer - 41) * 43)
+                execute_setclk(SimpleNamespace(Layer=layer, Value=layer, Mode=3))
+                execute_setlink(SimpleNamespace(Layer=layer, HoverCG=707, xLoc=0, yLoc=0, Slot=0))
+                execute_setlink(SimpleNamespace(Layer=layer, HoverCG=1070, xLoc=0, yLoc=665, Slot=1))
+            loadcls(0, 0, clear=True)
+            for bindings in (rscript_click_values, rscript_click_links, rscript_click_previews, rscript_click_modes):
+                assert not bindings, bindings
+            for layer in (41, 42, 43):
+                loadcls(layer, 0, cg=707, xpos=332 + (layer - 42) * 55, ypos=508)
+            for layer in (42, 43):
+                execute_setclk(SimpleNamespace(Layer=layer, Value=layer - 21, Mode=0))
+            execute_update(SimpleNamespace(Effect=0, Step=0, Wait=0))
+            execute_click(None)
+            click = captured[-1][1]
+            assert list(click["layers"].values()) == [42, 43]
+            assert [option[4:] for option in click["options"]] == [(332, 508), (387, 508)]
+            assert all(option[2] == option[3] for option in click["options"])
+            assert not click["previews"]  # 0401 songs work without setlink.
+            execute_setlink(SimpleNamespace(Layer=42, HoverCG=707, xLoc=0, yLoc=0, Slot=0))
+            execute_setlink(SimpleNamespace(Layer=42, HoverCG=1070, xLoc=0, yLoc=665, Slot=1))
+            execute_click(None)
+            click = captured[-1][1]
+            assert click["options"][0][4:] == (332, 508)
+            assert click["previews"][0] == (("grpo 0707", 0, 0), ("grpo 1070", 0, 665))
+            loadcls(0, 0, clear=True)
+            store.rscript_click_autoreset = True
             from types import SimpleNamespace
             execute_folder(SimpleNamespace(Layer=0, Folder="grpo_tp"))
             assert all(store.folder[number] == "grpo_tp" for number in range(100))
@@ -144,6 +181,9 @@ python early:
             renpy.call_screen = old_screen
             store.folder, store.layer_info = old_folder, old_info
             store.layer_x_grid, store.layer_y_grid = old_grid
+            store.rscript_click_link_is_preview, store.rscript_click_native_effects = old_click_dialect
+            store.rscript_click_autoreset = True
+            execute_resetclk(None)
         old_json = store.FileJson
         try:
             store.FileJson = lambda slot, key: 707 if key == "forest_dt1" else None

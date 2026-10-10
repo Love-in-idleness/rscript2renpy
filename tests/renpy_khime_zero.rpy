@@ -7,7 +7,7 @@ python early:
         renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
         renpy.display.screen.prepare_screens()
         assert khime_zero_available
-        options = [(0, True, "grpo_tp 9006", "grpo_tp 9106", 253, 561)]
+        options = [(0, True, "grpo_tp 9006", Transform("grpo_tp 9006", alpha=0.0), 253, 561)]
         _r[7901] = 0
         assert not khime_zero_unlocked()
         renpy.show_screen("rscript_click_screen", options=options)

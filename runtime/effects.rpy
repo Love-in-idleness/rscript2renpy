@@ -619,6 +619,10 @@ init python:
             rscript_apply_layers(layer, loadcls, effect, clear=True)
             return
 
+        if clear and store.rscript_click_native_effects:
+            # Native Khime 4067ce -> 406a90 resets both links even in a queue.
+            execute_resetclk(RScriptArguments(Layer=layer))
+
         anchor = layer_anchor.get(layer, (0.0, 0.0))
 
         if not clear:
