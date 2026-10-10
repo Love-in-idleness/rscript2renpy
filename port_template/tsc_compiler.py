@@ -251,8 +251,6 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
             # Cannonball.exe 0x417f40: signed multiply/divide, result in r0.
             lines.append("    $ _r[0] = rscript_muldev(%s) & 65535" % ", ".join(operands))
         elif legacy and op in {130, 131, 132, 134, 135, 136}:
-            if op in {130, 131, 135, 136}:
-                lines.append("    # Legacy numeric widget: native Bar/Fix artwork; Num digit skins/counting animation use a static fallback.")
             lines.append("    _rscript_number %s %s" % (
                 {130: "numload", 131: "numreng", 132: "numenable",
                  134: "numloc", 135: "numset", 136: "num"}[op], " ".join(operands)))

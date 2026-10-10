@@ -36,6 +36,12 @@ def main():
     # Execute the runtime helpers, not a second implementation in the test.
     helpers = (ROOT / "runtime/07_rscript_legacy.rpy").read_text().split("python early:\n")[1].split("    def parse_rscript_number")[0]
     exec(textwrap.dedent(helpers), namespace)
+    frames = namespace["rscript_number_frames"]
+    assert frames(0, 10) == (0, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    assert frames(10, 0) == (10, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+    assert frames(7, 7) == (7,)
+    assert frames(-3, 2) == (-3, -2, -1, 0, 1, 2)
+    assert len(frames(-32768, 32767)) < 60
     for family, left, right, expected in (
             (10, 100, 65535, 99), (10, 65535, 1, 0), (11, 0, 1, 65535),
             (12, 256, 256, 0), (5, 65535, 0, 0), (8, 65535, 0, 1),
@@ -190,6 +196,11 @@ def main():
         else:
             raise AssertionError("source/output overlap accepted")
         if len(sys.argv) > 1:
+            # Native Num sheets are vertical, not a font or a horizontal atlas.
+            atlas = Image.new("RGBA", (6, 100))
+            for digit in range(10):
+                atlas.paste((digit * 25, 0, 0, 255), (0, digit * 10, 6, digit * 10 + 10))
+            atlas.save(game / "grps/Num99.webp", lossless=True)
             if len(sys.argv) > 3:
                 original, translated = map(Path, sys.argv[2:4])
                 report = extract_native_ui(original / "Cannonball.exe", original)

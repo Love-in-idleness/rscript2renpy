@@ -173,6 +173,41 @@ python early:
         bar = rscript_number_displayable(rscript_numbers[0]).children[0]
         assert bar.crop == (0, 0, 234, 11), bar.crop
         assert (bar.xpos, bar.ypos) == (16, 1)
+        # Native eight-slot right alignment, zero suppression, image lookup.
+        digits = rscript_number_displayable(dict(Number=99, Value=42, X1=3, Y1=7)).children
+        assert [child.crop for child in digits] == [(0, 40, 6, 10), (0, 20, 6, 10)]
+        assert [(child.xpos, child.ypos) for child in digits] == [(39, 7), (45, 7)]
+        zero = rscript_number_displayable(dict(Number=99, Value=0)).children
+        assert len(zero) == 1 and zero[0].crop == (0, 0, 6, 10) and zero[0].xpos == 42
+        assert not rscript_number_displayable(dict(Number=98)).children
+        assert not rscript_number_displayable(dict(Number=0, Bar=0, Background=0)).children
+        frames = rscript_number_frames(0, 10)
+        animated, delay = rscript_number_animation(.05, .05, dict(Number=99), frames)
+        assert animated.children[-1].crop == (0, 20, 6, 10) and delay == .05
+        animated, delay = rscript_number_animation(2, 2, dict(Number=99), frames)
+        assert len(animated.children) == 2 and delay is None
+        # Test queued animation/wait/final redraw without playing the fixture.
+        old_pause = renpy.pause
+        pauses = []
+        renpy.pause = pauses.append
+        try:
+            command("numload 3 99 0 0")
+            command("numreng 3 0 100 0 0")
+            command("numenable 3 1")
+            command("num 3 10 1")
+            process_draw_queue()
+            assert pauses == [.45] and rscript_numbers[3]["Value"] == 10
+            assert not store.draw_queue and not store.draw_queue_delayed
+            command("num 3 20 0")
+            process_draw_queue()
+            assert pauses == [.45] and rscript_numbers[3]["Value"] == 20
+            command("num 3 -1 1")
+            process_draw_queue()
+            assert pauses == [.45] and rscript_numbers[3]["Value"] == 20
+            command("numenable 3 0")
+            process_draw_queue()
+        finally:
+            renpy.pause = old_pause
         # Clock units/range retention, timeout and early-selection remainder.
         import time
         old_clock = time.monotonic
