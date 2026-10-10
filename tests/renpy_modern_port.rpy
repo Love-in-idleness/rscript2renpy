@@ -271,12 +271,56 @@ python early:
             execute_dynsel(repr(("Reset", 0)))
             assert not rscript_dynamic_answers
             execute_dynnext(repr("Next"))
+            execute_dyndo(args)
+            assert _r[0] == 0 and rscript_dynamic_skin is None
+            for count in (5, 6, 8, 9):
+                execute_dynsel(repr(("Pages", 0)))
+                execute_dynnext(repr("Next"))
+                for number in range(count):
+                    execute_dynans(repr((str(number), number, 0, 0)))
+                pages = []
+                def pick_page(options):
+                    assert rscript_dynamic_skin == 2
+                    pages.append(options)
+                    if count == 5 or len(pages) == (count + 3) // 4 + 1:
+                        return options[0][1]
+                    return options[-1][1]
+                renpy.display_menu = pick_page
+                execute_dyndo(SimpleNamespace(Effect=2, Layout=2, Mode=1))
+                assert _r[0] == 0 and rscript_dynamic_skin is None
+                if count == 5:
+                    assert len(pages) == 1 and len(pages[0]) == 5
+                else:
+                    assert pages[0] == pages[-1]
+                    assert [value for page in pages[:-1] for _, value in page[:-1]] == list(range(count))
+                    assert all(page[-1] == ("Next", ("rscript_dynamic_next",)) for page in pages)
+            execute_dynsel(repr(("Default next", 0)))
+            for number in range(101):
+                execute_dynans(repr((str(number), number, 0, 0)))
+            assert len(rscript_dynamic_answers) == 100
+            renpy.display_menu = lambda options: (captured.append(options), options[0][1])[1]
+            execute_dyndo(args)
+            assert captured[-1][-1][0] == "次へ"
+            execute_dynsel(repr(("Append", 1)))
+            assert len(rscript_dynamic_answers) == 100
+            assert rscript_menu_panel("<02>literal", "sel_a", skin=0)[1] == "<02>literal"
+            old_layouts = dict(rscript_grps_layout)
+            try:
+                rscript_grps_layout.update({"sel_a02": {"items": {"body": (0, 0, 30, 10)}},
+                                           "sel_q02": {"items": {"body": (0, 0, 30, 10)}}})
+                assert rscript_menu_panel("literal", "sel_a", skin=2) == ("sel_a02", "literal")
+                assert rscript_menu_panel("literal", "sel_q", skin=2) == ("sel_q02", "literal")
+            finally:
+                rscript_grps_layout.clear()
+                rscript_grps_layout.update(old_layouts)
+            def fail_menu(options):
+                raise ValueError("cancelled")
+            renpy.display_menu = fail_menu
             try:
                 execute_dyndo(args)
-            except Exception as error:
-                assert "pagination" in str(error)
-            else:
-                raise AssertionError("pagination must not silently lose answers")
+            except ValueError:
+                pass
+            assert rscript_dynamic_skin is None and rscript_choice_prompt is None
         finally:
             renpy.display_menu = old_menu
         old_loadable = renpy.loadable

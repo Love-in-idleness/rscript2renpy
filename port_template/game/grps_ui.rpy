@@ -298,7 +298,7 @@ screen rscript_choice(items, prompt=None):
         yalign rscript_ui.get("choice_yalign", 0.42)
         spacing rscript_ui.get("choice_spacing", 4)
         if prompt:
-            $ prompt_folder, prompt_text = rscript_menu_panel(prompt, "sel_q")
+            $ prompt_folder, prompt_text = rscript_menu_panel(prompt, "sel_q", rscript_dynamic_skin)
             if prompt_folder:
                 $ question = rscript_layouts()[prompt_folder]
                 fixed:
@@ -319,7 +319,7 @@ screen rscript_choice(items, prompt=None):
                 text rscript_menu_text(prompt_text) xalign 0.5 color "#ffffff" font rscript_current_font()
         for item in items:
             if item.action is not None:
-                $ selected_folder, caption = rscript_menu_panel(item.caption, "sel_a")
+                $ selected_folder, caption = rscript_menu_panel(item.caption, "sel_a", rscript_dynamic_skin)
                 if selected_folder:
                     $ answer = rscript_layouts()[selected_folder]
                     fixed:

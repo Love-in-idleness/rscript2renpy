@@ -58,12 +58,14 @@ init python:
         path = rscript_image_path("grps/sel_a%02d/body.png" % number)
         return number if renpy.loadable(path) else None
 
-    def rscript_menu_panel(caption, prefix):
+    def rscript_menu_panel(caption, prefix, skin=None):
         # KhimeDL_CHS.exe 0x410bb6 / 0x4133e8: <NN> selects a skin,
         # with the remainder drawn as text; it is not an image-only choice.
         caption = renpy.substitute(caption)
         marker = renpy.re.match(r"<([ \t]*-?[0-9]+)>", caption)
-        if marker:
+        if skin is not None:
+            number = skin
+        elif marker:
             number = int(marker.group(1)) & 0xffff
             caption = caption[marker.end():]
         else:

@@ -2,6 +2,7 @@
 default rscript_choice_prompt = None
 default rscript_dynamic_answers = []
 default rscript_dynamic_next = None
+default rscript_dynamic_skin = None
 
 python early:
     def parse_rscript_expression(lex):
@@ -40,7 +41,9 @@ python early:
     def execute_dynans(value):
         # 0x43d550 -> 0x4099a9: third operand is a register key, not its value.
         caption, result, flag, inverted = eval(value)
-        store.rscript_dynamic_answers.append((caption, result, flag, inverted))
+        # 43d559: the native answer table has 100 entries.
+        if len(store.rscript_dynamic_answers) < 100:
+            store.rscript_dynamic_answers.append((caption, result, flag, inverted))
 
     def execute_dynnext(value):
         store.rscript_dynamic_next = eval(value)
@@ -54,12 +57,24 @@ python early:
         options = [(caption, result) for caption, result, flag, inverted
                    in store.rscript_dynamic_answers
                    if not flag or bool(store._r[flag]) == bool(inverted)]
-        # Native effect/layout modes are presentation-only, using the shared menu.
-        # ponytail: paginated dynnext is unimplemented; reject it rather than lose choices.
-        if store.rscript_dynamic_next:
-            raise Exception("RScript dynnext pagination is not implemented")
-        store._r[0] = renpy.display_menu(options) if options else 0
-        store.rscript_choice_prompt = None
+        # 409750: up to five answers, otherwise four + next, wrapping at the end.
+        next_page = ("rscript_dynamic_next",)
+        page = 0
+        store.rscript_dynamic_skin = args.Layout
+        try:
+            while options:
+                visible = options if len(options) <= 5 else options[page:page + 4] + [
+                    (store.rscript_dynamic_next or "次へ", next_page)]
+                result = renpy.display_menu(visible)
+                if result != next_page:
+                    store._r[0] = result
+                    break
+                page = page + 4 if page + 4 < len(options) else 0
+            else:
+                store._r[0] = 0
+        finally:
+            store.rscript_dynamic_skin = None
+            store.rscript_choice_prompt = None
 
     def parse_rscript_locmode(lex):
         args = rscript_arguments(lex, ["Layer", "XMode", "YMode", "Mode"])
