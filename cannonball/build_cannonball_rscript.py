@@ -14,6 +14,24 @@ from tsc_compiler import compile_overlays
 from ui_layout import extract_native_ui, native_layouts
 
 
+def correct_text_controls(scenes):
+    # Exact source typos: keep three-digit ^g parsing and original resources intact.
+    corrections = (
+        ("scr/2402.rpy", "^g63150種類くらいかなあ？", "^g063150種類くらいかなあ？"),
+        ("scr/2402.rpy", "^g6340個くらいかなあ？", "^g06340個くらいかなあ？"),
+        ("tl/zh/scr/2402.rpy", "^g63大概150种吧？", "^g063大概150种吧？"),
+        ("tl/zh/scr/2402.rpy", "^g63大概40个吧？", "^g063大概40个吧？"),
+        ("tl/zh/scr/6101.rpy", "^g033宰了弗克斯巴特。^g这次定要宰了她。",
+         "^g033宰了弗克斯巴特。^n这次定要宰了她。"),
+    )
+    for filename, before, after in corrections:
+        if filename in scenes:
+            old = "    _say %r\n" % before
+            new = ("    # CannonBall source typo corrected: %s -> %s\n" %
+                   (before, after)) + "    _say %r\n" % after
+            scenes[filename] = scenes[filename].replace(old, new)
+
+
 def build_cannonball(resources, project, force=False, languages=(), exe=None):
     resources, project = Path(resources).resolve(), Path(project).resolve()
     marker, patches = parse_language_options(list(languages))
@@ -26,6 +44,7 @@ def build_cannonball(resources, project, force=False, languages=(), exe=None):
     if not any((resources / se_directory).glob("*.ogg")):
         raise FileNotFoundError("converted sound effects missing: %s" % (resources / se_directory))
     scenes = compile_overlays(resources, patches, adapter="pre-codex")
+    correct_text_controls(scenes)
     if exe is not None:
         report = extract_native_ui(exe, resources)
         if not report["layouts"]:

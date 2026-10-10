@@ -11,7 +11,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "cannonball"))
-from build_cannonball_rscript import build_cannonball
+from build_cannonball_rscript import build_cannonball, correct_text_controls
 from rscript_tsc import read_tsc
 from tsc_compiler import compile_scene, compile_overlays
 from tsc_vm import emit_vm, packed
@@ -21,6 +21,27 @@ from exe_ui import constant_positions, inspect_exe
 
 
 def main():
+    from text_compat import flatten_unsupported_text_controls
+    originals = {
+        "scr/2402.rpy": "    _say '^g63150種類くらいかなあ？'\n    _say '^g6340個くらいかなあ？'\n",
+        "tl/zh/scr/2402.rpy": "    _say '^g63大概150种吧？'\n    _say '^g63大概40个吧？'\n",
+        "tl/zh/scr/6101.rpy": "    _say '^g033宰了弗克斯巴特。^g这次定要宰了她。'\n",
+        "scr/6101.rpy": "    _say '^g033フォックスバットを、殺そう。^n今度こそ、殺そう。'\n",
+        "scr/0000.rpy": "    _say '^g63150種類くらいかなあ？'\n",
+    }
+    corrected = originals.copy()
+    correct_text_controls(corrected)
+    assert "_say '^g063150種類くらいかなあ？'" in corrected["scr/2402.rpy"]
+    assert "_say '^g06340個くらいかなあ？'" in corrected["scr/2402.rpy"]
+    assert "_say '^g063大概150种吧？'" in corrected["tl/zh/scr/2402.rpy"]
+    assert "_say '^g063大概40个吧？'" in corrected["tl/zh/scr/2402.rpy"]
+    assert "_say '^g033宰了弗克斯巴特。^n这次定要宰了她。'" in corrected["tl/zh/scr/6101.rpy"]
+    assert corrected["scr/6101.rpy"] == originals["scr/6101.rpy"]
+    assert corrected["scr/0000.rpy"] == originals["scr/0000.rpy"]
+    assert all(flatten_unsupported_text_controls(text) == text for text in corrected.values())
+    again = corrected.copy()
+    correct_text_controls(again)
+    assert again == corrected  # Idempotent; comments and voice/control order stay intact.
     assert constant_positions([(1, "lea edi,[esi+0x68]"), (2, "mov eax,DWORD PTR [edi]"),
                                (3, "push 0x14a"), (4, "push 0x110"),
                                (5, "call DWORD PTR [eax+0x78]")], 0, 6) == {0x68: (272, 330)}
