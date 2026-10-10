@@ -169,15 +169,18 @@ python early:
 
     def execute_gosub(o):
         name, params, loc = o
+        target = rscript_label(name)
 
         if store._macro_params:
             params = store._macro_params
 
 
-        for i, param in enumerate(params):
-            _r[10 + i] = eval(param)
+        # Native calls resolve all operands before overwriting argument registers.
+        values = [eval(param) for param in params]
+        for i, value in enumerate(values):
+            _r[10 + i] = value
 
-        renpy.call(rscript_label(name))
+        renpy.call(target)
 
     def post_label_gosub(o):
         name, params, loc = o
@@ -220,16 +223,18 @@ python early:
     def execute_insub(o):
         name, params, loc = o
         script = current_script()
+        target = (name if name.startswith("_") and renpy.has_label(name)
+                  else rscript_label_local(script, name))
 
         if store._macro_params:
             params = store._macro_params
 
 
-        for i, param in enumerate(params):
-            _r[10 + i] = eval(param)
+        values = [eval(param) for param in params]
+        for i, value in enumerate(values):
+            _r[10 + i] = value
 
-        renpy.call(name if name.startswith("_") and renpy.has_label(name)
-                   else rscript_label_local(script, name))
+        renpy.call(target)
 
     def label_insub(o):
         name, params, loc = o
