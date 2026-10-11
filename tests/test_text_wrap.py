@@ -6,7 +6,7 @@ from itertools import product
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "runtime"))
-from rscript_wrap import NO_LINE_START, NO_LINE_END, glyph_breaks, normalize_boundaries, place_native_ruby
+from rscript_wrap import NO_LINE_START, NO_LINE_END, glyph_breaks, normalize_boundaries, place_native_ruby, ruby_markup
 
 
 def wrap(text, limit, advances=None):
@@ -17,6 +17,11 @@ def wrap(text, limit, advances=None):
 
 
 def main():
+    assert ruby_markup('|寂寞[じゃくまく]') == '{rb}寂寞{/rb}{rt}じゃくまく{/rt}'
+    assert ruby_markup('この躯[み]を介[お]いて') == 'この{rb}躯{/rb}{rt}み{/rt}を{rb}介{/rb}{rt}お{/rt}いて'
+    assert ruby_markup('|漢字[かんじ]字[じ]') == '{rb}漢字{/rb}{rt}かんじ{/rt}{rb}字{/rb}{rt}じ{/rt}'
+    assert ruby_markup('{color=#fff}躯[み]{/color}') == '{color=#fff}{rb}躯{/rb}{rt}み{/rt}{/color}'
+    assert ruby_markup('[literal] |unfinished[') == '[literal] |unfinished['
     assert wrap("甲乙", 2) == ["甲乙"]
     assert wrap("甲乙丙", 2) == ["甲乙", "丙"]
     assert wrap("甲乙。！", 2) == ["甲乙。", "！"]

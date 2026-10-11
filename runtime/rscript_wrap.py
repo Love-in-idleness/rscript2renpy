@@ -1,5 +1,14 @@
 """RScript kinsoku rules, operating on already shaped glyph advances."""
 
+import re
+
+
+def ruby_markup(text):
+    """Convert CodeX span and single-character readings, after style controls."""
+    return re.sub(r"\|([^\[\]|]+)\[([^\[\]]+)\]|([^{}\[\]|\n])\[([^\[\]]+)\]",
+                  lambda m: "{rb}%s{/rb}{rt}%s{/rt}" % (
+                      (m[1], m[2]) if m[1] is not None else (m[3], m[4])), text)
+
 NO_LINE_START = frozenset(
     " '\".,?!)}]"
     "\u3000、。，．？！ー～…）〕］｝〉》」』】’”"

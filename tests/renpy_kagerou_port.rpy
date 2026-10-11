@@ -263,6 +263,29 @@ python early:
             renpy.say = old_say
         kagerou_txcls('0')
         ruby, _ = parse_rscript_text(repr('|寂寞[じゃくまく]'), True)
+        ruby_probe = RScriptText(ruby)
+        ruby_probe.refresh_settings()
+        ruby_layout = renpy.text.text.Layout(ruby_probe, 480, 646, {}, size_only=True, drawable_res=False)
+        assert all(s.vertical for p in ruby_layout.paragraphs for s, c in p)
+        single, _ = parse_rscript_text(repr('この躯[み]を介[お]いて'), True)
+        assert single == 'この{rb}躯{/rb}{rt}み{/rt}を{rb}介{/rb}{rt}お{/rt}いて'
+        # 1000.rpy:29: unmarked single-character readings must not become body text.
+        line29, _ = parse_rscript_text(repr('火口はさながら抉[えぐ]られた傷痕めいて、熱く熾[おこ]った。'), True)
+        assert line29 == '火口はさながら{rb}抉{/rb}{rt}えぐ{/rt}られた傷痕めいて、熱く{rb}熾{/rb}{rt}おこ{/rt}った。'
+        for direction in (1, 0):
+            kagerou_set_text_setting('direction', direction)
+            rscript_set_text_style(0, text_rect=(114, 30, 646, 48) if direction else (400, 20, 48, 513))
+            split_ruby = RScriptText('{rb}漢字漢字{/rb}{rt}あいうえ{/rt}')
+            split_ruby.refresh_settings()
+            measured = renpy.text.text.Layout(split_ruby, 480, 646, {}, size_only=True, drawable_res=False)
+            glyphs = measured.paragraph_glyphs[0]
+            body = [g for g in glyphs if g.ruby == 1]
+            reading = [g for g in glyphs if g.ruby == 2]
+            assert body[0].y == body[1].y < body[2].y == body[3].y, (direction, [(g.x, g.y, g.advance, g.split) for g in body], split_ruby.rscript_settings)
+            assert reading[0].y == reading[1].y < reading[2].y == reading[3].y
+            assert all(g.y == round(b.y - b.ascent + g.ascent - 9)
+                       for b, g in zip(body, reading))
+        kagerou_set_text_setting('direction', 1)
         store.kagerou_page = store.kagerou_page_current = ruby
         renpy.show_screen('say', who=None, what=ruby)
         renpy.get_screen('say').update()

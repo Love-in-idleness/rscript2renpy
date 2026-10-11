@@ -109,8 +109,8 @@ python early:
         parsed, _ = parse_rscript_text(repr(raw), True)
         assert "…─–― " in parsed and " 甲 " in parsed
         assert lines(shaped(parsed, chars=100)[1]) == [" 甲 ", "\u3000乙 …─–― "]
-        visible, _ = parse_rscript_text(repr("50% [甲] "), True)
-        assert lines(shaped(visible, chars=100)[1]) == ["50% [甲] "]
+        visible, _ = parse_rscript_text(repr("50% ［甲］ "), True)
+        assert lines(shaped(visible, chars=100)[1]) == ["50% ［甲］ "]
         tagged = "{b}甲{color=#f00}乙{size=44}丙{/size}{/color}{/b}{w=1}丁"
         _, tagged_layout = shaped(tagged)
         gs = [g for p in tagged_layout.paragraph_glyphs for g in p]

@@ -166,10 +166,6 @@ python early:
             r"\^(?:g[ \t]*-?[0-9]+|a[0-9]{3}|[cf][a-z]|[binm]|[dw][0-9]+|s[0-9]|v[-0-9]+)",
             lambda match: match.group().lower(), text, flags=renpy.re.I)
         text = rscript_prepare_text(text)
-        # Shared by say, append, text objects and choices, not just modern TXT.
-        text = renpy.re.sub(r"\|([^\[\]|]+)\[([^\[\]]+)\]",
-                            lambda m: "{rb}%s{/rb}{rt}%s{/rt}" % m.groups(), text)
-
         no_wait = text.endswith(("<", ">"))
         if text.endswith("<"):
             text = text[:-1]
@@ -178,6 +174,11 @@ python early:
         text = renpy.re.sub(r"\^v([-0-9]+)",
                            lambda match: "".join(chr(ord(ch) + 0xfee0)
                                                 for ch in match.group(1)), text)
+        text = text.replace("^n", "\n")
+        text, center = renpy.re.subn(r"\^m", "", text)
+        center = bool(center)
+        # 4544d9/45f170: | marks a span; without it, annotate the preceding glyph.
+        text = rscript_wrap.ruby_markup(text)
 
 
         if no_wait:
@@ -188,10 +189,7 @@ python early:
         text = text.replace("[",  "[[")
         text = text.replace("\\{", "{{")
         text = text.replace("\\n", "\n")
-        text = text.replace("^n", "\n")
         text = text.replace("/'", "'")
-        text, center = renpy.re.subn(r"\^m", "", text)
-        center = bool(center)
 
         return text, center
 

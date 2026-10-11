@@ -3,10 +3,13 @@
 import ast
 from pathlib import Path
 import re
+import sys
 from textwrap import dedent
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "runtime"))
+import rscript_wrap
 
 
 def load_functions(path, names, namespace):
@@ -24,6 +27,7 @@ def load_functions(path, names, namespace):
 def main():
     store = SimpleNamespace(rscript_speaker=None)
     namespace = dict(
+        rscript_wrap=rscript_wrap,
         renpy=SimpleNamespace(re=re, translation=SimpleNamespace(translate_string=lambda s: s),
                               loadable=lambda path: True),
         store=store, persistent=SimpleNamespace(rscript_text_size=22),

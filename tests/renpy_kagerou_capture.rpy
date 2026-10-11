@@ -24,7 +24,7 @@ init python:
             return
         kagerou_set_text_setting('direction', 0)
         store.kagerou_page_old = ''
-        store.kagerou_page_current = '【女】\n『甲乙』「丙丁」【戊己】。横排的文字与等待图标。————――'
+        store.kagerou_page_current = parse_rscript_text(repr('【女】\n『甲乙』「丙丁」【戊己】。横排的文字与等待图标。————――\n抉[えぐ]られた傷痕めいて、熱く熾[おこ]った。'), True)[0]
         store.kagerou_page = kagerou_page_current
         renpy.show_screen('say', who=None, what=kagerou_page_text())
         renpy.restart_interaction()
@@ -36,7 +36,7 @@ label before_main_menu:
         persistent.rscript_text_cps = 0
         store.textbox_panel = 1
         store.kagerou_page_old = '　\n　——于这寂寥如荒原的风景之隙，\n　借我此身，{fast}\n'
-        store.kagerou_page_current = '————\n\u3000\n——————\n【女】\n『甲乙』「丙丁」【戊己】。横排と竖排を切り替え、文字と操作パネルの位置を確認します。' * 3
+        store.kagerou_page_current = parse_rscript_text(repr('　―――ジジ……ジッ、と。焦げる音が、銀の小さな火皿の中であえかに鳴き、火口はさながら抉[えぐ]られた傷痕めいて、熱く熾[おこ]った。'), True)[0]
         store.kagerou_page = kagerou_page_old + kagerou_page_current
         renpy.show_screen('say', who=None, what=kagerou_page_text())
     show screen kagerou_capture_timer
