@@ -32,8 +32,10 @@ TEXT_ORIGINS = (
 def text_geometry(direction, size, snap):
     if direction not in (0, 1) or size not in (0, 1, 2) or not 0 <= snap <= 8:
         raise ValueError("invalid native text preset")
-    font, width, height, pitch, ruby = TEXT_PRESETS[direction][size]
-    x, y = TEXT_ORIGINS[direction][size][snap]
+    # Port direction 1 means vertical; native 430437 uses SETE (native WORD 0).
+    native_direction = 1 - direction
+    font, width, height, pitch, ruby = TEXT_PRESETS[native_direction][size]
+    x, y = TEXT_ORIGINS[native_direction][size][snap]
     return dict(size=font, text_rect=(x, y, width, height), pitch=(pitch, 0),
                 ruby=(0, ruby, ruby), vertical=bool(direction))
 

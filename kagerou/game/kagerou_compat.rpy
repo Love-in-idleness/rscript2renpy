@@ -11,7 +11,7 @@ python early:
         geometry = text_geometry(persistent.kagerou_direction, persistent.kagerou_size,
                                  persistent.kagerou_snap)
         # Keep the chosen font size when rotating; native rectangle presets still apply.
-        geometry["size"] = text_geometry(0, persistent.kagerou_size,
+        geometry["size"] = text_geometry(1, persistent.kagerou_size,
                                          persistent.kagerou_snap)["size"]
         persistent.rscript_text_size = geometry["size"]
         store.rscript_base_text_size = geometry["size"]
@@ -240,7 +240,8 @@ screen kagerou_excompane():
         for prefix, field in (("dir", "direction"), ("shdw", "shadow"),
                               ("tfcs", "text_focus"), ("lfcs", "character_focus")):
             $ value = getattr(persistent, "kagerou_" + field)
-            use kagerou_ex_button("%s_%d" % (prefix, value),
+            $ icon = 1 - value if field == "direction" else value
+            use kagerou_ex_button("%s_%d" % (prefix, icon),
                                   Function(kagerou_set_text_setting, field, 1 - value))
         use kagerou_ex_button("font_0", Show("rscript_font_picker"))
         # shortcut: native lctr changes the unverified inactive-pixel algorithm.

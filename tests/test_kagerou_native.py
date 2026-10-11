@@ -29,10 +29,10 @@ def snapshot(root):
 
 def main():
     vertical = text_geometry(1, 0, 0)
-    assert vertical == dict(size=18, text_rect=(400, 20, 360, 513),
-                            pitch=(9, 0), ruby=(0, 9, 9), vertical=True)
-    assert text_geometry(0, 0, 0)["text_rect"] == (114, 30, 646, 480)
-    assert text_geometry(1, 2, 8)["text_rect"] == (20, 188, 240, 342)
+    assert vertical == dict(size=24, text_rect=(114, 30, 646, 480),
+                            pitch=(10, 0), ruby=(0, 9, 9), vertical=True)
+    assert text_geometry(0, 0, 0)["text_rect"] == (400, 20, 360, 513)
+    assert text_geometry(1, 2, 8)["text_rect"] == (20, 270, 342, 240)
     for direction in range(2):
         for size in range(3):
             for snap in range(9):
@@ -95,7 +95,9 @@ def main():
         assert image.handler(0x51) == 0x41c9ae
         assert image.handler(0x14) == 0x41c5e9
         # The constants used by the renderer are checked against actual instructions.
-        assert image.read(0x4303e2, 2) == b'\x6a\x12'  # vertical font 18
+        assert image.read(0x4303e2, 2) == b'\x6a\x12'  # native direction 1 (horizontal)
+        assert image.read(0x430437, 3) == b'\x0f\x94\xc1'  # SETE, not SETNE
+        assert image.read(0x455a1a, 12) == b'\x8b\x86\x70\x01\0\0\x2b\x86\x84\x01\0\0'  # columns right-to-left
         assert image.read(0x4303f1, 10) == b'\x68\x01\x02\0\0\x68\x68\x01\0\0'
         assert image.read(0x42bfce, 7) == b'\x68\x26\x02\0\0\x6a\0'  # (0,550)
         assert image.read(0x42c2be, 10) == b'\x68\x3c\x02\0\0\x68\x49\x02\0\0'
