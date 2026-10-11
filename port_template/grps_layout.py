@@ -32,6 +32,9 @@ UI_ACTIONS = {
         "gef_on": ("effects", True), "gef_off": ("effects", False),
         # Native off.png says stop on click; on.png says keep playing.
         "vocst_on": ("voice_stop", False), "vocst_off": ("voice_stop", True),
+        # Kagerou 40ce96/40e72b: pvNN addresses the ten numbered voice groups.
+        **{"pv%02d_%s" % (group, state): ("voice_group", group, enabled)
+           for group in range(10) for state, enabled in (("on", True), ("off", False))},
         "font": ("fonts",), "save": ("save",), "load": ("load",),
         "close": ("close",), "title": ("title",), "exit": ("quit",),
     },

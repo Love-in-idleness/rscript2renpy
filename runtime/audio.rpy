@@ -1,6 +1,10 @@
 init python:
     import os
 
+    def rscript_voice_enabled(number):
+        return (number is None or not rscript_voice_groups or
+                persistent.rscript_voice_group_enabled.get(number // 10000, True))
+
     def rscript_audio_file(kind, number):
         template = getattr(store, "rscript_%s_format" % kind)
         path = template % number

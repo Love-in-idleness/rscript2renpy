@@ -48,7 +48,7 @@ def main():
             subprocess.run(command, check=True, timeout=45, env=environment)
             destination = Path(sys.argv[3]).resolve()
             destination.mkdir(parents=True, exist_ok=True)
-            for name in ('vertical.png', 'horizontal.png',
+            for name in ('vertical.png', 'horizontal.png', 'preferences-jp.png', 'preferences-zh.png',
                          'transition-jp.png', 'transition-zh.png'):
                 shutil.copy2(project / name, destination / name)
 

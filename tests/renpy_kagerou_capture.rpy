@@ -7,11 +7,20 @@ init python:
     config.exception_handler = kagerou_capture_error
 
     def kagerou_capture():
-        name = 'vertical.png' if kagerou_capture_stage == 0 else 'horizontal.png'
+        name = ('vertical.png', 'horizontal.png', 'preferences-jp.png',
+                'preferences-zh.png')[kagerou_capture_stage]
         renpy.screenshot(os.path.join(config.basedir, name))
-        if kagerou_capture_stage:
+        if kagerou_capture_stage == 3:
             renpy.quit()
-        store.kagerou_capture_stage = 1
+        store.kagerou_capture_stage += 1
+        if kagerou_capture_stage >= 2:
+            renpy.hide_screen('say')
+            if kagerou_capture_stage == 3:
+                _preferences.language = 'zh'
+                renpy.run(rscript_ui_action(('voice_group', 4, False)))
+            renpy.show_screen('preferences')
+            renpy.restart_interaction()
+            return
         kagerou_set_text_setting('direction', 0)
         store.kagerou_page_old = ''
         store.kagerou_page_current = '【女】\n『甲乙』「丙丁」【戊己】。横排的文字与等待图标。'
@@ -33,5 +42,6 @@ label before_main_menu:
     $ renpy.pause()
 
 screen kagerou_capture_timer():
-    add "rscript_ctc"
+    if kagerou_capture_stage < 2:
+        add "rscript_ctc"
     timer 1.0 action Function(kagerou_capture) repeat True

@@ -58,7 +58,9 @@ init:
     default quakeex_params = None
     default jump_back_point = None
     default rscript_last_voice = None
+    default rscript_last_voice_number = None
     default rscript_voice_pending = False
+    default persistent.rscript_voice_group_enabled = {}
     default rscript_bgm_channel = "music"
     default rscript_bgm_number = 0
 

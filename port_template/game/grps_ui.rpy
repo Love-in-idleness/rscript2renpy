@@ -33,6 +33,8 @@ init python:
             return Preference("transitions", "all" if args[0] else "none")
         if kind == "voice_stop":
             return SetField(persistent, "rscript_stop_voice_on_advance", args[0])
+        if kind == "voice_group":
+            return SetDict(persistent.rscript_voice_group_enabled, args[0], args[1])
         return {
             "choice_back": rscript_rev_action,
             "rollback": Rollback, "rollforward": RollForward,
@@ -54,7 +56,7 @@ init python:
         if kind == "preferences":
             return bool(menu_enabled) and not rscript_touch_locked()
         if kind == "voice":
-            return rscript_last_voice is not None
+            return rscript_last_voice is not None and rscript_voice_enabled(rscript_last_voice_number)
         return None  # Preserve the native action's sensitivity.
 
     rscript_previous_menu_arguments = config.menu_arguments_callback
@@ -82,7 +84,7 @@ init python:
     config.save_json_callbacks.append(rscript_save_json)
 
     def rscript_replay_voice():
-        if store.rscript_last_voice:
+        if store.rscript_last_voice and rscript_voice_enabled(store.rscript_last_voice_number):
             renpy.music.play(store.rscript_last_voice, channel="rscript_voice",
                              loop=False, if_changed=False)
 
@@ -193,7 +195,8 @@ screen preferences(title_mode=False):
                 if not (title_mode and spec[0] in ("save", "load", "close", "quit")):
                     if not (title_mode and spec[0] == "effects" and _preferences.language in rscript_wiki_keywords):
                         use rscript_grps_button("confscrn", name, rscript_ui_action(spec),
-                                                 enabled=rscript_ui_sensitive(spec[0]))
+                                                 enabled=rscript_ui_sensitive(spec[0]),
+                                                 selected=(persistent.rscript_voice_group_enabled.get(spec[1], True) == spec[2] if spec[0] == "voice_group" else None))
             if "font" in layout["items"]:
                 $ field = layout["items"].get("font_txt", layout["items"]["font"])
                 text rscript_font_name():

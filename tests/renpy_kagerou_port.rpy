@@ -12,6 +12,40 @@ python early:
         assert rscript_compane_position == (585, 572)
         assert all(renpy.has_label(name) for name in ('_0000', '_0059', '_0201', '_0301', '_0302', '_g_0001_TOP2'))
         assert renpy.loadable(rscript_audio_file('voice', 40002))
+        # Native pvNN gates playback by number // 10000, not the active portrait.
+        controls = rscript_layouts()['confscrn']['controls']
+        assert all(controls['pv%02d_%s' % (group, state)] == ('voice_group', group, enabled)
+                   for group in range(1, 6) for state, enabled in (('on', True), ('off', False)))
+        assert not rscript_layouts()['confscrn'].get('unhandled')
+        original_play, original_stop = renpy.music.play, renpy.music.stop
+        audio_calls = []
+        try:
+            renpy.music.play = lambda *args, **kwargs: audio_calls.append(('play', args, kwargs))
+            renpy.music.stop = lambda *args, **kwargs: audio_calls.append(('stop', args, kwargs))
+            assert all(rscript_voice_enabled(group * 10000 + 1) for group in range(10))
+            execute_voice(RScriptArguments(VoiceNo=40002, Repeat=0, Fade=0, Pan=0))
+            assert len(audio_calls) == 1 and audio_calls[0][0] == 'play'
+            assert rscript_last_voice_number == 40002
+            off = rscript_ui_action(controls['pv04_off'])
+            renpy.run(off)
+            assert off.get_selected() and not rscript_voice_enabled(40002)
+            assert not rscript_ui_sensitive('voice')
+            rscript_replay_voice()
+            assert len(audio_calls) == 1  # No replay or interruption of an existing clip.
+            execute_voice(RScriptArguments(VoiceNo=40002, Repeat=0, Fade=0, Pan=0))
+            assert len(audio_calls) == 1 and rscript_last_voice is None and rscript_voice_pending
+            execute_voice(RScriptArguments(VoiceNo=10002, Repeat=0, Fade=0, Pan=0))
+            assert len(audio_calls) == 2 and rscript_last_voice_number == 10002
+            renpy.run(rscript_ui_action(controls['pv04_on']))
+            execute_voice(RScriptArguments(VoiceNo=40002, Repeat=0, Fade=0, Pan=0))
+            rscript_replay_voice()
+            assert len(audio_calls) == 4 and rscript_ui_sensitive('voice')
+            assert all(item[0] == 'play' for item in audio_calls)
+        finally:
+            renpy.music.play, renpy.music.stop = original_play, original_stop
+            persistent.rscript_voice_group_enabled.clear()
+            store.rscript_voice_pending = False
+            store.rscript_last_voice = store.rscript_last_voice_number = None
         assert rscript_click_link_is_preview
         assert rscript_folder_zero_all
         def command(parser, executor, text):
@@ -170,7 +204,7 @@ python early:
         kagerou_set_text_setting('size', 0)
         kagerou_set_text_setting('snap', 0)
         renpy.hide_screen('say')
-        for screen_name in ('kagerou_compane', 'kagerou_excompane', 'kagerou_history'):
+        for screen_name in ('kagerou_compane', 'kagerou_excompane', 'kagerou_history', 'preferences'):
             renpy.show_screen(screen_name)
             renpy.get_screen(screen_name).update()
             renpy.hide_screen(screen_name)

@@ -16,9 +16,13 @@ python early:
         fade   = args.Fade
         pan    = args.Pan
         store.rscript_last_voice = None
+        store.rscript_last_voice_number = None
         store.rscript_voice_pending = True
+        if not rscript_voice_enabled(args.VoiceNo):
+            return
         if renpy.loadable(voice_file):
             store.rscript_last_voice = voice_file
+            store.rscript_last_voice_number = args.VoiceNo
             renpy.music.play(voice_file, channel = "rscript_voice", loop = repeat == 999, if_changed = False)
         else:
             renpy.log("RScript: missing voice %s" % voice_file)

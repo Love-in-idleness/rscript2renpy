@@ -319,6 +319,9 @@ python early:
             store.jump_back_point = 1
             renpy.loadable = lambda path, **kwargs: (not os.path.splitext(path)[0].endswith("9999")
                                            if path.startswith("voice/") else old_loadable(path, **kwargs))
+            assert not rscript_voice_groups
+            persistent.rscript_voice_group_enabled[0] = False
+            assert rscript_voice_enabled(1)  # Ungrouped Forest/Khime voices remain unaffected.
             voice = SimpleNamespace(VoiceNo=1, Repeat=0, Fade=0, Pan=0)
             execute_say((None, None, repr("unvoiced")), interact=False)
             assert voice_button_count() == 2
@@ -359,7 +362,9 @@ python early:
             store.queue_draw, store.process_draw_queue = old_queue, old_process
             renpy.loadable, store.jump_back_point = old_loadable, old_point
             store.rscript_last_voice = None
+            store.rscript_last_voice_number = None
             store.rscript_voice_pending = False
+            persistent.rscript_voice_group_enabled.clear()
         old_afm_time = _preferences.afm_time
         renpy.show_screen("preferences")
         preference_screen = renpy.get_screen("preferences")
