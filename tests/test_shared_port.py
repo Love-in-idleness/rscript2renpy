@@ -63,6 +63,26 @@ def main():
             (textbox / ".meta.xml").write_text(
                 '<Canvas><Width>800</Width><Height>138</Height><Items>'
                 '<Item x="0" y="0">back</Item></Items></Canvas>', encoding="utf-8")
+            save = resources / 'grps/savescrn'
+            slot = resources / 'grps/saveconf'
+            save.mkdir()
+            slot.mkdir()
+            save_items = [('bg_save', 0, 0), ('bg_load', 0, 0),
+                          *[(str(n), 20 + 300 * (n // 5), 30 + 70 * (n % 5)) for n in range(10)],
+                          *[('%02d' % n, 20 + 30 * n, 520) for n in range(1, 11)],
+                          *[('%02d_f' % n, 20 + 30 * n, 520) for n in range(1, 11)]]
+            slot_items = [('icon', 0, 0), ('thmb', 7, 8), ('date', 114, 38),
+                          ('new', 205, 30), ('mask', 2, 0),
+                          *[(str(n), 3 + 12 * n, 4) for n in range(10)]]
+            for folder, entries, size in ((save, save_items, (800, 600)),
+                                          (slot, slot_items, (257, 62))):
+                for asset, _, _ in entries:
+                    Image.new('RGBA', (11, 13), 'white').save(folder / (asset + '.png'))
+                (folder / '.meta.xml').write_text(
+                    '<Canvas><Width>%d</Width><Height>%d</Height><Items>' % size +
+                    ''.join('<Item x="%d" y="%d">%s</Item>' % (x, y, asset)
+                            for asset, x, y in entries) + '</Items></Canvas>', encoding='utf-8')
+            Image.new('RGBA', (257, 62), 'blue').save(resources / 'grps/dt1_1000.png')
             answer = resources / "grps/sel_a00"
             answer.mkdir()
             for image in ("body", "body_f"):

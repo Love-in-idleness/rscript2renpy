@@ -1,5 +1,5 @@
 # Shared CodeX UI. Positions and available sprites come from grps/*/.meta.xml.
-default persistent.rscript_textbox_opacity = 1.0
+default persistent.rscript_textbox_opacity = rscript_ui.get("textbox_opacity", 1.0)
 define rscript_grps_language_layouts = {}
 
 init python:
@@ -396,6 +396,37 @@ screen load():
     tag menu
     use rscript_file_slots("load")
 
+screen rscript_save_slot(slot, slot_size):
+    $ slot_config = rscript_layouts().get("saveconf", {})
+    $ items = slot_config.get("items", {})
+    fixed:
+        xysize slot_size
+        if "bg" in items:
+            add rscript_ui_image("saveconf", "bg") pos items["bg"][:2] xysize items["bg"][2:]
+        # icon/date/thmb are dynamic fields; mask is the button's hover overlay.
+        if FileLoadable(slot):
+            $ dt1_image = rscript_slot_image(slot)
+            $ preview = items.get("thmb", items.get("icon", (4, 4, 92, slot_size[1] - 8)))
+            if dt1_image:
+                add dt1_image pos preview[:2]
+            else:
+                add FileScreenshot(slot) pos preview[:2] xysize preview[2:]
+            $ date = items.get("date", (0.98, 0.98, 0, 12))
+            $ date_pos = rscript_ui.get("slot_date_pos", date[:2])
+            text FileTime(slot, slot_config.get("date_format", "%Y/%m/%d %H:%M")):
+                pos date_pos
+                xanchor (0.0 if "slot_date_pos" in rscript_ui or "date" in items else 0.98)
+                yanchor (0.0 if "slot_date_pos" in rscript_ui or "date" in items else 0.98)
+                color rscript_ui.get("slot_date_color", "#ffffff")
+                font rscript_current_font()
+                size slot_config.get("date_size", max(12, date[3] if len(date) > 3 else 12))
+                outlines slot_config.get("date_outlines", [] if "slot_date_pos" in rscript_ui else [(1, "#000000", 0, 0)])
+        for name, item in items.items():
+            if name not in ("bg", "icon", "date", "thmb", "mask", "new") and not name.endswith(("_f", "_c")):
+                add rscript_ui_image("saveconf", name) pos item[:2] xysize item[2:]
+        if FileLoadable(slot) and "new" in items and FileNewest(slot):
+            add rscript_ui_image("saveconf", "new") pos items["new"][:2] xysize items["new"][2:]
+
 screen rscript_file_slots(mode):
     modal True
     key "game_menu" action Return()
@@ -415,41 +446,26 @@ screen rscript_file_slots(mode):
                 if item:
                     $ slot = index + 1
                     $ slot_action = FileSave(slot) if mode == "save" else FileLoad(slot)
+                    $ slot_size = rscript_ui.get("slot_size", slot_config.get("size") or item[2:])
+                    if not all(slot_size):
+                        $ slot_size = item[2:]
+                    $ mask = slot_layout.get("mask")
                     button:
                         xpos item[0]
                         ypos item[1]
-                        xsize rscript_ui.get("slot_size", item[2:])[0]
-                        ysize rscript_ui.get("slot_size", item[2:])[1]
+                        xysize slot_size
                         background None
-                        hover_background Solid("#ffffff20")
+                        hover_background (None if mask else Solid("#ffffff20"))
+                        hover_foreground (Transform(rscript_ui_image("saveconf", "mask"), pos=mask[:2], xysize=mask[2:]) if mask else None)
                         padding (0, 0)
                         action slot_action
-                        if "icon" in slot_layout:
-                            add rscript_ui_image("saveconf", "icon") pos slot_layout["icon"][:2]
-                        if "new" in slot_layout and FileNewest(slot):
-                            add rscript_ui_image("saveconf", "new") pos slot_layout["new"][:2]
-                        $ dt1_image = rscript_slot_image(slot)
-                        if dt1_image:
-                            add dt1_image
-                        elif FileLoadable(slot):
-                            $ preview = slot_layout.get("thmb", (4, 4, 92, item[3] - 8))
-                            add FileScreenshot(slot):
-                                pos preview[:2]
-                                xysize preview[2:]
-                        if FileLoadable(slot):
-                            $ date_pos = rscript_ui.get("slot_date_pos", slot_layout.get("date", (0.98, 0.98)))
-                            text FileTime(slot, slot_config.get("date_format", "%Y/%m/%d %H:%M")):
-                                xpos date_pos[0]
-                                ypos date_pos[1]
-                                xanchor (0.0 if "slot_date_pos" in rscript_ui or "date" in slot_layout else 0.98)
-                                yanchor (0.0 if "slot_date_pos" in rscript_ui or "date" in slot_layout else 0.98)
-                                color rscript_ui.get("slot_date_color", "#ffffff")
-                                size slot_config.get("date_size", 12)
-                                outlines slot_config.get("date_outlines", [] if "slot_date_pos" in rscript_ui else [(1, "#000000", 0, 0)])
+                        use rscript_save_slot(slot, slot_size)
             use rscript_grps_button("savescrn", "prev",
                                      FilePagePrevious(max=10, wrap=layout.get("page_wrap", True), auto=False, quick=False))
             use rscript_grps_button("savescrn", "next",
                                      FilePageNext(max=10, wrap=layout.get("page_wrap", True), auto=False, quick=False))
+            for page in range(1, 11):
+                use rscript_grps_button("savescrn", "%02d" % page, FilePage(page))
             if "number" in items:
                 $ number = items["number"]
                 $ page = FileCurrentPage()

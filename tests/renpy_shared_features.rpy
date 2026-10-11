@@ -16,6 +16,52 @@ python early:
         renpy.game.context().init_phase = False
         renpy.display.scenelists.init_layers()
         renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
+        renpy.display.screen.prepare_screens()
+        # Complete metadata-based slots, including digit artwork and page buttons.
+        original_json, original_loadable = FileJson, FileLoadable
+        original_time, original_newest = FileTime, FileNewest
+        try:
+            store.FileJson = lambda slot, key: 1000 if slot == 1 and key == 'rscript_dt1' else None
+            store.FileLoadable = lambda slot: slot == 1
+            store.FileTime = lambda *args: '2026/10/11 12:34'
+            store.FileNewest = lambda slot: slot == 1
+            for page in (1, 10):
+                FilePage(page)()
+                for mode, action_type in (('save', FileSave), ('load', FileLoad)):
+                    renpy.show_screen(mode)
+                    screen = renpy.get_screen(mode)
+                    screen.update()
+                    images, buttons, texts, positioned = [], [], [], []
+                    def collect_slot(d):
+                        if isinstance(d, renpy.display.im.Image):
+                            images.append(d.filename)
+                        if isinstance(d, renpy.display.behavior.Button):
+                            buttons.append(d)
+                        if isinstance(d, renpy.text.text.Text):
+                            texts.append(''.join(d.text))
+                        if isinstance(d, Transform) and isinstance(d.child, renpy.display.im.Image):
+                            positioned.append((d.child.filename, d.get_placement()[:2]))
+                    screen.visit_all(collect_slot)
+                    slots = [d for d in buttons if isinstance(d.action, action_type)]
+                    assert len(slots) == 10
+                    assert (slots[0].style.xminimum, slots[0].style.yminimum) == (257, 62)
+                    assert (slots[0].style.xmaximum, slots[0].style.ymaximum) == (257, 62)
+                    assert slots[0].style.xpos == 20 and slots[0].style.ypos == 30
+                    assert all(images.count('grps/saveconf/%d.png' % n) == 10 for n in range(10)), images
+                    assert ('grps/saveconf/0.png', (3, 4)) in positioned, positioned
+                    assert 'grps/saveconf/icon.png' not in images
+                    assert images.count('grps/saveconf/new.png') == 1
+                    assert images.count('grps/dt1_1000.png') == 1
+                    assert ('grps/dt1_1000.png', (7, 8)) in positioned
+                    assert texts.count('2026/10/11 12:34') == 1
+                    pages = [d.action for d in buttons if isinstance(d.action, FilePage)]
+                    assert len(pages) == 10 and sum(bool(a.get_selected()) for a in pages) == 1
+                    assert all('grps/savescrn/%02d.png' % n in images for n in range(1, 11)), images
+                    renpy.hide_screen(mode)
+        finally:
+            store.FileJson, store.FileLoadable = original_json, original_loadable
+            store.FileTime, store.FileNewest = original_time, original_newest
+            FilePage(1)()
         original_with = renpy.with_statement
         transitions = []
         try:
@@ -317,7 +363,6 @@ python early:
 
         # Update native screens to catch missing variables/properties and
         # verify the same controls exist in both games (lint does not do this).
-        renpy.display.screen.prepare_screens()
         # Drive the actual shared say/append path and count rendered buttons.
         old_say, old_play, old_pause = renpy.say, renpy.music.play, renpy.pause
         old_queue, old_process = store.queue_draw, store.process_draw_queue

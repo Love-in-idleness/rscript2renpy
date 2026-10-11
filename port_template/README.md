@@ -54,6 +54,10 @@
 存读档、选择项、对话/姓名牌和控制条；默认 `say` screen 已在公共层，
 `choice` screen 可 `use rscript_choice(items, prompt)`。
 存档时会将 `_r[1]` 记入存档元数据；若存在 `grps/dt1_NNNN.png`，存读档页按此编号显示原游戏章节图，旧存档或缺图时才回退到 Ren'Py 截图。
+`rscript_file_slots` 把 `saveconf` 作为独立槽位组件：外部原点由 `savescrn`
+给出，内部画布、数字／装饰图、预览、日期及 NEW 标记按 `.meta.xml` 布局。
+`icon/thmb/date` 是动态占位项，不把占位黑块绘制成内容；`mask` 用于悬停覆盖。
+`savescrn/01..10` 及其 `_f` 图像作为可选择的存档页码，选中状态跟随当前页。
 外传等独立资源可由适配层设置 `rscript_ui.slot_images`（图片路径序列）和
 `slot_image_zoom`；公共存档回调记录这组图片，预览横向拼接，返回本篇后仍按存档元数据显示。
 缺少坐标元数据会在构建时明确报错，而不是生成位置不明的界面。标题流程和
