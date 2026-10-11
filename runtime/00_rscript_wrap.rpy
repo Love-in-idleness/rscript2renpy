@@ -54,6 +54,24 @@ python early:
             ts = renpy.text.text.textsupport
             self.tokens = rscript_wrap.normalize_boundaries(
                 self.tokens, ts.TEXT, ts.PARAGRAPH, ts.DISPLAYABLE)
+            if self.style.vertical:
+                tokens = []
+                for kind, value in self.tokens:
+                    if kind != ts.TEXT:
+                        tokens.append((kind, value))
+                        continue
+                    for part in renpy.re.split(r"([—―])", value):
+                        if not part:
+                            continue
+                        # Shape the original dash horizontally; the SDK's final
+                        # rotation then points it down, independently of the font.
+                        dash = part[0] in "—―"
+                        if dash:
+                            tokens.append((renpy.TEXT_TAG, "horiz"))
+                        tokens.append((kind, part))
+                        if dash:
+                            tokens.append((renpy.TEXT_TAG, "/horiz"))
+                self.tokens = tokens
 
         def refresh_settings(self):
             base = self.rscript_base_size or self.style.size
@@ -158,6 +176,10 @@ python early:
         def glyphs(self, s, layout, level=0):
             glyphs = super(RScriptTextSegment, self).glyphs(s, layout, level)
             text = _rscript_layout_stack[-1][1] if _rscript_layout_stack else None
+            if isinstance(text, RScriptText) and text.style.vertical:
+                for glyph in glyphs:
+                    if chr(glyph.character) in "—―":
+                        glyph.advance = self.size + self.kerning + self.size / 30 * renpy.game.preferences.font_kerning
             if text is not None and rscript_native_ruby_enabled(text):
                 # The SDK replaces end-of-line advances with Glyph.width.
                 # Retain the shaped cell advance before that and char pitch.

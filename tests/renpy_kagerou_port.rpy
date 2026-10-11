@@ -175,6 +175,33 @@ python early:
         assert kagerou_wait_position(layout, box)[1] <= box['text_rect'][1] + box['text_rect'][3] + 24
         assert all(segment.vertical for paragraph in layout.paragraphs
                    for segment, content in paragraph)
+        original_font = persistent.rscript_text_font
+        try:
+            for font in ('NotoSansCJKjp-Regular.otf', 'NotoSansCJK-Light.ttc',
+                         'NotoSerifCJK-Regular.ttc', 'simhei.ttf'):
+                persistent.rscript_text_font = 'fonts/' + font
+                dashes = RScriptText('甲————\n\u3000\n——————乙―', size=24)
+                for direction in (1, 0, 1):
+                    kagerou_set_text_setting('direction', direction)
+                    dashes.refresh_settings()
+                    dash_layout = renpy.text.text.Layout(dashes, 480, 646, {},
+                        size_only=True, drawable_res=False)
+                    glyphs = [g for p in dash_layout.paragraph_glyphs for g in p]
+                    assert dashes.text == ['甲————\n\u3000\n——————乙―']
+                    if direction:
+                        assert ''.join(chr(g.character) for g in glyphs) == '甲————\u3000——————乙―', [(g.character, g.advance) for g in glyphs]
+                    for paragraph in dash_layout.paragraphs:
+                        for segment, value in paragraph:
+                            for glyph in segment.glyphs(value, dash_layout):
+                                if chr(glyph.character) in '—―':
+                                    left, top, right, bottom = segment.bounds([glyph],
+                                        (10000, 10000, -10000, -10000), dash_layout)
+                                    # Horizontal ink before the SDK's final 90-degree
+                                    # rotation becomes a vertical dash on the screen.
+                                    assert right - left > bottom - top, (font, direction, glyph.character, (left, top, right, bottom))
+        finally:
+            persistent.rscript_text_font = original_font
+            kagerou_set_text_setting('direction', 1)
         # Check ink bounds, not just advances: opening brackets used to draw
         # inside the following glyph despite having a full 24px advance.
         for index, size in enumerate((24, 18, 12)):
