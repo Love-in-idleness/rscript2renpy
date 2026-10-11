@@ -101,6 +101,17 @@ def main():
         assert image.read(0x41fbb1, 5) == b'\xbe\x01\0\0\0'  # folder 0 starts at object 1
         assert image.read(0x42da47, 5) == b'\xe8\x84\xff\xff\xff'  # hide tbox calls 42d9d0 clear
         assert image.read(0x47e254, 7) == b'pv%02d\0'
+        # System 7 -> 419ac0 -> window ID from the *previous* registration result.
+        assert image.read(0x417d88 + 7 * 4, 4) == (0x417d57).to_bytes(4, 'little')
+        assert image.read(0x4196ab, 5) == b'\x68\xa0\xa8\x41\0'
+        assert image.read(0x4196b6, 5) == b'\xe8\xb5\x51\x03\0'
+        assert image.read(0x4196d2, 6) == b'\x66\xa3\x64\x21\x48\0'
+        assert image.read(0x47e8f0, 9) == b'muscmenu\0'
+        assert image.read(0x41b5a5, 5) == b'\xe8\x96\x5b\x03\0'  # direct BGM backend
+        assert image.read(0x41b6a6, 5) == b'\xe8\xd5\xfc\xff\xff'  # last track stops first
+        assert image.read(0x41b6e4, 6) == b'\x66\xa3\xec\xdd\x49\0'  # gallery-local volume
+        assert image.read(0x41ac3a, 5) == b'\xe8\x71\x1e\x03\0'  # slider from level geometry
+        assert image.read(0x41ac89, 2) == b'\xff\x12'  # release level bitmap, do not draw it
         assert image.read(0x40e72b, 8) == b'\x66\x89\x04\x7d\x38\x22\x48\0'  # group state write
         assert image.read(0x41a661, 9) == b'\x66\x83\x3c\x75\x38\x22\x48\0\0'  # playback gate
         assert image.read(0x47e8ac, 15) == b'%s\\%d\\%04d.wav\0'

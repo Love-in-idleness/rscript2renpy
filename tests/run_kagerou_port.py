@@ -6,6 +6,8 @@ import shutil
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
+import wave
+from PIL import Image
 
 
 def main():
@@ -43,6 +45,20 @@ def main():
             assert (project / ('transition-%s.png' % (language or 'jp'))).is_file()
         fixture.unlink()
         fixture.with_suffix('.rpyc').unlink(missing_ok=True)
+        for name, seconds in (('short', .5), ('long', 5)):
+            with wave.open(str(game / (name + '.wav')), 'wb') as audio:
+                audio.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
+                audio.writeframes(b'\x00\x00' * int(22050 * seconds))
+        fixture = game / 'music_test.rpy'
+        shutil.copy2(Path(__file__).with_name('renpy_kagerou_music.rpy'), fixture)
+        subprocess.run(command, check=True, timeout=25, env=environment)
+        assert all((project / name).is_file() for name in ('music-jp.png', 'music-zh.png'))
+        for name in ('music-jp.png', 'music-zh.png'):
+            with Image.open(project / name) as screenshot:
+                colors = screenshot.convert('RGB').crop((384, 552, 584, 572)).getcolors(4000)
+                assert not any(r > 240 and g < 20 and b < 20 for _, (r, g, b) in colors), name
+        fixture.unlink()
+        fixture.with_suffix('.rpyc').unlink(missing_ok=True)
         if len(sys.argv) == 4:
             shutil.copy2(Path(__file__).with_name('renpy_kagerou_capture.rpy'), game / 'capture.rpy')
             subprocess.run(command, check=True, timeout=45, env=environment)
@@ -50,6 +66,8 @@ def main():
             destination.mkdir(parents=True, exist_ok=True)
             for name in ('vertical.png', 'horizontal.png', 'preferences-jp.png', 'preferences-zh.png',
                          'transition-jp.png', 'transition-zh.png'):
+                shutil.copy2(project / name, destination / name)
+            for name in ('music-jp.png', 'music-zh.png'):
                 shutil.copy2(project / name, destination / name)
 
 

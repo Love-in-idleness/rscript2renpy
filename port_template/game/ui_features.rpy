@@ -31,6 +31,8 @@ init python:
     def rscript_system_action(value, system=True):
         if not system:
             return Return(value)
+        if value in rscript_ui.get("system_actions", {}):
+            return rscript_ui["system_actions"][value]
         if value == 0:
             return rscript_quit_action()
         if value == 1:

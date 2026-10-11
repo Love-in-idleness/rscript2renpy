@@ -16,6 +16,67 @@ python early:
             kagerou_init_textbox()
             assert persistent.rscript_text_cps == speed
         persistent.rscript_text_cps = 25
+        assert kagerou_music_tracks() == tuple(range(1, 16))
+        assert rscript_system_action(7) is rscript_ui['system_actions'][7]
+        assert isinstance(rscript_system_action(7, False), Return)
+        music_methods = ('play', 'stop', 'set_pause', 'set_volume', 'is_playing')
+        original_music = {name: getattr(renpy.music, name) for name in music_methods}
+        audio_calls, backend_playing = [], [False]
+        original_volume = dict(_preferences.volumes)
+        try:
+            for name in music_methods[:-1]:
+                setattr(renpy.music, name, lambda *args, _name=name, **kwargs:
+                        audio_calls.append((_name, args, kwargs)))
+            renpy.music.is_playing = lambda **kwargs: backend_playing[0]
+            kagerou_music_begin()
+            assert kagerou_music_track == 1 and not kagerou_music_playing
+            kagerou_music_pause()
+            assert not kagerou_music_paused
+            kagerou_music_select(2)
+            assert kagerou_music_track == 2 and not kagerou_music_playing
+            kagerou_music_select(2)
+            assert kagerou_music_playing and audio_calls[-1][0] == 'play'
+            kagerou_music_tick()
+            assert kagerou_music_track == 2  # Decoder startup is not completion.
+            kagerou_music_pause()
+            count = len(audio_calls)
+            kagerou_music_play()
+            kagerou_music_tick()
+            assert kagerou_music_paused and len(audio_calls) == count
+            kagerou_music_select(3)
+            assert kagerou_music_track == 3 and not kagerou_music_paused
+            backend_playing[0] = True
+            kagerou_music_tick()
+            backend_playing[0] = False
+            kagerou_music_tick()
+            assert kagerou_music_track == 4 and kagerou_music_playing
+            kagerou_music_select(15)
+            kagerou_music_next()
+            assert kagerou_music_track == 1 and not kagerou_music_playing
+            count = len(audio_calls)
+            kagerou_music_previous()
+            kagerou_music_select(21)
+            assert kagerou_music_track == 1 and len(audio_calls) == count
+            for volume in (0, 128, 255):
+                store.kagerou_music_volume = volume
+                kagerou_music_apply_volume()
+                expected = 10 ** (-((255 - volume) * 3000 // 255) / 2000.)
+                assert audio_calls[-1] == ('set_volume', (expected,), {'channel': 'kagerou_gallery'})
+            assert dict(_preferences.volumes) == original_volume
+            old_screen = renpy.call_screen
+            try:
+                def close_gallery(name):
+                    assert name == 'kagerou_music_gallery'
+                    kagerou_music_play()
+                    kagerou_music_pause()
+                renpy.call_screen = close_gallery
+                kagerou_open_music()
+                assert not kagerou_music_playing and not kagerou_music_paused
+            finally:
+                renpy.call_screen = old_screen
+        finally:
+            for name, method in original_music.items():
+                setattr(renpy.music, name, method)
         assert (config.screen_width, config.screen_height) == (800, 600)
         assert persistent.rscript_text_size == 24 and persistent.kagerou_direction == 1
         assert rscript_textbox_state()['text_rect'] == (114, 30, 646, 480)

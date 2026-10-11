@@ -5,6 +5,8 @@ python early:
         renpy.execute_default_statement(True)
         assert persistent.rscript_text_cps == 25
         assert rscript_preference_action("text speed", 25).get_selected()
+        assert not rscript_ui.get('system_actions')
+        assert isinstance(rscript_system_action(7), Return)
         assert rscript_update_timing == "legacy"
         assert rscript_update_duration(1, 16, 16) == 2.56
         assert rscript_update_duration(11, 16, 16) == 5.12
