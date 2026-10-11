@@ -284,7 +284,7 @@ def main() -> None:
         "601": "https://example.test/page#keeper",
         "603": "https://example.test/page#replay",
     }
-    assert "default persistent.rscript_text_cps = 20" in FOREST_COMPAT
+    assert "default persistent.rscript_text_cps = 25" in FOREST_COMPAT
     assert "default persistent.rscript_wiki_mode = False" in FOREST_COMPAT
     assert "def rscript_prepare_wiki_text(text):" in FOREST_COMPAT
     game_menu = FOREST_COMPAT.split("screen preferences(title_mode=False):", 1)[1].split(

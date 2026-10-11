@@ -7,6 +7,9 @@ init python:
     from functools import partial as rscript_partial
 
     def rscript_migrate_ui_preferences():
+        # The old default matched none of the original menu's speed choices.
+        if persistent.rscript_text_cps == 20:
+            persistent.rscript_text_cps = 25
         if getattr(persistent, "rscript_opacity_migrated", False):
             return
         opacity = getattr(persistent, "textbox_opacity", None)

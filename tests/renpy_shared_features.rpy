@@ -3,6 +3,8 @@ python early:
     def check_shared_port_features():
         assert config.version == "1.3"
         renpy.execute_default_statement(True)
+        assert persistent.rscript_text_cps == 25
+        assert rscript_preference_action("text speed", 25).get_selected()
         assert rscript_update_timing == "legacy"
         assert rscript_update_duration(1, 16, 16) == 2.56
         assert rscript_update_duration(11, 16, 16) == 5.12
@@ -99,6 +101,13 @@ python early:
         renpy.run(rscript_preference_action("text speed", 0))
         assert persistent.rscript_text_cps == 0
         persistent.rscript_text_cps = 20
+        rscript_migrate_ui_preferences()
+        assert persistent.rscript_text_cps == 25
+        for speed in (75, 0, 30):
+            persistent.rscript_text_cps = speed
+            rscript_migrate_ui_preferences()
+            assert persistent.rscript_text_cps == speed
+        persistent.rscript_text_cps = 25
         # The new migration must run even if the previous Forest font migration ran.
         persistent.rscript_opacity_migrated = False
         persistent.textbox_opacity = 0.4
