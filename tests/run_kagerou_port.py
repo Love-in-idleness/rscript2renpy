@@ -55,7 +55,17 @@ def main():
         for language in ('', 'zh'):
             subprocess.run(command, check=True, timeout=45,
                            env=environment | {'KAGEROU_TEST_LANGUAGE': language})
-            assert (project / ('portrait-%s.png' % (language or 'jp'))).is_file()
+            capture = project / ('portrait-%s.png' % (language or 'jp'))
+            with Image.open(capture) as screenshot, Image.open(game / 'grpo_bu/3011.png') as portrait, \
+                    Image.open(game / 'grps/tbox01/back.png') as backdrop:
+                # Loaded layers alone do not prove the opaque pane hasn't covered them.
+                offset = portrait.width // 2 - 200
+                for x, y in ((180, 180), (100, 300), (200, 450)):
+                    art = portrait.getpixel((x + offset, y))
+                    assert art[3] == 255
+                    pane = backdrop.getpixel((x + 11, y))
+                    expected = tuple((a * 127 + b * 128) // 255 for a, b in zip(art[:3], pane[:3]))
+                    assert all(abs(a - b) < 8 for a, b in zip(screenshot.getpixel((x, y)), expected)), (language, x, y)
         fixture.unlink()
         fixture.with_suffix('.rpyc').unlink(missing_ok=True)
         for name, seconds in (('short', .5), ('long', 5)):
@@ -91,6 +101,8 @@ def main():
             for name in ('music-jp.png', 'music-zh.png', 'rollback-back.png', 'rollback-wheel.png'):
                 shutil.copy2(project / name, destination / name)
             for name in ('portrait-jp.png', 'portrait-zh.png'):
+                shutil.copy2(project / name, destination / name)
+            for name in ('save-jp.png', 'load-zh.png'):
                 shutil.copy2(project / name, destination / name)
 
 

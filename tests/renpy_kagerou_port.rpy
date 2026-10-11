@@ -6,6 +6,17 @@ python early:
         renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
         renpy.display.screen.prepare_screens()
         kagerou_init_textbox()
+        assert persistent.rscript_textbox_opacity == 128 / 255.0
+        for opacity in (1.0, .25):
+            persistent.rscript_textbox_opacity = opacity
+            persistent.kagerou_opacity_migrated = False
+            kagerou_init_textbox()
+            assert persistent.rscript_textbox_opacity == (128 / 255.0 if opacity == 1.0 else opacity)
+        persistent.rscript_textbox_opacity = 1.0
+        kagerou_init_textbox()
+        assert persistent.rscript_textbox_opacity == 1.0  # Explicit choices after migration survive.
+        persistent.rscript_textbox_opacity = 128 / 255.0
+        assert rscript_ui_image('saveconf', 'new') == rscript_image_path('grps/dat_new.png')
         assert persistent.rscript_text_cps == 25
         controls = rscript_layouts()['confscrn']['controls']
         assert rscript_ui_action(controls['msp_slw']).get_selected()

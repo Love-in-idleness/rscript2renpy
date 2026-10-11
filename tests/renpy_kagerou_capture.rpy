@@ -8,11 +8,34 @@ init python:
 
     def kagerou_capture():
         name = ('vertical.png', 'horizontal.png', 'preferences-jp.png',
-                'preferences-zh.png')[kagerou_capture_stage]
+                'preferences-zh.png', 'save-jp.png', 'load-zh.png')[kagerou_capture_stage]
+        if kagerou_capture_stage < 2:
+            # Exercise the real drawable layout, not only its size-only shaping pass.
+            for kind in ('say', 'oload'):
+                probe = RScriptText('{rb}漢字{/rb}{rt}かんじ{/rt}後', kind=kind,
+                                   slow=True, slow_cps=10)
+                renpy.display.render.render(probe, 800, 600, .15, .15)
+                glyphs = [g for paragraph in probe.get_layout().paragraph_glyphs for g in paragraph]
+                body = [g for g in glyphs if g.ruby == 1]
+                reading = [g for g in glyphs if g.ruby == 2]
+                assert [g.time for g in reading] == [body[0].time, body[0].time, body[1].time]
+                assert 0 < body[0].time < body[1].time
         renpy.screenshot(os.path.join(config.basedir, name))
-        if kagerou_capture_stage == 3:
+        if kagerou_capture_stage == 5:
             renpy.quit()
         store.kagerou_capture_stage += 1
+        if kagerou_capture_stage >= 4:
+            renpy.hide_screen('preferences')
+            renpy.hide_screen('save')
+            _preferences.language = None if kagerou_capture_stage == 4 else 'zh'
+            store.FileJson = lambda slot, key: 1000 if slot == 1 and key == 'rscript_dt1' else None
+            store.FileLoadable = lambda slot: slot == 1
+            store.FileTime = lambda *args: '2026/10/11 12:34'
+            store.FileNewest = lambda slot: slot == 1
+            FilePage(1 if kagerou_capture_stage == 4 else 10)()
+            renpy.show_screen('save' if kagerou_capture_stage == 4 else 'load')
+            renpy.restart_interaction()
+            return
         if kagerou_capture_stage >= 2:
             renpy.hide_screen('say')
             persistent.rscript_text_cps = 25

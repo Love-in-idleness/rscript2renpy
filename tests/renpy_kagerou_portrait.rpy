@@ -1,5 +1,6 @@
 # Real title -> 0050 -> 0999 -> 1000; disposable saves, no player progress.
 default kagerou_portrait_title_seen = False
+default kagerou_portrait_ready = False
 
 init python:
     rscript_update_duration = lambda effect, step, wait: .01
@@ -21,6 +22,10 @@ init python:
             image.find_target()
             assert renpy.loadable(image.raw_target.filename)
             assert renpy.showing('layer1', layer=IMAGE_LAYER)
+            if not kagerou_portrait_ready:
+                store.kagerou_portrait_ready = True
+                renpy.restart_interaction()
+                return
             language = _preferences.language or 'jp'
             renpy.screenshot(os.path.join(config.basedir, 'portrait-%s.png' % language))
             renpy.quit()

@@ -11,6 +11,7 @@ default persistent.kagerou_shadow = 0
 default persistent.kagerou_text_focus = 0
 default persistent.kagerou_character_focus = 0
 default persistent.kagerou_inactive_style = 0
+default persistent.kagerou_opacity_migrated = False
 
 init -100 python:
     # 41e5b0 / 450630: native update loops use millisecond waits.
@@ -29,8 +30,17 @@ init -100 python:
     rscript_se_format = "wav/%04d.ogg"
 
 init python:
-    rscript_ui.update({"textbox_size": (800, 600), "game_text_settings": False})
+    # 42fd4c -> 431070: the reading pane starts at opacity 128, not 255.
+    rscript_ui.update({"textbox_size": (800, 600), "game_text_settings": False,
+                       "textbox_opacity": 128 / 255.0})
+    # 4042ac keeps new's origin; 404a1c loads dat_new rather than the placeholder.
+    rscript_grps_layout["saveconf"].setdefault("images", {})["new"] = ("grps/dat_new.png", None)
     def kagerou_init_textbox():
+        if not persistent.kagerou_opacity_migrated:
+            if persistent.rscript_textbox_opacity == 1.0:
+                persistent.rscript_textbox_opacity = rscript_ui["textbox_opacity"]
+            persistent.kagerou_opacity_migrated = True
+            renpy.save_persistent()
         kagerou_apply_text_settings()
         # 42c2be..42c2d6: the reading pane's screen origin.
         store.rscript_compane_position = (585, 572)
