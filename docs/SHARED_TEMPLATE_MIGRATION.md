@@ -42,7 +42,7 @@ evermaiden/game/            1280×720、现代文本/音频编号与布局默认
 | 语音 | `rscript_voice`、重播、停止/等待、Auto 等语音、SE 999 循环 | 文件编号格式及 TSC 语音操作数 |
 | GUI | 原图设置、dt1 存读档、图片选项、点击区域、对话/姓名牌和控制条 | 各游戏的坐标、配色、状态图策略及 Khime 人脸 |
 | 存档 | Ren'Py 原生用户存档及工程内同步副本 | `options.rpy` 指定各游戏独立、稳定的 `config.save_directory` |
-| 版本 | `build_port.py` 的 `PORT_VERSION` 生成 PC／Android 版本，安卓版本代码不倒退 | 各游戏保留包名、图标和其他平台设置，不另设版本号 |
+| 版本 | `build_port.py` 的 `PORT_VERSION` 生成 PC／Android 显示版本；内部版本代码独立，新工程默认为 1，已有值保留 | 各游戏保留包名、图标和其他平台设置，不另设显示版本号 |
 | Android | 触摸控制、原生 Auto、直接写系统相册、启动说明 | 应用名称、图标、RAPT 配置及锁定场景 |
 | 剧本 | early/modern 编译循环、解析器、VM、补丁对齐、字幕插入、装配/兼容检查、编译缓存失效、启动视频机制与默认 0002→0001 顺序 | Forest 5000 整体替换、2500 图片编号纠错；各游戏方言/参数允许列表 |
 
@@ -52,9 +52,12 @@ evermaiden/game/            1280×720、现代文本/音频编号与布局默认
 原图右键菜单及无资源回退菜单的“返回主界面／退出游戏”统一使用英文确认框，
 点击 `No` 只关闭确认框，保留当前菜单与进度。提示和 `Yes`／`No` 不随剧情语言翻译。
 
-当前统一版本为 `1.4`，安卓版本代码最低为 `14`。公共构建流程生成
-`game/engine/port_version.rpy`，并更新 `android.json` 的版本；保留已有更高的版本代码，
-以及本机包名、权限和其他构建配置。RAPT 打包时仍可能按其原生规则使用更高的时间戳版本代码。
+当前统一显示版本为 `1.4`。公共构建流程生成 `game/engine/port_version.rpy`，
+并更新 `android.json` 的显示版本。内部 `numeric_version` 独立：新工程默认最低
+有效值 `1`，已有正整数保留，不随显示版本增加；包名、权限和其他配置也保留。
+内部版本代码不是最低安卓系统版本，系统要求由 Ren'Py/RAPT 的 `minSdkVersion`
+决定，不因本项目版本号增加而提高。RAPT 打包仍可能使用其时间戳版本代码。
+安装更新包的版本代码要求见 [Android 官方说明](https://developer.android.com/studio/publish/versioning)。
 Forest／Khime 的游戏配置和安卓配置源文件不再保留重复版本值。
 
 生成工程保留原始资源目录和场景文件名：`game/scr/*.rpy`、`game/grps/`、

@@ -20,7 +20,7 @@ from rscript_tsc import read_tsc  # noqa: E402
 
 def main() -> None:
     assert (ROOT / "VERSION").read_text().strip() == PORT_VERSION == "1.4"
-    assert ANDROID_VERSION_CODE == 14
+    assert ANDROID_VERSION_CODE == 1
     with TemporaryDirectory() as temporary:
         root = Path(temporary)
         choices = root / "choices.tsc"
@@ -73,7 +73,16 @@ def main() -> None:
         android["numeric_version"] = 12
         (project / "android.json").write_text(json.dumps(android))
         install_version(project)
-        android["numeric_version"] = 14
+        assert json.loads((project / "android.json").read_text()) == android
+        android["numeric_version"] = 0
+        (project / "android.json").write_text(json.dumps(android))
+        install_version(project)
+        android["numeric_version"] = 1
+        assert json.loads((project / "android.json").read_text()) == android
+        del android["numeric_version"]
+        (project / "android.json").write_text(json.dumps(android))
+        install_version(project)
+        android["numeric_version"] = 1
         assert json.loads((project / "android.json").read_text()) == android
         assert copied >= 12
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()

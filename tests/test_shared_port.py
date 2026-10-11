@@ -2,6 +2,7 @@
 """Build disposable Forest/Khime bases and exercise native shared features."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import json
 import os
 import shutil
 import signal
@@ -163,6 +164,8 @@ def main():
             assert "config.version" not in (project / "game/engine/options.rpy").read_text()
             assert (project / "game/engine/port_version.rpy").read_text() == \
                 'define config.version = "1.4"\n'
+            android = json.loads((project / "android.json").read_text())
+            assert android["version"] == "1.4" and android["numeric_version"] == 1
             for source in (ROOT / "runtime").glob("*.rpy"):
                 assert (project / "game" / "engine" / source.name).read_bytes() == source.read_bytes()
             if len(sys.argv) > 1:

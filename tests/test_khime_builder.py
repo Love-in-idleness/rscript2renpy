@@ -108,7 +108,7 @@ def main() -> None:
             assert foreground.crop((72, 72, 360, 360)).tobytes() == \
                 icon.convert("RGBA").resize((288, 288), Image.Resampling.NEAREST).tobytes()
         android = json.loads((project / "android.json").read_text())
-        assert android["version"] == "1.4" and android["numeric_version"] == 14
+        assert android["version"] == "1.4" and android["numeric_version"] == 1
         assert android["package"] == "io.github.loveinidleness.khime"
         assert (project / "game" / "engine" / "touch_controls.rpy").read_bytes() == \
             (ROOT / "port_template" / "game" / "touch_controls.rpy").read_bytes()

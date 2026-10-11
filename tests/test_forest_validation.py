@@ -69,7 +69,7 @@ def main() -> None:
             assert (project / name).read_bytes() == \
                 (ROOT / "forest" / "android" / name).read_bytes()
         android = json.loads((project / "android.json").read_text(encoding="utf-8"))
-        assert android["version"] == "1.4" and android["numeric_version"] == 14
+        assert android["version"] == "1.4" and android["numeric_version"] == 1
         assert 'define config.version = "1.4"' in (project / "game/engine/port_version.rpy").read_text()
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):

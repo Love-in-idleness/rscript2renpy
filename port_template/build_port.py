@@ -23,7 +23,8 @@ from tsc_patches import scenario_sources  # noqa: E402
 
 
 PORT_VERSION = "1.4"
-ANDROID_VERSION_CODE = 14
+# Minimum valid APK version code, independent of the displayed project version.
+ANDROID_VERSION_CODE = 1
 
 
 def validate_resources(root, *, directories=(), files=(), patterns=(), alternatives=()):

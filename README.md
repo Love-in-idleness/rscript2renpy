@@ -84,7 +84,9 @@ python3 tools/install_runtime.py /path/to/renpy-project
 `--force`。通用光标来自 Forest 原版，后续移植也使用同一资源。
 各生成器安装共用 Android 启动说明，包含项目地址及正版资源自行构建提示。
 PC／Android 版本由 `port_template/build_port.py` 的 `PORT_VERSION` 统一管理，
-当前为 `1.4`（仓库 `VERSION` 同步），安卓版本代码最低为 `14`，保留已有更高值。
+当前为 `1.4`（仓库 `VERSION` 同步）。新工程的安卓内部版本代码 `numeric_version`
+默认为最低有效值 `1`，已有值保留，不随项目版本自动增加。它不是最低安卓系统版本；
+系统要求由 Ren'Py/RAPT 的 `minSdkVersion` 决定，本项目不随版本号提高该要求。
 签名密钥不入库、不复制；生成配置与图标不代表已完成打包或实机验证。
 
 开始新适配前，可只读检查 `RsInit.tcf` 和初始化线索：
@@ -174,8 +176,11 @@ python3 tools/install_runtime.py /path/to/renpy-project
 
 Existing different files require `--force`. Ports share the original Forest
 cursor and an Android loading notice with the project URL and legal-resource
-build instructions. Shared PC/Android versioning does not imply successful APK
-builds or device testing. Signing keys remain local.
+build instructions. New projects default to internal Android version code 1;
+existing codes are retained, not increased with the displayed project version.
+This is separate from the minimum Android API level set by Ren'Py/RAPT.
+Shared PC/Android versioning does not imply successful APK builds or device
+testing. Signing keys remain local.
 
 ### Verification and licensing
 
