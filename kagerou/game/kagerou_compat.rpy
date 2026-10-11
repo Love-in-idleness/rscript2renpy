@@ -202,7 +202,8 @@ screen say(who, what, center=False):
         xysize (800, 600)
         padding (0, 0)
         background rscript_textbox_background()
-        rscript_text (kagerou_page_text() if kagerou_page else what):
+        # A cleared page must not fall back to Ren'Py's retained say scope.
+        rscript_text kagerou_page_text():
             id "what"
             font rscript_current_font()
             size persistent.rscript_text_size

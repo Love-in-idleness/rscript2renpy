@@ -27,20 +27,29 @@ def main():
         subprocess.run([str(sdk / 'renpy.sh'), str(project), 'kageroutest',
                         '--savedir', str(project / 'test-saves')], check=True,
                        env=os.environ | {'RENPY_PATH_TO_SAVES': str(project / 'sdk-saves')})
+        command = [str(sdk / 'renpy.sh'), str(project), 'run',
+                   '--savedir', str(project / 'test-saves')]
+        environment = os.environ | {'RENPY_PATH_TO_SAVES': str(project / 'sdk-saves'),
+            'SDL_AUDIODRIVER': 'dummy', 'RENPY_PERFORMANCE_TEST': '0',
+            'RENPY_SKIP_SPLASHSCREEN': '1'}
+        if shutil.which('xvfb-run'):
+            command = ['xvfb-run', '-a', *command]
+            environment['SDL_VIDEODRIVER'] = 'x11'
+        fixture = game / 'transition.rpy'
+        shutil.copy2(Path(__file__).with_name('renpy_kagerou_transition.rpy'), fixture)
+        for language in ('', 'zh'):
+            subprocess.run(command, check=True, timeout=45,
+                           env=environment | {'KAGEROU_TEST_LANGUAGE': language})
+            assert (project / ('transition-%s.png' % (language or 'jp'))).is_file()
+        fixture.unlink()
+        fixture.with_suffix('.rpyc').unlink(missing_ok=True)
         if len(sys.argv) == 4:
             shutil.copy2(Path(__file__).with_name('renpy_kagerou_capture.rpy'), game / 'capture.rpy')
-            command = [str(sdk / 'renpy.sh'), str(project), 'run',
-                       '--savedir', str(project / 'test-saves')]
-            environment = os.environ | {'RENPY_PATH_TO_SAVES': str(project / 'sdk-saves'),
-                'SDL_AUDIODRIVER': 'dummy', 'RENPY_PERFORMANCE_TEST': '0',
-                'RENPY_SKIP_SPLASHSCREEN': '1'}
-            if shutil.which('xvfb-run'):
-                command = ['xvfb-run', '-a', *command]
-                environment['SDL_VIDEODRIVER'] = 'x11'
             subprocess.run(command, check=True, timeout=45, env=environment)
             destination = Path(sys.argv[3]).resolve()
             destination.mkdir(parents=True, exist_ok=True)
-            for name in ('vertical.png', 'horizontal.png'):
+            for name in ('vertical.png', 'horizontal.png',
+                         'transition-jp.png', 'transition-zh.png'):
                 shutil.copy2(project / name, destination / name)
 
 

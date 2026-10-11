@@ -102,6 +102,7 @@ python early:
             renpy.say = old_say
         kagerou_txcls('0')
         ruby, _ = parse_rscript_text(repr('|寂寞[じゃくまく]'), True)
+        store.kagerou_page = store.kagerou_page_current = ruby
         renpy.show_screen('say', who=None, what=ruby)
         renpy.get_screen('say').update()
         window = renpy.get_widget('say', 'window')
