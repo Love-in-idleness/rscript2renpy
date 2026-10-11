@@ -15,6 +15,7 @@ init python:
         store.kagerou_capture_stage += 1
         if kagerou_capture_stage >= 2:
             renpy.hide_screen('say')
+            persistent.rscript_text_cps = 25
             if kagerou_capture_stage == 3:
                 _preferences.language = 'zh'
                 renpy.run(rscript_ui_action(('voice_group', 4, False)))

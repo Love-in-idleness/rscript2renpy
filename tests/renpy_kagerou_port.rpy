@@ -6,6 +6,16 @@ python early:
         renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
         renpy.display.screen.prepare_screens()
         kagerou_init_textbox()
+        assert persistent.rscript_text_cps == 25
+        controls = rscript_layouts()['confscrn']['controls']
+        assert rscript_ui_action(controls['msp_slw']).get_selected()
+        assert not rscript_ui_action(controls['msp_nom']).get_selected()
+        assert not rscript_ui_action(controls['msp_now']).get_selected()
+        for speed in (75, 0):
+            persistent.rscript_text_cps = speed
+            kagerou_init_textbox()
+            assert persistent.rscript_text_cps == speed
+        persistent.rscript_text_cps = 25
         assert (config.screen_width, config.screen_height) == (800, 600)
         assert persistent.rscript_text_size == 24 and persistent.kagerou_direction == 1
         assert rscript_textbox_state()['text_rect'] == (114, 30, 646, 480)

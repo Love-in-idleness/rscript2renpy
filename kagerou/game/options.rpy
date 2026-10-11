@@ -28,6 +28,9 @@ init -100 python:
 init python:
     rscript_ui.update({"textbox_size": (800, 600), "game_text_settings": False})
     def kagerou_init_textbox():
+        # The shared 20 cps default does not match any native menu choice.
+        if persistent.rscript_text_cps == 20:
+            persistent.rscript_text_cps = 25
         kagerou_apply_text_settings()
         # 42c2be..42c2d6: the reading pane's screen origin.
         store.rscript_compane_position = (585, 572)
