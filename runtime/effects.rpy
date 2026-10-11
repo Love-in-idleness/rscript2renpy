@@ -539,7 +539,8 @@ init python:
         if store.rscript_update_timing == "codex-ms":
             if 100 <= effect < 300:
                 return .310 if effect < 200 else .410
-            # Native 43b390: zero selects 10 steps; waits are milliseconds.
+            # Native 43b390 / Kagerou 41e5b0: zero selects 10; waits are milliseconds.
+            # shortcut: nominal waits omit Windows Sleep(5) jitter; calibrate with native playback.
             step = step or 10
             if effect == 2:
                 frames = max(0, step - 1)

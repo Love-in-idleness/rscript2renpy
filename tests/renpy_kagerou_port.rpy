@@ -123,6 +123,35 @@ python early:
             lex = renpy.lexer.Lexer([('kagerou-test', 1, text, [])])
             lex.advance()
             executor(parser(lex))
+        assert rscript_update_timing == 'codex-ms'
+        original_with = renpy.with_statement
+        transitions = []
+        def capture_transition(transition):
+            if transition is not None and not hasattr(transition, 'delay'):
+                transition = transition(old_widget=Solid('#000'), new_widget=Solid('#fff'))
+            transitions.append(transition)
+        try:
+            renpy.with_statement = capture_transition
+            # Actual corpus parameters, including the two-stage white flash.
+            for effect, step, wait, expected in (
+                    (1, 32, 40, 1.32), (1, 16, 20, .34), (1, 8, 10, .09),
+                    (1, 15, 100, 1.6), (1, 32, 80, 2.64),
+                    (2, 16, 100, 1.5), (3, 16, 20, .68), (3, 1, 2, .008),
+                    (4, 16, 20, .68), (2, 0, 16, .144), (2, 1, 16, 0),
+                    (116, 0, 0, .310), (216, 1, 999, .410)):
+                command(parse_update, execute_update, '%d %d %d' % (effect, step, wait))
+                assert abs(transitions[-1].delay - expected) < 1e-9
+                if effect == 2 and step == 0:
+                    assert transitions[-1].steps == 5
+                assert not in_queue and not draw_queue_delayed
+            command(parse_update, execute_update, '0 0 0')
+            assert transitions[-1] is None
+            _r[10], _r[11] = 32, 40
+            command(parse_update, execute_update, '1 _r[10] _r[11]')
+            assert abs(transitions[-1].delay - 1.32) < 1e-9
+            assert abs(rscript_update_duration(11, 16, 20) - .62) < 1e-9
+        finally:
+            renpy.with_statement = original_with
         command(parse_folder, execute_folder, "1 'grpo_bu'")
         command(kagerou_parse_locmode, kagerou_locmode, '1 1 0 0')
         assert layer_anchor[1] == (.5, 0)

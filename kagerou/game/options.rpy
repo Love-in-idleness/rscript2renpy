@@ -13,6 +13,8 @@ default persistent.kagerou_character_focus = 0
 default persistent.kagerou_inactive_style = 0
 
 init -100 python:
+    # 41e5b0 / 450630: native update loops use millisecond waits.
+    rscript_update_timing = "codex-ms"
     rscript_base_text_size = 24
     rscript_inline_base_size = 24
     rscript_native_text_metrics = True

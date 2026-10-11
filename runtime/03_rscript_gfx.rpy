@@ -235,6 +235,8 @@ python early:
         step   = args.Step
         wait   = args.Wait
 
+        if store.rscript_update_timing == "codex-ms":
+            step = step or 10
 
         ef_time = rscript_update_duration(effect, step, wait)
         trans = None

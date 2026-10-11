@@ -95,6 +95,22 @@ def main():
         assert image.handler(255) == 0x41d29d
         assert image.handler(0x51) == 0x41c9ae
         assert image.handler(0x14) == 0x41c5e9
+        assert image.handler(0x1c) == 0x41cae7
+        assert image.read(0x41e5d1, 5) == b'\xbf\x0a\0\0\0'  # zero -> ten steps
+        assert image.read(0x41e7e0, 20) == struct.pack('<5I',
+            0x41e7cb, 0x41e703, 0x41e726, 0x41e749, 0x41e76b)
+        assert image.read(0x4506c5, 3) == b'\x8d\x4f\x01'  # dissolve: step + 1
+        assert image.read(0x450540, 3) == b'\x8d\x47\xff'  # pixelate: step - 1
+        assert image.read(0x45038b, 3) == b'\x8d\x3c\0'  # mask: double the step
+        assert image.read(0x450407, 3) == b'\x8d\x4f\xff'  # mask: doubled step - 1
+        assert image.read(0x450d3e, 3) == b'\x8d\x4b\x01'  # white out: step + 1
+        assert image.read(0x450e7e, 3) == b'\x8d\x4d\x01'  # white in: step + 1
+        assert image.read(0x450a9e, 3) == b'\x8d\x4b\x01'  # black out: step + 1
+        assert image.read(0x450bde, 3) == b'\x8d\x4d\x01'  # black in: step + 1
+        assert image.read(0x450476, 6) == b'\xff\x15\x70\x30\x47\0'  # Sleep(5)
+        assert image.read(0x45040b, 6) == b'\x8b\x1d\xdc\x32\x47\0'  # timeGetTime
+        assert image.read(0x45084d, 9) == b'\x83\xc7\x14\x81\xff\x59\x02\0\0'
+        assert image.read(0x45098b, 9) == b'\x83\xc7\x32\x81\xff\xd1\x07\0\0'
         # The constants used by the renderer are checked against actual instructions.
         assert image.read(0x4303e2, 2) == b'\x6a\x12'  # native direction 1 (horizontal)
         assert image.read(0x430437, 3) == b'\x0f\x94\xc1'  # SETE, not SETNE

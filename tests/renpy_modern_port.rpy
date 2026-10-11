@@ -195,12 +195,14 @@ python early:
             for effect, step, wait, expected in (
                     (1, 16, 16, .272), (1, 32, 16, .528),
                     (1, 0, 16, .176), (1, 16, 0, 0),
-                    (2, 16, 16, .240), (2, 1, 16, 0),
+                    (2, 16, 16, .240), (2, 1, 16, 0), (2, 0, 16, .144),
                     (3, 16, 16, .544), (4, 16, 16, .544),
                     (11, 16, 16, .496), (116, 16, 0, .310),
                     (216, 1, 999, .410)):
                 execute_update(SimpleNamespace(Effect=effect, Step=step, Wait=wait))
                 assert isclose(transitions[-1].delay, expected), (effect, transitions[-1].delay)
+                if effect == 2 and step == 0:
+                    assert transitions[-1].steps == 5
             store.rscript_update_timing = "legacy"
             for effect, expected in ((1, 2.56), (3, 5.12), (11, 5.12)):
                 execute_update(SimpleNamespace(Effect=effect, Step=16, Wait=16))

@@ -79,9 +79,11 @@ Khime 通过 `build` 调用同一写入机制。写入运行时、界面和剧�
 
 动画计时在公共运行时处理，不能把已调校的老游戏速度直接套给新引擎。
 `rscript_update_timing` 默认 `legacy`，保留 Forest/Khime 已确认的表现；
-已核实的现代 CodeX 引擎可在适配层选择 `codex-ms`（Evermaiden 使用此项），
+已核实的 CodeX 引擎可在适配层选择 `codex-ms`（Evermaiden、Kagerou 使用此项），
 由公共函数按每个效果的循环次数与毫秒等待计算时长，适配层不复制计时代码。
 这是引擎语义配置，不根据 TSC 的字节布局自动推断。
+毫秒模式的零步数统一按 10 步构造效果；时长是循环次数乘名义等待，
+不复现 Windows `Sleep(5)` 的调度误差。
 
 ## 公共 UI 和字幕补丁
 
