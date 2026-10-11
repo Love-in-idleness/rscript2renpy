@@ -81,6 +81,34 @@ def glyph_breaks(glyphs, limit, ruby_atomic=True):
     return [units[index][0] for index in starts]
 
 
+def sync_ruby_times(glyphs):
+    """Reveal readings with their body cells, without adding typewriter time."""
+    index = 0
+    while index < len(glyphs):
+        before = index
+        body, reading = [], []
+        while index < len(glyphs) and glyphs[index].ruby == 1:
+            body.append(glyphs[index])
+            index += 1
+        while index < len(glyphs) and glyphs[index].ruby == 2:
+            reading.append(glyphs[index])
+            index += 1
+        if not body or not reading:
+            if index == before:
+                index += 1
+            continue
+        start = 0
+        while start < len(body):
+            end = start + 1
+            while end < len(body) and body[end].y == body[start].y:
+                end += 1
+            count = (len(reading) * (end - start) + len(body) - start - 1) // (len(body) - start)
+            row, reading = reading[:count], reading[count:]
+            for position, glyph in enumerate(row):
+                glyph.time = body[start + position * (end - start) // count].time
+            start = end
+
+
 def place_native_ruby(glyphs, offset, advances=None):
     """46afa0: distribute short readings; centre long ones; split by body rows.
 

@@ -34,6 +34,8 @@ python early:
                 scale = persistent.rscript_text_size / float(store.rscript_base_text_size)
                 rscript_wrap.place_native_ruby(glyphs, layout.scale(box["ruby"][2] * scale),
                     layout.rscript_ruby_advances)
+            if isinstance(text, RScriptText):
+                rscript_wrap.sync_ruby_times(glyphs)
 
     def rscript_text_settings(kind, base_size):
         return (gui.text_font, base_size,
@@ -164,7 +166,7 @@ python early:
                         text.style = new_style
                 super(RScriptLayout, self).__init__(text, width, height, renders,
                     size_only=size_only, splits_from=splits_from, drawable_res=drawable_res)
-                if size_only and self.has_ruby and rscript_native_ruby_enabled(text):
+                if size_only and self.has_ruby and isinstance(text, RScriptText):
                     rscript_place_ruby(builtins.list(g for p in self.paragraph_glyphs for g in p),
                         self.scale_int(text.style.ruby_style.yoffset),
                         self.scale_int(text.style.altruby_style.yoffset), *self.size)

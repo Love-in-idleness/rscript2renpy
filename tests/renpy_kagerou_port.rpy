@@ -275,7 +275,7 @@ python early:
         for direction in (1, 0):
             kagerou_set_text_setting('direction', direction)
             rscript_set_text_style(0, text_rect=(114, 30, 646, 48) if direction else (400, 20, 48, 513))
-            split_ruby = RScriptText('{rb}漢字漢字{/rb}{rt}あいうえ{/rt}')
+            split_ruby = RScriptText('{rb}漢字漢字{/rb}{rt}あいうえ{/rt}', slow_cps=25)
             split_ruby.refresh_settings()
             measured = renpy.text.text.Layout(split_ruby, 480, 646, {}, size_only=True, drawable_res=False)
             glyphs = measured.paragraph_glyphs[0]
@@ -283,6 +283,7 @@ python early:
             reading = [g for g in glyphs if g.ruby == 2]
             assert body[0].y == body[1].y < body[2].y == body[3].y, (direction, [(g.x, g.y, g.advance, g.split) for g in body], split_ruby.rscript_settings)
             assert reading[0].y == reading[1].y < reading[2].y == reading[3].y
+            assert [g.time for g in reading] == [g.time for g in body]
             assert all(g.y == round(b.y - b.ascent + g.ascent - 9)
                        for b, g in zip(body, reading))
         kagerou_set_text_setting('direction', 1)

@@ -30,6 +30,16 @@ python early:
                 result.append(current)
             return result
         raw = "|学習装置[インキュナブラ]后"
+        for kind in ('say', 'oload'):
+            for prefix in ('', '{fast}前', '{cps=5}', '{_start}'):
+                _, timing = shaped(prefix + '{rb}漢字{/rb}{rt}かんじ{/rt}後',
+                                   chars=20, kind=kind, slow_cps=10)
+                glyphs = timing.paragraph_glyphs[0]
+                base = [g for g in glyphs if g.ruby == 1]
+                top = [g for g in glyphs if g.ruby == 2]
+                assert [g.time for g in top] == [base[0].time, base[0].time, base[1].time]
+                _, plain = shaped(prefix + '漢字後', chars=20, kind=kind, slow_cps=10)
+                assert [g.time for g in glyphs if g.ruby < 2] == [g.time for g in plain.paragraph_glyphs[0]]
         parsed, _ = parse_rscript_text(repr(raw), True)
         assert parsed == "{rb}学習装置{/rb}{rt}インキュナブラ{/rt}后"
         for kind in ("say", "oload"):

@@ -6,7 +6,7 @@ from itertools import product
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "runtime"))
-from rscript_wrap import NO_LINE_START, NO_LINE_END, glyph_breaks, normalize_boundaries, place_native_ruby, ruby_markup
+from rscript_wrap import NO_LINE_START, NO_LINE_END, glyph_breaks, normalize_boundaries, place_native_ruby, ruby_markup, sync_ruby_times
 
 
 def wrap(text, limit, advances=None):
@@ -69,6 +69,15 @@ def main():
     place_native_ruby(base + reading, 9)
     assert [g.y for g in reading] == [-5, -5, 15, 15]
     assert [g.y for g in base] == [10, 10, 30, 30, 50]
+    for index, g in enumerate(base):
+        g.time = (index + 1) / 25
+    sync_ruby_times(base + reading)
+    assert [g.time for g in reading] == [g.time for g in base[:4]]
+    base = [glyph(1, 0, 10, 10)]
+    base[0].time = -3600  # Already displayed before {fast}.
+    sync_ruby_times(base + reading)
+    assert all(g.time == -3600 for g in reading)
+    sync_ruby_times([])
     place_native_ruby([], 9)
     place_native_ruby([glyph(0, 0, 0, 0), glyph(2, 0, 0, 0)], 9)
     # Exhaustively check forward progress and preservation, including zero width.
