@@ -50,6 +50,14 @@ def main():
             assert (project / ('transition-%s.png' % (language or 'jp'))).is_file()
         fixture.unlink()
         fixture.with_suffix('.rpyc').unlink(missing_ok=True)
+        fixture = game / 'portrait_test.rpy'
+        shutil.copy2(Path(__file__).with_name('renpy_kagerou_portrait.rpy'), fixture)
+        for language in ('', 'zh'):
+            subprocess.run(command, check=True, timeout=45,
+                           env=environment | {'KAGEROU_TEST_LANGUAGE': language})
+            assert (project / ('portrait-%s.png' % (language or 'jp'))).is_file()
+        fixture.unlink()
+        fixture.with_suffix('.rpyc').unlink(missing_ok=True)
         for name, seconds in (('short', .5), ('long', 5)):
             with wave.open(str(game / (name + '.wav')), 'wb') as audio:
                 audio.setparams((1, 2, 22050, 0, 'NONE', 'not compressed'))
@@ -81,6 +89,8 @@ def main():
                          'transition-jp.png', 'transition-zh.png'):
                 shutil.copy2(project / name, destination / name)
             for name in ('music-jp.png', 'music-zh.png', 'rollback-back.png', 'rollback-wheel.png'):
+                shutil.copy2(project / name, destination / name)
+            for name in ('portrait-jp.png', 'portrait-zh.png'):
                 shutil.copy2(project / name, destination / name)
 
 

@@ -156,11 +156,14 @@ python early:
             assert abs(rscript_update_duration(11, 16, 20) - .62) < 1e-9
         finally:
             renpy.with_statement = original_with
-        command(parse_folder, execute_folder, "1 'grpo_bu'")
-        command(kagerou_parse_locmode, kagerou_locmode, '1 1 0 0')
-        assert layer_anchor[1] == (.5, 0)
+        # Enter EXCMD with the actual title/gallery's global folder/origin state.
+        command(parse_folder, execute_folder, "0 'grpo'")
+        command(kagerou_parse_locmode, kagerou_locmode, '0 0 0 0')
         store.in_queue = True
         command(kagerou_parse_words, kagerou_excmd, '0 1 3011 0 0')
+        assert folder[1] == 'grpo_bu' and layer_anchor[1] == (.5, 0)
+        assert layer_info[1] == 'grpo_bu 3011'
+        assert folder[11] == 'grpo' and layer_anchor[11] == (0, 0)
         assert _r[20] == 1 and layer_zorder[1] == 16
         assert layer_zorder[6] == 12
         assert layer_pos[1] == (200, 0)
@@ -216,6 +219,9 @@ python early:
         command(parse_load, execute_load, '1 1 40 70 0 0')
         assert layer_info[1] == 'grpo_ex 0001' and layer_pos[1] == (40, 70)
         assert layer_anchor[1] == (0, 0)
+        command(kagerou_parse_words, kagerou_excmd, '0 1 3011 0 0')
+        assert layer_info[1] == 'grpo_bu 3011' and layer_anchor[1] == (.5, 0)
+        assert folder[2] == 'grpo_ex' and layer_anchor[2] == (0, 0)
         command(parse_folder, execute_folder, "1 'grpo_bu'")
         old_say = renpy.say
         calls = []

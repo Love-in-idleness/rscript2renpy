@@ -96,6 +96,10 @@ python early:
                 store._r[call[1]] = call[2]
             elif address == 0x41dda0:
                 _, layer, cg, effect, x, y, color = call
+                if 1 <= layer <= 6:
+                    # Bonus title/gallery scripts overwrite these 0000/9999 portrait settings.
+                    store.folder[layer] = "grpo_bu"
+                    store.layer_anchor[layer] = (.5, 0)
                 loadcls(layer, effect, cg=cg, xpos=x, ypos=y, color=color)
             elif address == 0x41e020:
                 layer = call[1]
