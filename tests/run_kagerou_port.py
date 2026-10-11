@@ -24,7 +24,12 @@ def main():
                        'grps', 'bgm', 'voice', 'wav', 'mov'):
             path = source / 'game' / folder
             if path.exists():
-                (game / folder).symlink_to(path, target_is_directory=True)
+                # SDK compilation must not share the real project's .rpyc files.
+                if folder in ('scr', 'tl'):
+                    shutil.copytree(path, game / folder,
+                                    ignore=shutil.ignore_patterns('*.rpyc', '__pycache__'))
+                else:
+                    (game / folder).symlink_to(path, target_is_directory=True)
         shutil.copy2(Path(__file__).with_name('renpy_kagerou_port.rpy'), game / 'kagerou_test.rpy')
         subprocess.run([str(sdk / 'renpy.sh'), str(project), 'kageroutest',
                         '--savedir', str(project / 'test-saves')], check=True,
@@ -59,6 +64,12 @@ def main():
                 assert not any(r > 240 and g < 20 and b < 20 for _, (r, g, b) in colors), name
         fixture.unlink()
         fixture.with_suffix('.rpyc').unlink(missing_ok=True)
+        fixture = game / 'history_test.rpy'
+        shutil.copy2(Path(__file__).with_name('renpy_kagerou_history.rpy'), fixture)
+        subprocess.run(command, check=True, timeout=25, env=environment)
+        assert all((project / name).is_file() for name in ('history.png', 'history-closed.png'))
+        fixture.unlink()
+        fixture.with_suffix('.rpyc').unlink(missing_ok=True)
         if len(sys.argv) == 4:
             shutil.copy2(Path(__file__).with_name('renpy_kagerou_capture.rpy'), game / 'capture.rpy')
             subprocess.run(command, check=True, timeout=45, env=environment)
@@ -67,7 +78,7 @@ def main():
             for name in ('vertical.png', 'horizontal.png', 'preferences-jp.png', 'preferences-zh.png',
                          'transition-jp.png', 'transition-zh.png'):
                 shutil.copy2(project / name, destination / name)
-            for name in ('music-jp.png', 'music-zh.png'):
+            for name in ('music-jp.png', 'music-zh.png', 'history.png', 'history-closed.png'):
                 shutil.copy2(project / name, destination / name)
 
 
