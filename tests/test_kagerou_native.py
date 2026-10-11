@@ -97,6 +97,9 @@ def main():
         # The constants used by the renderer are checked against actual instructions.
         assert image.read(0x4303e2, 2) == b'\x6a\x12'  # native direction 1 (horizontal)
         assert image.read(0x430437, 3) == b'\x0f\x94\xc1'  # SETE, not SETNE
+        assert image.read(0x47e718, 2) == b'\x32\0'  # animation timer 50ms
+        assert image.read(0x41fbb1, 5) == b'\xbe\x01\0\0\0'  # folder 0 starts at object 1
+        assert image.read(0x42da47, 5) == b'\xe8\x84\xff\xff\xff'  # hide tbox calls 42d9d0 clear
         assert image.read(0x455a1a, 12) == b'\x8b\x86\x70\x01\0\0\x2b\x86\x84\x01\0\0'  # columns right-to-left
         assert image.read(0x4303f1, 10) == b'\x68\x01\x02\0\0\x68\x68\x01\0\0'
         assert image.read(0x42bfce, 7) == b'\x68\x26\x02\0\0\x6a\0'  # (0,550)

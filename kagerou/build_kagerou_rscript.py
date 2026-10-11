@@ -49,7 +49,7 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
     validate_edition(resources)
     validate_resources(resources,
         directories=("scr", "grpe", "grpo", "grpo_bu", "grpo_ex", "grps", "bgm", "voice", "wav"),
-        files=("grps/tbox01/back.png",),
+        files=("grps/tbox01/back.png", *("grps/wait%02d/.meta.xml" % n for n in (12, 16, 18, 24))),
         patterns=("grpe/9001.png", "bgm/*.ogg", "voice/*/*.ogg", "wav/*.ogg"))
     image = NativeImage(exe or resources / "kagerou.exe")
     # Fresh-process layout preset 0; persisted native CFG is not imported.

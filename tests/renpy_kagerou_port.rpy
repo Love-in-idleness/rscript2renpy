@@ -13,6 +13,7 @@ python early:
         assert all(renpy.has_label(name) for name in ('_0000', '_0059', '_0201', '_0301', '_0302', '_g_0001_TOP2'))
         assert renpy.loadable(rscript_audio_file('voice', 40002))
         assert rscript_click_link_is_preview
+        assert rscript_folder_zero_all
         def command(parser, executor, text):
             lex = renpy.lexer.Lexer([('kagerou-test', 1, text, [])])
             lex.advance()
@@ -48,6 +49,13 @@ python early:
             assert _r[0] == 2 and not rscript_click_values
         finally:
             renpy.call_screen = old_call_screen
+        # Bonus galleries reset both folders and anchors before loading thumbnails.
+        command(parse_folder, execute_folder, "0 'grpo_ex'")
+        command(kagerou_parse_locmode, kagerou_locmode, '0 0 0 0')
+        command(parse_load, execute_load, '1 1 40 70 0 0')
+        assert layer_info[1] == 'grpo_ex 0001' and layer_pos[1] == (40, 70)
+        assert layer_anchor[1] == (0, 0)
+        command(parse_folder, execute_folder, "1 'grpo_bu'")
         old_say = renpy.say
         calls = []
         try:
@@ -76,6 +84,23 @@ python early:
             renpy.say = old_say
         kagerou_txcls('0')
         assert store.kagerou_page == ''
+        # 0999 -> 1000: tbox 0 0 ends the title page even without txcls.
+        store.kagerou_page = store.kagerou_page_current = '0999の文字'
+        store.in_queue = True
+        command(parse_tbox, kagerou_tbox, '0 0')
+        assert store.kagerou_page == '0999の文字'
+        store.in_queue = False
+        process_draw_queue()
+        assert store.kagerou_page == store.kagerou_page_old == store.kagerou_page_current == ''
+        assert renpy.get_screen('say') is None
+        command(parse_tbox, kagerou_tbox, '0 1')
+        try:
+            renpy.say = lambda who, what, **kwargs: calls.append((what, kwargs['interact']))
+            kagerou_say(repr(('', '1000の文字', 1)))
+            assert calls[-1][0] == '1000の文字'
+        finally:
+            renpy.say = old_say
+        kagerou_txcls('0')
         ruby, _ = parse_rscript_text(repr('|寂寞[じゃくまく]'), True)
         renpy.show_screen('say', who=None, what=ruby)
         renpy.get_screen('say').update()
@@ -99,8 +124,28 @@ python early:
                                        drawable_res=False)
         assert layout.size[0] <= 504 and layout.size[1] < 646, layout.size
         assert sample.style.shaper == 'harfbuzz'
+        box = rscript_textbox_state()
+        assert box['wait_image'] == 24
+        assert len(rscript_layouts()['wait24']['items']) == 60
+        assert kagerou_wait_position(layout, box)[1] <= box['text_rect'][1] + box['text_rect'][3] + 24
         assert all(segment.vertical for paragraph in layout.paragraphs
                    for segment, content in paragraph)
+        # Check ink bounds, not just advances: opening brackets used to draw
+        # inside the following glyph despite having a full 24px advance.
+        for index, size in enumerate((24, 18, 12)):
+            kagerou_set_text_setting('size', index)
+            brackets = RScriptText('『甲「乙【丙】丁』戊', size=size)
+            brackets.refresh_settings()
+            assert brackets.style.size == size
+            bracket_layout = renpy.text.text.Layout(brackets, 480, 646, {},
+                size_only=True, drawable_res=False)
+            segment = bracket_layout.paragraphs[0][0][0]
+            for glyph in bracket_layout.paragraph_glyphs[0]:
+                if chr(glyph.character) in '『「【':
+                    left, _, right, _ = segment.bounds([glyph],
+                        (10000, 10000, -10000, -10000), bracket_layout)
+                    assert 0 <= left - glyph.x < right - glyph.x <= glyph.advance + 1, (size, glyph.character, left, right)
+        kagerou_set_text_setting('size', 0)
         kagerou_set_text_setting('direction', 0)
         renpy.get_screen('say').update()
         text = renpy.get_widget('say', 'what')
@@ -114,6 +159,7 @@ python early:
                 text.refresh_settings()
                 assert persistent.rscript_text_size == text.style.size == expected
                 assert rscript_textbox_state()['size'] == expected
+                assert rscript_textbox_state()['wait_image'] == ((18, 16, 12) if direction == 0 else (24, 18, 12))[size]
         kagerou_set_text_setting('direction', 1)
         kagerou_set_text_setting('size', 2)
         assert persistent.rscript_text_size == 12

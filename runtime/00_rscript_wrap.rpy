@@ -167,6 +167,15 @@ python early:
                 line, char = rscript_textbox_state()["pitch"]
                 scale = persistent.rscript_text_size / float(store.rscript_base_text_size)
                 for glyph in glyphs:
+                    if self.vertical:
+                        # Vertical punctuation bearings can extend into the next cell.
+                        left, _, right, _ = super(RScriptTextSegment, self).bounds(
+                            [glyph], (10000, 10000, -10000, -10000), layout)
+                        cell = math.ceil(glyph.advance)
+                        if right - left <= cell and right > cell + 1:
+                            glyph.x_offset -= right - cell
+                        elif right - left <= cell and left < -1:
+                            glyph.x_offset -= left
                     if glyph.ruby < 2:
                         # 457062/457086: advance + char pitch; size + line pitch.
                         glyph.advance += layout.scale(char * scale)

@@ -10,6 +10,8 @@ python early:
         from engine.kagerou_native import text_geometry
         geometry = text_geometry(persistent.kagerou_direction, persistent.kagerou_size,
                                  persistent.kagerou_snap)
+        # 430cb0's wait table follows native presets, including horizontal 16px.
+        geometry["wait_image"] = geometry["size"]
         # Keep the chosen font size when rotating; native rectangle presets still apply.
         geometry["size"] = text_geometry(1, persistent.kagerou_size,
                                          persistent.kagerou_snap)["size"]
@@ -19,6 +21,36 @@ python early:
         persistent.rscript_line_spacing = geometry["pitch"][0]
         geometry["outlines"] = ((1, "#000000", 1, 1),) if persistent.kagerou_shadow == 0 else ()
         rscript_set_textbox(0, box_pos=(0, 0), **geometry)
+
+    def kagerou_wait_position(layout, box):
+        glyphs = [g for paragraph in layout.paragraph_glyphs for g in paragraph if g.ruby < 2]
+        if not glyphs:
+            return None
+        last = glyphs[-1]
+        x, y, width, height = box["text_rect"]
+        # 430e01: vertical uses the last cell's left/bottom; horizontal right/top.
+        if box["vertical"]:
+            gx, gy = layout.unscale_pair(last.x + last.advance, last.y + last.descent)
+            return (x + width - gy, y + gx)
+        gx, gy = layout.unscale_pair(last.x + last.advance, last.y - last.ascent)
+        return (x + gx, y + gy)
+
+    def kagerou_wait_displayable(st, at):
+        text = renpy.get_widget("say", "what")
+        layout = text.get_layout() if text else None
+        box = rscript_textbox_state()
+        position = kagerou_wait_position(layout, box) if layout else None
+        if position is None:
+            return Null(), .05
+        folder = "wait%02d" % box["wait_image"]
+        items = rscript_layouts()[folder]["items"]
+        names = list(items)
+        # 47e718 -> 4192b1 -> 44fca0: 50ms tick; 44b980 advances and loops.
+        name = names[int(st / .05) % len(names)]
+        dx, dy = items[name][:2]
+        return Transform(rscript_ui_image(folder, name),
+            pos=(absolute(position[0] + dx), absolute(position[1] + dy)),
+            anchor=(0, 0)), .05
 
     def kagerou_set_text_setting(name, value):
         setattr(persistent, "kagerou_" + name, value)
@@ -132,6 +164,9 @@ python early:
         kagerou_text(body, wait, append=True)
 
     def kagerou_tbox(args):
+        # 42da47 calls the same clear routine as txcls when hiding the box.
+        if args.mode == 0:
+            queue_draw(kagerou_clear_page)
         execute_tbox(args)
         process_draw_queue()
 
@@ -249,6 +284,7 @@ screen kagerou_excompane():
         use kagerou_ex_button("lctr_0", NullAction(), enabled=False)
 
 init 10 python:
+    renpy.image("rscript_ctc", DynamicDisplayable(kagerou_wait_displayable))
     rscript_ui.setdefault("layouts", {})["compane"] = dict(
         rscript_grps_layout["compane"], controls={name: spec for name, spec in
             rscript_grps_layout["compane"]["controls"].items() if name != "bak"})

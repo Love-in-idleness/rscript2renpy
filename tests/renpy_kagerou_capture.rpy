@@ -13,6 +13,10 @@ init python:
             renpy.quit()
         store.kagerou_capture_stage = 1
         kagerou_set_text_setting('direction', 0)
+        store.kagerou_page_old = ''
+        store.kagerou_page_current = '【女】\n『甲乙』「丙丁」【戊己】。横排的文字与等待图标。'
+        store.kagerou_page = kagerou_page_current
+        renpy.show_screen('say', who=None, what=kagerou_page_text())
         renpy.restart_interaction()
 
 label before_main_menu:
@@ -29,4 +33,5 @@ label before_main_menu:
     $ renpy.pause()
 
 screen kagerou_capture_timer():
+    add "rscript_ctc"
     timer 1.0 action Function(kagerou_capture) repeat True
