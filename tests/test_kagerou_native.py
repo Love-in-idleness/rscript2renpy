@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import struct
 import sys
 from tempfile import TemporaryDirectory
 
@@ -121,6 +122,19 @@ def main():
         assert image.read(0x42c2be, 10) == b'\x68\x3c\x02\0\0\x68\x49\x02\0\0'
         assert image.draw_handler(4) == 0x408ea6  # Internal image mode 3, not mode 4.
         assert image.draw_handler(0) == 0x408ed0
+        assert image.read(0x408ea9, 2) == b'\x6a\x03'
+        assert image.read(0x408f01, 5) == b'\xc1\xe2\x08\x2b\xd0'  # percent * 255
+        assert image.read(0x473f7c + 0xb0, 4) == (0x43fa30).to_bytes(4, 'little')
+        assert image.read(0x473f7c + 0xb4, 4) == (0x43fb00).to_bytes(4, 'little')
+        branch = image.read(0x4412c4 + 3, 1)[0]
+        assert image.read(0x44125c + branch * 4, 4) == (0x440e65).to_bytes(4, 'little')
+        assert image.read(0x440eb6, 5) == b'\xe8\xc5\x34\0\0'  # alpha renderer 444380
+        assert struct.unpack('<d', image.read(0x475c38, 8))[0] == 256.0
+        assert struct.unpack('<d', image.read(0x475c50, 8))[0] == 1 / 256
+        assert image.read(0x4460b8, 7) == b'\x88\x84\x37\x2c\x73\x4a\0'  # LUT write
+        assert image.read(0x42e325, 6) == b'\x66\xa3\x6c\x2a\x48\0'  # lctr config
+        assert image.read(0x416b05, 5) == b'\xe8\xb6\xb0\0\0'  # message 433 refresh
+        assert image.read(0x431510, 8) == b'\x66\x83\x3d\x6c\x2a\x48\0\0'  # refresh colors
         assert [image.character_x(n, layout=0, alternate=False) for n in range(1, 7)] == \
             [200, 200, 300, 400, 500, 600]
         assert [image.character_x(n, layout=6, alternate=False) for n in range(1, 7)] == \

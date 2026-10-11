@@ -10,6 +10,7 @@ default persistent.kagerou_snap = 0
 default persistent.kagerou_shadow = 0
 default persistent.kagerou_text_focus = 0
 default persistent.kagerou_character_focus = 0
+default persistent.kagerou_inactive_style = 0
 
 init -100 python:
     rscript_base_text_size = 24

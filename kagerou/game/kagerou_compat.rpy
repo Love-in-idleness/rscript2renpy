@@ -56,10 +56,13 @@ python early:
         setattr(persistent, "kagerou_" + name, value)
         kagerou_apply_text_settings()
         positions = store.kagerou_character_layouts[persistent.kagerou_character_focus][persistent.kagerou_snap]
-        for layer in range(1, 8):
+        for layer in range(1, 7):
             if layer in store.layer_info and layer in store.layer_pos:
                 execute_move(RScriptArguments(Layer=layer, xLoc=positions[layer], yLoc=0,
                                              Effect=0, Speed=0))
+            # 4314c0 refreshes color too, but does not change depth or register 20.
+            inactive = layer != store._r[20] and persistent.kagerou_inactive_style == 0
+            kagerou_draw(layer, 4 if inactive else 0, 50 if inactive else 0)
         process_draw_queue()
         renpy.save_persistent()
 
@@ -73,13 +76,20 @@ python early:
     def kagerou_parse_words(lex):
         return rscript_arguments(lex, ["Mode", "Slot", "CG", "KeepFocus", "Unused"])
 
+    def kagerou_draw(layer, mode, level):
+        # 408ea6 -> image mode 3; 408eec converts percent to an unsigned WORD.
+        if mode == 4:
+            mode, level = "'dim256'", ((level & 65535) * 255 // 100) & 65535
+        execute_draw(RScriptArguments(Layer=layer, Mode=mode, Level=level))
+
     def kagerou_excmd(args):
         from engine.kagerou_native import excmd_calls
         values = tuple(int(getattr(args, name)) & 65535
                        for name in ("Mode", "Slot", "CG", "KeepFocus", "Unused"))
         positions = store.kagerou_character_layouts[persistent.kagerou_character_focus][persistent.kagerou_snap]
         calls = excmd_calls(values, x=positions.get(values[1]),
-                            inactive_style=False, queued=store.in_queue)
+                            inactive_style=bool(persistent.kagerou_inactive_style),
+                            queued=store.in_queue)
         for call in calls:
             address = call[0]
             if address == "register":
@@ -99,9 +109,7 @@ python early:
             elif address == 0x41f940:
                 execute_depth(RScriptArguments(Layer=call[1], Depth=call[2]))
             elif address == 0x41f7f0:
-                # shortcut: mode 4's pixel algorithm is unverified; keep normal pixels
-                # until 408ea6 -> internal mode 3 has been independently reconstructed.
-                execute_draw(RScriptArguments(Layer=call[1], Mode=0, Level=0))
+                kagerou_draw(*call[1:])
             elif address == 0x41dd30:
                 process_draw_queue()
 
@@ -274,15 +282,13 @@ screen kagerou_excompane():
                                   Function(kagerou_set_text_setting, "size", index),
                                   selected=persistent.kagerou_size == index)
         for prefix, field in (("dir", "direction"), ("shdw", "shadow"),
-                              ("tfcs", "text_focus"), ("lfcs", "character_focus")):
+                              ("tfcs", "text_focus"), ("lfcs", "character_focus"),
+                              ("lctr", "inactive_style")):
             $ value = getattr(persistent, "kagerou_" + field)
             $ icon = 1 - value if field == "direction" else value
             use kagerou_ex_button("%s_%d" % (prefix, icon),
                                   Function(kagerou_set_text_setting, field, 1 - value))
         use kagerou_ex_button("font_0", Show("rscript_font_picker"))
-        # shortcut: native lctr changes the unverified inactive-pixel algorithm.
-        # Enable this control once EXCMD draw(4,50) is implemented.
-        use kagerou_ex_button("lctr_0", NullAction(), enabled=False)
 
 init 10 python:
     renpy.image("rscript_ctc", DynamicDisplayable(kagerou_wait_displayable))

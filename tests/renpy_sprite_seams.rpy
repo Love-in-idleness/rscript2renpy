@@ -81,4 +81,26 @@ label _0000:
         actual = image.get_at((20, 20))[:3]
         assert all(abs(a - b) <= 3 for a, b in zip(actual, (223, 191, 159))), actual
         print("OK: native canvas preserves destination inversion across CG/master layers")
+    hide scene_invert
+    python:
+        rscript_show_layer('layer1', what=renpy.displayable('dim256'))
+        for level in (0, 127, 255, 0):
+            execute_draw(RScriptArguments(Layer=1, Mode="'dim256'", Level=level))
+            renpy.pause(.2, hard=True)
+            image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes(None)))
+            w, h = image.get_size()
+            for index, alpha in enumerate((0, 64, 128, 255)):
+                actual = image.get_at((int((index * 200 + 100) * w / 800), int(200 * h / 600)))[:3]
+                # Native 444380 uses inverse-alpha LUTs, each with integer truncation.
+                inverse = 255 - alpha
+                dim = [c * (256 - level) // 256 for c in (231, 153, 71)]
+                expected = [c * (256 - inverse) // 256 + b * (1 + inverse) // 256
+                            for c, b in zip(dim, (32, 64, 96))]
+                assert all(abs(a - b) <= 2 for a, b in zip(actual, expected)), (level, alpha, actual, expected)
+            assert image.get_at((100 * w // 800, 200 * h // 600))[:3] == (32, 64, 96)
+        execute_draw(RScriptArguments(Layer=1, Mode=0, Level=0))
+        renpy.pause(.2, hard=True)
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes(None)))
+        assert image.get_at((700 * w // 800, 200 * h // 600))[:3] == (231, 153, 71)
+        print('OK: dim256 LUT brightness, preserved alpha, live level changes and normal-mode restoration')
     $ renpy.quit()

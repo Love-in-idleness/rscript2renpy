@@ -60,8 +60,7 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
                            for slot in range(1, 8)} for layout in range(9)]
                          for alternate in (False, True)]
     scenes = compile_overlays(resources, patches, adapter="kagerou")
-    warnings = ["EXCMD inactive draw (4,50): pixel algorithm unverified; normal rendering.",
-                "Bonus-script and music galleries require playthrough verification.",
+    warnings = ["Bonus-script and music galleries require playthrough verification.",
                 "Native transition fidelity and saved CFG layout require manual verification."]
     absent_voices = missing_voices(resources, patches)
     if absent_voices:

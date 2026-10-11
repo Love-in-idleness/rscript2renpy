@@ -134,6 +134,23 @@ init python:
     """
   )
 
+    renpy.register_shader("rscript.dim256",
+    variables = """
+    uniform float u_blendlevel;
+    """,
+    fragment_1100 = """
+    // Native LUT[channel] = trunc(channel * (256 - level) / 256).
+    // Change straight RGB, not coverage; transparent sprite edges remain intact.
+    // shortcut: GPU alpha rounding differs by up to 2 byte levels; use integer
+    // destination composition if byte-exact native edge matching is required.
+    if (gl_FragColor.a > 0.0) {
+        vec3 rgb = floor(gl_FragColor.rgb / gl_FragColor.a * 255.0 + 0.5);
+        rgb = floor(rgb * (256.0 - u_blendlevel) / 256.0);
+        gl_FragColor.rgb = rgb / 255.0 * gl_FragColor.a;
+    }
+    """
+    )
+
     renpy.register_shader("rscript.effect",
     variables = """
     uniform float u_effectmode;

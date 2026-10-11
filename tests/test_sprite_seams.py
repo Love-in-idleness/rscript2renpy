@@ -30,6 +30,10 @@ def main():
                     if (y < boundary) == top:
                         image.putpixel((x, y), (255, 255, 255, 255))
             image.save(project / "game" / (name + ".png"))
+        image = Image.new("RGBA", (800, 600))
+        for index, alpha in enumerate((0, 64, 128, 255)):
+            image.paste((231, 153, 71, alpha), (index * 200, 0, (index + 1) * 200, 600))
+        image.save(project / "game" / "dim256.png")
         command = [str(sdk / "renpy.sh"), str(project), "run", "--savedir", str(temp / "saves")]
         environment = os.environ | {"SDL_AUDIODRIVER": "dummy", "RENPY_RENDERER": "gl2",
                                     "RENPY_PATH_TO_SAVES": str(temp / "sdk-saves"),

@@ -135,6 +135,29 @@ python early:
         store.in_queue = False
         process_draw_queue()
         assert renpy.showing('layer1', layer=IMAGE_LAYER)
+        assert layer_blend[1] == (0, 0)
+        assert all(layer_blend[n] == ('dim256', 127) for n in range(2, 7))
+        depth_before = dict(layer_zorder)
+        kagerou_set_text_setting('inactive_style', 1)
+        assert all(layer_blend[n] == (0, 0) for n in range(1, 7))
+        assert _r[20] == 1 and dict(layer_zorder) == depth_before
+        command(kagerou_parse_words, kagerou_excmd, '2 2 0 0 0')
+        assert all(layer_blend[n] == (0, 0) for n in range(1, 7))
+        kagerou_set_text_setting('inactive_style', 0)
+        assert layer_blend[2] == (0, 0)
+        assert all(layer_blend[n] == ('dim256', 127) for n in (1, 3, 4, 5, 6))
+        command(kagerou_parse_words, kagerou_excmd, '0 1 3011 1 0')
+        assert _r[20] == 2 and layer_blend[1] == ('dim256', 127)
+        # Queue snapshots, keep-focus loads, and settings cannot alter slot 7.
+        store.in_queue = True
+        command(kagerou_parse_words, kagerou_excmd, '2 1 0 0 0')
+        assert layer_blend[2] == (0, 0)
+        store.in_queue = False
+        process_draw_queue()
+        assert layer_blend[1] == (0, 0) and layer_blend[2] == ('dim256', 127)
+        layer_blend[7] = (2, 25)
+        kagerou_set_text_setting('snap', 0)
+        assert layer_blend[7] == (2, 25)
         command(kagerou_parse_words, kagerou_excmd, '1 0 0 0 0')
         assert renpy.showing('layer1', layer=IMAGE_LAYER)
         command(kagerou_parse_words, kagerou_excmd, '1 1 0 0 0')

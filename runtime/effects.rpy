@@ -567,7 +567,10 @@ init python:
     def rscript_layer_visibility(layer, trans, st, at):
         # Keep the loaded image and its effects; enabl is visibility, not cls.
         trans.alpha = float(bool(store.layer_enabled.get(layer, 1)))
-        trans.u_blendmode, trans.u_blendlevel = store.layer_blend.get(layer, (0, 0))
+        mode, trans.u_blendlevel = store.layer_blend.get(layer, (0, 0))
+        # Named renderer modes are lowered by adapters, never raw opcode numbers.
+        trans.shader = "rscript.dim256" if mode == "dim256" else "rscript.blend"
+        trans.u_blendmode = 0 if mode == "dim256" else mode
         return .05
 
     def rscript_show_layer(name, at_list=None, **kwargs):
