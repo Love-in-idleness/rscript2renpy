@@ -179,7 +179,14 @@ python early:
             if isinstance(text, RScriptText) and text.style.vertical:
                 for glyph in glyphs:
                     if chr(glyph.character) in "—―":
-                        glyph.advance = self.size + self.kerning + self.size / 30 * renpy.game.preferences.font_kerning
+                        cell = layout.scale(self.size)
+                        _, top, _, bottom = super(RScriptTextSegment, self).bounds(
+                            [glyph], (10000, 10000, -10000, -10000), layout)
+                        # Horizontal font ascenders must not shift a vertical column's baseline.
+                        glyph.y_offset -= (top + bottom) / 2
+                        glyph.ascent = math.ceil(cell / 2)
+                        glyph.descent = math.ceil(cell / 2)
+                        glyph.advance = cell + self.kerning + layout.scale(self.size / 30 * renpy.game.preferences.font_kerning)
             if text is not None and rscript_native_ruby_enabled(text):
                 # The SDK replaces end-of-line advances with Glyph.width.
                 # Retain the shaped cell advance before that and char pitch.
@@ -201,7 +208,7 @@ python early:
                     if glyph.ruby < 2:
                         # 457062/457086: advance + char pitch; size + line pitch.
                         glyph.advance += layout.scale(char * scale)
-                        glyph.line_spacing = max(1, math.ceil(self.size + layout.scale(line * scale)))
+                        glyph.line_spacing = max(1, math.ceil(layout.scale(self.size + line * scale)))
             return glyphs
 
         def take_style(self, style, layout, context=None):

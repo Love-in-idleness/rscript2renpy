@@ -286,6 +286,30 @@ python early:
                                        drawable_res=False)
         assert layout.size[0] <= 504 and layout.size[1] < 646, layout.size
         assert sample.style.shaper == 'harfbuzz'
+        # 1000's opening used to place the column after a dash only 21px away.
+        columns = RScriptText('　\n　——于这寂寥如荒原的风景之隙，\n　借我此身，', size=24)
+        columns.refresh_settings()
+        column_layout = renpy.text.text.Layout(columns, 480, 646, {}, size_only=True,
+                                              drawable_res=False)
+        baselines = [p[0].y for p in column_layout.paragraph_glyphs]
+        assert baselines[2] - baselines[1] >= 34, baselines
+        # Drawable-resolution metrics must scale the whole cell, not only the gap.
+        column_layout.oversample = 2
+        _rscript_layout_stack.append((column_layout, columns))
+        try:
+            segment = RScriptTextSegment()
+            segment.take_style(columns.style, column_layout)
+            glyph = segment.glyphs('甲', column_layout)[0]
+            assert glyph.line_spacing == 68, glyph.line_spacing
+            segment.vertical = False  # The {horiz} dash segment used during layout.
+            glyph = segment.glyphs('—', column_layout)[0]
+            assert glyph.advance == 48 and glyph.ascent == glyph.descent == 24
+            _, top, _, bottom = segment.bounds([glyph],
+                (10000, 10000, -10000, -10000), column_layout)
+            assert abs(top + bottom) <= 1, (top, bottom)
+        finally:
+            _rscript_layout_stack.pop()
+            column_layout.oversample = 1
         box = rscript_textbox_state()
         assert box['wait_image'] == 24
         assert len(rscript_layouts()['wait24']['items']) == 60
@@ -307,6 +331,9 @@ python early:
                     assert dashes.text == ['甲————\n\u3000\n——————乙―']
                     if direction:
                         assert ''.join(chr(g.character) for g in glyphs) == '甲————\u3000——————乙―', [(g.character, g.advance) for g in glyphs]
+                        baselines = [p[0].y for p in dash_layout.paragraph_glyphs]
+                        assert all(b - a >= 34 for a, b in zip(baselines, baselines[1:])), (font, baselines)
+                        assert all(g.ascent == g.descent == 12 for g in glyphs if chr(g.character) in '—―')
                     for paragraph in dash_layout.paragraphs:
                         for segment, value in paragraph:
                             for glyph in segment.glyphs(value, dash_layout):

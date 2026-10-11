@@ -35,7 +35,7 @@ label before_main_menu:
         kagerou_init_textbox()
         persistent.rscript_text_cps = 0
         store.textbox_panel = 1
-        store.kagerou_page_old = '先の段落です。旧段落の濃さを確かめます。{fast}\n'
+        store.kagerou_page_old = '　\n　——于这寂寥如荒原的风景之隙，\n　借我此身，{fast}\n'
         store.kagerou_page_current = '————\n\u3000\n——————\n【女】\n『甲乙』「丙丁」【戊己】。横排と竖排を切り替え、文字と操作パネルの位置を確認します。' * 3
         store.kagerou_page = kagerou_page_old + kagerou_page_current
         renpy.show_screen('say', who=None, what=kagerou_page_text())
