@@ -1,5 +1,6 @@
 __pycache__/
 .pytest_cache/
+.venv/
 .vscode/
 .port-check/
 local.paths.toml

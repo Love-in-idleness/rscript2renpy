@@ -12,6 +12,9 @@ GitHub Release 或版本包。生成成功、自动测试和 lint 均不代表�
 除通用鼠标光标和各游戏应用图标外，仓库不包含游戏剧本、图像、音频、视频或
 可执行文件。用户必须使用自己合法持有的游戏文件，自行准备资源并构建工程。
 
+首次使用见 [环境配置与首次构建](docs/SETUP.md)；开发尚未支持的游戏见
+[新游戏移植指南与 AI 提示词](docs/NEW_GAME_PORTING.md)。
+
 ### 游戏移植说明
 
 各游戏的资源要求、生成命令、语言补丁规则、专用行为和验证边界分别维护在
@@ -81,7 +84,7 @@ python3 tools/install_runtime.py /path/to/renpy-project
 `--force`。通用光标来自 Forest 原版，后续移植也使用同一资源。
 各生成器安装共用 Android 启动说明，包含项目地址及正版资源自行构建提示。
 PC／Android 版本由 `port_template/build_port.py` 的 `PORT_VERSION` 统一管理，
-当前为 `1.3`，安卓版本代码最低为 `13`，保留已有更高值。
+当前为 `1.4`（仓库 `VERSION` 同步），安卓版本代码最低为 `14`，保留已有更高值。
 签名密钥不入库、不复制；生成配置与图标不代表已完成打包或实机验证。
 
 开始新适配前，可只读检查 `RsInit.tcf` 和初始化线索：
@@ -125,6 +128,9 @@ for Liar-soft/raiL-soft CodeX RScript games. Shared code lives in `runtime/` and
 The repository distributes source only, with no new GitHub Releases or versioned
 packages. Apart from the shared cursor and application icons, it does not include
 proprietary game data. Build from resources you legally own.
+
+Start with [environment setup and first build](docs/SETUP.md), or the
+[new-game porting guide and AI prompt](docs/NEW_GAME_PORTING.md) (Chinese).
 
 ### Game guides
 

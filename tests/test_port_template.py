@@ -11,7 +11,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import build, install_version  # noqa: E402
+from build_port import build, install_version, PORT_VERSION, ANDROID_VERSION_CODE  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
@@ -19,6 +19,8 @@ from rscript_tsc import read_tsc  # noqa: E402
 
 
 def main() -> None:
+    assert (ROOT / "VERSION").read_text().strip() == PORT_VERSION == "1.4"
+    assert ANDROID_VERSION_CODE == 14
     with TemporaryDirectory() as temporary:
         root = Path(temporary)
         choices = root / "choices.tsc"
@@ -61,12 +63,17 @@ def main() -> None:
         runtime_count, copied = build(resources, project)
         assert runtime_count == 25
         assert (project / "game/engine/port_version.rpy").read_text() == \
-            'define config.version = "1.3"\n'
+            'define config.version = "1.4"\n'
         android = {"version": "0.1", "numeric_version": 200,
                    "package": "test.keep.package", "permissions": ["VIBRATE"]}
         (project / "android.json").write_text(json.dumps(android))
         install_version(project)
-        android["version"] = "1.3"
+        android["version"] = "1.4"
+        assert json.loads((project / "android.json").read_text()) == android
+        android["numeric_version"] = 12
+        (project / "android.json").write_text(json.dumps(android))
+        install_version(project)
+        android["numeric_version"] = 14
         assert json.loads((project / "android.json").read_text()) == android
         assert copied >= 12
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()

@@ -22,8 +22,8 @@ from port_resources import (convert_masks, convert_bmp_assets, read_keywords,
 from tsc_patches import scenario_sources  # noqa: E402
 
 
-PORT_VERSION = "1.3"
-ANDROID_VERSION_CODE = 13
+PORT_VERSION = "1.4"
+ANDROID_VERSION_CODE = 14
 
 
 def validate_resources(root, *, directories=(), files=(), patterns=(), alternatives=()):

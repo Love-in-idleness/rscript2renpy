@@ -151,7 +151,7 @@ def main():
             with Image.open(project / name) as image:
                 assert image.size == size, (name, image.size)
         assert 'define config.window_icon = "icon.png"' in (game / 'engine/options.rpy').read_text()
-        assert 'define config.version = "1.3"' in (game / 'engine/port_version.rpy').read_text()
+        assert 'define config.version = "1.4"' in (game / 'engine/port_version.rpy').read_text()
         assert 'define rscript_boot_movies = (2, 1)' in (game / 'engine/ui_features.rpy').read_text()
         assert 'rscript_boot_movies =' not in (game / 'engine/options.rpy').read_text()
         for number in (1, 2, 11, 12):
