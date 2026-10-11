@@ -154,7 +154,9 @@ TXT 迁移回归：`python3 -B tests/test_kagerou_rebase.py /path/to/liarsofttoo
 整页文字、原生竖排布局、预设切换、段落淡化及两个面板屏幕，
 以及音乐鉴赏的选择、播放状态、首尾边界和临时音量；不进入正式游戏，不使用正式存档。
 转场检查覆盖实际剧本参数的毫秒计时、白色转场双阶段、零步数默认值、
-寄存器参数和队列提交；Forest/Khime 保留原计时配置。
+寄存器参数和队列提交；除效果 2 外，Forest/Khime 保留原计时配置。
+update 2 按 EXE 的 4×4 位掩码实现点阵替换，并非马赛克；
+只读原生模型核对掩码表，公共 GL2 检查每个阶段和缩放后的像素。
 隔离图形检查可在 `run_kagerou_port.py` 命令末尾追加截图目录，输出
 `vertical.png`、`horizontal.png`、`preferences-jp.png`、`preferences-zh.png`，
 绘制测试文字、操作面板和角色语音开关；另输出日中 0999→1000 转场截图。
@@ -165,7 +167,7 @@ TXT 迁移回归：`python3 -B tests/test_kagerou_rebase.py /path/to/liarsofttoo
 `muscmenu` 原图及元数据，支持选择、播放、暂停、前后曲和临时音量。
 最后一曲结束后停止并选回第一曲，退出不恢复原 BGM；设置/存读档使用公共界面。
 非焦点立绘已按原生 RGB 算法实现，转场已改为原生毫秒计时。
-像素化/遮罩转场的精确像素及 Windows 等待调度、原生记录页外观/分页、
+遮罩转场的精确像素及 Windows 等待调度、原生记录页外观/分页、
 原生 CFG/存档导入仍未完成；普通不支持
 效果在生成脚本中保留扁平化注释，EXCMD 限制写入构建清单。
 lint 提示非 ASCII 素材名及原脚本疑似不可达段，不等于完整游玩证明。

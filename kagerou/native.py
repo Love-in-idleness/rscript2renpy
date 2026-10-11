@@ -95,6 +95,10 @@ class NativeImage:
         index = self.read(0x408f40 + mode - 1, 1)[0]
         return struct.unpack("<I", self.read(0x408f24 + index * 4, 4))[0]
 
+    def update2_masks(self):
+        # 4437d0: level >> 4 selects a 4x4 per-pixel replacement bitmask.
+        return struct.unpack("<16H", self.read(0x47ef38, 32))
+
 
 def excmd_calls(operands, *, x, inactive_style, queued):
     """Expand five resolved WORD operands into native calls and register writes.

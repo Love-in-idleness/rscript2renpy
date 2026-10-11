@@ -8,11 +8,26 @@ python early:
         assert not rscript_ui.get('system_actions')
         assert isinstance(rscript_system_action(7), Return)
         assert rscript_update_timing == "legacy"
+        assert RScriptOrderedDissolve.masks[-1] == 0
         assert rscript_update_duration(1, 16, 16) == 2.56
         assert rscript_update_duration(11, 16, 16) == 5.12
+        assert rscript_update_duration(2, 16, 16) == .240
+        assert rscript_update_duration(2, 0, 16) == .144
         renpy.game.context().init_phase = False
         renpy.display.scenelists.init_layers()
         renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
+        original_with = renpy.with_statement
+        transitions = []
+        try:
+            renpy.with_statement = transitions.append
+            for step, wait in ((16, 16), (0, 16), (1, 0)):
+                execute_update(RScriptArguments(Effect=2, Step=step, Wait=wait))
+                transition = transitions[-1](old_widget=Solid('#000'), new_widget=Solid('#fff'))
+                assert isinstance(transition, RScriptOrderedDissolve)
+                assert transition.steps == (step or 10)
+                assert transition.delay == rscript_update_duration(2, step, wait)
+        finally:
+            renpy.with_statement = original_with
         if rscript_use_speaker_images:
             # Forest 0310 centers these objects; 0301/0302/0303 reset
             # every origin after playback, including cleared objects.

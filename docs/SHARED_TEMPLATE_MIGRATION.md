@@ -69,6 +69,11 @@ Forest／Khime 的游戏配置和安卓配置源文件不再保留重复版本�
 公共命名渲染模式 `dim256` 提供 RGB 整数 LUT 变暗并保留轮廓透明度；
 Kagerou 覆盖层将已核实的 EXCMD `(4,50)` 降低为 `("dim256",127)`。
 其他端口的数字 draw 模式不重新解释；焦点、强度转换与 `lctr` 开关均留在游戏覆盖层。
+公共 `RScriptOrderedDissolve` 按 4×4 位掩码逐点替换画面，不放大成色块。
+Forest、Khime、Evermaiden、CannonBall、Kagerou 的已审计 EXE 使用同一张表，
+因此 update 2 在公共层统一修正；原 Pixellate 调用只保留为注释。
+点阵先按原始画布像素合成，再随窗口缩放；计时为 `(Step-1)*Wait/1000`，
+零步数取 10，其他效果的兼容计时不变。依据见 [效果 2 审计](UPDATE_EFFECT2.md)。
 隔离 GL2 像素回归：`python3 -B tests/test_sprite_seams.py /path/to/renpy-sdk`。
 每组相邻位图增加一次纹理合成；实际动画观感和 Android GPU 性能仍需实机确认。
 不支持旧工程文件布局迁移。检测到 `images/scenario/audio` 旧目录或已知的

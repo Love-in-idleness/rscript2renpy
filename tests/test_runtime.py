@@ -47,6 +47,9 @@ def main() -> None:
     assert "elif effect == 4:" in combined
     assert "elif effect == 2:" in combined
     assert 'define rscript_update_timing = "legacy"' in combined
+    assert 'class RScriptOrderedDissolve(' in combined
+    assert '# trans = Pixellate(ef_time, step / 2)' in combined
+    assert 'renpy.curry(RScriptOrderedDissolve)(ef_time, step or 10)' in combined
     assert "ef_time = rscript_update_duration(effect, step, wait)" in combined
     assert "def rscript_update_duration(effect, step, wait):" in combined
     assert "rollforward = [ 'K_PAGEDOWN', 'repeat_K_PAGEDOWN', 'mousedown_5' ]" in combined

@@ -146,6 +146,15 @@ def main():
             for source in (ROOT / "runtime").glob("*.rpy"):
                 assert (project / "game" / "engine" / source.name).read_bytes() == source.read_bytes()
             if len(sys.argv) > 1:
+                # Native 4x4 replacement raster, then ordinary window filtering.
+                for mask in (0xffdf, 0xefdf, 0x6fdf, 0x6fd7, 0x6bd7, 0x6bd6, 0x6b56,
+                             0x6a56, 0x2a56, 0x2a52, 0x0a52, 0x0a12, 0x0812,
+                             0x0810, 0x0800, 0, 0xffff):
+                    rows = [b''.join(b'\x00\x00\xff' if mask & (1 << (x + 4 * y))
+                                     else b'\xff\x00\x00' for x in range(4)) * 200
+                            for y in range(4)]
+                    Image.frombytes('RGB', (800, 600), b''.join(rows) * 150).save(
+                        project / ('game/ordered-%04x.png' % mask))
                 shutil.copy2(ROOT / "tests/renpy_shared_features.rpy",
                              project / "game/shared_features_test.rpy")
                 subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), str(project),

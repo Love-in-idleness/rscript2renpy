@@ -508,6 +508,50 @@ init python:
         return (min(width - w, max(0, int(width * x) - w // 2)),
                 min(height - h, max(0, int(height * y) - h // 2)), w, h)
 
+    class RScriptOrderedDissolve(renpy.display.transition.Transition):
+        # Same 4x4 table in Forest, Khime, Evermaiden, CannonBall and Kagerou.
+        masks = (0xffdf, 0xefdf, 0x6fdf, 0x6fd7, 0x6bd7, 0x6bd6, 0x6b56, 0x6a56,
+                 0x2a56, 0x2a52, 0x0a52, 0x0a12, 0x0812, 0x0810, 0x0800, 0)
+
+        def __init__(self, duration, steps, old_widget=None, new_widget=None):
+            if steps < 1:
+                raise ValueError("Invalid native ordered dissolve parameters")
+            super(RScriptOrderedDissolve, self).__init__(duration)
+            self.steps = steps
+            self.old_widget, self.new_widget = old_widget, new_widget
+            self.events = False
+
+        def mask_at(self, st):
+            if st >= self.delay or self.steps == 1:
+                return 65535
+            frame = min(self.steps - 2, max(0, int(st * (self.steps - 1) / self.delay + 1e-9)))
+            level = (self.steps - frame) * 255 // self.steps
+            return self.masks[level >> 4]
+
+        def render(self, width, height, st, at):
+            if st >= self.delay or self.steps == 1 or renpy.game.less_updates:
+                return renpy.display.transition.null_render(self, width, height, st, at)
+            old = renpy.render(self.old_widget, width, height, st, at)
+            new = renpy.render(self.new_widget, width, height, st, at)
+            result = renpy.Render(max(old.width, new.width), max(old.height, new.height))
+            result.blit(old, (0, 0), focus=False, main=False)
+            result.blit(new, (0, 0), focus=True, main=True)
+            result.mesh = True
+            result.add_shader("rscript.ordered_dissolve")
+            result.add_uniform("u_rscript_mask", float(self.mask_at(st)))
+            result.add_property("mipmap", False)
+            result.add_property("nearest", True)
+            renpy.redraw(self, self.delay / (self.steps - 1))
+            # Rasterize the dots before window scaling, like the native DIB.
+            flat = renpy.Render(result.width, result.height)
+            flat.blit(result, (0, 0))
+            flat.operation = renpy.display.render.FLATTEN
+            flat.mesh = True
+            flat.add_shader("renpy.texture")
+            flat.add_property("drawable_resolution", False)
+            flat.add_property("mipmap", False)
+            return flat
+
     class RScriptCompoundZoom(renpy.display.transition.Transition):
         def __init__(self, effect, old_widget=None, new_widget=None):
             kind, anchors = divmod(effect, 100)
@@ -536,15 +580,16 @@ init python:
             return result
 
     def rscript_update_duration(effect, step, wait):
+        if effect == 2:
+            # All five audited EXEs: Step=0 selects 10, then Step-1 millisecond waits.
+            return max(0, (step or 10) - 1) * wait / 1000.0
         if store.rscript_update_timing == "codex-ms":
             if 100 <= effect < 300:
                 return .310 if effect < 200 else .410
             # Native 43b390 / Kagerou 41e5b0: zero selects 10; waits are milliseconds.
             # shortcut: nominal waits omit Windows Sleep(5) jitter; calibrate with native playback.
             step = step or 10
-            if effect == 2:
-                frames = max(0, step - 1)
-            elif effect >= 11:
+            if effect >= 11:
                 frames = 2 * step - 1
             else:
                 frames = step + 1

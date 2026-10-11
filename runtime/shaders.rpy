@@ -227,6 +227,25 @@ float a = gl_FragColor.a * (1.0 - step(0.5 / 255.0, gl_FragColor.r));
 gl_FragColor = vec4(a);
 """)
 
+    renpy.register_shader("rscript.ordered_dissolve",
+        variables = """
+uniform sampler2D tex0;
+uniform sampler2D tex1;
+uniform float u_rscript_mask;
+attribute vec2 a_tex_coord;
+attribute vec4 a_position;
+varying vec2 v_tex_coord;
+varying vec2 v__pixel;
+""",
+        vertex_200 = "v_tex_coord = a_tex_coord;",
+        vertex_300 = "v__pixel = a_position.xy;",
+        fragment_200 = """
+vec2 pixel = mod(floor(v__pixel), 4.0);
+float bit = pixel.x + 4.0 * pixel.y;
+float selected = mod(floor(u_rscript_mask / exp2(bit)), 2.0);
+gl_FragColor = mix(texture2D(tex0, v_tex_coord), texture2D(tex1, v_tex_coord), selected);
+""")
+
     renpy.register_shader("rscript.white",
         variables = "uniform float u_rscript_white;",
         fragment_1200 = """

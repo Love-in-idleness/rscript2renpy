@@ -124,6 +124,9 @@ python early:
             lex.advance()
             executor(parser(lex))
         assert rscript_update_timing == 'codex-ms'
+        assert RScriptOrderedDissolve.masks == (0xffdf, 0xefdf, 0x6fdf, 0x6fd7,
+            0x6bd7, 0x6bd6, 0x6b56, 0x6a56, 0x2a56, 0x2a52, 0x0a52,
+            0x0a12, 0x0812, 0x0810, 0x0800, 0)
         original_with = renpy.with_statement
         transitions = []
         def capture_transition(transition):
@@ -141,8 +144,9 @@ python early:
                     (116, 0, 0, .310), (216, 1, 999, .410)):
                 command(parse_update, execute_update, '%d %d %d' % (effect, step, wait))
                 assert abs(transitions[-1].delay - expected) < 1e-9
-                if effect == 2 and step == 0:
-                    assert transitions[-1].steps == 5
+                if effect == 2:
+                    assert isinstance(transitions[-1], RScriptOrderedDissolve)
+                    assert transitions[-1].steps == (step or 10)
                 assert not in_queue and not draw_queue_delayed
             command(parse_update, execute_update, '0 0 0')
             assert transitions[-1] is None

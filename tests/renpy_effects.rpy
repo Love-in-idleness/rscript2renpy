@@ -66,6 +66,44 @@ init 100 python:
                 actual = image.get_at((x, y))[:3]
                 assert all(abs(a - b) <= 3 for a, b in zip(actual, expected)), (level, x, y, actual, expected)
 
+    def effects_test_ordered(mask):
+        import io
+        import pygame_sdl2 as pygame
+        image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        assert renpy.get_physical_size() == (800, 600), renpy.get_physical_size()
+        # Compare a precomputed native bitmap through the same SDK filtering.
+        renpy.show('ordered_probe', what=Image('ordered-%04x.png' % mask))
+        renpy.pause(.05, hard=True)
+        reference = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
+        for y in range(32):
+            for x in range(32):
+                expected = reference.get_at((x, y))[:3]
+                actual = image.get_at((x, y))[:3]
+                # The SDK framebuffer may round a solid 255 channel to 254.
+                assert all(abs(a - b) <= 1 for a, b in zip(actual, expected)), (mask, x, y, actual, expected)
+
+    def effects_test_ordered_scale(ordered, when):
+        import io
+        import pygame_sdl2 as pygame
+        mask = ordered.mask_at(when)
+        assert mask == 0x0810
+        for size in ((700, 525), (1000, 750)):
+            renpy.set_physical_size(size)
+            renpy.show('ordered_probe', what=EffectsTimeProbe(ordered, when))
+            renpy.pause(.2, hard=True)
+            actual = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes(None)))
+            renpy.show('ordered_probe', what=Image('ordered-%04x.png' % mask))
+            renpy.pause(.2, hard=True)
+            expected = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes(None)))
+            assert actual.get_size() == expected.get_size() == size
+            for y in range(80, 112):
+                for x in range(80, 112):
+                    a, b = actual.get_at((x, y))[:3], expected.get_at((x, y))[:3]
+                    assert all(abs(i - j) <= 2 for i, j in zip(a, b)), (size, mask, x, y, a, b)
+        renpy.hide('ordered_probe')
+        renpy.set_physical_size((800, 600))
+        renpy.pause(.2, hard=True)
+
 screen effects_test_wakeup():
     # A modal click screen blocks the pause behavior underneath it.
     timer .1 repeat True action Function(renpy.end_interaction, True)
@@ -171,6 +209,38 @@ label _0000:
             process_draw_queue()
             assert not renpy.showing("layer20", layer=IMAGE_LAYER)
     python:
+        renpy.set_physical_size((800, 600))
+        renpy.pause(.2, hard=True)
+        masks = (0xffdf, 0xefdf, 0x6fdf, 0x6fd7, 0x6bd7, 0x6bd6, 0x6b56, 0x6a56,
+                 0x2a56, 0x2a52, 0x0a52, 0x0a12, 0x0812, 0x0810, 0x0800, 0)
+        assert RScriptOrderedDissolve.masks == masks
+        for steps in (1, 3, 10, 16, 32):
+            ordered = RScriptOrderedDissolve((steps - 1) * .05, steps,
+                old_widget=Solid('#f00', xsize=800, ysize=600),
+                new_widget=Solid('#00f', xsize=800, ysize=600))
+            for frame in range(steps - 1):
+                when = frame * .05 + .001
+                expected = masks[((steps - frame) * 255 // steps) >> 4]
+                assert ordered.mask_at(when) == expected
+                renpy.show('ordered_probe', what=EffectsTimeProbe(ordered, when))
+                renpy.pause(.05, hard=True)
+                effects_test_ordered(expected)
+            renpy.show('ordered_probe', what=EffectsTimeProbe(ordered, ordered.delay))
+            renpy.pause(.05, hard=True)
+            effects_test_ordered(65535)
+            renpy.hide('ordered_probe')
+        effects_test_ordered_scale(ordered, .201)
+        single = RScriptOrderedDissolve(1, 1,
+            old_widget=Solid('#f00'), new_widget=Solid('#00f'))
+        assert single.mask_at(0) == 65535
+        renpy.render(single, 800, 600, 0, 0)
+        for steps in (0, -1):
+            try:
+                RScriptOrderedDissolve(1, steps)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError('invalid ordered dissolve accepted')
         for effect, phase in ((116, .155), (216, .205)):
             zoom = RScriptCompoundZoom(effect,
                 old_widget=Solid("#f00", xsize=800, ysize=600),

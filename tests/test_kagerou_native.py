@@ -100,7 +100,7 @@ def main():
         assert image.read(0x41e7e0, 20) == struct.pack('<5I',
             0x41e7cb, 0x41e703, 0x41e726, 0x41e749, 0x41e76b)
         assert image.read(0x4506c5, 3) == b'\x8d\x4f\x01'  # dissolve: step + 1
-        assert image.read(0x450540, 3) == b'\x8d\x47\xff'  # pixelate: step - 1
+        assert image.read(0x450540, 3) == b'\x8d\x47\xff'  # ordered dissolve: step - 1
         assert image.read(0x45038b, 3) == b'\x8d\x3c\0'  # mask: double the step
         assert image.read(0x450407, 3) == b'\x8d\x4f\xff'  # mask: doubled step - 1
         assert image.read(0x450d3e, 3) == b'\x8d\x4b\x01'  # white out: step + 1
@@ -111,6 +111,17 @@ def main():
         assert image.read(0x45040b, 6) == b'\x8b\x1d\xdc\x32\x47\0'  # timeGetTime
         assert image.read(0x45084d, 9) == b'\x83\xc7\x14\x81\xff\x59\x02\0\0'
         assert image.read(0x45098b, 9) == b'\x83\xc7\x32\x81\xff\xd1\x07\0\0'
+        branch = image.read(0x4412c4 + 18, 1)[0]
+        assert image.read(0x44125c + branch * 4, 4) == (0x440c17).to_bytes(4, 'little')
+        assert image.read(0x440c33, 5) == b'\xe8\x98\x2b\0\0'  # opaque dither
+        assert image.read(0x443858, 3) == b'\xc1\xfa\x04'  # level >> 4
+        assert image.read(0x44389b, 3) == b'\x83\xe1\x03'  # row mod 4
+        assert image.read(0x4438bf, 7) == b'\x8d\x0c\x4d\x38\xef\x47\0'
+        assert image.read(0x4438e4, 2) == b'\xd3\xe7'  # 1 << (x%4 + 4*(y%4))
+        assert image.read(0x45e01a, 5) == b'\xf7\xda\x89\x56\x08'  # top-down DIB
+        assert image.update2_masks() == (0xffdf, 0xefdf, 0x6fdf, 0x6fd7,
+            0x6bd7, 0x6bd6, 0x6b56, 0x6a56, 0x2a56, 0x2a52, 0x0a52,
+            0x0a12, 0x0812, 0x0810, 0x0800, 0)
         # The constants used by the renderer are checked against actual instructions.
         assert image.read(0x4303e2, 2) == b'\x6a\x12'  # native direction 1 (horizontal)
         assert image.read(0x430437, 3) == b'\x0f\x94\xc1'  # SETE, not SETNE

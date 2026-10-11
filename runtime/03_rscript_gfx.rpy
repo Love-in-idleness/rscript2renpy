@@ -248,7 +248,9 @@ python early:
             trans = Dissolve(ef_time)
 
         elif effect == 2:
-            trans = Pixellate(ef_time, step / 2)
+            # Pixellate makes blocks; the audited EXEs replace individual pixels.
+            # trans = Pixellate(ef_time, step / 2)
+            trans = renpy.curry(RScriptOrderedDissolve)(ef_time, step or 10)
 
         elif effect == 3:
             trans = Fade(ef_time, 0.0, ef_time, color = "#FFFFFF")

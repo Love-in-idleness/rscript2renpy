@@ -10,7 +10,7 @@
 - 绘制队列里的 effect/tone/tonedep 固定指令执行时的寄存器值，不延迟读取。
 - `_update` 计时集中在公共 `rscript_update_duration`，Evermaiden 只选择
   `codex-ms` 策略，不再继承 Forest 的百分之一秒调校。`Step=0` 默认取 10；
-  溶解每次等待为毫秒，共 `Step+1` 次；像素化为 `Step-1` 次；
+  溶解每次等待为毫秒，共 `Step+1` 次；点阵替换为 `Step-1` 次；
   遮罩为 `2*Step-1` 次；白/黑过渡每阶段 `Step+1` 次。
   依据 `43b390` → `453010` / `4531d0` / `453940` / `452e60` 的循环。
   例如 `update 1 16 16` 从 2.56 秒改为名义 0.272 秒。
@@ -184,7 +184,7 @@ GL2 实际菜单动作测试运行 `dyndo 0 0 4`，断言选择 4 的 roll-forwa
 - 通过 `test_modern_port.py /opt/apps/renpy .port-check/evermaiden/zh`：
   包括真实解释器的寄存器队列快照、图层组、批量转场只执行一次，
   以及 0201 / 0301 鉴赏脚本流程。计时回归检查实际转场对象的总时长，
-  覆盖普通/零步数、零等待、像素化、白/黑过渡、遮罩与 legacy 策略。
+  覆盖普通/零步数、零等待、点阵替换、白/黑过渡、遮罩与 legacy 策略。
 - 通过 `test_shared_port.py /opt/apps/renpy --logic-only`（Forest / Khime），
   `test_forest_builder.py /home/idleness/Source/LiarsoftTool/res_ft/Forest` 和
   `test_forest_validation.py`。
