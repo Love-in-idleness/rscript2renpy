@@ -408,7 +408,17 @@ python early:
         kagerou_set_text_setting('size', 0)
         kagerou_set_text_setting('snap', 0)
         renpy.hide_screen('say')
-        for screen_name in ('kagerou_compane', 'kagerou_excompane', 'kagerou_history', 'preferences'):
+        assert rscript_layouts()['compane']['controls']['bak'] == ('rollback',)
+        assert 'mousedown_4' in config.keymap['rollback']
+        assert not renpy.has_screen('kagerou_history')
+        old_roll = store.roll_enabled
+        try:
+            for allowed, action_type in ((False, NullAction), (True, Rollback)):
+                store.roll_enabled = allowed
+                assert isinstance(rscript_ui_action(rscript_layouts()['compane']['controls']['bak']), action_type)
+        finally:
+            store.roll_enabled = old_roll
+        for screen_name in ('rscript_compane', 'kagerou_excompane', 'preferences'):
             renpy.show_screen(screen_name)
             renpy.get_screen(screen_name).update()
             renpy.hide_screen(screen_name)

@@ -64,10 +64,12 @@ def main():
                 assert not any(r > 240 and g < 20 and b < 20 for _, (r, g, b) in colors), name
         fixture.unlink()
         fixture.with_suffix('.rpyc').unlink(missing_ok=True)
-        fixture = game / 'history_test.rpy'
-        shutil.copy2(Path(__file__).with_name('renpy_kagerou_history.rpy'), fixture)
-        subprocess.run(command, check=True, timeout=25, env=environment)
-        assert all((project / name).is_file() for name in ('history.png', 'history-closed.png'))
+        fixture = game / 'rollback_test.rpy'
+        shutil.copy2(Path(__file__).with_name('renpy_kagerou_rollback.rpy'), fixture)
+        for mode in ('back', 'wheel'):
+            subprocess.run(command, check=True, timeout=25,
+                           env=environment | {'KAGEROU_ROLLBACK_INPUT': mode})
+            assert (project / ('rollback-%s.png' % mode)).is_file()
         fixture.unlink()
         fixture.with_suffix('.rpyc').unlink(missing_ok=True)
         if len(sys.argv) == 4:
@@ -78,7 +80,7 @@ def main():
             for name in ('vertical.png', 'horizontal.png', 'preferences-jp.png', 'preferences-zh.png',
                          'transition-jp.png', 'transition-zh.png'):
                 shutil.copy2(project / name, destination / name)
-            for name in ('music-jp.png', 'music-zh.png', 'history.png', 'history-closed.png'):
+            for name in ('music-jp.png', 'music-zh.png', 'rollback-back.png', 'rollback-wheel.png'):
                 shutil.copy2(project / name, destination / name)
 
 

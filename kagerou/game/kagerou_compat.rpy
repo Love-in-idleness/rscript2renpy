@@ -73,13 +73,6 @@ python early:
             previous = "{alpha=0.5019607843}" + previous + "{/alpha}"
         return previous + store.kagerou_page_current
 
-    def kagerou_history_ruby_style():
-        ruby = style.ruby_text.copy()
-        ruby.font = rscript_current_font()
-        ruby.size = max(1, persistent.rscript_text_size // 2)
-        ruby.yoffset = -persistent.rscript_text_size
-        return ruby
-
     def kagerou_parse_words(lex):
         return rscript_arguments(lex, ["Mode", "Slot", "CG", "KeepFocus", "Unused"])
 
@@ -226,53 +219,11 @@ screen say(who, what, center=False):
             slow_cps persistent.rscript_text_cps
             line_spacing persistent.rscript_line_spacing
         if textbox_panel:
-            use kagerou_compane
+            use rscript_compane
             use kagerou_excompane
 
 screen choice(items):
     use rscript_choice(items, kagerou_choice_prompt)
-
-screen kagerou_compane():
-    # Native bak enters the text log, not a state-rewinding rollback.
-    use rscript_compane
-    fixed:
-        pos (585, 572)
-        xysize (205, 18)
-        use rscript_grps_button("compane", "bak", Show("kagerou_history"))
-
-screen kagerou_history():
-    modal True
-    zorder 100
-    key "game_menu" action Hide("kagerou_history")
-    add Solid("#000000dd")
-    viewport:
-        id "history_viewport"
-        pos (30, 30)
-        xysize (740, 510)
-        mousewheel True
-        draggable True
-        scrollbars "vertical"
-        # No default GUI scrollbar styles: its natural width consumes the viewport.
-        vscrollbar_xsize 12
-        vscrollbar_base_bar Solid("#333333")
-        vscrollbar_thumb Solid("#aaaaaa", xysize=(12, 24))
-        yinitial 1.0
-        vbox:
-            spacing 20
-            for index, entry in enumerate(_history_list):
-                text entry.what:
-                    id "history_%d" % index
-                    font rscript_current_font()
-                    size persistent.rscript_text_size
-                    color "#ffffff"
-                    ruby_style kagerou_history_ruby_style()
-                    substitute False
-    textbutton "戻る / 返回":
-        id "history_close"
-        action Hide("kagerou_history")
-        align (0.5, 0.95)
-        text_font rscript_current_font()
-        text_size 22
 
 screen kagerou_ex_button(name, action, selected=False, enabled=True):
     $ items = rscript_layouts()["excompane"]["items"]
@@ -311,8 +262,5 @@ screen kagerou_excompane():
 
 init 10 python:
     renpy.image("rscript_ctc", DynamicDisplayable(kagerou_wait_displayable))
-    rscript_ui.setdefault("layouts", {})["compane"] = dict(
-        rscript_grps_layout["compane"], controls={name: spec for name, spec in
-            rscript_grps_layout["compane"]["controls"].items() if name != "bak"})
-    # Kagerou's log is opened by its native bak control, not a quick-menu substitute.
+    # Use the native reading panes without duplicating the generic quick menu.
     config.overlay_screens = [name for name in config.overlay_screens if name != "quick_menu"]
