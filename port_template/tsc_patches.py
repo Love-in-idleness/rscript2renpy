@@ -184,13 +184,14 @@ def language_patch_data(base_scr: Path, patch_scr: Path, *, dialect=None,
             for base_index, patch_index in matched:
                 pairs.append((base_previous + 1 + base_index,
                               patch_previous + 1 + patch_index))
+            following = iter(matched)
+            next_match = next(following, (len(base_segment), len(patch_segment)))
             for patch_index, item in enumerate(patch_segment):
                 if patch_index in matched_patch:
                     continue
-                next_match = next((base_index for base_index, matched_index in matched
-                                   if matched_index > patch_index),
-                                  len(base_segment))
-                base_index = base_previous + 1 + next_match
+                while next_match[1] < patch_index:
+                    next_match = next(following, (len(base_segment), len(patch_segment)))
+                base_index = base_previous + 1 + next_match[0]
                 offset = (base_items[base_index].offset
                           if base_index < len(base_items) else base_tsc.code_size)
                 added.append((patch_previous + 1 + patch_index, offset, item))
