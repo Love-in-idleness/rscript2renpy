@@ -28,6 +28,7 @@ def main():
         root = Path(temporary)
         source, target = root / "source", root / "目标.rpy"
         source.write_bytes(b"new")
+        source.chmod(0o600)
         target.write_bytes(b"old")
         target.chmod(0o604)
         cache = target.with_suffix(".rpyc")
@@ -41,6 +42,8 @@ def main():
             assert not list(root.glob(".rscript-*.tmp"))
 
         def partial_copy(input_file, output):
+            assert stat.S_IMODE(Path(output.name).stat().st_mode) == \
+                stat.S_IMODE(source.stat().st_mode), "private source exposed in temporary file"
             output.write(b"partial")
             raise OSError("simulated write failure")
 

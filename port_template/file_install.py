@@ -86,6 +86,9 @@ def copy_file(source: Path, target: Path, force: bool = False, *, metadata=True)
         if not force:
             raise FileExistsError("refusing to overwrite different file: %s" % target)
     with source.open("rb") as input_file, atomic_output(target) as output:
+        if metadata:
+            # A private copy2 source must not be readable in a wider-mode temporary file.
+            os.chmod(output.name, stat.S_IMODE(source.stat().st_mode))
         shutil.copyfileobj(input_file, output)
         if metadata:
             output.flush()
