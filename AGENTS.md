@@ -23,6 +23,7 @@
 
 - 按改动选择相关检查，不为纯文档或路径配置改动运行游戏测试。
 - 基础检查：`python3 -B tests/test_runtime.py`、`python3 -B tests/test_port_template.py`、`git diff --check`。
+- 编译及字幕补丁：`python3 -B tests/test_tsc_compiler.py`、`python3 -B tests/test_tsc_patches.py`。
 - 公共层：`python3 -B tests/test_shared_port.py`；需要真实 SDK 检查时追加本机配置中的 SDK 路径。
 - Forest：`python3 -B tests/test_forest_builder.py <资源目录>`、`python3 -B tests/test_forest_validation.py`；资源检查先查看 `tests/test_forest_resources.py --help`。
 - Khime：`python3 -B tests/test_khime_builder.py <资源目录>`。

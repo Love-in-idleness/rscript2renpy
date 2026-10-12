@@ -1,7 +1,6 @@
 """Shared text/subtitle patch alignment; dialects retain opcode policies."""
 
 from pathlib import Path
-from functools import lru_cache
 import re
 
 from rscript_tsc import STRING_OPERANDS, read_tsc
@@ -85,22 +84,17 @@ def scene_strings(source: Path, dialect=None, menu_transform=lambda value: value
 
 def align_insertable_segment(base, patch):
     """Match existing wait/font/cls commands and leave patch additions."""
-    @lru_cache(maxsize=None)
-    def align(base_index, patch_index):
-        if base_index == len(base):
-            return ()
+    matched = []
+    patch_index = 0
+    for base_index, item in enumerate(base):
+        # Matching depends only on opcode; the earliest match leaves most room for the rest.
+        while patch_index < len(patch) and patch[patch_index].opcode != item.opcode:
+            patch_index += 1
         if patch_index == len(patch):
-            return None
-        if base[base_index].opcode == patch[patch_index].opcode:
-            rest = align(base_index + 1, patch_index + 1)
-            if rest is not None:
-                return ((base_index, patch_index),) + rest
-        return align(base_index, patch_index + 1)
-
-    result = align(0, 0)
-    if result is None:
-        raise ValueError("language patch removes an existing display command")
-    return result
+            raise ValueError("language patch removes an existing display command")
+        matched.append((base_index, patch_index))
+        patch_index += 1
+    return tuple(matched)
 
 
 def render_patch_command(tsc, item) -> str:

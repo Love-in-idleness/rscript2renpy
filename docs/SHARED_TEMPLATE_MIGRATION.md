@@ -186,6 +186,7 @@ python3 -B tests/test_shared_port.py /opt/apps/renpy
 python3 -B tests/test_runtime.py
 python3 -B tests/test_port_template.py
 python3 -B tests/test_tsc_compiler.py
+python3 -B tests/test_tsc_patches.py
 python3 -B tests/test_text_wrap.py
 python3 -B tests/run_native_text_wrap.py /opt/apps/renpy
 python3 -B tests/run_touch_controls.py /opt/apps/renpy
