@@ -110,6 +110,8 @@ python3 -B tests/test_shared_port.py /path/to/renpy-sdk --logic-only
 游戏专用测试见各适配 README。静态检查、算法测试、SDK 检查、lint、实际画面、
 完整路线与 Android 实机验证分别报告，不互相替代。
 统一禁则与真实字形度量见 [文字布局说明](docs/TEXT_WRAPPING.md)。
+本轮安全、公共分发和增量安装的实现与验收边界见
+[两仓库优化完成说明](docs/OPTIMIZATION_REPORT_2026-10-12.md)。
 
 ### 授权
 
@@ -186,6 +188,8 @@ testing. Signing keys remain local.
 
 Use the shared checks above and the game-specific guide. Tests and lint are not
 proof of complete gameplay, audiovisual accuracy or Android compatibility.
+See the [safety and incremental-install optimization report](docs/OPTIMIZATION_REPORT_2026-10-12.md)
+(Chinese) for implementation status and known validation limits.
 
 Project code uses the [MIT License](LICENSE). See
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for other assets and licenses.
