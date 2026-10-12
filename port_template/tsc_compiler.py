@@ -5,7 +5,7 @@ import sys
 import re
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
-from rscript_tsc import E, read_tsc  # noqa: E402
+from rscript_tsc import E, RScriptTsc, read_tsc  # noqa: E402
 from tsc_vm import emit_vm, packed  # noqa: E402
 from tsc_patches import (language_patch_data, instruction_strings, menu_text,
                          patch_text_expression, emit_insertions,
@@ -50,7 +50,7 @@ def label(scene: str, offset: int) -> str:
     return "_%s_L_%06x" % (scene, offset)
 
 
-def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
+def compile_scene(source: Path | RScriptTsc, patches=(), *, zero=False, zero_title=False,
                   adapter="khime", scene_prefix="", language=None,
                   language_texts=None, language_insertions=None,
                   language_operands=None, scene_name=None, operand_patch=None,
@@ -60,7 +60,10 @@ def compile_scene(source: Path, patches=(), *, zero=False, zero_title=False,
     early = adapter in {"early", "pre-codex"}
     modern = adapter not in {"khime", "early", "pre-codex"}
     dialect = "kagerou" if adapter == "kagerou" else "legacy" if legacy else "forest" if zero or early else "modern"
-    tsc = read_tsc(source, dialect)
+    if isinstance(source, RScriptTsc):
+        tsc, source = source, source.path
+    else:
+        tsc = read_tsc(source, dialect)
     items = tsc.instructions()
     patch_texts = language_texts or {}
     patch_insertions = language_insertions or {}
@@ -354,11 +357,12 @@ def compile_overlays(resources: Path, patches=(), *, adapter="modern") -> dict[s
             prefix = "rscript_variant%d_" % index
             destination = ("scr/%s.rpy" % source.stem if language is None else
                            "tl/%s/scr/%s.rpy" % (language, source.stem))
+            tsc = read_tsc(source, "kagerou" if adapter == "kagerou" else
+                           "legacy" if adapter == "pre-codex" else "modern")
             files[destination] = compile_scene(
-                source, adapter=adapter, scene_prefix=prefix)
+                tsc, adapter=adapter, scene_prefix=prefix)
             routes.setdefault(source.stem, []).append((language, prefix + source.stem))
-            for name, offset in read_tsc(source, "kagerou" if adapter == "kagerou" else
-                                         "legacy" if adapter == "pre-codex" else "modern").named_entries:
+            for name, offset in tsc.named_entries:
                 entry_routes.setdefault((source.stem, name), []).append((language, "_g_%s%s_%s" % (prefix, source.stem, name)))
     for scene, destinations in routes.items():
         lines = ["# Generated language-aware scene entry.", "label _%s:" % scene]

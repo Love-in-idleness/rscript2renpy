@@ -2,11 +2,13 @@
 """Shared emission, early policy boundaries and per-language event ordering."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import sys
 import struct
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
-from tsc_compiler import compile_scene
+import tsc_compiler
+from tsc_compiler import compile_scene, compile_overlays
 from rscript_tsc import read_tsc
 
 
@@ -58,6 +60,25 @@ def main():
         assert relocated.instructions()[0].operands[0] == 52
         result = compile_scene(source, adapter="modern")
         assert 'label _g_0000_TOP1:' in result and '_insub _0000_L_000034' in result
+        assert compile_scene(relocated, adapter="modern") == result
+        base, translated = (Path(directory) / name for name in ("base", "zh"))
+        for root in (base, translated):
+            (root / "scr").mkdir(parents=True)
+            (root / "scr/0000.tsc").write_text(source.read_text(), encoding="utf-8")
+        (base / "scr/0001.tsc").write_text(modern + "*end\n", encoding="utf-8")
+        with patch.object(tsc_compiler, "read_tsc", wraps=read_tsc) as reader:
+            scenes = compile_overlays(base, [("zh", translated)])
+        assert reader.call_count == 3, "each original/translated TSC must be parsed once"
+        assert len({call.args[0] for call in reader.call_args_list}) == 3
+        assert "label _g_0000_TOP1:" in scenes["scr/0000.rpy"]
+        assert "jump _g_rscript_variant1_0000_TOP1" in scenes["scr/0000.rpy"]
+        translated_source = translated / "scr/0000.tsc"
+        translated_source.write_text(translated_source.read_text().replace("*wait 1", "*wait 2"),
+                                     encoding="utf-8")
+        updated = compile_overlays(base, [("zh", translated)])
+        assert updated["scr/0000.rpy"] == scenes["scr/0000.rpy"]
+        assert "_wait 2" in updated["tl/zh/scr/0000.rpy"]
+        assert updated["tl/zh/scr/0000.rpy"] != scenes["tl/zh/scr/0000.rpy"]
         for invalid, message in (
                 (named.replace(':L_00002e\n', ''), 'unknown label'),
                 (named.replace('*insub L_00002e 0 0 0 0 0 0 0 0 0 0\n:L_00002e\n', ''),
