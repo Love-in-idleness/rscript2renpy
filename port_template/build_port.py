@@ -6,14 +6,14 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-import shutil
 import sys
 from tempfile import TemporaryDirectory
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from install_runtime import install, clear_script_cache, reject_legacy_paths  # noqa: E402
+from install_runtime import (install, copy_file, write_script,
+                             clear_script_cache, reject_legacy_paths)  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
@@ -75,11 +75,7 @@ def install_version(project: Path, force: bool = False) -> None:
     reject_legacy_paths(project / "game", ("port_version.rpy", "port_version.rpyc"))
     destination = project / "game/engine/port_version.rpy"
     content = 'define config.version = "%s"\n' % PORT_VERSION
-    if destination.exists() and destination.read_text(encoding="utf-8") != content and not force:
-        raise FileExistsError("refusing to overwrite different file: %s" % destination)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(content, encoding="utf-8")
-    clear_script_cache(destination)
+    write_script(content, destination, force)
     android = project / "android.json"
     if android.is_file():
         settings = json.loads(android.read_text(encoding="utf-8"))
@@ -102,16 +98,6 @@ def install_android(source: Path, project: Path, force: bool = False) -> None:
     for name in ("android-icon_background.png", "android-icon_foreground.png"):
         copy_file(source / name, project / name, force)
 
-
-
-def copy_file(source: Path, target: Path, force: bool) -> None:
-    if target.exists() and source.samefile(target):
-        return
-    if target.exists() and target.read_bytes() != source.read_bytes() and not force:
-        raise FileExistsError("refusing to overwrite different file: %s" % target)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, target)
-    clear_script_cache(target)
 
 
 def install_icon(source: Path, project: Path, force: bool = False) -> None:
@@ -164,11 +150,7 @@ def write_scenario(content: str, destination: Path, resources: Path,
     result = flatten_unsupported_effects(content, resources,
                                          preserve_dynamic=preserve_dynamic)
     result = flatten_unsupported_text_controls(result)
-    if destination.exists() and destination.read_text(encoding="utf-8") != result and not force:
-        raise FileExistsError("refusing to overwrite different file: %s" % destination)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(result, encoding="utf-8")
-    clear_script_cache(destination)
+    write_script(result, destination, force)
 
 
 def copy_scenarios(source: Path, target: Path, resources: Path,
@@ -223,10 +205,7 @@ def install_base(resources: Path, project: Path, force: bool = False) -> tuple[i
             copy_file(source, game / "fonts" / source.name, force)
             copied += 1
     destination = game / "engine/grps_layout.rpy"
-    if destination.exists() and destination.read_text(encoding="utf-8") != layout and not force:
-        raise FileExistsError("refusing to overwrite different file: %s" % destination)
-    destination.write_text(layout, encoding="utf-8")
-    clear_script_cache(destination)
+    write_script(layout, destination, force)
     copied += 1
     return len(installed), copied
 

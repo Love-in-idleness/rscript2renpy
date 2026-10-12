@@ -7,7 +7,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-from install_runtime import install  # noqa: E402
+from install_runtime import install, copy_file, write_script  # noqa: E402
 
 
 def main() -> None:
@@ -70,6 +70,39 @@ def main() -> None:
         assert (project / "game" / "engine" / "gui" / "rscript_cursor.png").is_file()
         assert (project / "game" / "engine" / "gui" / "rscript_dither.svg").is_file()
         assert (project / "game" / "engine" / "gui" / "rscript_empty.svg").is_file()
+        script = project / "game/engine/01_defines.rpy"
+        cache = script.with_suffix(".rpyc")
+        script.write_text("user edit\n", encoding="utf-8")
+        cache.write_bytes(b"existing cache")
+        try:
+            install(project)
+        except FileExistsError:
+            pass
+        else:
+            raise AssertionError("runtime installation must preserve conflicting edits")
+        assert script.read_text() == "user edit\n"
+        assert cache.read_bytes() == b"existing cache"
+        install(project, force=True)
+        assert script.read_bytes() == (ROOT / "runtime/01_defines.rpy").read_bytes()
+        assert not cache.exists()
+        copy_file(script, script)
+        destination = project / "generated/测试.rpy"
+        write_script("label test:\n    # 中文\n    return\n", destination)
+        cache = destination.with_suffix(".rpyc")
+        cache.write_bytes(b"existing cache")
+        try:
+            write_script("different\n", destination)
+        except FileExistsError:
+            pass
+        else:
+            raise AssertionError("generated script must preserve conflicting edits")
+        assert "中文" in destination.read_text(encoding="utf-8")
+        assert cache.read_bytes() == b"existing cache"
+        write_script("different\n", destination, force=True)
+        assert destination.read_text() == "different\n" and not cache.exists()
+        cache.write_bytes(b"existing cache")
+        write_script("different\n", destination)
+        assert not cache.exists()
         old = project / "game/01_defines.rpy"
         old.write_text("old layout\n", encoding="utf-8")
         try:
