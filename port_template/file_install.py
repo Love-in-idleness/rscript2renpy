@@ -9,9 +9,19 @@ import stat
 
 
 def reject_overlap(source: Path, output: Path) -> None:
-    source, output = source.resolve(), output.resolve()
-    if source == output or source.is_relative_to(output) or output.is_relative_to(source):
-        raise ValueError("resource input and output project overlap: %s / %s" % (source, output))
+    output = output.resolve()
+    pending, visited = [source], set()
+    while pending:
+        directory = pending.pop().resolve()
+        if directory == output or directory.is_relative_to(output) or output.is_relative_to(directory):
+            raise ValueError("resource input and output project overlap: %s / %s" % (directory, output))
+        if directory in visited or not directory.is_dir():
+            continue
+        visited.add(directory)
+        # Check links before any output cleanup; visited also bounds directory-link cycles.
+        with os.scandir(directory) as entries:
+            pending.extend(Path(entry.path) for entry in entries
+                           if entry.is_symlink() or entry.is_dir(follow_symlinks=False))
 
 
 def files_equal(source: Path, target: Path) -> bool:

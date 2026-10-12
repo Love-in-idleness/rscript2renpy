@@ -173,9 +173,6 @@ def install_base(resources: Path, project: Path, force: bool = False) -> tuple[i
     resources = resources.resolve()
     project = project.resolve()
     reject_overlap(resources, project)
-    for folder in resources.iterdir():
-        if folder.is_dir():
-            reject_overlap(folder, project)
     game = project / "game"
     layout = "define rscript_grps_layout = %r\n" % collect_layout(resources)
 

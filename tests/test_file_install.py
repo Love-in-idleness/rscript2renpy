@@ -165,6 +165,25 @@ def main():
             alias = root / "resource-alias"
             alias.symlink_to(resources, target_is_directory=True)
             reject(lambda: file_install.reject_overlap(alias, resources / "project"), ValueError)
+            external = root / "external-patch"
+            external.mkdir()
+            linked = external / "grps"
+            linked.symlink_to(package, target_is_directory=True)
+            reject(lambda: copy_language_assets(external, "zh", game), ValueError)
+            assert (package / "keep").read_text() == "preserved"
+            reject(lambda: assemble_port(resources, project, {"scr/0000.rpy": "pass"},
+                                         ROOT / "forest", patches=[("zh", external)],
+                                         force=True), ValueError)
+            assert not (game / "engine").exists(), "preflight wrote files before detecting a patch link"
+            linked.unlink()
+            nested = external / "grps/nested"
+            nested.mkdir(parents=True)
+            (nested / "asset.png").symlink_to(package / "keep")
+            reject(lambda: copy_language_assets(external, "zh", game), ValueError)
+            assert (package / "keep").read_text() == "preserved"
+            (nested / "asset.png").unlink()
+            (nested / "cycle").symlink_to(external, target_is_directory=True)
+            file_install.reject_overlap(external, project)
     print("OK: atomic copy/text failures, metadata, permissions and overlap checks")
 
 
