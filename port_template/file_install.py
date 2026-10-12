@@ -14,6 +14,18 @@ def reject_overlap(source: Path, output: Path) -> None:
         raise ValueError("resource input and output project overlap: %s / %s" % (source, output))
 
 
+def files_equal(source: Path, target: Path) -> bool:
+    if source.stat().st_size != target.stat().st_size:
+        return False
+    with source.open("rb") as left, target.open("rb") as right:
+        while True:
+            block = left.read(64 * 1024)
+            if block != right.read(64 * 1024):
+                return False
+            if not block:
+                return True
+
+
 @contextmanager
 def atomic_output(destination: Path):
     destination = Path(destination)
@@ -45,8 +57,9 @@ def atomic_output(destination: Path):
                 os.chmod(temporary, mode)
             yield output
             output.flush()
-        # os.replace does not fall back to a cross-volume copy on Windows.
-        os.replace(temporary, destination)
+        if not destination.exists() or not files_equal(temporary, destination):
+            # os.replace does not fall back to a cross-volume copy on Windows.
+            os.replace(temporary, destination)
     finally:
         if fd >= 0:
             os.close(fd)
@@ -61,22 +74,40 @@ def clear_script_cache(path: Path) -> None:
         path.with_suffix(".rpyc").unlink(missing_ok=True)
 
 
-def copy_file(source: Path, target: Path, force: bool = False, *, metadata=True) -> None:
+def copy_file(source: Path, target: Path, force: bool = False, *, metadata=True) -> bool:
     if target.exists() and source.samefile(target):
-        return
-    if target.exists() and target.read_bytes() != source.read_bytes() and not force:
-        raise FileExistsError("refusing to overwrite different file: %s" % target)
+        return False
+    if target.exists():
+        if files_equal(source, target):
+            if metadata:
+                shutil.copystat(source, target)
+            clear_script_cache(target)
+            return False
+        if not force:
+            raise FileExistsError("refusing to overwrite different file: %s" % target)
     with source.open("rb") as input_file, atomic_output(target) as output:
         shutil.copyfileobj(input_file, output)
         if metadata:
             output.flush()
             shutil.copystat(source, output.name)
     clear_script_cache(target)
+    return True
 
 
-def write_text(content: str, destination: Path, force: bool = False) -> None:
-    if destination.exists() and destination.read_text(encoding="utf-8") != content and not force:
-        raise FileExistsError("refusing to overwrite different file: %s" % destination)
+def write_text(content: str, destination: Path, force: bool = False) -> bool:
+    if destination.exists():
+        try:
+            identical = destination.read_text(encoding="utf-8") == content
+        except UnicodeDecodeError:
+            if not force:
+                raise
+            identical = False
+        if identical:
+            clear_script_cache(destination)
+            return False
+        if not force:
+            raise FileExistsError("refusing to overwrite different file: %s" % destination)
     with atomic_output(destination) as output:
         output.write(content.replace("\n", os.linesep).encode("utf-8"))
     clear_script_cache(destination)
+    return True

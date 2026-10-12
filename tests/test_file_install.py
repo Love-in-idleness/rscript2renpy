@@ -85,6 +85,51 @@ def main():
         assert target.read_bytes() == b"new"
         assert stat.S_IMODE(target.stat().st_mode) == stat.S_IMODE(source.stat().st_mode)
         assert target.stat().st_mtime_ns == source.stat().st_mtime_ns
+        # Equal content keeps its inode, synchronizes copy2 metadata, and invalidates rpyc.
+        inode = target.stat().st_ino
+        os.utime(source, ns=(1234567800000000000, 1234567800000000000))
+        cache.write_bytes(b"stale cache")
+        with patch.object(file_install.os, "replace", side_effect=AssertionError("equal file replaced")), \
+             patch.object(file_install.shutil, "copyfileobj", side_effect=AssertionError("equal file copied")):
+            assert file_install.copy_file(source, target) is False
+        assert not cache.exists() and target.stat().st_ino == inode
+        assert target.stat().st_mtime_ns == source.stat().st_mtime_ns
+        cache.write_bytes(b"stale cache")
+        old_time = target.stat().st_mtime_ns
+        with patch.object(file_install.os, "replace", side_effect=AssertionError("equal script replaced")):
+            assert file_install.write_text("new", target) is False
+        assert target.stat().st_mtime_ns == old_time and not cache.exists()
+
+        # A size mismatch must not open either file; equal files use bounded reads.
+        large, other = root / "large.ogg", root / "other.ogg"
+        large.write_bytes(b"A" * (3 * 65536 + 17))
+        other.write_bytes(b"short")
+        with patch.object(Path, "open", side_effect=AssertionError("size mismatch read file")):
+            assert not file_install.files_equal(large, other)
+        other.write_bytes(large.read_bytes())
+        real_path_open = Path.open
+        class BoundedReader:
+            def __init__(self, path, *args, **kwargs):
+                self.file = real_path_open(path, *args, **kwargs)
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return self.file.__exit__(*args)
+            def read(self, size):
+                assert 0 < size <= 65536
+                return self.file.read(size)
+        with patch.object(Path, "open", lambda path, *args, **kwargs: BoundedReader(path, *args, **kwargs)):
+            assert file_install.files_equal(large, other)
+        for index in (0, 65536, large.stat().st_size - 1):
+            with other.open("r+b") as changed:
+                changed.seek(index)
+                changed.write(b"B")
+            assert not file_install.files_equal(large, other)
+            other.write_bytes(large.read_bytes())
+        inode, modified = other.stat().st_ino, other.stat().st_mtime_ns
+        with file_install.atomic_output(other) as output:
+            output.write(large.read_bytes())
+        assert (other.stat().st_ino, other.stat().st_mtime_ns) == (inode, modified)
         if os.name != "nt":
             link = root / "link"
             link.symlink_to(target)

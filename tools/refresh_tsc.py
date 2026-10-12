@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Explicit GSC preprocessing; builders remain independent of LiarsoftTool."""
 import argparse
-import os
 from pathlib import Path
 import subprocess
 import sys
@@ -46,11 +45,7 @@ def refresh_tsc(resources, tool, encoding, dialect, force=False):
                     raise ValueError("%s: %s" % (source, reason)) from error
                 prepared.append((staged, source.with_suffix(".tsc")))
         for staged, target in prepared:
-            if target.exists() and target.read_bytes() == staged.read_bytes():
-                os.utime(target, ns=(staged.stat().st_atime_ns, staged.stat().st_mtime_ns))
-                continue
-            copy_file(staged, target, force=True)
-            changed += 1
+            changed += copy_file(staged, target, force=True)
     return sum(map(len, sources)), changed
 
 
