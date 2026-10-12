@@ -1,6 +1,7 @@
 """Shared converted assets, keyword JSON and language option validation."""
 
 from pathlib import Path
+from fnmatch import fnmatch
 import json
 import re
 import shutil
@@ -34,8 +35,7 @@ def copy_language_assets(patch: Path, language: str, game: Path, base: Path | No
         if folder.name in {"engine", "scr", "scenario", "saves", "tl"} or folder.name.startswith("."):
             continue
         output = target / folder.name
-        for pattern in ("*.png", "*.jpg", "*.webp", "*.ogg", ".meta.xml"):
-            copy_assets(folder, pattern, output)
+        copy_assets(folder, ("*.png", "*.jpg", "*.webp", "*.ogg", ".meta.xml"), output)
         convert_bmp_assets(folder, output)
         convert_masks(folder, output)
         for asset in folder.rglob("*.wav"):
@@ -133,12 +133,17 @@ def parse_language_options(specs: list[str]) -> tuple[str | None,
     return marker, patches
 
 
-def copy_assets(source: Path, pattern: str, target: Path) -> None:
-    if source.is_dir():
-        for asset in source.rglob(pattern):
-            output = target / asset.relative_to(source)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(asset, output)
+def copy_assets(source: Path, pattern: str | tuple[str, ...], target: Path) -> None:
+    """Copy one or several filename patterns with a single directory walk."""
+    if not source.is_dir():
+        return
+    assets = (source.rglob(pattern) if isinstance(pattern, str) else
+              (asset for asset in source.rglob("*")
+               if any(fnmatch(asset.name, item) for item in pattern)))
+    for asset in assets:
+        output = target / asset.relative_to(source)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(asset, output)
 
 
 def convert_masks(source: Path, target: Path) -> None:

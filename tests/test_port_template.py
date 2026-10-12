@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 import sys
 from contextlib import redirect_stdout
 from io import StringIO
+from unittest.mock import patch as mock_patch
 from PIL import Image
 
 
@@ -16,6 +17,7 @@ from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
 from rscript_tsc import read_tsc  # noqa: E402
+from port_resources import copy_assets  # noqa: E402
 
 
 def main() -> None:
@@ -23,6 +25,25 @@ def main() -> None:
     assert ANDROID_VERSION_CODE == 1
     with TemporaryDirectory() as temporary:
         root = Path(temporary)
+        assets = root / "assets"
+        assets.mkdir()
+        for name in ("a.png", "a.webp", "B.PNG", "nested/b.jpg", "nested/voice.ogg",
+                     "nested/.meta.xml", "ignored.gsc"):
+            asset = assets / name
+            asset.parent.mkdir(parents=True, exist_ok=True)
+            asset.write_bytes(name.encode("utf-8"))
+        patterns = ("*.png", "*.jpg", "*.webp", "*.ogg", ".meta.xml")
+        expected = {asset.relative_to(assets): asset.read_bytes()
+                    for pattern in patterns for asset in assets.rglob(pattern)}
+        with mock_patch.object(Path, "rglob", autospec=True, side_effect=Path.rglob) as walker:
+            copy_assets(assets, patterns, root / "copied-assets")
+        assert walker.call_count == 1, "resource formats must share one directory walk"
+        actual = {asset.relative_to(root / "copied-assets"): asset.read_bytes()
+                  for asset in (root / "copied-assets").rglob("*") if asset.is_file()}
+        assert actual == expected
+        copy_assets(assets, ".meta.xml", root / "metadata-only")
+        assert (root / "metadata-only/nested/.meta.xml").read_bytes() == b"nested/.meta.xml"
+        assert not (root / "metadata-only/a.png").exists()
         choices = root / "choices.tsc"
         choices.write_text(
             ';@gsc-byte-format modern-36\n;@gsc-schema modern\n'
