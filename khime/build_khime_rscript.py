@@ -13,6 +13,7 @@ from port_resources import parse_language_options  # noqa: E402
 from tsc_patches import scenario_sources  # noqa: E402
 from khime_tsc import compile_scene  # noqa: E402
 from zero import prepare_zero, install_zero  # noqa: E402
+from file_install import reject_overlap, write_text  # noqa: E402
 
 
 def build_khime(resources: Path, project: Path, force: bool = False,
@@ -30,6 +31,10 @@ def build_khime(resources: Path, project: Path, force: bool = False,
     if zero_patches and zero_resources is None:
         raise ValueError("--khime-zero-language requires --khime-zero")
     zero_content = None
+    for directory in (resources, *(p for _, p in patches),
+                      *((zero_resources,) if zero_resources is not None else ()),
+                      *(p for _, p in zero_patches)):
+        reject_overlap(directory, project)
     if zero_resources is not None:
         zero_resources = zero_resources.resolve()
         zero_content = prepare_zero(zero_resources, zero_patches)
@@ -54,10 +59,10 @@ def build_khime(resources: Path, project: Path, force: bool = False,
             if language not in {name for name, _ in patches}:
                 target = game / "tl" / language / "rscript_strings.rpy"
                 target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_text("translate %s python:\n    pass\n" % language, encoding="utf-8")
-    (game / "engine/zero_config.rpy").write_text(
+                write_text("translate %s python:\n    pass\n" % language, target, force=True)
+    write_text(
         "init 1 python:\n    khime_zero_available = %r\n" % (zero_resources is not None),
-        encoding="utf-8")
+        game / "engine/zero_config.rpy", force=True)
     clear_script_cache(game / "engine/zero_config.rpy")
 
     print("Wrote %s: %d Khime scenes%s" %

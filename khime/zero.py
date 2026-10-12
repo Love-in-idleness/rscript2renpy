@@ -7,6 +7,7 @@ import wave
 from build_port import copy_file, copy_tree, write_scenario
 from port_resources import convert_bmp_assets, convert_masks
 from khime_tsc import compile_scene, read_tsc
+from file_install import reject_overlap
 
 IMAGE_FOLDERS = ("grpe", "grpo", "grpo_bu", "grps")
 
@@ -71,6 +72,8 @@ def prepare_zero(resources: Path, patches) -> str:
 
 
 def install_zero(resources: Path, patches, game: Path, content: str, force: bool) -> None:
+    for source in (resources, *(patch for _, patch in patches)):
+        reject_overlap(source, game.parent)
     # Do not call copy_language_assets: it replaces the *main* language package.
     for root, target in [(resources, game),
                          *((patch, game / "tl" / language) for language, patch in patches)]:

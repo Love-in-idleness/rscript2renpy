@@ -1,0 +1,82 @@
+"""File-level installation only; a failed build is not a project transaction."""
+
+from contextlib import contextmanager
+import os
+from pathlib import Path
+import secrets
+import shutil
+import stat
+
+
+def reject_overlap(source: Path, output: Path) -> None:
+    source, output = source.resolve(), output.resolve()
+    if source == output or source.is_relative_to(output) or output.is_relative_to(source):
+        raise ValueError("resource input and output project overlap: %s / %s" % (source, output))
+
+
+@contextmanager
+def atomic_output(destination: Path):
+    destination = Path(destination)
+    if destination.is_symlink():
+        destination = destination.resolve(strict=True)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    mode = None
+    if destination.exists():
+        status = destination.stat()
+        if not stat.S_ISREG(status.st_mode) or not status.st_mode & 0o222:
+            raise PermissionError("cannot write file: %s" % destination)
+        # Replacement must not bypass the existing file's write permissions.
+        probe = os.open(destination, os.O_WRONLY | getattr(os, "O_BINARY", 0))
+        os.close(probe)
+        mode = stat.S_IMODE(status.st_mode)
+    while True:
+        temporary = destination.parent / (".rscript-" + secrets.token_hex(12) + ".tmp")
+        try:
+            fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                         getattr(os, "O_BINARY", 0), 0o666)
+            break
+        except FileExistsError:
+            continue
+    try:
+        # Use the exclusively created descriptor, with a path-valued .name for copystat.
+        with open(temporary, "wb", opener=lambda _path, _flags: fd) as output:
+            fd = -1
+            if mode is not None:
+                os.chmod(temporary, mode)
+            yield output
+            output.flush()
+        # os.replace does not fall back to a cross-volume copy on Windows.
+        os.replace(temporary, destination)
+    finally:
+        if fd >= 0:
+            os.close(fd)
+        if temporary.exists():
+            if os.name == "nt":
+                temporary.chmod(stat.S_IWRITE | stat.S_IREAD)
+            temporary.unlink()
+
+
+def clear_script_cache(path: Path) -> None:
+    if path.suffix == ".rpy":
+        path.with_suffix(".rpyc").unlink(missing_ok=True)
+
+
+def copy_file(source: Path, target: Path, force: bool = False, *, metadata=True) -> None:
+    if target.exists() and source.samefile(target):
+        return
+    if target.exists() and target.read_bytes() != source.read_bytes() and not force:
+        raise FileExistsError("refusing to overwrite different file: %s" % target)
+    with source.open("rb") as input_file, atomic_output(target) as output:
+        shutil.copyfileobj(input_file, output)
+        if metadata:
+            output.flush()
+            shutil.copystat(source, output.name)
+    clear_script_cache(target)
+
+
+def write_text(content: str, destination: Path, force: bool = False) -> None:
+    if destination.exists() and destination.read_text(encoding="utf-8") != content and not force:
+        raise FileExistsError("refusing to overwrite different file: %s" % destination)
+    with atomic_output(destination) as output:
+        output.write(content.replace("\n", os.linesep).encode("utf-8"))
+    clear_script_cache(destination)

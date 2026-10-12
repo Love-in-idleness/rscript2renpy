@@ -3,13 +3,13 @@
 import argparse
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import TemporaryDirectory
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "port_template"))
 from rscript_tsc import read_tsc
+from file_install import copy_file
 
 
 def refresh_tsc(resources, tool, encoding, dialect, force=False):
@@ -49,13 +49,7 @@ def refresh_tsc(resources, tool, encoding, dialect, force=False):
             if target.exists() and target.read_bytes() == staged.read_bytes():
                 os.utime(target, ns=(staged.stat().st_atime_ns, staged.stat().st_mtime_ns))
                 continue
-            with NamedTemporaryFile(dir=target.parent, prefix=".tsc-", delete=False) as temporary:
-                temporary_path = Path(temporary.name)
-            try:
-                shutil.copy2(staged, temporary_path)
-                os.replace(temporary_path, target)
-            finally:
-                temporary_path.unlink(missing_ok=True)
+            copy_file(staged, target, force=True)
             changed += 1
     return sum(map(len, sources)), changed
 

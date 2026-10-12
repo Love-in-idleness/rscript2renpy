@@ -5,31 +5,13 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-import shutil
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "runtime"
-
-def clear_script_cache(path: Path) -> None:
-    if path.suffix == ".rpy":
-        path.with_suffix(".rpyc").unlink(missing_ok=True)
-
-def copy_file(source: Path, target: Path, force: bool = False) -> None:
-    if target.exists() and source.samefile(target):
-        return
-    if target.exists() and target.read_bytes() != source.read_bytes() and not force:
-        raise FileExistsError("refusing to overwrite different file: %s" % target)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, target)
-    clear_script_cache(target)
-
-def write_script(content: str, destination: Path, force: bool = False) -> None:
-    if destination.exists() and destination.read_text(encoding="utf-8") != content and not force:
-        raise FileExistsError("refusing to overwrite different file: %s" % destination)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(content, encoding="utf-8")
-    clear_script_cache(destination)
+sys.path.insert(0, str(ROOT / "port_template"))
+from file_install import copy_file, clear_script_cache, reject_overlap, write_text as write_script
 
 def reject_legacy_paths(game: Path, paths) -> None:
     old = [str(game / path) for path in paths if (game / path).exists()]
@@ -38,6 +20,7 @@ def reject_legacy_paths(game: Path, paths) -> None:
                               "\n- ".join(old))
 
 def install(project: Path, force: bool = False) -> list[Path]:
+    reject_overlap(RUNTIME, project)
     game = project / "game"
     if not game.is_dir():
         raise ValueError("Ren'Py game directory not found: %s" % game)

@@ -4,7 +4,6 @@
 import argparse
 import json
 from pathlib import Path
-import shutil
 import sys
 from tempfile import TemporaryDirectory
 
@@ -15,6 +14,7 @@ from port_resources import parse_language_options
 from tsc_compiler import compile_overlays
 from rscript_tsc import read_tsc
 from native import NativeImage
+from file_install import copy_file, reject_overlap, write_text
 
 
 BONUS_SCENES = ("0059", "0201", "0301", "0302", *("%04d" % n for n in range(1501, 1512)))
@@ -44,8 +44,7 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
     resources, project = Path(resources).resolve(), Path(project).resolve()
     marker, patches = parse_language_options(list(languages))
     for directory in (resources, *(p for _, p in patches)):
-        if project == directory or project.is_relative_to(directory):
-            raise ValueError("output must not be inside original/patch resources")
+        reject_overlap(directory, project)
     validate_edition(resources)
     validate_resources(resources,
         directories=("scr", "grpe", "grpo", "grpo_bu", "grpo_ex", "grps", "bgm", "voice", "wav"),
@@ -86,13 +85,13 @@ def build_kagerou(resources, project, force=False, languages=(), exe=None):
         # A new project's own base files are replaced by this adapter's overlay.
         assemble_port(prepared, project, scenes, overlay.parent, marker, patches,
                       force=force or not project.exists())
-    shutil.copy2(Path(__file__).parent / "native.py", project / "game/engine/kagerou_native.py")
-    (project / "kagerou-build.json").write_text(json.dumps({
+    copy_file(Path(__file__).parent / "native.py", project / "game/engine/kagerou_native.py", force=True)
+    write_text(json.dumps({
         "adapter": "kagerou", "edition": "ハチポチ特典", "exe_sha256": image.sha256,
         "original_scenes": len(list((resources / "scr").glob("*.tsc"))),
         "languages": [name for name, _ in patches],
         "character_x": positions, "warnings": warnings,
-    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    }, ensure_ascii=False, indent=2) + "\n", project / "kagerou-build.json", force=True)
     for message in warnings:
         print("NOTE: " + message)
     print("Wrote %s: %d original scenes, %d language packages" %

@@ -8,29 +8,29 @@ import shutil
 import struct
 from PIL import Image, ImageOps
 from grps_layout import collect_layout
+from file_install import atomic_output, copy_file, reject_overlap, write_text
 
 
 def write_language_config(game: Path, labels, keywords, images=None) -> None:
-    (game / "engine/language_config.rpy").write_text(
+    write_text(
         "init -90 python:\n"
         "    rscript_languages = %r\n"
         "    rscript_wiki_keywords = %r\n"
         "    rscript_wiki_images = %r\n" % (labels, keywords, images or {}),
-        encoding="utf-8")
-    (game / "engine/language_config.rpyc").unlink(missing_ok=True)
+        game / "engine/language_config.rpy", force=True)
 
 
 def copy_language_assets(patch: Path, language: str, game: Path, base: Path | None = None) -> None:
     # This directory is owned by the generated language package, not saves.
+    reject_overlap(patch, game.parent)
     target = game / "tl" / language
     if target.is_dir():
         shutil.rmtree(target)
     target.mkdir(parents=True)
-    (target / "rscript_strings.rpy").write_text(
-        "translate %s python:\n    pass\n" % language, encoding="utf-8")
-    (target / "grps_layout.rpy").write_text(
+    write_text("translate %s python:\n    pass\n" % language, target / "rscript_strings.rpy")
+    write_text(
         "init 1 python:\n    rscript_grps_language_layouts[%r] = %r\n" %
-        (language, collect_layout(patch, fallback=base)), encoding="utf-8")
+        (language, collect_layout(patch, fallback=base)), target / "grps_layout.rpy")
     for folder in sorted(path for path in patch.iterdir() if path.is_dir()):
         if folder.name in {"engine", "scr", "scenario", "saves", "tl"} or folder.name.startswith("."):
             continue
@@ -42,11 +42,11 @@ def copy_language_assets(patch: Path, language: str, game: Path, base: Path | No
             if not asset.with_suffix(".ogg").is_file():
                 destination = output / asset.relative_to(folder)
                 destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(asset, destination)
+                copy_file(asset, destination, force=True, metadata=False)
     copy_movies(patch / "mov", target / "mov")
     if (patch / "keywords.json").is_file():
         read_keywords(patch / "keywords.json")
-        shutil.copyfile(patch / "keywords.json", target / "keywords.json")
+        copy_file(patch / "keywords.json", target / "keywords.json", force=True, metadata=False)
 
 def strip_json_comments(text: str) -> str:
     """Remove // comments without touching // inside JSON strings."""
@@ -143,7 +143,7 @@ def copy_assets(source: Path, pattern: str | tuple[str, ...], target: Path) -> N
     for asset in assets:
         output = target / asset.relative_to(source)
         output.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(asset, output)
+        copy_file(asset, output, force=True, metadata=False)
 
 
 def convert_masks(source: Path, target: Path) -> None:
@@ -151,7 +151,8 @@ def convert_masks(source: Path, target: Path) -> None:
         output = (target / asset.relative_to(source)).with_suffix(".png")
         output.parent.mkdir(parents=True, exist_ok=True)
         with Image.open(asset) as image:
-            image.save(output, "PNG")
+            with atomic_output(output) as temporary:
+                image.save(temporary, "PNG")
 
 
 def convert_bmp_assets(source: Path, target: Path) -> None:
@@ -178,12 +179,14 @@ def convert_bmp_assets(source: Path, target: Path) -> None:
                 image = bmp.convert("RGBA")  # Ordinary opaque/paletted BMP.
         output = (target / asset.relative_to(source)).with_suffix(".png")
         output.parent.mkdir(parents=True, exist_ok=True)
-        image.save(output, "PNG")
+        with atomic_output(output) as temporary:
+            image.save(temporary, "PNG")
 
 
 def copy_movies(source: Path, target: Path, clear: bool = False) -> None:
     if not source.is_dir():
         return
+    reject_overlap(source, target)
     target.mkdir(parents=True, exist_ok=True)
     if clear:
         for obsolete in target.iterdir():
@@ -192,4 +195,4 @@ def copy_movies(source: Path, target: Path, clear: bool = False) -> None:
                 obsolete.unlink()
     for asset in sorted(source.iterdir()):
         if asset.is_file() and asset.suffix.lower() == ".mpg":
-            shutil.copyfile(asset, target / asset.name)
+            copy_file(asset, target / asset.name, force=True, metadata=False)

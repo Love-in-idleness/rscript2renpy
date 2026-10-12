@@ -20,6 +20,7 @@ from grps_layout import collect_layout  # noqa: E402
 from port_resources import (convert_masks, convert_bmp_assets, read_keywords,
                             copy_language_assets, write_language_config)  # noqa: E402
 from tsc_patches import scenario_sources  # noqa: E402
+from file_install import reject_overlap, write_text  # noqa: E402
 
 
 PORT_VERSION = "1.4"
@@ -45,6 +46,8 @@ def assemble_port(resources, project, scenes, overlay, marker=None, patches=(), 
     """Install already compiled scenes using the same resource/overlay path."""
     if not scenes:
         raise ValueError("no compiled scenes")
+    for source in (resources, *(directory for _, directory in patches)):
+        reject_overlap(source, project)
     labels = [(None, marker or "Original")] + [(name, name) for name, _ in patches]
     labels.extend((name, name) for name in extra_languages
                   if name not in {language for language, _ in labels})
@@ -65,7 +68,11 @@ def assemble_port(resources, project, scenes, overlay, marker=None, patches=(), 
     for source in (overlay / "game").glob("*.rpy"):
         copy_engine_file(source, game, force)
     for language, patch in patches:
-        copy_language_assets(patch, language, game, base=resources)
+        try:
+            copy_language_assets(patch, language, game, base=resources)
+        except (OSError, ValueError) as error:
+            raise OSError("language package %s may be incomplete; fix the error and rebuild: %s" %
+                          (game / "tl" / language, error)) from error
     for name, content in scenes.items():
         write_scenario(content, game / name, resources, force)
     write_language_config(game, labels, keywords, images)
@@ -82,8 +89,7 @@ def install_version(project: Path, force: bool = False) -> None:
         settings["version"] = PORT_VERSION
         settings["numeric_version"] = max(int(settings.get("numeric_version", 1)),
                                           ANDROID_VERSION_CODE)
-        android.write_text(json.dumps(settings, indent=4, ensure_ascii=False) + "\n",
-                           encoding="utf-8")
+        write_text(json.dumps(settings, indent=4, ensure_ascii=False) + "\n", android, force=True)
 
 
 def install_android(source: Path, project: Path, force: bool = False) -> None:
@@ -92,8 +98,7 @@ def install_android(source: Path, project: Path, force: bool = False) -> None:
     if destination.is_file():
         # Retain local package/signing/build settings; only versions are shared.
         settings.update(json.loads(destination.read_text(encoding="utf-8")))
-    destination.write_text(json.dumps(settings, indent=4, ensure_ascii=False) + "\n",
-                           encoding="utf-8")
+    write_text(json.dumps(settings, indent=4, ensure_ascii=False) + "\n", destination, force=True)
     install_version(project, force)
     for name in ("android-icon_background.png", "android-icon_foreground.png"):
         copy_file(source / name, project / name, force)
@@ -167,6 +172,10 @@ def install_base(resources: Path, project: Path, force: bool = False) -> tuple[i
     """Install the shared base; a game's overlay is applied only afterwards."""
     resources = resources.resolve()
     project = project.resolve()
+    reject_overlap(resources, project)
+    for folder in resources.iterdir():
+        if folder.is_dir():
+            reject_overlap(folder, project)
     game = project / "game"
     layout = "define rscript_grps_layout = %r\n" % collect_layout(resources)
 
@@ -213,6 +222,7 @@ def install_base(resources: Path, project: Path, force: bool = False) -> tuple[i
 def build(resources: Path, project: Path, force: bool = False,
           scenarios: Path | None = None) -> tuple[int, int]:
     scenarios = scenarios or resources / "scenario"
+    reject_overlap(scenarios, project)
     if not any(scenarios.glob("*.rpy")):
         raise FileNotFoundError(
             "game-specific TSC lowerer produced no scenario/*.rpy files: %s" %
