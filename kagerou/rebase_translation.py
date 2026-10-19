@@ -124,7 +124,7 @@ def rebase(base, patch, tool, apply=False):
             if len(parts[1]) != native.code_size:
                 raise ValueError("TSC/GSC command sizes disagree: " + str(source))
             original_txt = work / "original.txt"
-            run(tool, "-e", "cp932", "-o", original_txt, reference)
+            run(tool, "--gsc-to-txt", "-e", "cp932", "-o", original_txt, reference)
             original = exported_strings(original_txt)
             if not original:
                 shutil.copy2(reference, staged / reference.name)
@@ -153,7 +153,7 @@ def rebase(base, patch, tool, apply=False):
                     continue
                 donor_gsc, donor_txt = work / "donor.gsc", work / "donor.txt"
                 run(tool, "-e", "gbk", "-o", donor_gsc, donor_path)
-                run(tool, "-e", "gbk", "-o", donor_txt, donor_gsc)
+                run(tool, "--gsc-to-txt", "-e", "gbk", "-o", donor_txt, donor_gsc)
                 text, changed = dialogue_strings(native, donor, parts[1], original,
                     (exported_strings(donor_txt), gsc_parts(donor_gsc)[1]))
             if not changed and dialogue:
@@ -165,7 +165,7 @@ def rebase(base, patch, tool, apply=False):
             if gsc_parts(output) != parts:
                 raise ValueError("non-text GSC bytes changed: " + name)
             check = work / "check.txt"
-            run(tool, "-e", "gbk", "-o", check, output)
+            run(tool, "--gsc-to-txt", "-e", "gbk", "-o", check, output)
             if exported_strings(check) != text:
                 raise ValueError("TXT import changed text: " + name)
             run(tool, "--gsc-to-tsc", "-e", "gbk", "-o", staged / source.name, output)
