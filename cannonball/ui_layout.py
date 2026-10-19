@@ -1,7 +1,7 @@
 """Cannonball.exe native UI profile, independently usable without the EXE."""
 from pathlib import Path
 from PIL import Image
-from grps_layout import UI_ACTIONS
+from grps_layout import UI_ACTIONS, IMAGE_SUFFIXES
 from exe_ui import constant_positions, inspect_exe
 
 EXE_SHA256 = "df4b5b6dffc7002370d0772869baaba551b08fca970e92609ca64b08174f89ba"
@@ -30,8 +30,14 @@ SAVE_BUTTONS = {"exit": ("dat_re", 653, 503),
 
 def native_layouts(resources, positions=None):
     resources = Path(resources)
-    files = {p.stem.lower(): p for p in (resources / "grps").iterdir() if p.suffix.lower() == ".png"}
-    files.update({p.stem.lower(): p for p in (resources / "grps").iterdir() if p.suffix.lower() == ".webp"})
+    files = {}
+    for path in (resources / "grps").iterdir():
+        suffix = path.suffix.lower()
+        if not path.is_file() or suffix not in IMAGE_SUFFIXES:
+            continue
+        previous = files.get(path.stem.lower())
+        if previous is None or IMAGE_SUFFIXES.index(suffix) < IMAGE_SUFFIXES.index(previous.suffix.lower()):
+            files[path.stem.lower()] = path
     layouts = {name: {"items": {}, "images": {}, "controls": {}}
                for name in ("confscrn", "compane", "savescrn", "saveconf", "sel_a", "sel_q")}
 

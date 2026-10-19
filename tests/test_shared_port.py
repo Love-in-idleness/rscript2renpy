@@ -10,6 +10,7 @@ import signal
 import subprocess
 import sys
 from PIL import Image
+from bmp_fixture import bmp_v4
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
@@ -106,6 +107,15 @@ def main():
                           "mov/0001.mpg", "mov/0002.mpg"):
                 (resources / asset).write_bytes(b"unused fixture")
             project = temporary / name
+            # Exercise direct native media installation and .meta.xml geometry.
+            (resources / "grpe/9001.png").unlink()
+            Image.new("RGB", (9, 7), "red").save(resources / "grpe/9001.bmp")
+            (textbox / "back.png").unlink()
+            Image.new("RGB", (800, 138), "black").save(textbox / "back.bmp")
+            for variant, alphas in (("mixed", (0, 128, 255)), ("clear", (0, 0, 0)),
+                                    ("opaque", (255, 255, 255))):
+                (resources / ("grps/native_" + variant + ".BMP")).write_bytes(bmp_v4(alphas))
+            Image.new("L", (3, 1), 128).save(resources / "grps/ef11.msk", "BMP")
             if name == "Forest":
                 build_forest(["build_forest_rscript.py", str(resources), str(project)])
             else:
@@ -148,6 +158,10 @@ def main():
                 else:
                     raise AssertionError("Khime must not silently flatten non-text patch changes")
                 (patch / "scr/0000.tsc").write_text(translated_script, encoding="utf-8")
+            for asset in ("grpe/9001.bmp", "grps/tbox01/back.bmp", "grps/ef11.msk",
+                          "grps/native_mixed.BMP", "grps/native_clear.BMP", "grps/native_opaque.BMP"):
+                assert (project / "game" / asset).read_bytes() == (resources / asset).read_bytes()
+                assert not (project / "game" / asset).with_suffix(".png").exists()
             Image.new("RGB", (17, 13), "red").save(project / "game/grpo/0707.webp")
             translated_image = project / "game/tl/asset_test/grpo/0707.png"
             translated_image.parent.mkdir(parents=True)
@@ -157,6 +171,9 @@ def main():
             translated_png = project / "game/tl/png_test/grpo/0707.png"
             translated_png.parent.mkdir(parents=True)
             Image.new("RGB", (7, 5), "yellow").save(translated_png)
+            translated_bmp = project / "game/tl/bmp_test/grpo/0707.BMP"
+            translated_bmp.parent.mkdir(parents=True)
+            translated_bmp.write_bytes(bmp_v4())
             for filename in ("text_features.rpy", "touch_controls.rpy", "gui.rpy"):
                 assert (project / "game" / "engine" / filename).read_bytes() == \
                     (ROOT / "port_template/game" / filename).read_bytes()

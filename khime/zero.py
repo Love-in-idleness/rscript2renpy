@@ -5,7 +5,7 @@ import re
 import wave
 
 from build_port import copy_file, copy_tree, write_scenario
-from port_resources import convert_bmp_assets, convert_masks
+from grps_layout import ui_image, IMAGE_SUFFIXES
 from khime_tsc import compile_scene, read_tsc
 from file_install import reject_overlap
 
@@ -64,7 +64,7 @@ def prepare_zero(resources: Path, patches) -> str:
                             for n in re.findall(r"\^g([ \t]*-?[0-9]+)", text, re.I))
         missing = sorted(name for name in required if not any(
             (p / name).is_file() or (name.endswith(".png") and
-                                    (p / name).with_suffix(".bmp").is_file())
+                                    ui_image((p / name).parent, (p / name).stem) is not None)
             for p in (root, resources)))
         if missing:
             raise FileNotFoundError("Khime Zero converted media missing: " + ", ".join(missing))
@@ -79,9 +79,7 @@ def install_zero(resources: Path, patches, game: Path, content: str, force: bool
                          *((patch, game / "tl" / language) for language, patch in patches)]:
         for folder in IMAGE_FOLDERS:
             output = target / "khime_zero" / folder
-            copy_tree(root / folder, output, {".png", ".xml"}, force)
-            convert_bmp_assets(root / folder, output)
-            convert_masks(root / folder, output)
+            copy_tree(root / folder, output, {*IMAGE_SUFFIXES, ".xml"}, force)
         for folder in ("bgm", "wav", "voice"):
             output = target / "khime_zero" / folder
             copy_tree(root / folder, output, {".ogg"}, force)

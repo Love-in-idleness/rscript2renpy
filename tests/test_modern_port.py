@@ -165,8 +165,9 @@ def main():
         assert (game / 'engine/ui_features.rpy').read_bytes() == (ROOT / 'port_template/game/ui_features.rpy').read_bytes()
         assert not (game / 'evermaiden_compat.rpy').exists()
         assert (game / 'grps/new_panel/.meta.xml').is_file()
-        with Image.open(game / 'grps/new_panel/opaque.png') as opaque:
-            assert opaque.getpixel((0, 0)) == (18, 52, 86, 255)
+        with Image.open(game / 'grps/new_panel/opaque.bmp') as opaque:
+            assert opaque.getpixel((0, 0)) == (18, 52, 86)
+        assert not (game / 'grps/new_panel/opaque.png').exists()
         assert not (game / 'audio').exists() and not (game / 'scenario').exists()
         assert (game / 'engine/06_rscript_modern.rpy').is_file()
         assert (game / 'scr/0000.rpy').is_file() and (game / 'tl/zh/scr/5000.rpy').is_file()

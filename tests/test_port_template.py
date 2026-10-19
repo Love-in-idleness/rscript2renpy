@@ -35,6 +35,7 @@ def main() -> None:
         patterns = ("*.png", "*.jpg", "*.webp", "*.ogg", ".meta.xml")
         expected = {asset.relative_to(assets): asset.read_bytes()
                     for pattern in patterns for asset in assets.rglob(pattern)}
+        expected[Path("B.PNG")] = b"B.PNG"
         with mock_patch.object(Path, "rglob", autospec=True, side_effect=Path.rglob) as walker:
             copy_assets(assets, patterns, root / "copied-assets")
         assert walker.call_count == 1, "resource formats must share one directory walk"
@@ -190,7 +191,7 @@ def main() -> None:
                         "_cls 1 _r[6501]", "_effect _r[6511] 0"):
             result = flatten_unsupported_effects("    " + command + "\n", resources)
             assert command in result and "flattened" not in result
-        (masks / "ef11.msk").write_bytes(b"converted by install_base")
+        (masks / "ef11.msk").write_bytes(b"native BMP-backed mask")
         assert flatten_unsupported_effects("    _update 11 10 10\n",
                                            root / "masks") == "    _update 11 10 10\n"
         (masks / "ES101.PNG").write_bytes(b"mask")

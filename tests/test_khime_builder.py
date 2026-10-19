@@ -9,6 +9,7 @@ import struct
 import sys
 
 from PIL import Image
+from bmp_fixture import bmp_v4
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "khime"))
@@ -80,9 +81,7 @@ def main() -> None:
         patch = Path(temporary) / "patch"
         (patch / "grpo_tp").mkdir(parents=True)
         (patch / "grpo_tp" / "9001.bmp").write_bytes(
-            b"BM" + struct.pack("<IHHI", 62, 0, 0, 54) +
-            struct.pack("<IiiHHIIiiII", 40, 2, 1, 1, 32, 0, 8, 0, 0, 0, 0) +
-            b"\x00\x00\x00\xff\x00\xff\x00\x00")
+            bmp_v4((0, 255)))
         (patch / "grpe").mkdir()
         shutil.copy2(patch / "grpo_tp" / "9001.bmp", patch / "grpe" / "9001.bmp")
         build_khime(resources, project, languages=["jp", "zh=%s" % patch])
@@ -94,9 +93,9 @@ def main() -> None:
             assert original.convert("RGBA").tobytes() == window_icon.convert("RGBA").tobytes()
         for folder in ("grpe", "grpo_tp"):
             with Image.open(project / "game" / "tl" / "zh" /
-                            folder / "9001.png") as translated:
-                assert translated.getpixel((0, 0)) == (0, 0, 0, 0)
-                assert translated.getpixel((1, 0)) == (0, 255, 0, 255)
+                            folder / "9001.bmp") as translated:
+                assert translated.getpixel((0, 0)) == (10, 20, 30, 0)
+                assert translated.getpixel((1, 0)) == (10, 20, 30, 255)
         notice = (ROOT / "port_template" / "android" / "notice.png").read_bytes()
         for name in ("android-presplash.png", "android-downloading.png"):
             assert (project / name).read_bytes() == notice

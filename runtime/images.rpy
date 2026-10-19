@@ -25,14 +25,19 @@ init 100 python:
     config.missing_image_callback = rscript_missing_image
 
 init -130 python:
+    rscript_image_extensions = (".webp", ".png", ".jpg", ".bmp", ".msk")
+    _rscript_image_files = {fn.lower(): fn for _, fn in renpy.loader.listdirfiles(common=False)
+                           if os.path.splitext(fn)[1].lower() in rscript_image_extensions}
+
     def rscript_image_path(path):
         base, ext = os.path.splitext(path)
-        if ext.lower() not in (".webp", ".png", ".jpg", ".bmp"):
+        if ext.lower() not in rscript_image_extensions:
             return path
         # Language overrides take precedence over the base game's format.
         for prefix in renpy.loader.get_prefixes():
-            for suffix in (".webp", ".png", ".jpg", ".bmp"):
+            for suffix in rscript_image_extensions:
                 candidate = prefix + base + suffix
+                candidate = _rscript_image_files.get(candidate.lower(), candidate)
                 if renpy.loadable(candidate, tl=False):
                     return candidate
         return path
@@ -77,7 +82,7 @@ init python:
 
 init python hide:
 
-    img_extensions = [".webp", ".png", ".jpg", ".bmp"]
+    img_extensions = rscript_image_extensions
     registered_tags = set()
 
     for _, fn in renpy.loader.listdirfiles(common = False):

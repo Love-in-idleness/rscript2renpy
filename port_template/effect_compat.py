@@ -1,6 +1,7 @@
 """Flatten visual effects the shared Ren'Py runtime cannot execute."""
 
 from pathlib import Path
+from grps_layout import ui_image
 
 
 # Operand position, field name, safe fallback. Keep in step with runtime/*.rpy.
@@ -55,16 +56,9 @@ def _supported(command: str, field: str, value: int,
             return False, "not implemented"
         mask = ("ef%02d.png" if command == "_update" else "es%03d.png") % value
         relative = Path("grps") / mask
-        # install_base converts source .msk masks to these PNG names.
-        found = any((resources / prefix / candidate).is_file()
-                    for prefix in (Path(), Path("images"))
-                    for candidate in (relative.with_suffix(".webp"), relative, relative.with_suffix(".msk")))
-        if not found and command == "_effect":
-            # Image registration lowercases tags, not actual resource filenames.
-            found = any(path.name.lower() in (mask, str(Path(mask).with_suffix(".webp")))
-                        for prefix in (Path(), Path("images"))
-                        for path in (resources / prefix / "grps").glob("*")
-                        if path.is_file())
+        # Ren'Py loads BMP-backed MSK masks directly, with no PNG intermediate.
+        found = any(ui_image(resources / prefix / "grps", relative.stem) is not None
+                    for prefix in (Path(), Path("images")))
         return found, "missing %s" % relative
     raise ValueError("unlisted effect command: %s" % command)
 

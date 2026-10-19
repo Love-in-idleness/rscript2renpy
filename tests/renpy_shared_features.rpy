@@ -111,7 +111,8 @@ python early:
         try:
             for selected, expected in ((None, "grpo/0707.webp"),
                                        ("asset_test", "tl/asset_test/grpo/0707.webp"),
-                                       ("png_test", "tl/png_test/grpo/0707.png")):
+                                       ("png_test", "tl/png_test/grpo/0707.png"),
+                                       ("bmp_test", "tl/bmp_test/grpo/0707.BMP")):
                 _preferences.language = selected
                 assert rscript_image_path("grpo/0707.png") == expected
                 assert rscript_image_path("grpo/0707.webp") == expected
@@ -120,6 +121,20 @@ python early:
                 assert image.raw_target.filename == expected, image.raw_target
         finally:
             _preferences.language = language
+        for variant, alphas in (("mixed", (0, 128, 255)), ("clear", (0, 0, 0)),
+                                ("opaque", (255, 255, 255))):
+            path = "grps/native_" + variant + ".BMP"
+            assert rscript_image_path(path.replace(".BMP", ".png")) == path
+            native = renpy.get_registered_image("grps native_" + variant)
+            native.find_target()
+            assert native.raw_target.filename == path
+            surface = native.raw_target.load()
+            for x, alpha in enumerate(alphas):
+                assert tuple(surface.get_at((x, 0))) == (10, 20, 30, alpha)
+        assert rscript_image_path("grps/ef11.png") == "grps/ef11.msk"
+        surface = renpy.display.im.Image("grps/ef11.msk").load()
+        assert surface.get_size() == (3, 1)
+        assert tuple(surface.get_at((0, 0)))[:3] == (128, 128, 128)
         try:
             for expression in ("'^cw８月１１日・月曜日'", "''",
                                "{'zh': '^cw８月１１日·星期一'}.get(_preferences.language, '^cw８月１１日・月曜日')"):

@@ -5,10 +5,8 @@ from fnmatch import fnmatch
 import json
 import re
 import shutil
-import struct
-from PIL import Image, ImageOps
 from grps_layout import collect_layout
-from file_install import atomic_output, copy_file, reject_overlap, write_text
+from file_install import copy_file, reject_overlap, write_text
 
 
 def write_language_config(game: Path, labels, keywords, images=None) -> None:
@@ -35,9 +33,7 @@ def copy_language_assets(patch: Path, language: str, game: Path, base: Path | No
         if folder.name in {"engine", "scr", "scenario", "saves", "tl"} or folder.name.startswith("."):
             continue
         output = target / folder.name
-        copy_assets(folder, ("*.png", "*.jpg", "*.webp", "*.ogg", ".meta.xml"), output)
-        convert_bmp_assets(folder, output)
-        convert_masks(folder, output)
+        copy_assets(folder, ("*.png", "*.jpg", "*.webp", "*.bmp", "*.msk", "*.ogg", ".meta.xml"), output)
         for asset in folder.rglob("*.wav"):
             if not asset.with_suffix(".ogg").is_file():
                 destination = output / asset.relative_to(folder)
@@ -139,48 +135,34 @@ def copy_assets(source: Path, pattern: str | tuple[str, ...], target: Path) -> N
         return
     assets = (source.rglob(pattern) if isinstance(pattern, str) else
               (asset for asset in source.rglob("*")
-               if any(fnmatch(asset.name, item) for item in pattern)))
+               if asset.is_file() and any(fnmatch(asset.name.lower(), item) for item in pattern)))
     for asset in assets:
         output = target / asset.relative_to(source)
+        check_native_image(asset, output)
         output.parent.mkdir(parents=True, exist_ok=True)
         copy_file(asset, output, force=True, metadata=False)
 
 
-def convert_masks(source: Path, target: Path) -> None:
-    for asset in source.rglob("*.msk"):
-        output = (target / asset.relative_to(source)).with_suffix(".png")
-        output.parent.mkdir(parents=True, exist_ok=True)
-        with Image.open(asset) as image:
-            with atomic_output(output) as temporary:
-                image.save(temporary, "PNG")
-
-
-def convert_bmp_assets(source: Path, target: Path) -> None:
-    if not source.is_dir():
+def check_native_image(asset: Path, output: Path) -> None:
+    """Fail clearly on unprepared CodeX BMPs and obsolete converted outputs."""
+    if asset.suffix.lower() not in (".bmp", ".msk"):
         return
-    for asset in sorted(source.rglob("*")):
-        if not asset.is_file() or asset.suffix.lower() != ".bmp":
-            continue
-        data = asset.read_bytes()
-        if len(data) < 54 or data[:2] != b"BM":
-            raise ValueError("unsupported CodeX patch BMP: %s" % asset)
-        bits = struct.unpack_from("<H", data, 28)[0]
-        with Image.open(asset) as bmp:
-            if bits == 32:
-                if (struct.unpack_from("<I", data, 30)[0] != 0 or
-                        struct.unpack_from("<i", data, 22)[0] <= 0):
-                    raise ValueError("unsupported CodeX patch BMP: %s" % asset)
-                offset = struct.unpack_from("<I", data, 10)[0]
-                image = Image.frombytes("RGBA", bmp.size, data[offset:],
-                                        "raw", "BGRA", 0, -1)
-                # CodeX uses inverse alpha only for its 32-bit BMPs.
-                image.putalpha(ImageOps.invert(image.getchannel("A")))
-            else:
-                image = bmp.convert("RGBA")  # Ordinary opaque/paletted BMP.
-        output = (target / asset.relative_to(source)).with_suffix(".png")
-        output.parent.mkdir(parents=True, exist_ok=True)
-        with atomic_output(output) as temporary:
-            image.save(temporary, "PNG")
+    if asset.suffix.lower() == ".bmp":
+        with asset.open("rb") as source:
+            header = source.read(54)
+        if (len(header) >= 54 and header[:2] == b"BM" and
+                int.from_bytes(header[14:18], "little") == 40 and
+                int.from_bytes(header[28:30], "little") == 32 and
+                int.from_bytes(header[30:34], "little") == 0):
+            raise ValueError("CodeX BMP needs LiarsoftTool --unpack-only first "
+                             "(use a resource working copy): %s" % asset)
+    png_name = (asset.stem + ".png").lower()
+    old_png = next((path for path in output.parent.glob("*")
+                    if path.is_file() and path.name.lower() == png_name), None)
+    if old_png and not any(path.is_file() and path.name.lower() == png_name
+                           for path in asset.parent.iterdir()):
+        raise ValueError("obsolete converted PNG shadows %s: %s; use a fresh "
+                         "output project or remove that old generated PNG" % (asset, old_png))
 
 
 def copy_movies(source: Path, target: Path, clear: bool = False) -> None:

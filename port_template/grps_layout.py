@@ -4,10 +4,14 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 from PIL import Image
 
+IMAGE_SUFFIXES = (".webp", ".png", ".jpg", ".bmp", ".msk")
 
 def ui_image(folder, name):
-    return next((path for suffix in (".webp", ".png")
-                 if (path := folder / (name + suffix)).is_file()), None)
+    if folder.is_dir():
+        files = {path.name.lower(): path for path in folder.iterdir() if path.is_file()}
+        return next((files[(name + suffix).lower()] for suffix in IMAGE_SUFFIXES
+                     if (name + suffix).lower() in files), None)
+    return None
 
 # Native names shared by CodeX archives. Metadata supplies geometry, not actions.
 UI_ACTIONS = {
@@ -58,7 +62,7 @@ def collect_layout(resources: Path, fallback: Path | None = None) -> dict:
             continue
         metadata = source / ".meta.xml"
         if not metadata.is_file():
-            if any(path.suffix.lower() in {".png", ".webp"} for path in source.iterdir()):
+            if any(path.suffix.lower() in IMAGE_SUFFIXES for path in source.iterdir()):
                 raise ValueError("%s needs .meta.xml to position its UI assets" % source)
             continue
         canvas = ET.parse(metadata).getroot()

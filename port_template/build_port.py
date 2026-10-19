@@ -16,8 +16,8 @@ from install_runtime import (install, copy_file, write_script,
                              clear_script_cache, reject_legacy_paths)  # noqa: E402
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
-from grps_layout import collect_layout  # noqa: E402
-from port_resources import (convert_masks, convert_bmp_assets, read_keywords,
+from grps_layout import collect_layout, ui_image, IMAGE_SUFFIXES  # noqa: E402
+from port_resources import (check_native_image, read_keywords,
                             copy_language_assets, write_language_config)  # noqa: E402
 from tsc_patches import scenario_sources  # noqa: E402
 from file_install import reject_overlap, write_text  # noqa: E402
@@ -30,12 +30,22 @@ ANDROID_VERSION_CODE = 1
 
 def validate_resources(root, *, directories=(), files=(), patterns=(), alternatives=()):
     missing = [str(root / name) for name in directories if not (root / name).is_dir()]
-    missing.extend(str(root / name) for name in files if not (root / name).is_file())
+    def exists(name):
+        path = root / name
+        return path.is_file() or (path.suffix.lower() in IMAGE_SUFFIXES and
+                                 ui_image(path.parent, path.stem) is not None)
+    missing.extend(str(root / name) for name in files if not exists(name))
     if not scenario_sources(root / "scr"):
         missing.append(str(root / "scr/*.tsc"))
-    missing.extend(str(root / pattern) for pattern in patterns if not any(root.glob(pattern)))
+    def matches(pattern):
+        path = Path(pattern)
+        if path.suffix.lower() in IMAGE_SUFFIXES:
+            return any(candidate.is_file() and candidate.suffix.lower() in IMAGE_SUFFIXES
+                       for candidate in root.glob(str(path.with_suffix(".*"))))
+        return any(candidate.is_file() for candidate in root.glob(pattern))
+    missing.extend(str(root / pattern) for pattern in patterns if not matches(pattern))
     missing.extend(str(root / names[0]) for names in alternatives
-                   if not any((root / name).is_file() for name in names))
+                   if not any(exists(name) for name in names))
     if missing:
         raise FileNotFoundError("resources must be unpacked and converted first; missing:\n- " +
                                 "\n- ".join(missing))
@@ -139,6 +149,7 @@ def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> in
         if path.suffix.lower() == ".wav" and path.with_suffix(".ogg").is_file():
             continue  # Embedded Ogg was extracted; copy the playable file only.
         relative = path.relative_to(source)
+        check_native_image(path, target / relative)
         copy_file(path, target / relative, force)
         copied += 1
     return copied
@@ -192,12 +203,10 @@ def install_base(resources: Path, project: Path, force: bool = False) -> tuple[i
         if folder.name in {"engine", "scr", "scenario", "saves", "tl"} or folder.name.startswith("."):
             continue
         output = game / folder.name
-        copied += copy_tree(folder, output, {".png", ".jpg", ".webp", ".ogg", ".wav", ".mpg"}, force)
+        copied += copy_tree(folder, output, {*IMAGE_SUFFIXES, ".ogg", ".wav", ".mpg"}, force)
         for metadata in folder.rglob(".meta.xml"):
             copy_file(metadata, output / metadata.relative_to(folder), force)
             copied += 1
-        convert_bmp_assets(folder, output)
-        convert_masks(folder, output)
     keywords = resources / "keywords.json"
     if keywords.is_file():
         read_keywords(keywords)  # Validate before enabling clickable links.

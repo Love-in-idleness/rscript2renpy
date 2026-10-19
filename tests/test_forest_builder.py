@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "forest"))
 from build_forest_rscript import (compile_credits_scene, compile_scene,
                                   language_patch_data, wiki_image_links)
-from port_resources import (convert_masks, copy_assets, copy_movies,
+from port_resources import (copy_assets, copy_movies,
                             read_keywords, strip_json_comments)
 from tsc_patches import menu_text, scene_strings
 from rscript_tsc import read_tsc
@@ -44,7 +44,7 @@ def main() -> None:
     assert 'replace("        ypos 639", "        ypos 556")' not in builder
     assert 'rscript_ctc_x = 747' in FOREST_COMPAT
     assert 'rscript_voice_format = "voice/%04d.ogg"' in FOREST_COMPAT
-    inline_graphic = "{rscript_g=%s:%d}"
+    inline_graphic = "{rscript_g=%03d:%d}"
     assert inline_graphic in FOREST_COMPAT
     assert FOREST_COMPAT.index('speaker = renpy.re.match') < \
         FOREST_COMPAT.index('return rscript_inline_graphics(text)')
@@ -128,10 +128,12 @@ def main() -> None:
     assert 'default object_size = {}' in definitions
     with TemporaryDirectory() as temporary:
         target = Path(temporary)
-        convert_masks(resources / "grps", target)
-        for name in ("ef11.png", "ef12.png"):
+        copy_assets(resources / "grps", "*.msk", target)
+        for name in ("ef11.msk", "ef12.msk"):
             with Image.open(target / name) as mask:
-                assert mask.format == "PNG" and mask.size == (800, 600)
+                assert mask.format == "BMP" and mask.size == (800, 600)
+            assert (target / name).read_bytes() == (resources / "grps" / name).read_bytes()
+            assert not (target / name).with_suffix(".png").exists()
         metadata_source = target / "metadata-source"
         metadata_source.mkdir()
         (metadata_source / ".meta.xml").write_text("<Canvas/>", encoding="utf-8")
