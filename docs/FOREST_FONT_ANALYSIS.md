@@ -1,10 +1,15 @@
-# Forest 汉化版默认字体分析
+# 开发参考：Forest 字体
+
+[返回文档目录](README.md)
+
+说明字体选择与混合文本度量的依据；更换字体请使用游戏设置。
+本文供适配开发查阅，样本和地址不代表其他引擎版本。
 
 ## 静态证据
 
-分析对象：`/home/idleness/Games/Forest/Forest_CHS_unpacked.exe`，PE32 x86。
+分析对象：`Forest/Forest_CHS_unpacked.exe`，PE32 x86。
 SHA-256：`94ab25e356d24d9a816ba7bcee6cb30fd6d0f664bbdbc24c000346b2f1b4bda9`。
-本次只做静态分析，没有启动 EXE 或记录 Windows GDI 实际选中的字体。
+该次分析只做静态分析，没有启动 EXE 或记录 Windows GDI 实际选中的字体。
 
 - `0x46336c`：`BA DA CC E5 00`，CP936 解码为「黑体」。
 - `0x46337c`：`82 6C 82 72 20 96 BE 92 A9 00`，CP932 解码为「ＭＳ 明朝」。
@@ -58,7 +63,7 @@ Windows 字体替代也可能造成差异。未经动态捕获，不声称原游
 因此，此次默认字体匹配并不等于截图中所有断点差异已解决。
 测试同时保留 Noto 的比例字体与 Wiki 标签度量回归用例。
 
-## 混合文本修复：选用英文更窄的默认字体
+## 混合文本与默认字体
 
 本机 SDK 的 `font.py` 默认使用 FreeType `auto` hinting。
 对 SimHei 实测 `auto-light`、`bytecode`、`none` 后，`Royal Host` 从

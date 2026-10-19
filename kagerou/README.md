@@ -1,176 +1,86 @@
 # KagerouTouryuuki 移植说明
 
-[返回主说明](../README.md) · [通用模板](../port_template/README.md)
+[返回主说明](../README.md)
 
 ## 概述
 
-本目录提供《霞外籠逗留記》的实验性 Ren'Py 8 工程生成器，包括原版剧本、
-可选中文资源和专用运行时。生成及自动测试不代表完整路线已经验证。
-**只支持安装了「ハチポチ特典」后的游戏；未安装特典的旧版不支持。**
-当前基准为 162 个 TSC 场景，包含特典剧情及更新后的鉴赏脚本。
-除用户允许沿用的启动视频流程外，专用行为先核对本作 EXE；
-未确认的效果明确降级，不猜测像素算法。仓库不包含游戏本体。
-以下命令均在仓库根目录执行。
+将用户自备的《霞外籠逗留記》资源生成 Ren'Py 8 工程。
+
+只支持安装「ハチポチ特典」后的游戏，未安装特典的旧版不支持。
+适配仍在完善。以下命令均在仓库根目录执行，环境安装见 [首次构建](../docs/SETUP.md)。
 
 ## 准备资源
 
-资源预处理依赖当前 [LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool)。
-保留原版与补丁各自的 EXE、原始 GSC，并在工作副本转换图像、音频和 TSC；
-不要覆盖手工修改过的脚本。当前 TSC 为 `modern-36`，混用 `modern` 与
-`rscript19` schema，不能整批强行指定成 Forest 方言。
+在安装特典后的游戏工作副本中转换：
 
-原版资源包括 `grpe/grpo/grpo_bu/grpo_ex/grps/bgm/voice/wav/mov/scr`。
-`0302` 虽设置了 `grpo_cut` 文件夹，但当前语料未从该槽加载图片，
-当前资源也无此归档，不将其列为必需目录；将来存在时按资源目录一起复制。
-保留 `grps` 的 `.meta.xml`；封装 WAV 中的 Ogg 必须先提取。
-生成器只读输入，不将游戏资源或 EXE 提交到本仓库。
+```bash
+liarsofttool -R --unpack-only --gsc-to-tsc -e cp932 /path/to/KagerouTouryuuki
+```
+
+保留原 `kagerou.exe`、`scr/*.tsc`、全部 `grp*` 图像目录及 `.meta.xml`、
+`bgm/voice/wav` 和 `mov`。中文补丁在自己的副本中单独转换。
+
+生成器需要已支持版本的 EXE 来读取布局；它不会执行或复制 EXE。
+资源副本中没有 EXE 时，用 `--exe /path/to/kagerou.exe` 指定。
 
 ## 生成工程
 
-首次生成不用 `--force`；重建前备份手工修改，再明确加上：
+```bash
+python3 kagerou/build_kagerou_rscript.py \
+    /path/to/KagerouTouryuuki /path/to/renpy/KagerouTouryuuki
+```
+
+输出目录可由脚本创建。重建前备份手工修改，并加上 `--force`。
+
+## 语言补丁
 
 ```bash
 python3 kagerou/build_kagerou_rscript.py \
     /path/to/KagerouTouryuuki /path/to/renpy/KagerouTouryuuki \
     --language jp --language zh=/path/to/KagerouTouryuuki_CHS
-/path/to/renpy-sdk/renpy.sh /path/to/renpy/KagerouTouryuuki
 ```
 
-生成器只读 TSC，不调用 LiarsoftTool。原版目录需要已审计的 `kagerou.exe`；
-资源副本不含 EXE 时用 `--exe /path/to/kagerou.exe` 指定只读引用。
-未确认 EXE 哈希会报错，不使用另一款游戏的坐标表代替。
-输出包含 `game/scr`、`game/tl/zh/scr` 和 `kagerou-build.json`，后者记录
-版本依据与限制。不复制原生 EXE、归档、源图编辑文件或原生存档。
+补丁必须匹配特典版。按原资源相对路径放置，只需提供修改的文件。
+语言包使用整场景覆盖，缺少译文的场景使用当前原版。
 
-只读审计入口：
+### 将旧中文补丁迁移到特典版
 
-```bash
-python3 kagerou/inspect_kagerou.py /path/to/KagerouTouryuuki \
-    --patch /path/to/KagerouTouryuuki_CHS
-```
+迁移工具以特典版日文 GSC 为模板，保留新版本流程并回填旧译文。
+原版资源不变，补丁安装前自动备份。
 
-JSON 包含 EXE 哈希、处理函数地址、脚本数量、schema、指令频次、补丁缺失
-场景和启动视频存在性。工具不执行 EXE，不解码 GSC，不改变输入文件。
-
-## 语言补丁
-
-当前原版有 162 个 TSC。中文补丁必须基于安装特典后的脚本重建，不能直接
-套用旧版的 140 场景补丁；缺少的场景回退当前原版。
-语言包按完整场景切换，图像与元数据按语言覆盖；不要求逐指令对齐，但补丁
-剧情改动也会一起生效。补丁 EXE 的两个字体字符集字节变化不证明剧本只有文本变化。
-
-旧中文 TSC 有 12 处命名入口缺少标签，应从原 GSC 按 GBK 重新导出，
-保留对应 `L_xxxxxx` 标签。手工修改过 TSC 时先对比译文，不能直接覆盖：
+先检查迁移结果：
 
 ```bash
-python3 tools/refresh_tsc.py /path/to/working-copy \
-    --liarsofttool /path/to/liarsofttool --encoding gbk --dialect kagerou --force
-```
-
-### 旧译文迁移到特典版
-
-中文 GSC 曾由编辑后的 TSC 生成。重建工具使用 LiarsoftTool 的 TXT 导出／导入：
-以新版日文 GSC 为模板，只回填旧中文的 TXT/TXA 姓名及正文；
-指令、跳转、数据块、命名入口和尾部表保留新版字节。
-按场景内对话顺序核对数量、语音与非文本参数，不按重复日文句子查找替换。
-无法对齐、无法 GBK 编码、TXT 无法无损表示时整批拒绝安装。
-
-```bash
-# 默认只验证，不替换文件。
 python3 kagerou/rebase_translation.py /path/to/patched-original /path/to/Chinese-patch \
-    --liarsofttool /path/to/LiarsoftTool/build/liarsofttool
-# 全部验证通过后安装，先备份旧 scr，再替换为重建后的 GSC/TSC。
-python3 kagerou/rebase_translation.py /path/to/patched-original /path/to/Chinese-patch \
-    --liarsofttool /path/to/LiarsoftTool/build/liarsofttool --apply
+    --liarsofttool /path/to/liarsofttool
 ```
 
-原版资源始终只读。备份位于补丁目录的 `kagerou-rebase-backup-*/scr`，
-同目录的 `rebase-report.json` 记录迁移结果与未翻译场景。
-若存在 `NNNN_zh.tsc`，优先采用这份编辑后的译文，原文件保存在备份中，
-安装时统一恢复为数字场景名 `NNNN.tsc`。旧 GSC 指令不导入新版模板。
-当前 `1501`～`1504` 有译文，`1505`～`1511` 尚未翻译，回退新版日文；
-不把未翻译的日文强制写成 GBK，也不生成假译文。
-
-## 适配说明
-
-依据见 [NATIVE_EVIDENCE.md](NATIVE_EVIDENCE.md)。
-`native.py` 的 EXCMD 调用模型已接入图层：加载、清除、寄存器 20、深度和队列。
-非焦点角色 `(4,50)` 像素算法未还原，明确扁平化为正常显示。
-坐标来自本作 EXE，不复制其他游戏的专用覆盖层。
-
-按用户确认，默认采用竖排、字号档 0、布局档 0：24px，物理区域
-`(114,30,646,480)`，首列在右上方，列从右向左排列；横排可通过方向键切换。
-等待提示使用原资源 `wait12/16/18/24` 的 60 帧动画，每 50ms 推进一帧，
-跟随末字位置；隐藏文本框同时清空当前文字页，防止跨场景残留。
-文字界面只读取当前页缓冲，不以 Ren'Py 保留的旧对话作为空页回退。
-隔离 SDK 测试执行日文／中文的实际 0999→1000，并检查清页后重建界面不恢复旧正文。
-端口的三个字号档统一为 24/18/12px，横竖切换不改变所选字号；
-原生方向相关字号常量只留在只读证据模型中，不直接作为 Ren'Py 的竖排字号。
-横/竖排文字区域和九个定位档来自 EXE。折行以文字区域的
-像素宽度（横排）或高度（竖排）为准，不再提供与原生预设冲突的任意字数设置。
-这个默认选择不读取旧 CFG，也不声称从 EXE 文件直接读出了竖排默认值。
-全屏使用 `tbox01/back.png` 及元数据原点。
-TXT 丢弃第一字符串，姓名保留在正文 `【姓名】` 中；
-整页追加、段落分隔、溢出清页、TXA 和 txcls 单独处理。
-旧段落按原生文字焦点开关淡化到 `128/255`，当前段落保持正常显示。
-共享字形度量处理折行、注音；语音按 `voice/<组>/<四位编号>.ogg` 查找。
-原图设置页的五组角色语音开关按语音编号除以 10000 的组号生效，不按立绘槽判断。
-默认全部开启；关闭只阻止该组后续播放及重播，不截断已经开始的语音。
-单个超长段落与自定义超大字号暂未实现段内分页。
-
-阅读面板使用 `grps/compane`，原生屏幕位置为 `(585,572)`；文字控制面板
-使用 `grps/excompane`，位置为 `(0,550)`。子控件原点来自各自 `.meta.xml`。
-已核实并接入方向、字号、九宫定位、文字阴影、旧段落淡化、立绘定位及字体选择；
-阅读面板提供跳过、回退、自动、重播语音、隐藏界面与文本框透明度。
-`bak`（Back）按移植版操作约定，与滚轮向上共用 Ren'Py 回滚，不再打开文字记录页；
-禁止回滚的片段和回滚边界同样生效。这一点有意不同于原版 EXE。
-字体选择使用跨平台字体列表，阴影使用 Ren'Py 的近似绘制，均非原生像素复刻。
-非焦点角色按 EXE 的 RGB 查表变暗（强度 50 对应比例 129/256），不降低轮廓透明度。
-`lctr` 可关闭／恢复变暗效果，立即刷新当前立绘；焦点来自寄存器 20。
-透明边缘的 GPU 混合舍入不保证与原生软件渲染逐像素一致。
-
-0999 返回后继续调用 1000，无需改动原剧本。公共 `_gosub/_insub` 在写入参数
-寄存器前先求值目标和全部参数，避免 `_r[10]` 保存的 1000 被参数 0 覆盖，
-错误进入 `_0000` 标题场景。
-
-启动视频仅进程启动时按 `0002.mpg`、`0001.mpg` 播放存在文件，返回标题不
-重复播放。当前资源缺少 `0001.mpg`，警告后跳过，不用结局视频代替。
-`0003.mpg` 属于五处结局调用，保留，不加入启动流程。
-
-## 验证与限制
+确认报告后执行安装：
 
 ```bash
-python3 -B tests/test_kagerou_native.py \
-    /path/to/KagerouTouryuuki /path/to/KagerouTouryuuki_CHS
-python3 -B tests/test_kagerou_builder.py \
-    /path/to/KagerouTouryuuki /path/to/KagerouTouryuuki_CHS
-python3 -B tests/run_kagerou_port.py /path/to/renpy/KagerouTouryuuki /path/to/renpy-sdk
+python3 kagerou/rebase_translation.py /path/to/patched-original /path/to/Chinese-patch \
+    --liarsofttool /path/to/liarsofttool --apply
+```
+
+备份位于补丁目录的 `kagerou-rebase-backup-*/scr`，结果见 `rebase-report.json`。
+无法对齐的场景不会强行写入；没有译文的特典场景保留日文。
+
+## 使用说明
+
+默认竖排。文字面板可以切换横竖排、字号、位置、阴影和字体，
+切换方向不会改变所选字号。Back 与滚轮向上都执行回滚。
+
+角色语音开关位于原图设置页。CG、场景和音乐鉴赏使用特典版脚本及资源。
+启动视频只在打开游戏时播放，缺少的视频会跳过。
+
+## 检查与已知限制
+
+```bash
 /path/to/renpy-sdk/renpy.sh /path/to/renpy/KagerouTouryuuki lint
 ```
 
-原生模型测试检查表读取、162 个特典版场景和输入哈希不变。
-TXT 迁移回归：`python3 -B tests/test_kagerou_rebase.py /path/to/liarsofttool`，
-检查导出／导入、非文本字节一致、备份、编辑译文优先级及错误拒绝。
-隔离 SDK 命令检查实际寄存器间接调用、初始化、资源查找、EXCMD 队列/深度/清除、
-整页文字、原生竖排布局、预设切换、段落淡化及两个面板屏幕，
-以及音乐鉴赏的选择、播放状态、首尾边界和临时音量；不进入正式游戏，不使用正式存档。
-转场检查覆盖实际剧本参数的毫秒计时、白色转场双阶段、零步数默认值、
-寄存器参数和队列提交；除效果 2 外，Forest/Khime 保留原计时配置。
-update 2 按 EXE 的 4×4 位掩码实现点阵替换，并非马赛克；
-只读原生模型核对掩码表，公共 GL2 检查每个阶段和缩放后的像素。
-隔离图形检查可在 `run_kagerou_port.py` 命令末尾追加截图目录，输出
-`vertical.png`、`horizontal.png`、`preferences-jp.png`、`preferences-zh.png`，
-绘制测试文字、操作面板和角色语音开关；另输出日中 0999→1000 转场截图。
-音乐页检查使用合成 WAV 验证解码结束自动切曲、暂停和退出清理，另输出
-`music-jp.png`、`music-zh.png`；不代表实际游戏音频或声卡听感已验证。
-特典版的 CG／场景鉴赏使用本版 `0201/0301/0302` 剧本生成，不沿用旧版入口；
-实际解锁和鉴赏流程仍需游玩验证。音乐鉴赏接入原脚本系统编号 7，使用
-`muscmenu` 原图及元数据，支持选择、播放、暂停、前后曲和临时音量。
-最后一曲结束后停止并选回第一曲，退出不恢复原 BGM；设置/存读档使用公共界面。
-非焦点立绘已按原生 RGB 算法实现，转场已改为原生毫秒计时。
-遮罩转场的精确像素及 Windows 等待调度、原生记录页外观/分页、
-原生 CFG/存档导入仍未完成；普通不支持
-效果在生成脚本中保留扁平化注释，EXCMD 限制写入构建清单。
-lint 提示非 ASCII 素材名及原脚本疑似不可达段，不等于完整游玩证明。
-生成器还检查 TXT 的语音资源引用；缺少 Ogg/WAV 时警告并记录，不编造音频。
-实际画面、语音、视频解码、完整路线和安卓实机仍需用户验证。
+超长段落的段内分页、部分转场、原生记录页外观和原版存档导入尚未完成。
+请检查实际排版、语音、鉴赏、完整路线及 Android。
+
+开发检查：`tests/test_kagerou_native.py`、`tests/test_kagerou_builder.py`、
+`tests/run_kagerou_port.py`。原程序依据见 [开发参考](NATIVE_EVIDENCE.md)。

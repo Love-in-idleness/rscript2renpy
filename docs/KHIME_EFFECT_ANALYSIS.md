@@ -1,4 +1,9 @@
-# Khime 对象效果静态分析
+# 开发参考：Khime 图像效果
+
+[返回文档目录](README.md)
+
+列出对象效果、遮罩及颜色混合的已确认参数。
+本文供适配开发查阅，样本和地址不代表其他引擎版本。
 
 依据用户持有的 `KhimeDL_CHS.exe`，不分发可执行文件。
 SHA-256：`522bec3e93340ffd3bdb24ba98cfb775f80df9d85460819da840d824ad4822a8`。
@@ -33,6 +38,6 @@ Khime 实际资源名为大写 `ES101.png` 等，生成兼容检查必须忽略�
 静态分析和 lint 不等于原版视觉一致。未确认效果继续扁平化并注释。
 效果 0 的文本对象保留既有 Forest 淡入行为。
 
-自动验证：`python3 -B tests/test_shared_port.py /opt/apps/renpy`，
+自动验证：`python3 -B tests/test_shared_port.py /path/to/renpy-sdk`，
 在独立测试工程检查真实 shader 编译、反色/白色像素、队列执行和文本对象效果。
 人工对照入口：1102（19）、1110（文本 4）、7501（clear 10）、7503（load 15）。

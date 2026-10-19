@@ -1,119 +1,76 @@
 # Khime Kusaritop 移植说明
 
-[返回主说明](../README.md) · [通用模板](../port_template/README.md)
+[返回主说明](../README.md)
 
 ## 概述
 
-本目录使用公共 `runtime/` 与 `port_template/`，将用户自备的 Khime 资源
-生成 Ren'Py 8 工程。Khime 的音频命名、提示图坐标和界面指令由
-`khime/game/*.rpy` 补充，不在复制后改写共用运行时。
-仓库不包含游戏本体；以下命令均在仓库根目录执行。
+将用户自备的《腐り姫》资源生成 Ren'Py 8 工程，可选接入外传《帰省 ～jamais vu～》。
+以下命令均在仓库根目录执行，环境安装见 [首次构建](../docs/SETUP.md)。
 
 ## 准备资源
 
-需要 Python 3、Pillow、Ren'Py 8 SDK，以及当前
-[LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool)。
-先在合法持有的游戏副本中完成解包和转换：
-
 ```bash
-liarsofttool -R --unpack-only --gsc-to-tsc /path/to/Khime
+liarsofttool -R --unpack-only --gsc-to-tsc -e cp932 /path/to/Khime
 ```
 
-输入使用当前 `legacy-28/early` 命令式 `scr/*.tsc`，不接受旧转储或 GSC。
-资源目录包括 `grpe/grpf/grpo/grpo_ex/grpo_tp/grpp/grps/bgm/voice/wav/mov`；
-图像需转换，保留 `grps` 下的 `.meta.xml`。封装 Ogg 的 WAV 必须先提取，
-不能当成普通 WAV 播放。原始 MPG 直接保留，不重新编码。
-原 GSC 的编码需按输入指定，不由语言标签决定，详见
-[主说明](../README.md#依赖与资源预处理)。
+保留 `scr/*.tsc`、`grp*` 图像目录、`.meta.xml`、`bgm/voice/wav` 和 `mov`。
+封装在 WAV 中的 Ogg 应先提取；普通 PCM WAV 和原始 MPG 可以直接使用。
+补丁单独转换，编码按实际文件选择。
 
 ## 生成工程
 
 ```bash
-python3 khime/build_khime_rscript.py \
-    /path/to/Khime /path/to/renpy/Khime
+python3 khime/build_khime_rscript.py /path/to/Khime /path/to/renpy/Khime
 ```
 
-输出目录无需预先创建。脚本会编译全部 TSC 场景，直接调用 `port_template.build_port`
-安装共用运行时和资源。默认拒绝覆盖不同内容的文件，确认重建时加 `--force`。
-生成工程保留原资源目录；剧本在 `game/scr/`，解释器、公共界面和游戏补丁在
-`game/engine/`。不迁移旧 `images/scenario/audio` 布局或根目录旧运行时，
-即使 `--force` 也会报错；请生成到新的工程目录。
+输出目录可由脚本创建。重建前备份手工修改，并加上 `--force`。
+从旧版生成器升级时，建议使用新的输出目录。
 
 ## 语言补丁
 
-支持 `--language jp` 设置原版标签，以及 `--language zh=/path/to/patch`
-添加语言补丁；参数可以重复。例如：
-
 ```bash
-python3 khime/build_khime_rscript.py \
-    /path/to/Khime /path/to/renpy/Khime \
+python3 khime/build_khime_rscript.py /path/to/Khime /path/to/renpy/Khime \
     --language jp --language zh=/path/to/Khime.zh
 ```
 
-补丁目录可只含修改的 `scr/*.tsc` 和转换后的图像、音频、
-`keywords.json`。公共补丁对齐允许新增字幕及配套等待/清除，并校验跳转重定位；
-非文本参数只接受 lowerer 明确允许的显示/音频等指令，不允许改变剧情逻辑。
-通用模板会把补丁中的 CodeX 32 位 BMP（包括 `grpo_tp/*.bmp`）按反向透明度
-转换为语言专用 PNG，用于替换标题等图像。
-可翻译对话、追加文本、文本对象、选项和问题，缺少的场景使用原版。
-5000 按语言整体替换仍只属于 Forest。
+`--language jp` 命名原版语言，`--language zh=目录` 添加补丁。
+补丁按原资源的相对路径放置，只需提供修改的 TSC、图像和音频。
 
-## 适配说明
+支持翻译对话、追加文字、选项与文字对象，以及添加字幕和配套等待、清除指令。
+普通补丁不能任意修改剧情逻辑；缺少的场景使用原版。
+CodeX BMP 的透明度由 LiarsoftTool 预处理，生成器直接复制图片。
 
-Khime 默认字号 29、对话每行 21 字、叠加文本每行 20 字、行距 −5；已有玩家设置保留。
-标题的设置按钮打开公共 `rscript_title_preferences`：字体、字号、对话/文本对象
-每行字数、行距、语言、Wiki 和持久化备份/恢复/清除。
-游戏内仍使用原图音量、存读档设置，并提供 Text Settings 入口。
-显示速度由游戏内设置控制。
-打开游戏时，共用 `splashscreen` 依次播放原始 `mov/0002.mpg`、`mov/0001.mpg`；
-返回标题不会重复触发启动视频，结局剧本原有的 `_movie` 调用仍保留。
+### 可选外传
 
-设置菜单、存读档和对话控制条由通用模板读取 `grps` 的 PNG 与 `.meta.xml`
-生成；标题画面仍由 Khime 脚本的点击区域控制。
-共用光标、字体与图标的授权见 [第三方声明](../THIRD_PARTY_NOTICES.md)。
-
-### 可选外传《帰省 ～jamais vu～》
-
-本篇照常生成，追加下列参数接入用户自备的 Khime Zero 和翻译补丁：
+准备好外传及补丁后追加参数：
 
 ```bash
-python3 khime/build_khime_rscript.py --force \
-    /path/to/Khime /path/to/RenPy-Khime \
+python3 khime/build_khime_rscript.py /path/to/Khime /path/to/renpy/Khime \
     --language jp --language zh=/path/to/Khime.zh \
     --khime-zero /path/to/Khime_zero \
     --khime-zero-language zh=/path/to/Khime_zero.zh
 ```
 
-这一版只接入外传 `scr/2001.tsc`，使用当前 LiarsoftTool 的 `legacy-28/early`
-命令格式，不接入其标题和其他场景。所有资源依旧由用户自行解包、转换。
-外传图片、姓名牌与音频放入 `khime_zero/` 命名空间，语言资源也有独立子目录，
-不会覆盖本篇同编号素材。补丁与本篇共用 `zh` 等语言标签，缺少译文时回退原文。
-640×480 的图片和对象坐标等比放大 1.25 倍到 800×600；对话沿用本篇文字设置。
-外传存档使用其原始 `grps/dt1_1001.png` 红色图标和 `grps/dt2_0001.png`
-章节横幅，按顺序并排放大 1.25 倍。图片路径写入存档元数据，因此在本篇
-存读档页也能正确显示；修复前的外传存档需要读入后重新保存才会补上这些信息。
+目前接入外传的 `scr/2001.tsc`，不接入它的独立标题。
+入口在本篇原标题满足解锁条件后显示，外传资源不会覆盖本篇同编号图片。
+未提供外传补丁时使用原文。
 
-主标题在“狐狸娶亲”（9105）与“退出”（9106）之间新增图片入口，
-普通/悬停图分别来自外传 `grpo/0001.png` 与 `grpo/0101.png`。
-沿用原标题的持久寄存器 `7901 == 1` 解锁条件：未解锁不显示入口且不能进入；
-解锁后将退出行下移 35px，保留独立点击区域。外传结束或从菜单返回标题会重置
-运行时，不会把外传 CG 编号写入本篇解锁寄存器；本篇进度和玩家文字设置不清除。
+## 使用说明
 
-优先播放转换后的 OGG；外传 BGM 尚存的标准 PCM WAV 可直接使用，无需 ffmpeg。
-封装 OGG 的 WAV 必须先由 LiarsoftTool 提取，不接受假 WAV。
-早期 BGM 淡入/淡出时长尚未确认，暂为无渐变播放，并在生成位置注明。
+标题设置可以调整字体、字号、行字数、行距、语言及系统进度。
+默认字号 29，对话每行 21 字宽；显示速度和音量在游戏内设置中调整。
+启动视频每次打开游戏只播放一次，返回标题不重播。
 
-## 验证与限制
+共用光标、字体与图标授权见 [第三方声明](../THIRD_PARTY_NOTICES.md)。
+
+## 检查与已知限制
 
 ```bash
-python3 -B tests/test_khime_builder.py /path/to/Khime
-python3 -B tests/test_khime_zero.py
-python3 -B tests/test_shared_port.py /path/to/renpy-sdk --logic-only
 /path/to/renpy-sdk/renpy.sh /path/to/renpy/Khime lint
 ```
 
-当前适配已支持脚本跳转、选择、标题图像点击、基础画面、文字和音频指令。
-通用模板会检查运行时能力和效果遮罩；尚未实现的图像效果在生成时降级，
-RPY 对应位置保留原参数注释。数字显示控件仍缺乏原游戏的视觉匹配。
-原生游戏、补丁与外传的画面、音频、字幕时序、完整路线和旧存档兼容性仍需
-实际游玩确认；测试与 lint 不代替这些验证。不发布游戏本体或构建后的游戏包。
+部分图像效果及数字控件尚未完全还原，外传 BGM 暂无淡入淡出。
+请检查完整路线、鉴赏、字幕、音频及旧存档；Android 需另行测试。
+
+开发测试：`tests/test_khime_builder.py`、`tests/test_khime_zero.py`、
+`tests/test_shared_port.py`。引擎行为分析见 [开发参考](../docs/README.md#开发参考)。

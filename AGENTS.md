@@ -2,41 +2,45 @@
 
 ## 开始工作
 
-- 使用 `rg` 搜索源码。先检查 `git status --short`，保留已有修改与未跟踪资源。
-- 阅读 `README.md`；公共层改动参考 `docs/SHARED_TEMPLATE_MIGRATION.md`，文字布局改动参考 `docs/TEXT_WRAPPING.md`。
-- 本机路径集中在被 Git 忽略的 `local.paths.toml`。使用前检查路径存在及资源格式；配置记录位置，不证明资源已完整转换。
-- 路径配置格式见 `local.paths.example.toml`，读取方式与权限加载说明见 `docs/LOCAL_WORKFLOW.md`。
-- 项目级 Codex 权限在 `.codex/config.toml`；保存配置不代表当前聊天已重新加载权限。
-- 跨仓库修改前阅读 LiarsoftTool 的 `AGENTS.md`。资源转换、GSC/TSC 格式与编码归 LiarsoftTool；Ren'Py lowering、模板与运行时归本仓库。输出契约改变时验证两侧，不能只修改消费者绕过上游错误。
+- 先检查 Git 状态，保留用户已有改动；使用 `rg` 搜索。
+- 阅读 README 和受影响游戏的说明。路径配置见 `local.paths.example.toml`，
+  本机路径保存在不入库的 `local.paths.toml`。
+- 跨仓库任务同时阅读 LiarsoftTool 的 AGENTS.md。资源转换属于 LiarsoftTool，
+  TSC 编译、Ren'Py 运行时和界面属于本仓库。
 
-## 修改归属
+## 实现边界
 
-- 通用指令、图层、音频和文字运行时放在 `runtime/`；共享构建、资源及界面放在 `port_template/`。
-- 游戏方言和专用行为留在 `forest/`、`khime/` 的生成器或 `game/` 覆盖层。
-- 持久修复必须修改仓库源码，再由生成器同步目标工程；不要只改生成工程，或对复制后的公共运行时做字符串替换。
-- 公共能力改动同时检查 Forest 与 Khime；生成前确认资源、语言补丁、输出路径和已有手工修改。Forest 会覆盖生成文件，Khime 的 `--force` 只能用于确认可以覆盖的目标。
-- 原版及语言补丁资源只读使用。游戏资源、生成工程、存档和签名密钥不得提交。
-- 不支持的效果在对应转换处扁平化，并用生成注释保留原值和原因。未知 opcode 不凭空补全语义，记录证据与未确认部分。
-- 界面修复先查看原图或用户截图，复用现有视觉控件和布局。
+- 通用代码放在 `runtime/`、`port_template/`，方言与游戏差异放在适配目录。
+- 不复制公共代码长期分叉，不对安装后的代码做字符串补丁；修复必须写回生成器或模板。
+- 未知语义根据本游戏 EXE、脚本和实际表现确认，不套用其他游戏的猜测。
+- 原件只读；转换用副本，测试用临时工程。游戏素材、生成工程、存档、密钥和个人路径不提交。
+- 覆盖前检查手工修改，遵守各生成器的覆盖规则。不要自动安装管理员依赖或执行未知 EXE。
+
+## 文档写法
+
+- README 面向使用者：项目用途、依赖、准备资源、生成命令、补丁和必要限制。
+- 采用用户提供的中文写法，英文与中文信息对齐，不自行扩写一套功能。
+- 写短句和直接步骤。不要把错误处理细节、兼容旧数据的分支、内部字段、
+  回归测试流水账、提交过程和反复的免责声明塞进用户指南。
+- 游戏 README 统一为：概述、准备资源、生成工程、语言补丁、使用说明、检查与已知限制。
+- 逆向地址、哈希、参数表和必要实现依据放在明确标识的开发参考，保留事实与未知项。
+  不把静态结论写成实际游玩结果。
+- 主 README 链接各游戏说明；文档目录区分使用指南与开发参考。
+- 参数、示例和本地链接须核对当前源码。删除功能时同步清理引用。
+- 许可证、版权和来源信息完整保留；不因简化文字而改变授权含义。
 
 ## 验证
 
-- 按改动选择相关检查，不为纯文档或路径配置改动运行游戏测试。
-- 基础检查：`python3 -B tests/test_runtime.py`、`python3 -B tests/test_port_template.py`、`git diff --check`。
-- 文件安装：`python3 -B tests/test_file_install.py`（失败注入、权限、元数据及输入输出重叠）。
-- 编译及字幕补丁：`python3 -B tests/test_tsc_compiler.py`、`python3 -B tests/test_tsc_patches.py`。
-- 公共层：`python3 -B tests/test_shared_port.py`；需要真实 SDK 检查时追加本机配置中的 SDK 路径。
-- Forest：`python3 -B tests/test_forest_builder.py <资源目录>`、`python3 -B tests/test_forest_validation.py`；资源检查先查看 `tests/test_forest_resources.py --help`。
-- Khime：`python3 -B tests/test_khime_builder.py <资源目录>`。
-- 文字：`python3 -B tests/test_text_wrap.py`；SDK 内部接口或布局改动还需 `python3 -B tests/run_native_text_wrap.py <SDK目录>`。
-- 触屏控制：`python3 -B tests/run_touch_controls.py <SDK目录>`。独立测试工程使用临时存档，不操作正式游戏进度。
-- 同步完整工程后执行 `<SDK目录>/renpy.sh <工程目录> lint`。SDK 升级后重跑相关原生测试。
-- 实际游戏画面、音频、路线、旧存档和安卓实机验证由用户完成；未经明确请求不启动正式游戏。独立自动测试只能证明其覆盖的行为。
-- 分开报告静态检查、自动测试、lint、人工验证；说明未运行的检查和既有失败，不把 lint 当作完整游玩证明。
+- 文档改动检查链接、标题、命令参数和 `git diff --check`，不为纯文档更新运行完整游戏。
+- 公共代码检查 `tests/test_runtime.py`、`tests/test_port_template.py`。
+- 文件安装检查 `tests/test_file_install.py`；原生图像检查 `tests/test_native_images.py`。
+- 编译与补丁检查 `tests/test_tsc_compiler.py`、`tests/test_tsc_patches.py`。
+- 共享工程检查 `tests/test_shared_port.py <SDK> --logic-only`，另做受影响游戏的测试和 lint。
+- 文字、触屏改动分别使用 `tests/run_native_text_wrap.py`、`tests/run_touch_controls.py`。
+- 画面、音频、路线、旧存档和 Android 由实际运行确认，报告中区分测试与实机结果。
 
-## Git 与权限
+## Git
 
-- 提交只包含当前任务的文件；不要混入已有改动。每项独立任务验证后及时本地提交，未明确要求不推送。
-- 按当前 README 维护源码，不创建新的 GitHub Release 或版本包。
-- 优先使用当前合适的 checkout；需要新分支时使用 `codex/` 前缀。
-- 管理员权限操作须先说明目的和具体命令并获得授权。不要通过其他工具绕过目录权限。
+- 独立任务验证后本地提交，只提交当前任务文件；用户要求暂不提交时照做。
+- 未明确要求不推送，不发布 Release，不提高版本号或安卓要求。
+- 优先使用当前 checkout；需要新分支时用 `codex/` 前缀。

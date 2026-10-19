@@ -1,4 +1,9 @@
-# Khime 图片菜单与鼠标命中
+# 开发参考：Khime 点击与菜单
+
+[返回文档目录](README.md)
+
+说明按钮命中、关联图和图层清理的原生行为。
+本文供适配开发查阅，样本和地址不代表其他引擎版本。
 
 只读分析用户提供的 `KhimeDL_CHS.exe`，不运行或分发 EXE。
 SHA-256：`522bec3e93340ffd3bdb24ba98cfb775f80df9d85460819da840d824ad4822a8`。
@@ -26,7 +31,7 @@ PE32，ImageBase `0x400000`，以下地址均为 VA。
   图号（`+0x30/+0x38/+0x3a`）。队列模式也先复位元数据，绘制可稍后执行。
   `resetclk 0` 仍由 `0x4239a4` 跳过，不等于全局复位。
 
-## 移植修复与边界
+## 适配策略
 
 之前 Khime 没启用公共原生点击语义：把槽 0 当作本体替换图及命中位置，
 并在 `cls` 后保留旧绑定。于是 0501 的提示图层 41 重新成为旧的“画像鉴赏”
@@ -38,13 +43,7 @@ Khime 现在声明 `rscript_click_link_is_preview` 与 `rscript_click_native_eff
 不把本 EXE 的规则强套给其他引擎版本。没有修改或清除玩家存档。
 归省入口改为识别标题按钮本体 `9006`，不再依赖旧的悬停替换图 `9106`。
 
-回归：`tests/test_shared_port.py /opt/apps/renpy` 覆盖队列清除、提示图层复用、
+回归：`tests/test_shared_port.py /path/to/renpy-sdk` 覆盖队列清除、提示图层复用、
 无关联图的曲目按钮、关联图与命中坐标分离及两槽显示；独立图形测试覆盖鼠标
 进入/离开、双关联图、像素和点击返回值。实际 Khime 三个菜单及旧存档仍需人工检查。
 `tests/test_khime_zero.py` 同时检查新悬停模式下的外传入口及返回标题。
-
-此次本机整套资源 smoke-check 的边界：`0_Package/星空流星/Khime` 的
-`scr/0000.tsc:5` 仍是旧式未引用字符串 `*jump 1 0`，被当前解析器拒绝；
-`KhimeKusaritop` 的场景编译通过，但缺少 `grps/confscrn` 元数据使界面资源
-断言失败。本次只同步已核对无手工改动的运行时/覆盖层，没有重写这些资源。
-隔离 lint 退出码为 0，仍报告既有重复 default、不可达语句及 Forest 非 ASCII 文件名。

@@ -1,4 +1,6 @@
-# SimHei（黑体）说明 / Notice
+# SimHei 字体授权 / Font notice
+
+[第三方资源说明 / Third-party notices](../../THIRD_PARTY_NOTICES.md)
 
 `simhei.ttf` 用于匹配 Forest 汉化版默认正文所请求的 Windows 字体。
 它来自本机已安装的字体，不是从游戏 EXE 提取出来的字体文件。
