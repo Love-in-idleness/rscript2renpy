@@ -117,7 +117,7 @@ def main() -> None:
         assert "_oload effect 4 flattened to 0" not in credits
         assert "_oload 20 400 188 4 0" in credits
         assert "unsupported text control ^fm flattened to empty" not in credits
-        assert "'^fm企画・シナリオ'" in credits
+        assert repr(credit_tsc.string(first_font.operands[5])) in credits
         for name in ("04_rscript_audio.rpy", "character.rpy", "keymap.rpy",
                      "03_rscript_gfx.rpy", "00_rscript_wrap.rpy", "rscript_wrap.py"):
             assert (project / "game" / "engine" / name).read_bytes() == (ROOT / "runtime" / name).read_bytes()
