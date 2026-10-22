@@ -2,15 +2,30 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 from install_runtime import install, copy_file, write_script  # noqa: E402
+import install_runtime
 
 
 def main() -> None:
+    with TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        runtime = root / "runtime"
+        (runtime / "__pycache__").mkdir(parents=True)
+        (runtime / "engine.rpy").write_text("label fixture:\n    return\n")
+        (runtime / "engine.rpyc").write_bytes(b"stale cache")
+        (runtime / "__pycache__/engine.pyc").write_bytes(b"host cache")
+        project = root / "project"
+        (project / "game").mkdir(parents=True)
+        with patch.object(install_runtime, "RUNTIME", runtime):
+            installed = install(project)
+        assert [path.name for path in installed] == ["engine.rpy"]
+        assert not (project / "game/engine/__pycache__").exists()
     files = sorted((ROOT / "runtime").glob("*.rpy"))
     assert len(files) == 20
     combined = "\n".join(path.read_text(encoding="utf-8") for path in files)

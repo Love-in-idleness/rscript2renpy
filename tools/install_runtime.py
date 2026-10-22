@@ -25,7 +25,9 @@ def install(project: Path, force: bool = False) -> list[Path]:
     if not game.is_dir():
         raise ValueError("Ren'Py game directory not found: %s" % game)
 
-    sources = sorted(path for path in RUNTIME.rglob("*") if path.is_file())
+    sources = sorted(path for path in RUNTIME.rglob("*") if path.is_file()
+                     and "__pycache__" not in path.parts
+                     and path.suffix not in (".pyc", ".rpyc"))
     legacy_paths = [source.relative_to(RUNTIME) for source in sources]
     reject_legacy_paths(game, legacy_paths + [path.with_suffix(".rpyc")
                                             for path in legacy_paths if path.suffix == ".rpy"])
