@@ -162,8 +162,10 @@ def main() -> None:
         save_ui = (project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
         save_ui += (project / "game" / "engine" / "ui_features.rpy").read_text(encoding="utf-8")
         assert 'data["rscript_dt1"] = int(store._r[1])' in save_ui
-        assert 'FileJson(slot, key="rscript_dt1")' in save_ui
-        assert 'grps/dt1_%04d.png' in save_ui
+        assert 'data["rscript_dt2"] = int(store._r[2])' in save_ui
+        assert 'for prefix in ("dt1", "dt2"):' in save_ui
+        assert 'FileJson(slot, key="rscript_" + prefix)' in save_ui
+        assert 'grps/%s_%04d.png' in save_ui
         assert 'key "game_menu" action Function(rscript_open_game_menu)' in (
             project / "game" / "engine" / "grps_ui.rpy").read_text(encoding="utf-8")
         assert 'key "rollback" action rscript_ui_action(("rollback",))' in (

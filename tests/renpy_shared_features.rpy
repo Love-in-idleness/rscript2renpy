@@ -275,6 +275,17 @@ python early:
         try:
             store.FileJson = lambda slot, key: 707 if key == "forest_dt1" else None
             assert rscript_slot_image(1) is None  # Missing dt1 does not try to load a missing image.
+            store.FileJson = lambda slot, key: 1000 if key == "rscript_dt1" else None
+            assert rscript_slot_image(1) == "grps/dt1_1000.png"
+            old_loadable = renpy.loadable
+            try:
+                store.FileJson = lambda slot, key: {"rscript_dt1": 1000, "rscript_dt2": 1}.get(key)
+                renpy.loadable = lambda path, **kwargs: path in {"grps/dt1_1000.png", "grps/dt2_0001.png"}
+                card = rscript_slot_image(1)
+                assert [child.filename for child in card.children] == ["grps/dt1_1000.png", "grps/dt2_0001.png"]
+                assert card.style.fit_first
+            finally:
+                renpy.loadable = old_loadable
         finally:
             store.FileJson = old_json
         old_loadable = renpy.loadable

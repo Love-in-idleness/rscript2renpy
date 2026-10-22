@@ -119,7 +119,9 @@ python early:
 
 
         persistent.seen_cg[img] = True
-        _r[9000 + args.CGNum] = 1
+        if rscript_cg_register_limit is None or args.CGNum < rscript_cg_register_limit:
+            _r[9000 + args.CGNum] = 1
+        RScriptReg._persistent_dirty = True
 
     def predict_gload(args):
         img = "grpe %04d" % args.CGNum

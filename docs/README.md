@@ -10,6 +10,7 @@
 - [Evermaiden](../evermaiden/README.md)
 - [CannonBall](../cannonball/README.md)
 - [KagerouTouryuuki](../kagerou/README.md)
+- [SevenBridge（日文版）](../sevenbridge/README.md)
 - [第三方资源与授权](../THIRD_PARTY_NOTICES.md)
 
 ## 开发参考
@@ -25,6 +26,7 @@
 - [Evermaiden 运行时](EVERMAIDEN_RUNTIME_GAPS.md)
 - [CannonBall 引擎行为](../cannonball/NATIVE_EFFECTS.md)
 - [Kagerou 原程序依据](../kagerou/NATIVE_EVIDENCE.md)
+- [SevenBridge 原程序依据](../sevenbridge/NATIVE_EVIDENCE.md)
 - [2026-10-12 公共层整理记录](OPTIMIZATION_REPORT_2026-10-12.md)
 
 原生参考中的地址和结论只适用于标明哈希的构建，不是所有游戏共用的规范。

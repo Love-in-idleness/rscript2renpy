@@ -32,6 +32,20 @@ python early:
             for key in range(first, min(last, 9999) + 1):
                 store._r[key] = value
 
+    def parse_getflag(lex):
+        args = rscript_arguments(lex, ["Flag", "Mark"])
+        lex.expect_eol()
+        return args
+
+    def execute_getflag(args):
+        # SBridge_jp.exe 421670: mark bank-0 bits, or query one into register 0.
+        key = "grpe %04d" % (args.Flag & 0xffff)
+        if args.Mark:
+            persistent.seen_cg[key] = True
+            RScriptReg._persistent_dirty = True
+        else:
+            store._r[0] = int(bool(persistent.seen_cg.get(key, False)))
+
     def execute_dynsel(value):
         prompt, append = eval(value)
         if not append:
@@ -118,6 +132,7 @@ python early:
     renpy.register_statement("_rscript_locmode", parse=parse_rscript_locmode,
                              execute=execute_rscript_locmode)
     renpy.register_statement("_flagset", parse=parse_flagset, execute=execute_flagset)
+    renpy.register_statement("_getflag", parse=parse_getflag, execute=execute_getflag)
     renpy.register_statement("_dynsel", parse=parse_rscript_expression, execute=execute_dynsel)
     renpy.register_statement("_dynans", parse=parse_rscript_expression, execute=execute_dynans)
     renpy.register_statement("_dynnext", parse=parse_rscript_expression, execute=execute_dynnext)

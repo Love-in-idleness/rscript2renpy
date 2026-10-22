@@ -48,6 +48,15 @@ def main():
                           '*return @2\n*end\n', encoding="utf-8")
         result = compile_scene(source, adapter="modern")
         assert "_return _r[2]\n    _end" in result
+        source.write_text(";@gsc-byte-format modern-36\n;@gsc-schema rscript18\n"
+                          '*locmode 0 0 0\n*se 3\n*se_on 999 0 0\n'
+                          '*se_off 0\n*getflag @100 1\n*getflag 23 0\n'
+                          '*jump 1 ""\n', encoding="utf-8")
+        result = compile_scene(source, adapter="modern")
+        assert "_locmode 0 0 0" in result
+        assert "_se 0 3\n    _se_on 0 999 0 0\n    _se_off 0 0" in result
+        assert "_jump 1\n" in result
+        assert "_getflag _r[100] 1\n    _getflag 23 0" in result
         modern = ";@gsc-byte-format modern-36\n;@gsc-schema modern\n"
         trailer = (struct.pack('<4I', 0, 1, 0, 46) + b'\0TOP1\0').hex()
         named = modern + ';@gsc-trailer-header 8 6\n;@gsc-trailer ' + trailer + '\n'

@@ -28,3 +28,8 @@ base_language = "jp"
 
 [khime.patches]
 zh = ""
+
+[sevenbridge]
+resources = ""
+project = ""
+base_language = "jp"

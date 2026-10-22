@@ -177,13 +177,20 @@ init python:
                 zoom = 1.0
             return HBox(*(Transform(Image(rscript_image_path(path)), zoom=zoom) for path in images), spacing=0)
         # Keep existing Forest saves readable; all new saves use the shared key.
-        number = FileJson(slot, key="rscript_dt1")
-        if number is None:
-            number = FileJson(slot, key="forest_dt1")
-        if isinstance(number, int) and number > 0:
-            path = rscript_image_path("grps/dt1_%04d.png" % number)
-            if renpy.loadable(path):
-                return path
+        cards = []
+        for prefix in ("dt1", "dt2"):
+            number = FileJson(slot, key="rscript_" + prefix)
+            if number is None and prefix == "dt1":
+                number = FileJson(slot, key="forest_dt1")
+            if isinstance(number, int) and number > 0:
+                path = rscript_image_path("grps/%s_%04d.png" % (prefix, number))
+                if renpy.loadable(path):
+                    cards.append(path)
+        if len(cards) == 1:
+            return cards[0]
+        if cards:
+            # Native saveconf places dt1 and dt2 on the same icon origin.
+            return Fixed(*(Image(path) for path in cards), fit_first=True)
         return None
 
     def rscript_page_image(page):
@@ -195,8 +202,14 @@ init python:
         # Khime names page artwork 0..9 (displaying 1..10); Forest uses 1..10.
         if renpy.loadable(rscript_image_path("grps/nonbl/0.png")):
             number -= 1
-        path = rscript_image_path("grps/nonbl/%d.png" % number)
-        return path if renpy.loadable(path) else None
+        name = str(number)
+        layout = rscript_layouts().get("nonbl", {})
+        for candidate in (name, name.translate(str.maketrans("0123456789", "０１２３４５６７８９"))):
+            path = rscript_image_path("grps/nonbl/%s.png" % candidate)
+            if renpy.loadable(path):
+                item = layout.get("items", {}).get(candidate)
+                return Composite(layout["size"], item[:2], path) if item else path
+        return None
 
     def rscript_preference_action(setting, value):
         if setting == "text speed":
@@ -272,7 +285,7 @@ screen say(who, what, center=False):
     $ textpos = rscript_ui.get("text_pos", textpos)
     $ textpos = boxstate.get("text_rect", textpos)
     if rscript_use_speaker_images or rscript_speaker_images_override:
-        $ textpos = (absolute(text_indent + 1), 8)
+        $ textpos = rscript_ui.get("text_pos", (absolute(text_indent + 1), 8))
     window:
         id "window"
         background rscript_textbox_background()

@@ -30,6 +30,7 @@ MODERN_PASSTHROUGH.update({
     29: "zupdate", 34: "movi", 40: "depth", 41: "group", 44: "effectdep",
     50: "backup", 55: "makesave", 57: "logflash", 91: "texloc",
     100: "waitloc", 106: "namloc", 107: "texpich", 108: "texruby",
+    114: "getflag",
 })
 KHIME_COMMANDS = {
     48: "face", 101: "faceloc", 105: "facedep", 130: "numload",
@@ -141,7 +142,7 @@ def compile_scene(source: Path | RScriptTsc, patches=(), *, zero=False, zero_tit
             lines.append("    # CodeX makesave: native in-memory execution snapshot is not implemented; Ren'Py saves its current state.")
         if modern and op == 97 and values[1] != 2:
             lines.append("    # CodeX texfont slot %s needs a port font-slot mapping; unmapped slots use the player font." % operands[1])
-        if modern and op == 38 and values[3]:
+        if modern and op == 38 and len(values) == 4 and values[3]:
             lines.append("    # CodeX locmode Mode %s ignored; only the X/Y origin is implemented." % operands[3])
         if modern and op == 213:
             lines.append("    # CodeX dyndo %s: native fallback geometry and motion retained; external selmap coordinates are not implemented." % " ".join(operands))
@@ -219,17 +220,17 @@ def compile_scene(source: Path | RScriptTsc, patches=(), *, zero=False, zero_tit
             lines.append("    _oload %s %s" %
                          (" ".join(operands[:5]), text(item, 5)))
         elif op == 62:
-            if not modern or (adapter == "kagerou" and len(operands) == 1):
+            if not modern or len(operands) == 1:
                 lines.append("    _se 0 %s" % operands[-1])
             else:
                 lines.append("    _se %s" % " ".join(operands))
         elif op == 63:
             lines.append("    _se_on %s" % " ".join(
                 ["0"] + (operands if early else operands[-3:]) if not modern or
-                (adapter == "kagerou" and len(operands) == 3) else operands))
+                len(operands) == 3 else operands))
         elif op == 64:
             lines.append("    _se_off %s" % ("0 " + operands[-1]
-                                           if not modern or (adapter == "kagerou" and len(operands) == 1)
+                                           if not modern or len(operands) == 1
                                            else " ".join(operands)))
         elif op == 81:
             original = tsc.string(values[4]) if legacy else instruction_strings(tsc, item)["say"]
@@ -284,6 +285,8 @@ def compile_scene(source: Path | RScriptTsc, patches=(), *, zero=False, zero_tit
                 args = operands if parameters == values else [
                     packed(value, word16=legacy) if kind == E else str(value)
                     for kind, value in zip(item.kinds, parameters)]
+                if op == 38 and len(args) == 3:
+                    return "_locmode %s" % " ".join(args)
                 return "_%s_%s %s" % (prefix, KHIME_COMMANDS[op], " ".join(args))
             emit_operand_variants(lines, patch_operands, item, adapter_statement)
         elif op in commands:

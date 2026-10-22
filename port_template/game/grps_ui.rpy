@@ -77,6 +77,7 @@ init python:
 
     def rscript_save_json(data):
         data["rscript_dt1"] = int(store._r[1])
+        data["rscript_dt2"] = int(store._r[2])
         if rscript_ui.get("slot_images"):
             data["rscript_slot_images"] = rscript_ui["slot_images"]
             data["rscript_slot_zoom"] = rscript_ui.get("slot_image_zoom", 1.0)

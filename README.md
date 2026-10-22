@@ -22,6 +22,7 @@ Ren'Py 8 兼容运行时与移植工具。
 | Khime Kusaritop（含可选 Khime Zero） | [khime/README.md](khime/README.md) |
 | Evermaiden | [evermaiden/README.md](evermaiden/README.md) |
 | CannonBall | [cannonball/README.md](cannonball/README.md) |
+| SevenBridge（日文版） | [sevenbridge/README.md](sevenbridge/README.md) |
 | KagerouTouryuuki（适配中，仅支持安装「ハチポチ特典」后） | [kagerou/README.md](kagerou/README.md) |
 
 ### 依赖与资源预处理
@@ -97,6 +98,7 @@ language patches. Run command examples from the repository root.
 | Khime Kusaritop, with optional Khime Zero | [khime/README.md](khime/README.md) |
 | Evermaiden | [evermaiden/README.md](evermaiden/README.md) |
 | CannonBall | [cannonball/README.md](cannonball/README.md) |
+| SevenBridge — Japanese version | [sevenbridge/README.md](sevenbridge/README.md) |
 | KagerouTouryuuki — in development; requires the ハチポチ特典 add-on | [kagerou/README.md](kagerou/README.md) |
 
 ### Dependencies and resource preparation
