@@ -16,6 +16,7 @@
 
 - [新游戏移植指南与 AI 提示词](NEW_GAME_PORTING.md)
 - [通用模板](../port_template/README.md)
+- [通用界面资源分工](../port_template/README.md#界面资源分工)
 - [源码分工](SHARED_TEMPLATE_MIGRATION.md) · [本机路径](LOCAL_WORKFLOW.md)
 - [初始化配置](RSCRIPT_INITIALIZATION.md)
 - [文字布局](TEXT_WRAPPING.md) · [Forest 字体](FOREST_FONT_ANALYSIS.md)

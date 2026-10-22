@@ -1,6 +1,6 @@
 # 通用 RScript 移植模板
 
-[返回主说明](../README.md) · [新游戏移植指南](../docs/NEW_GAME_PORTING.md)
+[返回主说明](../README.md) · [新游戏移植指南](../docs/NEW_GAME_PORTING.md) · [Русский](README.ru.md)
 
 这个目录为新适配提供共用的剧本编译、工程生成和界面。
 它不是可以直接用于所有 RScript 游戏的一键转换器。
@@ -42,7 +42,53 @@ CodeX BMP 的反向 Alpha 由 LiarsoftTool 规范化。
 | Android | 触摸控制条、截图、图标和项目启动说明 |
 
 界面优先读取 `.meta.xml` 的布局。不同资源命名或按钮行为需要适配，
-不能仅靠图片文件名猜动作。存档槽位可使用原游戏章节图与 `saveconf` 组件。
+按钮文件名用于识别功能，具体动作、状态和启用条件再按本作脚本或 EXE 确认。
+存档槽位可使用原游戏章节图与 `saveconf` 组件。
+
+## 界面资源分工
+
+移植时先检查以下素材，避免把界面图片当作剧情图片，或只复制素材而遗漏功能。
+这是通用检查清单；某款游戏缺少对应目录或命名不同时，按实际资源核对。
+
+| 路径 | 用途 |
+| --- | --- |
+| `grps/dt*` | 存档用图像 |
+| `grps/nonbl/` | 菜单翻页用的数字图片 |
+| `grps/compane/` | 游戏进行中的控制栏；图片文件名标识对应功能 |
+| `grps/confscrn/` | 游戏右键菜单 |
+| `grps/savescrn/` | 存档、读档菜单图片 |
+| 各目录的 `.meta.xml` | 图片显示位置及画布布局；原始尺寸也须保留 |
+
+主菜单使用文本菜单代替原游戏主菜单按钮；游戏内的控制栏、右键菜单和
+存读档界面仍使用上述素材。接入新适配时遵循此方案，已有游戏的特殊行为由适配负责。
+
+布局以 `.meta.xml` 为准，不凭截图猜坐标、不统一居中。`dt*` 不作为普通背景
+或立绘，`nonbl` 不是剧情文字。存档槽位应作为完整组件处理：同时核对
+`saveconf` 中的预览、数字、日期、图标和选中遮罩，不用一张截图替代整套布局。
+每个控制按钮接到对应功能，分别确认选中、未选中与悬停状态。
+
+### UI resource map (English)
+
+Check these assets before implementing a new port. This is a shared checklist;
+verify games with missing directories or different naming against their own resources.
+
+| Path | Role |
+| --- | --- |
+| `grps/dt*` | Save-game images |
+| `grps/nonbl/` | Number images used for menu pagination |
+| `grps/compane/` | In-game control bar; image names identify button functions |
+| `grps/confscrn/` | In-game right-click menu |
+| `grps/savescrn/` | Save/load screen artwork |
+| `.meta.xml` in each directory | Image positions and canvas layout; preserve original dimensions too |
+
+New adapters use a text-based main menu instead of native title-menu buttons.
+In-game controls, the right-click menu and save/load screens retain native artwork.
+Existing adapters keep their explicitly supported game-specific behavior.
+
+Read `.meta.xml` rather than guessing positions or centering every image.
+Treat each save slot as a complete `saveconf` component: preview, numbers, date,
+icons and selection mask. Do not replace the whole layout with a screenshot.
+Wire each button to its own function and distinguish selected, idle and hover states.
 
 启动视频默认按 `0002.mpg → 0001.mpg` 播放，每次启动一次。
 特殊游戏可配置 `rscript_boot_movies`。
