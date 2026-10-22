@@ -37,7 +37,7 @@ Ren'Py 8 兼容运行时与移植工具。
 新移植从 [通用模板](port_template/README.md) 开始。
 共用运行时位于 `runtime/`，构建和界面位于 `port_template/`，
 游戏差异位于各适配目录。开发分工见 [公共模板说明](docs/SHARED_TEMPLATE_MIGRATION.md)。
-界面素材用途、`.meta.xml` 布局和文本主菜单约定见
+界面素材用途、`.meta.xml` 布局和主菜单环境设置入口约定见
 [通用界面资源分工](port_template/README.md#界面资源分工)。
 
 生成工程保留原资源目录：剧本在 `game/scr/`，图像在 `game/grp*/`，音频在
@@ -115,7 +115,7 @@ The common runtime is in `runtime/`, build tools and UI are in
 `port_template/`, and game-specific code lives in each adapter directory.
 See the [architecture guide](docs/SHARED_TEMPLATE_MIGRATION.md) for development.
 See the [shared UI resource map](port_template/README.md#ui-resource-map-english)
-for asset roles, `.meta.xml` layouts and the text-based main-menu policy.
+for asset roles, `.meta.xml` layouts and the main menu's Text Settings entry.
 
 Generated projects keep native resource folders: scripts in `game/scr/`,
 images in `game/grp*/`, audio in `game/bgm/`, `game/voice/` and `game/wav/`,

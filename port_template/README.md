@@ -59,8 +59,9 @@ CodeX BMP 的反向 Alpha 由 LiarsoftTool 规范化。
 | `grps/savescrn/` | 存档、读档菜单图片 |
 | 各目录的 `.meta.xml` | 图片显示位置及画布布局；原始尺寸也须保留 |
 
-主菜单使用文本菜单代替原游戏主菜单按钮；游戏内的控制栏、右键菜单和
-存读档界面仍使用上述素材。接入新适配时遵循此方案，已有游戏的特殊行为由适配负责。
+保留原游戏主菜单；在主菜单点击“环境设置”时，打开已有的 Text Settings
+（`rscript_title_preferences`），不是把整个主菜单替换成文本菜单。
+游戏内控制栏、右键菜单和存读档界面仍使用上述素材。
 
 布局以 `.meta.xml` 为准，不凭截图猜坐标、不统一居中。`dt*` 不作为普通背景
 或立绘，`nonbl` 不是剧情文字。存档槽位应作为完整组件处理：同时核对
@@ -81,9 +82,10 @@ verify games with missing directories or different naming against their own reso
 | `grps/savescrn/` | Save/load screen artwork |
 | `.meta.xml` in each directory | Image positions and canvas layout; preserve original dimensions too |
 
-New adapters use a text-based main menu instead of native title-menu buttons.
-In-game controls, the right-click menu and save/load screens retain native artwork.
-Existing adapters keep their explicitly supported game-specific behavior.
+Keep the original main menu. Its environment/settings button opens the existing
+Text Settings screen (`rscript_title_preferences`); this does not replace the
+whole main menu. In-game controls, the right-click menu and save/load screens
+retain native artwork.
 
 Read `.meta.xml` rather than guessing positions or centering every image.
 Treat each save slot as a complete `saveconf` component: preview, numbers, date,
