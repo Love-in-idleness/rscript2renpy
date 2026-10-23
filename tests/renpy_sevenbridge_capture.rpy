@@ -1,5 +1,7 @@
 # Disposable visual check; the runner isolates both saves and generated scripts.
 default sevenbridge_capture_stage = 0
+default sevenbridge_drag_stage = 0
+default sevenbridge_drag_dialogue = None
 
 init python:
     def sevenbridge_capture_error(short, full, info):
@@ -14,6 +16,32 @@ init python:
             return
         if stage == 1 and not store.last_say:
             return
+        if stage == 1:
+            step = store.sevenbridge_drag_stage
+            if step == 0:
+                store.sevenbridge_drag_dialogue = store.last_say
+            assert store.last_say == store.sevenbridge_drag_dialogue, "opacity drag advanced dialogue"
+            if step == 3:
+                assert persistent.rscript_textbox_opacity < .05, persistent.rscript_textbox_opacity
+            if step < 6:
+                import pygame_sdl2 as pygame
+                focus = next(f for f in renpy.display.focus.focus_list
+                             if isinstance(f.widget, renpy.display.behavior.Bar))
+                assert focus.widget.style.bar_vertical
+                x = int(focus.x + focus.w / 2)
+                y = int(focus.y + (focus.h / 2 if step == 0 else
+                                  focus.h - 1 if step < 4 else 1))
+                renpy.set_mouse_pos(x, y)
+                pos = renpy.display.draw.untranslate_point(x, y)
+                pygame.event.post(pygame.event.Event(pygame.MOUSEMOTION, pos=pos,
+                                  rel=(0, 0), buttons=(1 if step in (1, 4) else 0, 0, 0)))
+                if step in (0, 2, 3, 5):
+                    event = pygame.MOUSEBUTTONDOWN if step in (0, 3) else pygame.MOUSEBUTTONUP
+                    pygame.event.post(pygame.event.Event(event, pos=pos, button=1))
+                store.sevenbridge_drag_stage += 1
+                return
+            assert persistent.rscript_textbox_opacity > .95
+            print("OK: SevenBridge opacity drags down/up without advancing dialogue")
         destination = os.environ["SEVENBRIDGE_CAPTURE"]
         names = ("title.png", "dialogue.png", "preferences.png", "save.png", "load.png")
         renpy.screenshot(os.path.join(destination, names[stage]))

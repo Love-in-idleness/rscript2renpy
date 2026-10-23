@@ -15,6 +15,13 @@ python early:
             assert renpy.loadable("mov/%04d.mpg" % number)
         assert cur_textbox == 0 and text_indent == 146
         assert rscript_ui["text_pos"] == (147, 11)
+        renpy.show_screen("rscript_compane")
+        panel = renpy.get_screen("rscript_compane")
+        panel.update()
+        bars = []
+        panel.visit_all(lambda d: bars.append(d) if isinstance(d, renpy.display.behavior.Bar) else None)
+        assert len(bars) == 1 and bars[0].style.bar_vertical
+        renpy.hide_screen("rscript_compane")
         assert "_0001" not in config.label_overrides
         store.menu_enabled = 0
         assert rscript_system_action(3).screen == "rscript_title_preferences"

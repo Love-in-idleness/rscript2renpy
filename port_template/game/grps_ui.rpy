@@ -265,6 +265,7 @@ screen rscript_compane():
                 if track[3] > track[2]:
                     vbar:
                         style "rscript_volume_bar"
+                        bar_vertical True
                         value FieldValue(persistent, "rscript_textbox_opacity", range=1.0)
                         base_bar (rscript_image_path("grps/compane/bg.png") if rscript_ui.get("compane_bar_background", False) else Solid("#00000000"))
                         thumb rscript_ui_image("compane", "slide")
