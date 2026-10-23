@@ -1,6 +1,6 @@
 # Перенос Khime Kusaritop
 
-[中文](README.zh.md) | Русский · [Главная](../README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 ## Обзор
 
@@ -65,7 +65,7 @@ python3 khime/build_khime_rscript.py /path/to/Khime /path/to/renpy/Khime \
 Скорость и звук меняются во внутриигровых настройках. Видео проигрывается только
 при запуске приложения, не при возврате к титулу.
 
-Лицензии общего курсора, шрифтов и значков — в [уведомлениях](../THIRD_PARTY_NOTICES.md).
+Лицензии общего курсора, шрифтов и значков — в [уведомлениях](../THIRD_PARTY_NOTICES.ru.md).
 
 ## Проверка и ограничения
 
@@ -78,4 +78,4 @@ python3 khime/build_khime_rscript.py /path/to/Khime /path/to/renpy/Khime \
 галерею, субтитры, звук и старые сохранения; Android проверяется отдельно.
 
 Тесты: `tests/test_khime_builder.py`, `tests/test_khime_zero.py`, `tests/test_shared_port.py`.
-Анализ движка — в [технических заметках](../docs/README.zh.md#开发参考).
+Анализ движка — в [технических заметках](../docs/README.ru.md#разработка).

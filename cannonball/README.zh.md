@@ -1,6 +1,6 @@
 # CannonBall 移植说明
 
-[中文](README.zh.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 [返回主说明](../README.zh.md)
 
@@ -8,7 +8,7 @@
 
 将用户自备的 CannonBall 资源生成 Ren'Py 8 工程。
 当前适配仍在完善，以下命令均在仓库根目录执行。
-环境安装见 [首次构建](../docs/SETUP.md)。
+环境安装见 [首次构建](../docs/SETUP.zh.md)。
 
 ## 准备资源
 
@@ -54,7 +54,7 @@ python3 cannonball/build_cannonball_rscript.py \
 赛车画面禁止回退与存档，退出后恢复正常权限。
 启动视频依次播放 `0002.mpg`、`0001.mpg`，返回标题不重播。
 
-共用光标、字体与本作图标授权见 [第三方声明](../THIRD_PARTY_NOTICES.md)。
+共用光标、字体与本作图标授权见 [第三方声明](../THIRD_PARTY_NOTICES.zh.md)。
 
 ## 检查与已知限制
 
@@ -68,4 +68,4 @@ python3 cannonball/build_cannonball_rscript.py \
 - Android 需要实机测试。
 
 开发测试：`tests/test_cannonball_port.py`。
-原程序依据及效果清单见 [开发参考](NATIVE_EFFECTS.md)。
+原程序依据及效果清单见 [开发参考](NATIVE_EFFECTS.zh.md)。

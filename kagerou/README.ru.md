@@ -1,6 +1,6 @@
 # Перенос KagerouTouryuuki
 
-[中文](README.zh.md) | Русский · [Главная](../README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 ## Обзор
 
@@ -66,4 +66,4 @@ CG-, сценическая и музыкальная галереи испол�
 вёрстку, речь, галереи, маршруты и Android.
 
 Тесты: `tests/test_kagerou_native.py`, `tests/test_kagerou_builder.py`,
-`tests/run_kagerou_port.py`. Основания: [техническая заметка](NATIVE_EVIDENCE.md).
+`tests/run_kagerou_port.py`. Основания: [техническая заметка](NATIVE_EVIDENCE.ru.md).

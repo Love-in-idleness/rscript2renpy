@@ -11,7 +11,7 @@ This adapter targets `SBridge_jp.exe`; Chinese patches are not supported yet.
 
 ## Prepare resources
 
-Follow [environment setup](../docs/SETUP.md). Work on a copy of your game and
+Follow [environment setup](../docs/SETUP.en.md). Work on a copy of your game and
 use LiarsoftTool to unpack recursively and convert resources. Keep current
 `scr/*.tsc`, images, `.meta.xml`, OGG and ordinary PCM WAV files.
 See `liarsofttool -h` for conversion options.
@@ -51,4 +51,4 @@ read or overwrite native saves.
 Run Ren'Py lint as described in the [main guide](../README.en.md), then check
 graphics, audio and routes in the game. Missing `mov` files cannot be played.
 Full playthroughs and Android devices still require verification.
-See [native evidence](NATIVE_EVIDENCE.zh.md) for the supported executable.
+See [native evidence](NATIVE_EVIDENCE.en.md) for the supported executable.

@@ -1,3 +1,3 @@
-# Evermaiden
+# README
 
-[中文](README.zh.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)

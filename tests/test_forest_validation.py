@@ -80,7 +80,8 @@ def main() -> None:
         gui_text = gui.read_text(encoding="utf-8")
         assert "gui.init(*rscript_screen_size)" in gui_text
         assert 'define gui.text_font = "fonts/NotoSansCJKjp-Regular.otf"' in gui_text
-        for name in ("simhei.ttf", "SimHei-NOTICE.md"):
+        for name in ("simhei.ttf", "SimHei-NOTICE.md", "SimHei-NOTICE.zh.md",
+                     "SimHei-NOTICE.en.md", "SimHei-NOTICE.ru.md"):
             assert (project / "game" / "fonts" / name).read_bytes() == \
                 (ROOT / "port_template" / "fonts" / name).read_bytes()
         assert "gui.scale(" not in gui_text

@@ -1,6 +1,6 @@
 # Evermaiden 移植说明
 
-[中文](README.zh.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 [返回主说明](../README.zh.md)
 
@@ -8,7 +8,7 @@
 
 将用户自备的 Evermaiden 资源生成 Ren'Py 8 工程。
 当前适配仍在完善，以下命令均在仓库根目录执行。
-环境安装见 [首次构建](../docs/SETUP.md)。
+环境安装见 [首次构建](../docs/SETUP.zh.md)。
 
 ## 准备资源
 
@@ -54,7 +54,7 @@ python3 evermaiden/build_evermaiden_rscript.py \
 启动视频依次为 `0002.mpg`、`0001.mpg`，返回标题不重播。
 地图选项、CG 和音乐鉴赏仍由原脚本控制。
 
-共用光标、字体与本作图标授权见 [第三方声明](../THIRD_PARTY_NOTICES.md)。
+共用光标、字体与本作图标授权见 [第三方声明](../THIRD_PARTY_NOTICES.zh.md)。
 
 ## 检查与已知限制
 
@@ -68,4 +68,4 @@ python3 evermaiden/build_evermaiden_rscript.py \
 - 完整路线、鉴赏操作、存档兼容及 Android 尚需实际测试。
 
 开发测试：`tests/test_modern_port.py`。
-具体实现和待办见 [运行时参考](../docs/EVERMAIDEN_RUNTIME_GAPS.md)。
+具体实现和待办见 [运行时参考](../docs/EVERMAIDEN_RUNTIME_GAPS.zh.md)。

@@ -1,6 +1,6 @@
 # Локальные пути
 
-[中文](LOCAL_WORKFLOW.md) · [Документация](README.ru.md)
+[中文](LOCAL_WORKFLOW.zh.md) | [English](LOCAL_WORKFLOW.en.md) | [Русский](LOCAL_WORKFLOW.ru.md)
 
 `local.paths.toml` хранит пути инструментов, ресурсов и результатов на вашей
 машине. Это необязательная конфигурация: она не передаёт параметры генераторам

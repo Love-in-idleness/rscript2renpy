@@ -1,6 +1,6 @@
 # Перенос новой игры
 
-[中文](NEW_GAME_PORTING.md) · [Главная](../README.ru.md) · [Среда](SETUP.ru.md)
+[中文](NEW_GAME_PORTING.zh.md) | [English](NEW_GAME_PORTING.en.md) | [Русский](NEW_GAME_PORTING.ru.md)
 
 Руководство для разработки ещё не поддерживаемой игры. Для готовой адаптации
 достаточно её README; ИИ не требуется.

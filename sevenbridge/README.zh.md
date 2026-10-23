@@ -11,7 +11,7 @@
 
 ## 准备资源
 
-安装依赖见[环境配置](../docs/SETUP.md)。复制原游戏资源，在副本上用
+安装依赖见[环境配置](../docs/SETUP.zh.md)。复制原游戏资源，在副本上用
 LiarsoftTool 递归解包并转换，保留当前格式的 `scr/*.tsc`、图像、
 `.meta.xml`、OGG 与普通 PCM WAV。转换参数见 `liarsofttool -h`。
 

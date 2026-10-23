@@ -1,6 +1,6 @@
 # Перенос CannonBall
 
-[中文](README.zh.md) | Русский · [Главная](../README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 ## Обзор
 
@@ -54,7 +54,7 @@ python3 cannonball/build_cannonball_rscript.py \
 восстанавливаются. Видео `0002.mpg`, `0001.mpg` проигрываются при запуске,
 но не при возврате к титулу.
 
-Лицензии курсора, шрифтов и значка — в [уведомлениях](../THIRD_PARTY_NOTICES.md).
+Лицензии курсора, шрифтов и значка — в [уведомлениях](../THIRD_PARTY_NOTICES.ru.md).
 
 ## Проверка и ограничения
 
@@ -69,4 +69,4 @@ python3 cannonball/build_cannonball_rscript.py \
 - Android требует проверки на устройстве.
 
 Тесты: `tests/test_cannonball_port.py`. Основания и эффекты:
-[техническая заметка](NATIVE_EFFECTS.md).
+[техническая заметка](NATIVE_EFFECTS.ru.md).

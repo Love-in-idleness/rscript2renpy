@@ -1,6 +1,6 @@
 # KagerouTouryuuki 移植说明
 
-[中文](README.zh.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 [返回主说明](../README.zh.md)
 
@@ -9,7 +9,7 @@
 将用户自备的《霞外籠逗留記》资源生成 Ren'Py 8 工程。
 
 只支持安装「ハチポチ特典」后的游戏，未安装特典的旧版不支持。
-适配仍在完善。以下命令均在仓库根目录执行，环境安装见 [首次构建](../docs/SETUP.md)。
+适配仍在完善。以下命令均在仓库根目录执行，环境安装见 [首次构建](../docs/SETUP.zh.md)。
 
 ## 准备资源
 
@@ -63,4 +63,4 @@ python3 kagerou/build_kagerou_rscript.py \
 请检查实际排版、语音、鉴赏、完整路线及 Android。
 
 开发检查：`tests/test_kagerou_native.py`、`tests/test_kagerou_builder.py`、
-`tests/run_kagerou_port.py`。原程序依据见 [开发参考](NATIVE_EVIDENCE.md)。
+`tests/run_kagerou_port.py`。原程序依据见 [开发参考](NATIVE_EVIDENCE.zh.md)。

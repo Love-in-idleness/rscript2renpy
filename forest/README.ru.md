@@ -1,6 +1,6 @@
 # Перенос Forest
 
-[中文](README.zh.md) | [English](README.en.md) | Русский · [Главная](../README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 ## Обзор
 
@@ -74,7 +74,7 @@ python3 forest/build_forest_rscript.py /path/to/Forest /path/to/renpy/Forest \
 - Дополнительные TTF, OTF и TTC можно положить в `game/fonts/` готового проекта.
 - Скорость, звук и сохранения доступны в меню по правой кнопке.
 
-Лицензии курсора, значков и шрифтов — в [уведомлениях](../THIRD_PARTY_NOTICES.md).
+Лицензии курсора, значков и шрифтов — в [уведомлениях](../THIRD_PARTY_NOTICES.ru.md).
 
 ## Проверка и ограничения
 
@@ -86,4 +86,4 @@ python3 forest/build_forest_rscript.py /path/to/Forest /path/to/renpy/Forest \
 Старые сохранения, переключение языков и Android требуют проверки на вашей версии ресурсов.
 
 Тесты: `tests/test_forest_validation.py`, `tests/test_forest_builder.py`,
-`tests/test_shared_port.py`. Общие правила текста: [техническая заметка](../docs/TEXT_WRAPPING.md).
+`tests/test_shared_port.py`. Общие правила текста: [техническая заметка](../docs/TEXT_WRAPPING.ru.md).

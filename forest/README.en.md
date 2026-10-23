@@ -7,7 +7,7 @@
 ## Overview
 
 This adapter builds a Ren'Py 8 project from your own Forest resources.
-Run examples from the repository root. See [setup](../docs/SETUP.md) for dependencies.
+Run examples from the repository root. See [setup](../docs/SETUP.en.md) for dependencies.
 
 ## Prepare resources
 
@@ -68,4 +68,4 @@ Use the in-game menu for text speed, audio and saving/loading.
 Run lint as shown above, then check subtitles, voices, image choices, gallery
 returns and saves in actual gameplay. Old saves, language switching and Android
 need testing with your resource version.
-See [third-party notices](../THIRD_PARTY_NOTICES.md) for asset licenses.
+See [third-party notices](../THIRD_PARTY_NOTICES.en.md) for asset licenses.

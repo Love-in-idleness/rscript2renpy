@@ -5,8 +5,8 @@
 `rscript2renpy` 是面向 CodeX RScript 游戏（主要来自 Liar-soft / raiL-soft）的
 Ren'Py 8 兼容运行时与移植工具。
 
-首次使用见 [环境配置与首次构建](docs/SETUP.md)；开发尚未支持的游戏见
-[新游戏移植指南与 AI 提示词](docs/NEW_GAME_PORTING.md)。
+首次使用见 [环境配置与首次构建](docs/SETUP.zh.md)；开发尚未支持的游戏见
+[新游戏移植指南与 AI 提示词](docs/NEW_GAME_PORTING.zh.md)。
 后续目标见[开发规划](docs/ROADMAP.zh.md)。
 
 除通用鼠标光标和各游戏应用图标外，仓库不包含游戏剧本、图像、音频、视频或
@@ -38,7 +38,7 @@ Ren'Py 8 兼容运行时与移植工具。
 
 新移植从 [通用模板](port_template/README.zh.md) 开始。
 共用运行时位于 `runtime/`，构建和界面位于 `port_template/`，
-游戏差异位于各适配目录。开发分工见 [公共模板说明](docs/SHARED_TEMPLATE_MIGRATION.md)。
+游戏差异位于各适配目录。开发分工见 [公共模板说明](docs/SHARED_TEMPLATE_MIGRATION.zh.md)。
 界面素材用途、`.meta.xml` 布局和主菜单环境设置入口约定见
 [通用界面资源分工](port_template/README.zh.md#界面资源分工)。
 
@@ -68,6 +68,6 @@ python3 tools/install_runtime.py /path/to/renpy-project
 ## 授权
 
 代码采用 [MIT License](LICENSE)。第三方代码、光标、图标和字体说明见
-[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.zh.md)。
 Noto CJK 字体采用 [SIL Open Font License 1.1](port_template/fonts/NotoSans.txt)；
-SimHei 的授权独立，见 [字体说明](port_template/fonts/SimHei-NOTICE.md)。
+SimHei 的授权独立，见 [字体说明](port_template/fonts/SimHei-NOTICE.zh.md)。

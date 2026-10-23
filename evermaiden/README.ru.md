@@ -1,6 +1,6 @@
 # Перенос Evermaiden
 
-[中文](README.zh.md) | Русский · [Главная](../README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 ## Обзор
 
@@ -55,7 +55,7 @@ python3 evermaiden/build_evermaiden_rscript.py \
 возврат к титулу не повторяет видео. Карты выбора, CG- и музыкальная галереи
 по-прежнему управляются исходными сценариями.
 
-Лицензии курсора, шрифтов и значка — в [уведомлениях](../THIRD_PARTY_NOTICES.md).
+Лицензии курсора, шрифтов и значка — в [уведомлениях](../THIRD_PARTY_NOTICES.ru.md).
 
 ## Проверка и ограничения
 
@@ -69,4 +69,4 @@ python3 evermaiden/build_evermaiden_rscript.py \
 - Полные маршруты, управление галереей, совместимость сохранений и Android ещё требуют проверки.
 
 Тесты: `tests/test_modern_port.py`. Реализация и открытые вопросы:
-[техническая заметка](../docs/EVERMAIDEN_RUNTIME_GAPS.md).
+[техническая заметка](../docs/EVERMAIDEN_RUNTIME_GAPS.ru.md).

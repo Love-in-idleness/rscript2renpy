@@ -1,36 +1,37 @@
 # 文档目录
 
-[中文](README.zh.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 [返回主说明](../README.zh.md)
 
 ## 使用指南
 
-- [环境配置与首次构建](SETUP.md)
+- [环境配置与首次构建](SETUP.zh.md)
 - [Forest](../forest/README.zh.md)
 - [Khime 与可选外传](../khime/README.zh.md)
 - [Evermaiden](../evermaiden/README.zh.md)
 - [CannonBall](../cannonball/README.zh.md)
 - [KagerouTouryuuki](../kagerou/README.zh.md)
 - [SevenBridge（日文版）](../sevenbridge/README.zh.md)
-- [第三方资源与授权](../THIRD_PARTY_NOTICES.md)
+- [第三方资源与授权](../THIRD_PARTY_NOTICES.zh.md)
 
 ## 开发参考
 
-- [开发规划](ROADMAP.zh.md) · [Русский](ROADMAP.ru.md)
-- [新游戏移植指南与 AI 提示词](NEW_GAME_PORTING.md)
+- [开发规划](ROADMAP.zh.md)
+- [工作约定](../AGENTS.zh.md)
+- [新游戏移植指南与 AI 提示词](NEW_GAME_PORTING.zh.md)
 - [通用模板](../port_template/README.zh.md)
 - [通用界面资源分工](../port_template/README.zh.md#界面资源分工)
-- [源码分工](SHARED_TEMPLATE_MIGRATION.md) · [本机路径](LOCAL_WORKFLOW.md)
-- [初始化配置](RSCRIPT_INITIALIZATION.md)
-- [文字布局](TEXT_WRAPPING.md) · [Forest 字体](FOREST_FONT_ANALYSIS.md)
-- [Khime 点击](KHIME_CLICK_ANALYSIS.md) · [图像效果](KHIME_EFFECT_ANALYSIS.md) · [控制符](KHIME_TEXT_CONTROLS.md)
-- [效果 2](UPDATE_EFFECT2.md)
-- [Evermaiden 运行时](EVERMAIDEN_RUNTIME_GAPS.md)
-- [CannonBall 引擎行为](../cannonball/NATIVE_EFFECTS.md)
-- [Kagerou 原程序依据](../kagerou/NATIVE_EVIDENCE.md)
+- [源码分工](SHARED_TEMPLATE_MIGRATION.zh.md) · [本机路径](LOCAL_WORKFLOW.zh.md)
+- [初始化配置](RSCRIPT_INITIALIZATION.zh.md)
+- [文字布局](TEXT_WRAPPING.zh.md) · [Forest 字体](FOREST_FONT_ANALYSIS.zh.md)
+- [Khime 点击](KHIME_CLICK_ANALYSIS.zh.md) · [图像效果](KHIME_EFFECT_ANALYSIS.zh.md) · [控制符](KHIME_TEXT_CONTROLS.zh.md)
+- [效果 2](UPDATE_EFFECT2.zh.md)
+- [Evermaiden 运行时](EVERMAIDEN_RUNTIME_GAPS.zh.md)
+- [CannonBall 引擎行为](../cannonball/NATIVE_EFFECTS.zh.md)
+- [Kagerou 原程序依据](../kagerou/NATIVE_EVIDENCE.zh.md)
 - [SevenBridge 原程序依据](../sevenbridge/NATIVE_EVIDENCE.zh.md)
-- [2026-10-12 公共层整理记录](OPTIMIZATION_REPORT_2026-10-12.md)
+- [2026-10-12 公共层整理记录](OPTIMIZATION_REPORT_2026-10-12.zh.md)
 
 原生参考中的地址和结论只适用于标明哈希的构建，不是所有游戏共用的规范。
 

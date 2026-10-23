@@ -1,6 +1,6 @@
 # Документация
 
-[中文](README.zh.md) | Русский · [Главная](../README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 ## Руководства
 
@@ -11,7 +11,7 @@
 - [CannonBall](../cannonball/README.ru.md)
 - [KagerouTouryuuki](../kagerou/README.ru.md)
 - [SevenBridge, японская версия](../sevenbridge/README.ru.md)
-- [Сторонние ресурсы и лицензии](../THIRD_PARTY_NOTICES.md)
+- [Сторонние ресурсы и лицензии](../THIRD_PARTY_NOTICES.ru.md)
 
 ## Разработка
 
@@ -21,17 +21,17 @@
 - [Локальные пути](LOCAL_WORKFLOW.ru.md)
 - [Правила работы](../AGENTS.ru.md)
 
-Технические заметки, пока на китайском:
+Технические справочники:
 
-- [Распределение исходников](SHARED_TEMPLATE_MIGRATION.md)
-- [Инициализация](RSCRIPT_INITIALIZATION.md)
-- [Вёрстка текста](TEXT_WRAPPING.md), [шрифты Forest](FOREST_FONT_ANALYSIS.md)
-- [Khime: клики](KHIME_CLICK_ANALYSIS.md), [эффекты](KHIME_EFFECT_ANALYSIS.md), [управление текстом](KHIME_TEXT_CONTROLS.md)
-- [Эффект 2](UPDATE_EFFECT2.md), [runtime Evermaiden](EVERMAIDEN_RUNTIME_GAPS.md)
-- [CannonBall](../cannonball/NATIVE_EFFECTS.md), [Kagerou](../kagerou/NATIVE_EVIDENCE.md)
-- [Изменения общего слоя от 2026-10-12](OPTIMIZATION_REPORT_2026-10-12.md)
+- [Распределение исходников](SHARED_TEMPLATE_MIGRATION.ru.md)
+- [Инициализация](RSCRIPT_INITIALIZATION.ru.md)
+- [Вёрстка текста](TEXT_WRAPPING.ru.md), [шрифты Forest](FOREST_FONT_ANALYSIS.ru.md)
+- [Khime: клики](KHIME_CLICK_ANALYSIS.ru.md), [эффекты](KHIME_EFFECT_ANALYSIS.ru.md), [управление текстом](KHIME_TEXT_CONTROLS.ru.md)
+- [Эффект 2](UPDATE_EFFECT2.ru.md), [runtime Evermaiden](EVERMAIDEN_RUNTIME_GAPS.ru.md)
+- [CannonBall](../cannonball/NATIVE_EFFECTS.ru.md), [Kagerou](../kagerou/NATIVE_EVIDENCE.ru.md)
+- [Изменения общего слоя от 2026-10-12](OPTIMIZATION_REPORT_2026-10-12.ru.md)
 
-[Анализ SevenBridge](../sevenbridge/NATIVE_EVIDENCE.ru.md) доступен на русском.
+[Анализ SevenBridge](../sevenbridge/NATIVE_EVIDENCE.ru.md).
 Адреса и выводы действуют только для файлов с указанными хешами, не являются
 спецификацией всех игр.
 

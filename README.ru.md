@@ -1,6 +1,6 @@
 # rscript2renpy
 
-[中文](README.zh.md) | [English](README.en.md) | Русский
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 `rscript2renpy` — совместимый с Ren'Py 8 runtime и инструменты переноса игр
 на CodeX RScript, прежде всего произведений Liar-soft и raiL-soft.
@@ -70,6 +70,6 @@ python3 tools/install_runtime.py /path/to/renpy-project
 ## Лицензии
 
 Код распространяется по [MIT License](LICENSE). Сторонний код, курсор, значки
-и шрифты перечислены в [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+и шрифты перечислены в [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.ru.md).
 Noto CJK использует [SIL Open Font License 1.1](port_template/fonts/NotoSans.txt).
-У SimHei отдельные условия: [уведомление о шрифте](port_template/fonts/SimHei-NOTICE.md).
+У SimHei отдельные условия: [уведомление о шрифте](port_template/fonts/SimHei-NOTICE.ru.md).

@@ -1,32 +1,3 @@
-# 本机路径配置
+# LOCAL_WORKFLOW
 
-[返回文档目录](README.zh.md)
-
-[Русский](LOCAL_WORKFLOW.ru.md)
-
-`local.paths.toml` 用来记录本机工具、资源和输出的位置。
-它是可选配置，不会自动传参，也不会自动启用语言补丁。
-
-## 配置方法
-
-复制仓库根目录的 `local.paths.example.toml` 为 `local.paths.toml`，
-将示例路径改为自己的绝对路径。
-
-| 部分 | 内容 |
-| --- | --- |
-| `tools` | 两个仓库、LiarsoftTool CLI/GUI、构建目录和 Ren'Py SDK |
-| 游戏配置 | 转换后的资源目录、输出工程和基准语言 |
-| 游戏的 `patches` | 语言标签与补丁目录 |
-
-未配置的项目留空。这个文件已被 Git 忽略，不要提交个人路径。
-无需配置文件时，直接给生成器传入路径即可。
-
-## 使用约定
-
-- 原游戏与补丁原件只读，转换在副本中进行。
-- 输出工程放在资源目录之外。
-- 重建前备份生成工程内的手工修改。
-- `rebuild_local.sh` 是本机便捷脚本，不作为其他用户的构建入口。
-
-LiarsoftTool 和 rscript2renpy 可以共用这份配置，避免重复维护路径。
-开发工具需要访问其他目录时，只开放当前任务需要的路径。
+[中文](LOCAL_WORKFLOW.zh.md) | [English](LOCAL_WORKFLOW.en.md) | [Русский](LOCAL_WORKFLOW.ru.md)

@@ -94,6 +94,6 @@ BMP/MSK напрямую, без дополнительного преобраз
 | `game/` | Общий интерфейс Ren'Py |
 | `../runtime/` | Исполнительная среда RScript |
 
-См. [архитектуру](../docs/SHARED_TEMPLATE_MIGRATION.md),
-[раскладку текста](../docs/TEXT_WRAPPING.md) и
+См. [архитектуру](../docs/SHARED_TEMPLATE_MIGRATION.ru.md),
+[раскладку текста](../docs/TEXT_WRAPPING.ru.md) и
 [проверки разработчика](../docs/README.ru.md#проверки-разработчика).

@@ -1,13 +1,13 @@
 # Khime Kusaritop 移植说明
 
-[中文](README.zh.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
 [返回主说明](../README.zh.md)
 
 ## 概述
 
 将用户自备的《腐り姫》资源生成 Ren'Py 8 工程，可选接入外传《帰省 ～jamais vu～》。
-以下命令均在仓库根目录执行，环境安装见 [首次构建](../docs/SETUP.md)。
+以下命令均在仓库根目录执行，环境安装见 [首次构建](../docs/SETUP.zh.md)。
 
 ## 准备资源
 
@@ -63,7 +63,7 @@ python3 khime/build_khime_rscript.py /path/to/Khime /path/to/renpy/Khime \
 默认字号 29，对话每行 21 字宽；显示速度和音量在游戏内设置中调整。
 启动视频每次打开游戏只播放一次，返回标题不重播。
 
-共用光标、字体与图标授权见 [第三方声明](../THIRD_PARTY_NOTICES.md)。
+共用光标、字体与图标授权见 [第三方声明](../THIRD_PARTY_NOTICES.zh.md)。
 
 ## 检查与已知限制
 

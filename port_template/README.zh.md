@@ -2,7 +2,7 @@
 
 [中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
 
-[返回主说明](../README.zh.md) · [新游戏移植指南](../docs/NEW_GAME_PORTING.md)
+[返回主说明](../README.zh.md) · [新游戏移植指南](../docs/NEW_GAME_PORTING.zh.md)
 
 这个目录为新适配提供共用的剧本编译、工程生成和界面。
 它不是可以直接用于所有 RScript 游戏的一键转换器。
@@ -94,6 +94,6 @@ CodeX BMP 的反向 Alpha 由 LiarsoftTool 规范化。
 | `game/` | 共用 Ren'Py 界面 |
 | `../runtime/` | RScript 运行时 |
 
-接口分工见 [开发架构](../docs/SHARED_TEMPLATE_MIGRATION.md)，
-文字规则见 [文字布局参考](../docs/TEXT_WRAPPING.md)，
+接口分工见 [开发架构](../docs/SHARED_TEMPLATE_MIGRATION.zh.md)，
+文字规则见 [文字布局参考](../docs/TEXT_WRAPPING.zh.md)，
 测试入口见 [文档目录](../docs/README.zh.md#开发检查)。

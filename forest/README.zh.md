@@ -7,7 +7,7 @@
 ## 概述
 
 将用户自备的 Forest 资源生成 Ren'Py 8 工程。以下命令均在仓库根目录执行。
-环境安装见 [首次构建](../docs/SETUP.md)。
+环境安装见 [首次构建](../docs/SETUP.zh.md)。
 
 ## 准备资源
 
@@ -69,7 +69,7 @@ python3 forest/build_forest_rscript.py /path/to/Forest /path/to/renpy/Forest \
 - 在生成工程的 `game/fonts/` 中放入 TTF、OTF 或 TTC，可添加字体。
 - 游戏内右键菜单控制显示速度、音量及存读档。
 
-光标、图标与字体授权见 [第三方声明](../THIRD_PARTY_NOTICES.md)。
+光标、图标与字体授权见 [第三方声明](../THIRD_PARTY_NOTICES.zh.md)。
 
 ## 检查与已知限制
 
@@ -82,4 +82,4 @@ python3 forest/build_forest_rscript.py /path/to/Forest /path/to/renpy/Forest \
 
 开发测试：`tests/test_forest_validation.py`、
 `tests/test_forest_builder.py`、`tests/test_shared_port.py`。
-共用文字规则见 [文字布局参考](../docs/TEXT_WRAPPING.md)。
+共用文字规则见 [文字布局参考](../docs/TEXT_WRAPPING.zh.md)。
