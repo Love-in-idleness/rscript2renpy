@@ -10,6 +10,9 @@ python early:
         assert (config.screen_width, config.screen_height) == (800, 600)
         assert persistent.rscript_text_size == 24
         assert rscript_voice_groups and rscript_folder_zero_all
+        assert rscript_boot_movies == (2, 1)
+        for number in (2, 3, 4):
+            assert renpy.loadable("mov/%04d.mpg" % number)
         assert cur_textbox == 0 and text_indent == 146
         assert rscript_ui["text_pos"] == (147, 11)
         assert "_0001" not in config.label_overrides
@@ -69,7 +72,8 @@ python early:
         old_screen, old_say = renpy.call_screen, renpy.say
         old_play, old_stop = renpy.music.play, renpy.music.stop
         old_restart = renpy.full_restart
-        calls, voices = [], []
+        old_movie = renpy.movie_cutscene
+        calls, voices, movies = [], [], []
         try:
             config.exception_handler = fail_fast
             renpy.pause = lambda *a, **kw: None
@@ -77,6 +81,22 @@ python early:
             renpy.music.play = lambda filename, *a, **kw: voices.append((filename, kw))
             renpy.music.stop = lambda *a, **kw: None
             renpy.full_restart = lambda *a, **kw: (_ for _ in ()).throw(Finished())
+            def movie(filename):
+                assert renpy.loadable(filename), filename
+                movies.append(filename)
+            renpy.movie_cutscene = movie
+            # Command mode has no menu context; run only the splashscreen's Python.
+            node = renpy.game.script.lookup("splashscreen")
+            while not isinstance(node, renpy.ast.Python):
+                node = node.next
+            renpy.python.py_exec_bytecode(node.code.bytecode)
+            assert movies == ["mov/%04d.mpg" % number for number in (2, 1)
+                              if renpy.loadable("mov/%04d.mpg" % number)], movies
+            movies.clear()
+            for number in (2, 3, 4):
+                execute_movie(SimpleNamespace(MovieNo=number))
+            assert movies == ["mov/0002.mpg", "mov/0003.mpg", "mov/0004.mpg"]
+            movies.clear()
             def click(name, **kwargs):
                 assert name == "rscript_click_screen", name
                 options = kwargs["options"]
@@ -97,6 +117,7 @@ python early:
             else:
                 raise AssertionError("native title did not reach the opening scene")
             assert calls, "title choice was not executed"
+            print("OK: SevenBridge boot and scenario movie paths are loadable")
             print("OK: SevenBridge script 0000 -> title -> opening, name and voice", calls)
             for scene, choice, exit_value in (("0201", 1, 13), ("0301", 5001, 20), ("0400", 1, 49)):
                 persistent.seen_cg.update(("grpe %04d" % number, True) for number in range(1, 3301))
@@ -140,5 +161,6 @@ python early:
             renpy.call_screen, renpy.say = old_screen, old_say
             renpy.music.play, renpy.music.stop = old_play, old_stop
             renpy.full_restart = old_restart
+            renpy.movie_cutscene = old_movie
         return False
     renpy.arguments.register_command("sevenbridgetest", check_sevenbridge_port)

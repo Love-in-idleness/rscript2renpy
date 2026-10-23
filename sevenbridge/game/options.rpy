@@ -22,9 +22,6 @@ init -100 python:
     # 41fcc0 records CGs >=1000 only in the separate progress bit bank.
     rscript_cg_register_limit = 1000
     rscript_se_format = "wav/%04d.ogg"
-    # No boot movies are present in this original installation; movie commands
-    # remain in the source scripts and use mov/ when supplied by the owner.
-    rscript_boot_movies = ()
     rscript_ctc_x, rscript_ctc_y = 690, 572
     rscript_ui = {"show_speaker": True, "speaker_pos": (0, 11),
                   "text_pos": (147, 11), "textbox_size": (800, 130),

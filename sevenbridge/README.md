@@ -17,7 +17,8 @@ LiarsoftTool 递归解包并转换，保留当前格式的 `scr/*.tsc`、图像�
 
 需要 `scr`、`grpe`、`grpo`、`grpo_bu`、`grpo_ex`、`grps`、`bgm`、
 `voice` 和 `wav` 目录。语音中的子目录也须解包，不能只提取最外层。
-如原游戏另有视频，把它们保留在资源副本的 `mov` 目录。
+把原游戏的 `mov` 目录一并复制到资源副本，保留 `0002.mpg`、
+`0003.mpg` 和 `0004.mpg`。启动时播放 `0002`，`0003/0004` 由剧本调用。
 
 ### 生成工程
 
@@ -64,7 +65,9 @@ See `liarsofttool -h` for conversion options.
 
 Required directories: `scr`, `grpe`, `grpo`, `grpo_bu`, `grpo_ex`, `grps`,
 `bgm`, `voice` and `wav`. Unpack nested voice archives too.
-If your game includes separate videos, keep them in the prepared `mov` directory.
+Copy the original `mov` directory into the resource working copy, including
+`0002.mpg`, `0003.mpg` and `0004.mpg`. Startup plays `0002`;
+the scenarios call `0003/0004`.
 
 ### Generate the project
 
