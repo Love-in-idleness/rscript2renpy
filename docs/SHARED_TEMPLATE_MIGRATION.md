@@ -1,6 +1,6 @@
 # 开发参考：公共模板与游戏适配
 
-[返回文档目录](README.md) · [通用模板](../port_template/README.md)
+[返回文档目录](README.zh.md) · [通用模板](../port_template/README.zh.md)
 
 本页说明源码分工。构建已有游戏请直接使用各游戏 README。
 
@@ -54,5 +54,5 @@ PC 与 Android 显示版本由 `build_port.py` 管理；不要为普通更新提
 
 公共修改先运行 `test_runtime.py`、`test_port_template.py` 与
 `test_shared_port.py`，再检查受影响的游戏。
-测试命令见 [文档目录](README.md#开发检查)。
+测试命令见 [文档目录](README.zh.md#开发检查)。
 SDK 升级后重跑原生文字和界面测试，完整游玩结果另行记录。

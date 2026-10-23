@@ -1,6 +1,6 @@
 # 第三方资源与授权 / Third-party notices
 
-[返回主说明 / Project guide](README.md)
+[返回主说明 / Project guide](README.zh.md)
 
 项目代码采用 MIT，但光标、图标和部分字体有独立授权。
 本页保留各资源的来源及权利说明；分发前请逐项确认。

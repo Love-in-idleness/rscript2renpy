@@ -1,6 +1,8 @@
 # Общий шаблон порта RScript
 
-[中文 / English](README.md) · [Главная страница](../README.md) · [Новая игра](../docs/NEW_GAME_PORTING.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
+
+[Главная страница](../README.md) · [Новая игра](../docs/NEW_GAME_PORTING.md)
 
 Здесь находятся общие средства компиляции сценариев, сборки проекта и интерфейса.
 Это не универсальный конвертер любой игры RScript одним нажатием.
@@ -94,4 +96,4 @@ BMP/MSK напрямую, без дополнительного преобраз
 
 См. [архитектуру](../docs/SHARED_TEMPLATE_MIGRATION.md),
 [раскладку текста](../docs/TEXT_WRAPPING.md) и
-[проверки разработчика](../docs/README.md#开发检查).
+[проверки разработчика](../docs/README.zh.md#开发检查).

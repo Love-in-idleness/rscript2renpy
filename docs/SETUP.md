@@ -1,6 +1,6 @@
 # 环境配置与首次构建
 
-[返回主说明](../README.md)
+[返回主说明](../README.zh.md)
 
 本指南用于构建已有适配的游戏。新游戏需要编写适配器，见
 [新游戏移植指南](NEW_GAME_PORTING.md)。下列 `/path/to/...` 均需替换为自己的路径。
@@ -82,7 +82,7 @@ python3 forest/build_forest_rscript.py /path/to/prepared/Forest /path/to/project
 
 没有补丁就省略 `--language zh=...`。
 `jp` 是基准语言标签，`zh=目录` 添加可切换的语言包；标签不负责转换文件编码。
-各游戏的补丁规则不同，请以 [游戏说明](../README.md#游戏移植说明) 为准。
+各游戏的补丁规则不同，请以 [游戏说明](../README.zh.md#游戏移植说明) 为准。
 
 首次构建使用新目录。重建前备份生成工程内的手工修改，按生成器要求使用 `--force`。
 

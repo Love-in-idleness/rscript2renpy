@@ -1,6 +1,6 @@
 # 开发参考：RScript 初始化配置
 
-[返回文档目录](README.md)
+[返回文档目录](README.zh.md)
 
 新适配可先查看 `RsInit.tcf`，获取窗口尺寸、资源目录和启动线索。
 不是所有游戏都有此文件或 `RsInit.dll`；缺少时需从 EXE 和脚本确认。

@@ -1,6 +1,8 @@
-# SevenBridge: данные исходной программы
+# SevenBridge: технические основания
 
-[中文](NATIVE_EVIDENCE.md) · [Руководство](README.ru.md)
+[中文](NATIVE_EVIDENCE.zh.md) | [Русский](NATIVE_EVIDENCE.ru.md)
+
+[Руководство](README.ru.md)
 
 Дата анализа: 2026-10-22. Исследован японский `SBridge_jp.exe`, PE32/i386,
 базовый адрес `0x400000`, SHA-256:

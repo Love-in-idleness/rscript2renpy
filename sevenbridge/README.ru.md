@@ -1,6 +1,8 @@
 # SevenBridge
 
-[中文 / English](README.md) · [Главная страница](../README.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
+
+[Главная страница](../README.md)
 
 ## Обзор
 
@@ -47,7 +49,7 @@ python3 sevenbridge/build_sevenbridge_rscript.py /path/to/prepared-sevenbridge /
 
 ## Проверки и ограничения
 
-Запустите Ren'Py lint по [основной инструкции](../README.md), затем проверьте
+Запустите Ren'Py lint по [основной инструкции](../README.zh.md), затем проверьте
 изображения, звук и сюжетные маршруты. Без файлов `mov` соответствующие видео
 недоступны. Полное прохождение и устройства Android ещё требуют проверки.
 Версия EXE и результаты анализа описаны в [технической справке](NATIVE_EVIDENCE.ru.md).
