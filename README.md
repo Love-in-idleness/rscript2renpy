@@ -7,6 +7,7 @@ Ren'Py 8 兼容运行时与移植工具。
 
 首次使用见 [环境配置与首次构建](docs/SETUP.md)；开发尚未支持的游戏见
 [新游戏移植指南与 AI 提示词](docs/NEW_GAME_PORTING.md)。
+后续目标见[开发规划](docs/ROADMAP.md)。
 
 除通用鼠标光标和各游戏应用图标外，仓库不包含游戏剧本、图像、音频、视频或
 可执行文件。用户必须使用自己合法持有的游戏文件，自行准备资源并构建工程。
@@ -82,6 +83,7 @@ Start with [environment setup and your first build](docs/SETUP.md).
 For a game that is not yet supported, see the
 [new-game porting guide and AI prompt](docs/NEW_GAME_PORTING.md).
 These guides are in Chinese.
+See the [roadmap](docs/ROADMAP.md#english) for future work.
 
 Apart from the shared cursor and application icons, this repository does not
 include game scripts, artwork, audio, video or executables. Prepare resources
