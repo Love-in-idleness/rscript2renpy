@@ -43,28 +43,6 @@ python3 kagerou/build_kagerou_rscript.py \
 补丁必须匹配特典版。按原资源相对路径放置，只需提供修改的文件。
 语言包使用整场景覆盖，缺少译文的场景使用当前原版。
 
-### 将旧中文补丁迁移到特典版
-
-迁移工具以特典版日文 GSC 为模板，保留新版本流程并回填旧译文。
-原版资源不变，补丁安装前自动备份。
-
-先检查迁移结果：
-
-```bash
-python3 kagerou/rebase_translation.py /path/to/patched-original /path/to/Chinese-patch \
-    --liarsofttool /path/to/liarsofttool
-```
-
-确认报告后执行安装：
-
-```bash
-python3 kagerou/rebase_translation.py /path/to/patched-original /path/to/Chinese-patch \
-    --liarsofttool /path/to/liarsofttool --apply
-```
-
-备份位于补丁目录的 `kagerou-rebase-backup-*/scr`，结果见 `rebase-report.json`。
-无法对齐的场景不会强行写入；没有译文的特典场景保留日文。
-
 ## 使用说明
 
 默认竖排。文字面板可以切换横竖排、字号、位置、阴影和字体，

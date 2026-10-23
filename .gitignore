@@ -5,6 +5,8 @@ __pycache__/
 .port-check/
 local.paths.toml
 /rebuild_local.sh
+/kagerou/rebase_translation.py
+/tests/test_kagerou_rebase.py
 .codex/config.toml
 *.pyc
 *.rpyc
