@@ -1,6 +1,6 @@
 # Evermaiden 移植说明
 
-[中文](README.zh.md)
+[中文](README.zh.md) | [Русский](README.ru.md)
 
 [返回主说明](../README.zh.md)
 

@@ -2,6 +2,8 @@
 
 [返回主说明](../README.zh.md) · [环境配置](SETUP.md)
 
+[Русский](NEW_GAME_PORTING.ru.md)
+
 本页用于开发尚未支持的游戏。已有适配直接按对应游戏 README 构建，不需要 AI。
 
 ## 准备资料

@@ -1,3 +1,3 @@
 # Khime Kusaritop
 
-[中文](README.zh.md)
+[中文](README.zh.md) | [Русский](README.ru.md)

@@ -2,7 +2,7 @@
 
 [中文](ROADMAP.zh.md) | [English](ROADMAP.en.md) | [Русский](ROADMAP.ru.md)
 
-[Главная страница](../README.md)
+[Главная страница](../README.ru.md)
 
 ## Текущие задачи
 
