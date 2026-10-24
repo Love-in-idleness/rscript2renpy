@@ -1,6 +1,6 @@
 # 开发规划
 
-[中文](ROADMAP.zh.md) | [English](ROADMAP.en.md) | [Русский](ROADMAP.ru.md)
+[中文](ROADMAP.zh.md) | [English](ROADMAP.en.md) | [Русский](ROADMAP.ru.md) | [日本語](ROADMAP.ja.md)
 
 [主说明](../README.zh.md)
 
@@ -8,7 +8,7 @@
 
 - 先完成 SevenBridge 日文移植的构建与运行检查，再继续扩展其他游戏。
 - 公共能力保留在模板和运行时；游戏差异根据本作 EXE 与脚本确认。
-- 中文、英文和俄语说明随功能同步。
+- 中文、英文、俄语和日语说明随功能同步。
 - 与 LiarsoftTool 保持独立：资源解包、编码、图像和音频转换由 LiarsoftTool 负责。
 
 ## 长期规划：实验性 `--pure-renpy`

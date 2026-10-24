@@ -1,3 +1,3 @@
 # KHIME_CLICK_ANALYSIS
 
-[中文](KHIME_CLICK_ANALYSIS.zh.md) | [English](KHIME_CLICK_ANALYSIS.en.md) | [Русский](KHIME_CLICK_ANALYSIS.ru.md)
+[中文](KHIME_CLICK_ANALYSIS.zh.md) | [English](KHIME_CLICK_ANALYSIS.en.md) | [Русский](KHIME_CLICK_ANALYSIS.ru.md) | [日本語](KHIME_CLICK_ANALYSIS.ja.md)

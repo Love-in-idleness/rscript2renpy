@@ -1,6 +1,6 @@
 # Историческая запись: безопасность и общий слой, 2026-10-12
 
-[中文](OPTIMIZATION_REPORT_2026-10-12.zh.md) | [English](OPTIMIZATION_REPORT_2026-10-12.en.md) | [Русский](OPTIMIZATION_REPORT_2026-10-12.ru.md)
+[中文](OPTIMIZATION_REPORT_2026-10-12.zh.md) | [English](OPTIMIZATION_REPORT_2026-10-12.en.md) | [Русский](OPTIMIZATION_REPORT_2026-10-12.ru.md) | [日本語](OPTIMIZATION_REPORT_2026-10-12.ja.md)
 
 [Документация](README.ru.md)
 

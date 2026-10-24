@@ -1,6 +1,6 @@
 # 第三方资源与授权
 
-[中文](THIRD_PARTY_NOTICES.zh.md) | [English](THIRD_PARTY_NOTICES.en.md) | [Русский](THIRD_PARTY_NOTICES.ru.md)
+[中文](THIRD_PARTY_NOTICES.zh.md) | [English](THIRD_PARTY_NOTICES.en.md) | [Русский](THIRD_PARTY_NOTICES.ru.md) | [日本語](THIRD_PARTY_NOTICES.ja.md)
 
 [返回主说明](README.zh.md)
 

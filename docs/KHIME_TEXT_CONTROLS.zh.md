@@ -1,6 +1,6 @@
 # 开发参考：Khime 文本控制符
 
-[中文](KHIME_TEXT_CONTROLS.zh.md) | [English](KHIME_TEXT_CONTROLS.en.md) | [Русский](KHIME_TEXT_CONTROLS.ru.md)
+[中文](KHIME_TEXT_CONTROLS.zh.md) | [English](KHIME_TEXT_CONTROLS.en.md) | [Русский](KHIME_TEXT_CONTROLS.ru.md) | [日本語](KHIME_TEXT_CONTROLS.ja.md)
 
 [返回文档目录](README.zh.md)
 

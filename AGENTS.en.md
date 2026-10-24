@@ -1,6 +1,6 @@
 # Working agreements
 
-[中文](AGENTS.zh.md) | [English](AGENTS.en.md) | [Русский](AGENTS.ru.md)
+[中文](AGENTS.zh.md) | [English](AGENTS.en.md) | [Русский](AGENTS.ru.md) | [日本語](AGENTS.ja.md)
 
 ## Before starting
 
@@ -20,10 +20,10 @@
 ## Documentation
 
 - README is for users: purpose, dependencies, resource preparation, build commands, patches and necessary limitations.
-- Every project-authored document has separate .zh.md, .en.md and .ru.md versions in the same directory, updated together.
+- Every project-authored document has separate .zh.md, .en.md, .ru.md and .ja.md versions in the same directory, updated together.
   The unsuffixed .md is navigation only. Do not keep mixed-language bodies or substitute short summaries for translations.
 - Preserve original licenses and third-party legal text unchanged; provide translations of project-authored explanations.
-- Follow the user's Chinese writing; English and Russian must carry the same facts without invented features.
+- Follow the user's Chinese writing; English, Russian and Japanese must carry the same facts without invented features.
 - Write short direct instructions. Error internals, legacy migration, internal fields, regression logs, commit histories and repeated disclaimers do not belong in user guides.
 - Game guides use overview, resource preparation, generation, language patches, use, checks and limitations.
 - Reverse-engineering hashes, addresses, operands and uncertainties belong in developer references. Static evidence is not gameplay.

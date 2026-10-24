@@ -1,6 +1,6 @@
 # 通用 RScript 移植模板
 
-[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md) | [日本語](README.ja.md)
 
 [返回主说明](../README.zh.md) · [新游戏移植指南](../docs/NEW_GAME_PORTING.zh.md)
 

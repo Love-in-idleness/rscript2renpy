@@ -1,3 +1,3 @@
 # FOREST_FONT_ANALYSIS
 
-[中文](FOREST_FONT_ANALYSIS.zh.md) | [English](FOREST_FONT_ANALYSIS.en.md) | [Русский](FOREST_FONT_ANALYSIS.ru.md)
+[中文](FOREST_FONT_ANALYSIS.zh.md) | [English](FOREST_FONT_ANALYSIS.en.md) | [Русский](FOREST_FONT_ANALYSIS.ru.md) | [日本語](FOREST_FONT_ANALYSIS.ja.md)

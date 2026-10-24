@@ -1,6 +1,6 @@
 # 开发记录：2026-10-12 安全与公共层整理
 
-[中文](OPTIMIZATION_REPORT_2026-10-12.zh.md) | [English](OPTIMIZATION_REPORT_2026-10-12.en.md) | [Русский](OPTIMIZATION_REPORT_2026-10-12.ru.md)
+[中文](OPTIMIZATION_REPORT_2026-10-12.zh.md) | [English](OPTIMIZATION_REPORT_2026-10-12.en.md) | [Русский](OPTIMIZATION_REPORT_2026-10-12.ru.md) | [日本語](OPTIMIZATION_REPORT_2026-10-12.ja.md)
 
 [返回文档目录](README.zh.md)
 

@@ -1,6 +1,6 @@
 # Техническая справка: вёрстка текста
 
-[中文](TEXT_WRAPPING.zh.md) | [English](TEXT_WRAPPING.en.md) | [Русский](TEXT_WRAPPING.ru.md)
+[中文](TEXT_WRAPPING.zh.md) | [English](TEXT_WRAPPING.en.md) | [Русский](TEXT_WRAPPING.ru.md) | [日本語](TEXT_WRAPPING.ja.md)
 
 [Документация](README.ru.md)
 

@@ -1,6 +1,6 @@
 # rscript2renpy
 
-[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md) | [日本語](README.ja.md)
 
 `rscript2renpy` is a Ren'Py 8 compatibility runtime and porting tool for
 CodeX RScript games, mainly from Liar-soft and raiL-soft.

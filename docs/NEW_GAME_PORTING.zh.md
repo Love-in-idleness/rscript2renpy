@@ -1,6 +1,6 @@
 # 新游戏移植指南
 
-[中文](NEW_GAME_PORTING.zh.md) | [English](NEW_GAME_PORTING.en.md) | [Русский](NEW_GAME_PORTING.ru.md)
+[中文](NEW_GAME_PORTING.zh.md) | [English](NEW_GAME_PORTING.en.md) | [Русский](NEW_GAME_PORTING.ru.md) | [日本語](NEW_GAME_PORTING.ja.md)
 
 [返回主说明](../README.zh.md) · [环境配置](SETUP.zh.md)
 

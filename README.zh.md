@@ -1,6 +1,6 @@
 # rscript2renpy
 
-[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md) | [日本語](README.ja.md)
 
 `rscript2renpy` 是面向 CodeX RScript 游戏（主要来自 Liar-soft / raiL-soft）的
 Ren'Py 8 兼容运行时与移植工具。

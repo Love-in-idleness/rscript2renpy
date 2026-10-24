@@ -1,6 +1,6 @@
 # 开发参考：CannonBall 引擎行为
 
-[中文](NATIVE_EFFECTS.zh.md) | [English](NATIVE_EFFECTS.en.md) | [Русский](NATIVE_EFFECTS.ru.md)
+[中文](NATIVE_EFFECTS.zh.md) | [English](NATIVE_EFFECTS.en.md) | [Русский](NATIVE_EFFECTS.ru.md) | [日本語](NATIVE_EFFECTS.ja.md)
 
 [返回文档目录](../docs/README.zh.md)
 

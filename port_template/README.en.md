@@ -1,6 +1,6 @@
 # Shared RScript port template
 
-[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md) | [日本語](README.ja.md)
 
 [Project overview](../README.en.md) · [New-game guide](../docs/NEW_GAME_PORTING.en.md)
 

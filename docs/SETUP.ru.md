@@ -1,6 +1,6 @@
 # Среда и первая сборка
 
-[中文](SETUP.zh.md) | [English](SETUP.en.md) | [Русский](SETUP.ru.md)
+[中文](SETUP.zh.md) | [English](SETUP.en.md) | [Русский](SETUP.ru.md) | [日本語](SETUP.ja.md)
 
 Это руководство для уже адаптированных игр. Для новой игры нужен адаптер:
 см. [руководство разработчика](NEW_GAME_PORTING.ru.md).

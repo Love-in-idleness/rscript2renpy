@@ -1,6 +1,6 @@
 # 环境配置与首次构建
 
-[中文](SETUP.zh.md) | [English](SETUP.en.md) | [Русский](SETUP.ru.md)
+[中文](SETUP.zh.md) | [English](SETUP.en.md) | [Русский](SETUP.ru.md) | [日本語](SETUP.ja.md)
 
 [返回主说明](../README.zh.md)
 

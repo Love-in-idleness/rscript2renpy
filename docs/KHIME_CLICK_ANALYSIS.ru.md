@@ -1,6 +1,6 @@
 # Техническая справка: клики и меню Khime
 
-[中文](KHIME_CLICK_ANALYSIS.zh.md) | [English](KHIME_CLICK_ANALYSIS.en.md) | [Русский](KHIME_CLICK_ANALYSIS.ru.md)
+[中文](KHIME_CLICK_ANALYSIS.zh.md) | [English](KHIME_CLICK_ANALYSIS.en.md) | [Русский](KHIME_CLICK_ANALYSIS.ru.md) | [日本語](KHIME_CLICK_ANALYSIS.ja.md)
 
 [Документация](README.ru.md)
 

@@ -1,6 +1,6 @@
 # Техническая справка: runtime Evermaiden
 
-[中文](EVERMAIDEN_RUNTIME_GAPS.zh.md) | [English](EVERMAIDEN_RUNTIME_GAPS.en.md) | [Русский](EVERMAIDEN_RUNTIME_GAPS.ru.md)
+[中文](EVERMAIDEN_RUNTIME_GAPS.zh.md) | [English](EVERMAIDEN_RUNTIME_GAPS.en.md) | [Русский](EVERMAIDEN_RUNTIME_GAPS.ru.md) | [日本語](EVERMAIDEN_RUNTIME_GAPS.ja.md)
 
 [Документация](README.ru.md)
 

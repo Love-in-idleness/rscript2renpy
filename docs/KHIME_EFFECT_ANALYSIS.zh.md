@@ -1,6 +1,6 @@
 # 开发参考：Khime 图像效果
 
-[中文](KHIME_EFFECT_ANALYSIS.zh.md) | [English](KHIME_EFFECT_ANALYSIS.en.md) | [Русский](KHIME_EFFECT_ANALYSIS.ru.md)
+[中文](KHIME_EFFECT_ANALYSIS.zh.md) | [English](KHIME_EFFECT_ANALYSIS.en.md) | [Русский](KHIME_EFFECT_ANALYSIS.ru.md) | [日本語](KHIME_EFFECT_ANALYSIS.ja.md)
 
 [返回文档目录](README.zh.md)
 

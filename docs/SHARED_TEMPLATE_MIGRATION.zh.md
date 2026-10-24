@@ -1,6 +1,6 @@
 # 开发参考：公共模板与游戏适配
 
-[中文](SHARED_TEMPLATE_MIGRATION.zh.md) | [English](SHARED_TEMPLATE_MIGRATION.en.md) | [Русский](SHARED_TEMPLATE_MIGRATION.ru.md)
+[中文](SHARED_TEMPLATE_MIGRATION.zh.md) | [English](SHARED_TEMPLATE_MIGRATION.en.md) | [Русский](SHARED_TEMPLATE_MIGRATION.ru.md) | [日本語](SHARED_TEMPLATE_MIGRATION.ja.md)
 
 [返回文档目录](README.zh.md) · [通用模板](../port_template/README.zh.md)
 

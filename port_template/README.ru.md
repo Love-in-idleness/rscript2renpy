@@ -1,6 +1,6 @@
 # Общий шаблон порта RScript
 
-[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md)
+[中文](README.zh.md) | [English](README.en.md) | [Русский](README.ru.md) | [日本語](README.ja.md)
 
 [Главная страница](../README.ru.md) · [Новая игра](../docs/NEW_GAME_PORTING.ru.md)
 

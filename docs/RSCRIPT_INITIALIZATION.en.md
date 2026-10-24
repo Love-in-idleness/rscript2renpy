@@ -1,6 +1,6 @@
 # Developer reference: RScript initialization
 
-[中文](RSCRIPT_INITIALIZATION.zh.md) | [English](RSCRIPT_INITIALIZATION.en.md) | [Русский](RSCRIPT_INITIALIZATION.ru.md)
+[中文](RSCRIPT_INITIALIZATION.zh.md) | [English](RSCRIPT_INITIALIZATION.en.md) | [Русский](RSCRIPT_INITIALIZATION.ru.md) | [日本語](RSCRIPT_INITIALIZATION.ja.md)
 
 [Documentation](README.en.md)
 

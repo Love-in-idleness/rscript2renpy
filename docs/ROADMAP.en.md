@@ -1,11 +1,11 @@
 # Roadmap
 
-[中文](ROADMAP.zh.md) | [English](ROADMAP.en.md) | [Русский](ROADMAP.ru.md)
+[中文](ROADMAP.zh.md) | [English](ROADMAP.en.md) | [Русский](ROADMAP.ru.md) | [日本語](ROADMAP.ja.md)
 
 [Project overview](../README.en.md)
 
 Current work prioritizes the Japanese SevenBridge port, shared runtime reuse and
-Chinese, English and Russian documentation. LiarsoftTool remains a separate project
+Chinese, English, Russian and Japanese documentation. LiarsoftTool remains a separate project
 responsible for resource extraction and conversion.
 
 An experimental `--pure-renpy` backend is a long-term goal, not an available option.

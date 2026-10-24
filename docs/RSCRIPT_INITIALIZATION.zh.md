@@ -1,6 +1,6 @@
 # 开发参考：RScript 初始化配置
 
-[中文](RSCRIPT_INITIALIZATION.zh.md) | [English](RSCRIPT_INITIALIZATION.en.md) | [Русский](RSCRIPT_INITIALIZATION.ru.md)
+[中文](RSCRIPT_INITIALIZATION.zh.md) | [English](RSCRIPT_INITIALIZATION.en.md) | [Русский](RSCRIPT_INITIALIZATION.ru.md) | [日本語](RSCRIPT_INITIALIZATION.ja.md)
 
 [返回文档目录](README.zh.md)
 

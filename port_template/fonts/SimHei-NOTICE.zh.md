@@ -1,6 +1,6 @@
 # SimHei 字体授权 / Font notice
 
-[中文](SimHei-NOTICE.zh.md) | [English](SimHei-NOTICE.en.md) | [Русский](SimHei-NOTICE.ru.md)
+[中文](SimHei-NOTICE.zh.md) | [English](SimHei-NOTICE.en.md) | [Русский](SimHei-NOTICE.ru.md) | [日本語](SimHei-NOTICE.ja.md)
 
 [第三方资源说明 / Third-party notices](../../THIRD_PARTY_NOTICES.zh.md)
 

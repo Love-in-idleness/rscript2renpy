@@ -1,6 +1,6 @@
 # Техническая справка: текстовые команды Khime
 
-[中文](KHIME_TEXT_CONTROLS.zh.md) | [English](KHIME_TEXT_CONTROLS.en.md) | [Русский](KHIME_TEXT_CONTROLS.ru.md)
+[中文](KHIME_TEXT_CONTROLS.zh.md) | [English](KHIME_TEXT_CONTROLS.en.md) | [Русский](KHIME_TEXT_CONTROLS.ru.md) | [日本語](KHIME_TEXT_CONTROLS.ja.md)
 
 [Документация](README.ru.md)
 

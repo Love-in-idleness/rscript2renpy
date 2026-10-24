@@ -1,6 +1,6 @@
 # 开发参考：Evermaiden 运行时
 
-[中文](EVERMAIDEN_RUNTIME_GAPS.zh.md) | [English](EVERMAIDEN_RUNTIME_GAPS.en.md) | [Русский](EVERMAIDEN_RUNTIME_GAPS.ru.md)
+[中文](EVERMAIDEN_RUNTIME_GAPS.zh.md) | [English](EVERMAIDEN_RUNTIME_GAPS.en.md) | [Русский](EVERMAIDEN_RUNTIME_GAPS.ru.md) | [日本語](EVERMAIDEN_RUNTIME_GAPS.ja.md)
 
 [返回文档目录](README.zh.md)
 
