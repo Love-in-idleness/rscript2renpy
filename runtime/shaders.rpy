@@ -5,101 +5,99 @@ init python:
     uniform float u_colormode;
     """,
     fragment_functions = """
-    vec3 rgb2hsv(vec3 c)
+    // CMath::Init / CGrapConvLevel: byte LUTs, including the 127/128 boundary.
+    vec3 rscript_grade(vec3 c, vec3 level)
     {
-        vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-        vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
-        vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
-
-        float d = q.x - min(q.w, q.y);
-        float e = 1.0e-10;
-        return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-    }
-
-    vec3 hsv2rgb(vec3 c)
-    {
-        vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-        vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-        return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-    }
-
-    vec3 rscript_sepia(vec3 c)
-    {
-      float h = 0.07;
-      float s = 0.87;
-      float v = rgb2hsv(c).b;
-      if (v > 0.5) {
-        s = s * pow((1.0 - v) * 2.0, 0.87);
-      }
-      return hsv2rgb(vec3(h, s, v));
+        return floor(mix(c * (level + 1.0) / 128.0,
+            c + (256.0 - c) * (2.0 * level - 255.0) / 256.0,
+            step(vec3(128.0), level)));
     }
 
     vec3 rscript_grayscale(vec3 c)
     {
-      float gray = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-      return vec3(gray);
+        return vec3(floor((c.r + c.g + c.b) / 3.0));
     }
 
-    // Forest colormode 5: the original engine's blue-purple night tint.
+    vec3 rscript_tint(vec3 c, vec3 tint)
+    {
+        return rscript_grade(tint, rscript_grayscale(c));
+    }
+
     vec3 rscript_night(vec3 c)
     {
-      float l = (c.r + c.g + c.b) / 3.0;
-      if (l <= 0.5) {
-        return l * vec3(18.0 / 32.0, 15.0 / 32.0, 35.0 / 32.0);
-      }
-      return vec3(
-        (46.0 * l - 14.0) / 32.0,
-        (49.0 * l - 17.0) / 32.0,
-        (29.0 * l + 3.0) / 32.0
-      );
+        return rscript_tint(c, vec3(72.0, 61.0, 139.0));
     }
 
-    // Forest colormode 6: the original engine's orange sunset tint.
     vec3 rscript_sunset(vec3 c)
     {
-      float l = (c.r + c.g + c.b) / 3.0;
-      if (l <= 0.5) {
-        return vec3(2.0 * l, l, 0.0);
-      }
-      return vec3(1.0, l, 2.0 * l - 1.0);
+        return rscript_tint(c, vec3(255.0, 128.0, 0.0));
+    }
+
+    vec3 rscript_night_mix(vec3 c, vec3 level)
+    {
+        float minimum = min(c.r, min(c.g, c.b));
+        return floor(c * (256.0 - minimum) / 256.0)
+             + floor(rscript_grade(c, level) * (minimum + 1.0) / 256.0);
+    }
+
+    float rscript_hsl_channel(float h, float p, float q)
+    {
+        if (h > 360.0) h -= 360.0;
+        else if (h < 0.0) h += 360.0;
+        if (h < 60.0) return p + (q - p) * h / 60.0;
+        if (h < 180.0) return q;
+        if (h < 240.0) return p + (q - p) * (240.0 - h) / 60.0;
+        return p;
+    }
+
+    // CGrapConvPower: quantized HSL, not a conventional hue rotation.
+    vec3 rscript_power(vec3 c)
+    {
+        float lo = min(c.r, min(c.g, c.b));
+        float hi = max(c.r, max(c.g, c.b));
+        float delta = hi - lo;
+        float total = hi + lo;
+        float lbyte = floor((total + 1.0) / 2.0);
+        if (delta == 0.0) return vec3(lbyte);
+        float sbyte = floor(delta / min(total, 510.0 - total) * 255.0 + 0.5);
+        float h;
+        if (c.r == hi) h = (c.g - c.b) / delta;
+        else if (c.g == hi) h = (c.b - c.r) / delta + 2.0;
+        else h = (c.r - c.g) / delta + 4.0;
+        // Native cvttsd2si truncates negative red-sector hues toward zero.
+        h = mod(float(int(h * 42.0 + 0.5)) + 256.0, 256.0);
+        if (h >= 127.0 && h <= 209.0) {
+            float d = h - 168.0;
+            h = mod(h + floor((1764.0 - d * d) * 120.0 / 1764.0), 256.0);
+        }
+        h = h * 360.0 / 255.0;
+        float s = sbyte / 255.0;
+        float l = lbyte / 255.0;
+        float q = lbyte < 128.0 ? l * s + l : l + s - l * s;
+        float p = l + l - q;
+        return floor(vec3(rscript_hsl_channel(h + 120.0, p, q),
+                          rscript_hsl_channel(h, p, q),
+                          rscript_hsl_channel(h - 120.0, p, q)) * 255.0 + 0.5);
     }
     """,
     fragment_1000 = """
-    if (u_colormode == 1.0) {
-      //gl_FragColor.rgb /= gl_FragColor.a;
-      //gl_FragColor.rgb = 0;
-      //gl_FragColor.rgb *= gl_FragColor.a;
-      gl_FragColor.rgb = vec3(0.0);
-    }
-
-    if (u_colormode == 2.0) {
-      gl_FragColor.rgb /= gl_FragColor.a;
-      gl_FragColor.rgb = vec3(1.0) - gl_FragColor.rgb;
-      gl_FragColor.rgb *= gl_FragColor.a;
-    }
-
-    if (u_colormode == 3.0) {
-      gl_FragColor.rgb /= gl_FragColor.a;
-      gl_FragColor.rgb = rscript_grayscale(gl_FragColor.rgb);
-      gl_FragColor.rgb *= gl_FragColor.a;
-    }
-
-    if (u_colormode == 4.0) {
-      gl_FragColor.rgb /= gl_FragColor.a;
-      gl_FragColor.rgb = rscript_sepia(gl_FragColor.rgb);
-      gl_FragColor.rgb *= gl_FragColor.a;
-    }
-
-    if (u_colormode == 5.0 && gl_FragColor.a > 0.0) {
-      gl_FragColor.rgb /= gl_FragColor.a;
-      gl_FragColor.rgb = rscript_night(gl_FragColor.rgb);
-      gl_FragColor.rgb *= gl_FragColor.a;
-    }
-
-    if (u_colormode == 6.0 && gl_FragColor.a > 0.0) {
-      gl_FragColor.rgb /= gl_FragColor.a;
-      gl_FragColor.rgb = rscript_sunset(gl_FragColor.rgb);
-      gl_FragColor.rgb *= gl_FragColor.a;
+    if (gl_FragColor.a > 0.0 && u_colormode >= 1.0 && u_colormode <= 15.0 && u_colormode != 14.0) {
+        vec3 c = floor(gl_FragColor.rgb / gl_FragColor.a * 255.0 + 0.5);
+        if (u_colormode == 1.0) c = vec3(0.0);
+        if (u_colormode == 2.0) c = vec3(255.0) - c;
+        if (u_colormode == 3.0) c = rscript_grayscale(c);
+        if (u_colormode == 4.0) c = rscript_tint(c, vec3(139.0, 69.0, 19.0));
+        if (u_colormode == 5.0) c = rscript_night(c);
+        if (u_colormode == 6.0) c = rscript_sunset(c);
+        if (u_colormode == 7.0) c = rscript_night_mix(c, vec3(24.0, 16.0, 32.0));
+        if (u_colormode == 8.0) c = rscript_grade(c, vec3(40.0, 32.0, 64.0));
+        if (u_colormode == 9.0) c = rscript_grade(c, vec3(56.0, 48.0, 128.0));
+        if (u_colormode == 10.0) c = rscript_grade(c, vec3(128.0, 45.0, 80.0));
+        if (u_colormode == 11.0) c = rscript_night_mix(c, vec3(144.0, 64.0, 48.0));
+        if (u_colormode == 12.0) c = rscript_grade(c, vec3(128.0, 80.0, 48.0));
+        if (u_colormode == 13.0) c = rscript_grade(c, vec3(160.0, 96.0, 64.0));
+        if (u_colormode == 15.0) c = rscript_power(c);
+        gl_FragColor.rgb = c / 255.0 * gl_FragColor.a;
     }
     """
   )
@@ -151,73 +149,40 @@ init python:
     """
     )
 
-    renpy.register_shader("rscript.effect",
-    variables = """
-    uniform float u_effectmode;
-    """,
-    fragment_functions = """
-// Based on the GIMP Color to Alpha plugin
-// https://gitlab.gnome.org/GNOME/gimp/blob/bcd98991017f85aff90aee36451970d59edcb95d/plug-ins/common/colortoalpha.c#L206
-vec4 color_to_alpha(vec4 src, vec3 col) {
-  float alpha1, alpha2, alpha3, alpha4;
-
-  if (src.a <= 0.0) {
-    return vec4(0.0);
-  }
-
-  alpha4 = src.a;
-
-  // Ren'Py uses premultiplied alpha, so we need to
-  // temporarily un-premultiply it here to do our calculations.
-  src.r /= src.a;
-  src.g /= src.a;
-  src.b /= src.a;
-
-  if (src.r > col.r) {
-    alpha1 = (src.r - col.r) / (1.0 - col.r);
-  } else if (src.r < col.r) {
-    alpha1 = (col.r - src.r) / col.r;
-  } else {
-    alpha1 = 0.0;
-  }
-
-  if (src.g > col.g) {
-    alpha2 = (src.g - col.g) / (1.0 - col.g);
-  } else if (src.g < col.g) {
-    alpha2 = (col.g - src.g) / col.g;
-  } else {
-    alpha2 = 0.0;
-  }
-
-  if (src.b > col.b) {
-    alpha3 = (src.b - col.b) / (1.0 - col.b);
-  } else if (src.b < col.b) {
-    alpha3 = (col.b - src.b) / col.b;
-  } else {
-    alpha3 = 0.0;
-  }
-
-  float a = max(alpha1, max(alpha2, alpha3));
-
-  if (a < 1.0 / 255.0) {
-    return vec4(src.r * a, src.g * a, src.b * a, a);
-  }
-
-  float r = (src.r - col.r) / a + col.r;
-  float g = (src.g - col.g) / a + col.g;
-  float b = (src.b - col.b) / a + col.b;
-  a *= alpha4;
-
-  return vec4(r * a, g * a, b * a, a);
+    renpy.register_shader("rscript.light256",
+        variables="uniform float u_blendlevel;",
+        fragment_1100="""
+if (gl_FragColor.a > 0.0) {
+    vec3 rgb = floor(gl_FragColor.rgb / gl_FragColor.a * 255.0 + 0.5);
+    rgb = floor(rgb + (256.0 - rgb) * u_blendlevel / 256.0);
+    gl_FragColor.rgb = rgb / 255.0 * gl_FragColor.a;
 }
-    """,
-    fragment_1200 = """
-gl_FragColor = color_to_alpha(gl_FragColor, vec3(0.5));
-    """
-  )
+""")
+
+    from renpy.uguu import GL_FUNC_ADD, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA
+    # Grade is per-channel: multiply the destination, then add its highlight.
+    config.gl_blend_func["rscript_grade_scale"] = (
+        GL_FUNC_ADD, GL_ZERO, 0x0300,  # GL_SRC_COLOR
+        GL_FUNC_ADD, GL_ZERO, GL_ONE)
+    config.gl_blend_func["rscript_grade_add"] = (
+        GL_FUNC_ADD, GL_ONE, GL_ONE,
+        GL_FUNC_ADD, GL_ZERO, GL_ONE)
+    renpy.register_shader("rscript.grade",
+        variables="uniform float u_rscript_grade_add;",
+        fragment_1200="""
+float a = gl_FragColor.a;
+vec3 level = floor(gl_FragColor.rgb / max(a, 0.00001) * 255.0 + 0.5);
+vec3 high = step(vec3(128.0), level);
+if (u_rscript_grade_add == 0.0) {
+    vec3 scale = mix((level + 1.0) / 128.0, (511.0 - 2.0 * level) / 256.0, high);
+    gl_FragColor = vec4(mix(vec3(1.0), scale, a), 1.0);
+} else {
+    gl_FragColor = vec4(high * (2.0 * level - 255.0) / 255.0 * a, 1.0);
+}
+""")
+
 
     # Khime renderer 0x67 inverts destination RGB where the mask's red is zero.
-    from renpy.uguu import GL_FUNC_ADD, GL_ONE, GL_ZERO, GL_ONE_MINUS_SRC_ALPHA
     config.gl_blend_func["rscript_invert"] = (
         GL_FUNC_ADD, 0x0307, GL_ONE_MINUS_SRC_ALPHA,  # GL_ONE_MINUS_DST_COLOR
         GL_FUNC_ADD, GL_ZERO, GL_ONE)

@@ -43,12 +43,15 @@ init -130 python:
         return path
 
 init python:
-    class RScriptRasterVisibility:
+    class RScriptObjectVisibility:
         def __init__(self, layer):
             self.layer = layer
 
         def __call__(self, trans, st, at):
             return rscript_layer_visibility(self.layer, trans, st, at)
+
+    class RScriptRasterVisibility(RScriptObjectVisibility):
+        pass
 
     def rscript_native_images(child):
         entries = getattr(child, "scene_list", None)
@@ -70,7 +73,11 @@ init python:
             batch.clear()
 
         for entry in entries:
-            if isinstance(getattr(entry.displayable, "function", None), RScriptRasterVisibility):
+            visibility = getattr(entry.displayable, "function", None)
+            if isinstance(visibility, RScriptObjectVisibility) and store.layer_blend.get(visibility.layer, (0, 0))[0] == 3:
+                flush()
+                result.add(RScriptGrade(entry.displayable), entry.show_time, entry.animation_time)
+            elif isinstance(visibility, RScriptRasterVisibility):
                 batch.append(entry)
             else:
                 flush()

@@ -113,9 +113,10 @@ def main():
         assert "# Legacy BGM fade 0:" not in lowered
         assert "# Legacy BGM fade rscript_signed16(_r[7]):" in lowered
         assert "_bgm_off int(bool(rscript_signed16(_r[7]))) 2000" in lowered
-        assert lowered.count("_draw 1 0 50") == 2
+        assert lowered.count("_draw 1 0 50") == 1
+        assert "_draw 1 3 50" in lowered
         assert "native normal-drawing alias" in lowered and "flattened" not in lowered
-        assert "_draw 1 {1:1,2:2}.get(rscript_signed16(_r[8]),0) 50" in lowered
+        assert "_draw 1 {1:1,2:2,3:3}.get(rscript_signed16(_r[8]),0) 50" in lowered
         # Lowered expressions must survive the common visual compatibility pass.
         from effect_compat import flatten_unsupported_effects
         assert "flattened" not in flatten_unsupported_effects(lowered, base)

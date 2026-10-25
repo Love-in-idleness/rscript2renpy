@@ -17,6 +17,8 @@ init python:
         store.draw_queue_delayed = []
         store.draw_queue_extra_delayed = []
         store.layer_info = {}
+        store.layer_color = {}
+        store.rscript_colormode_limit = 5
         store.layer_pos = {}
         store.layer_alpha = {}
         store.layer_blend = {}
@@ -63,9 +65,10 @@ python early:
         image = "khime_zero grpe %04d" % args.CGNum
         queue_draw(renpy.scene, layer=CG_LAYER)
         queue_draw(renpy.show, image, tag=CG_TAG, layer=CG_LAYER,
-                   at_list=[Transform(shader="rscript.colormode", u_colormode=args.Colormode)])
+                   at_list=[Transform(shader="rscript.colormode", u_colormode=rscript_colormode(args.Colormode))])
         process_draw_queue()
         store.layer_info[CG_LAYER] = image
+        store.layer_color[CG_LAYER] = rscript_colormode(args.Colormode)
         store.layer_pos[CG_LAYER] = (0, 0)
         # Never turn the external CG number into a main-game unlock register.
 

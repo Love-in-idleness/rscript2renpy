@@ -123,7 +123,7 @@ def main() -> None:
         assert "_load effect 19 flattened" not in scene
         assert "_update effect 16 flattened to 0 (missing grps/ef16.png)" in scene
         assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in scene
-        assert "_draw blend mode 3 flattened to 0" in scene
+        assert "_draw 1 3 30" in scene
         assert "_oaction action 7 flattened to no-op" in scene
         assert "unsupported text control ^fz, ^q flattened to empty" in scene
         assert "_khime_say '^fmHello ^crred ^g001^nnext ^cyyellow unknown '" in scene

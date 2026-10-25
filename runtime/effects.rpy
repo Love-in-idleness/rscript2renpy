@@ -615,9 +615,43 @@ init python:
         trans.alpha = float(bool(store.layer_enabled.get(layer, 1)))
         mode, trans.u_blendlevel = store.layer_blend.get(layer, (0, 0))
         # Named renderer modes are lowered by adapters, never raw opcode numbers.
-        trans.shader = "rscript.dim256" if mode == "dim256" else "rscript.blend"
-        trans.u_blendmode = 0 if mode == "dim256" else mode
+        if mode in (4, 5, "dim256"):
+            trans.shader = "rscript.light256" if mode == 5 else "rscript.dim256"
+            if mode != "dim256":
+                trans.u_blendlevel = ((int(trans.u_blendlevel) & 0xffff) * 255 // 100) & 0xffff
+            trans.u_blendmode = 0
+        else:
+            trans.shader = "rscript.blend"
+            trans.u_blendmode = mode
         return .05
+
+    class RScriptGrade(renpy.Displayable):
+        def __init__(self, child):
+            super(RScriptGrade, self).__init__()
+            self.child = child
+
+        def visit(self):
+            return [self.child]
+
+        def get_placement(self):
+            return self.child.get_placement()
+
+        def render(self, width, height, st, at):
+            source = renpy.render(self.child, width, height, st, at)
+            w, h = source.get_size()
+            result = renpy.Render(w, h)
+            for add, blend in ((0., "rscript_grade_scale"), (1., "rscript_grade_add")):
+                part = renpy.Render(w, h)
+                part.blit(source, (0, 0))
+                part.mesh = True
+                part.add_shader("renpy.texture")
+                part.add_shader("rscript.grade")
+                part.add_uniform("u_rscript_grade_add", add)
+                part.add_property("gl_blend_func", config.gl_blend_func[blend])
+                result.blit(part, (0, 0))
+            # shortcut: two GPU passes round separately, within two byte levels;
+            # use destination-texture integer composition for byte-exact edges.
+            return result
 
     def rscript_show_layer(name, at_list=None, **kwargs):
         transforms = list(at_list or [])
@@ -626,7 +660,7 @@ init python:
             # Moves/effects must retain native depth, not renpy.show's default 0.
             kwargs.setdefault("zorder", store.layer_zorder.get(number, number * 2))
             visibility = (RScriptRasterVisibility if isinstance(kwargs.get("what"), renpy.display.image.ImageReference)
-                          else renpy.curry(rscript_layer_visibility))
+                          else RScriptObjectVisibility)
             transforms.append(Transform(shader="rscript.blend", u_blendmode=0, u_blendlevel=0,
                                         function=visibility(number)))
         renpy.show(name, at_list=transforms, **kwargs)
@@ -679,6 +713,7 @@ init python:
             ypos = ypos * store.layer_y_grid
         else:
             xpos, ypos = store.layer_pos.get(layer, (0.0, 0.0))
+        color = store.layer_color.get(layer, 0) if clear else rscript_colormode(color, layer)
 
         # RScript coordinates are pixels even after a fractional locgrid scale.
         # Bare floats are *relative* positions in Ren'Py, not pixel offsets.
@@ -706,6 +741,7 @@ init python:
             if not clear:
                 img = displayable if displayable is not None else "%s %04d" % (folder[layer], cg)
                 store.layer_info[layer] = img
+                store.layer_color[layer] = color
                 store.layer_pos[layer] = (xpos or 0, ypos or 0)
                 queue_draw(rscript_show_layer, tag, what = renpy.displayable(img),
                            at_list = at_list, zorder = zorder, layer = IMAGE_LAYER)
@@ -849,7 +885,7 @@ init python:
                 queue_ef_pause(0.5)
 
             elif layer in store.layer_info:
-                queue_draw(rscript_show_layer, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [ef], layer = IMAGE_LAYER)
+                queue_draw(rscript_show_layer, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [Transform(shader="rscript.colormode", u_colormode=color), ef], layer = IMAGE_LAYER)
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
@@ -868,7 +904,7 @@ init python:
                 queue_ef_pause(0.5)
 
             elif layer in store.layer_info:
-                queue_draw(rscript_show_layer, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [ef], layer = IMAGE_LAYER)
+                queue_draw(rscript_show_layer, tag, what = renpy.displayable(store.layer_info[layer]), at_list = [Transform(shader="rscript.colormode", u_colormode=color), ef], layer = IMAGE_LAYER)
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
@@ -928,6 +964,7 @@ init python:
 
         if clear:
             store.layer_info.pop(layer, None)
+            store.layer_color.pop(layer, None)
             store.layer_pos.pop(layer, None)
         process_draw_queue()
 
@@ -940,7 +977,8 @@ init python:
         xpos, ypos = store.layer_pos.get(layer, (0, 0))
         anchor = store.layer_anchor.get(layer, (0.0, 0.0))
         tag = "layer%d" % layer
-        stable = Transform(xpos = xpos, ypos = ypos, anchor = anchor)
+        stable = Transform(xpos = xpos, ypos = ypos, anchor = anchor,
+                           shader="rscript.colormode", u_colormode=store.layer_color.get(layer, 0))
 
         queue_draw(rscript_show_layer, tag, what = renpy.displayable(img),
                    at_list = [stable, rotate_clockwise], layer = IMAGE_LAYER)
@@ -1014,7 +1052,8 @@ init python:
             raise Exception("Move effect %d not defined." % effect)
 
         # Replacing _oload's fade must not inherit its initial alpha=0.
-        trans = Transform(xpos = xpos, ypos = ypos, anchor = anchor, alpha = 1.0)
+        trans = Transform(xpos = xpos, ypos = ypos, anchor = anchor, alpha = 1.0,
+                          shader="rscript.colormode", u_colormode=store.layer_color.get(layer, 0))
         if effect in (5, 6):
             # Native 413e40 -> 44d3c0: opposite half-circle paths, not shakes.
             ef = Transform(alpha=1.0, function=renpy.curry(rscript_arc_move)(
@@ -1028,6 +1067,8 @@ init python:
             ef = afterimage(start, ef)
 
 
+        ef.shader = "rscript.colormode"
+        ef.u_colormode = store.layer_color.get(layer, 0)
         queue_draw(rscript_show_layer, tag, what = renpy.displayable(img), at_list = [ef], layer = layer_name)
         if effect > 0:
             queue_ef_pause(dur)

@@ -27,6 +27,7 @@
 - [組版](TEXT_WRAPPING.ja.md) · [Forest 字体](FOREST_FONT_ANALYSIS.ja.md)
 - [Khime クリック](KHIME_CLICK_ANALYSIS.ja.md) · [画像効果](KHIME_EFFECT_ANALYSIS.ja.md) · [制御符](KHIME_TEXT_CONTROLS.ja.md)
 - [効果 2](UPDATE_EFFECT2.ja.md)
+- [原生色彩・描画モード](NATIVE_VISUAL_MODES.ja.md)
 - [Evermaiden ランタイム](EVERMAIDEN_RUNTIME_GAPS.ja.md)
 - [CannonBall 原動作](../cannonball/NATIVE_EFFECTS.ja.md)
 - [Kagerou 原プログラム](../kagerou/NATIVE_EVIDENCE.ja.md)

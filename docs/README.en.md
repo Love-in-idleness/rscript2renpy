@@ -25,6 +25,7 @@
 - [Text layout](TEXT_WRAPPING.en.md) · [Forest fonts](FOREST_FONT_ANALYSIS.en.md)
 - [Khime clicks](KHIME_CLICK_ANALYSIS.en.md) · [Effects](KHIME_EFFECT_ANALYSIS.en.md) · [Text controls](KHIME_TEXT_CONTROLS.en.md)
 - [Effect 2](UPDATE_EFFECT2.en.md)
+- [Native color and drawing modes](NATIVE_VISUAL_MODES.en.md)
 - [Evermaiden runtime](EVERMAIDEN_RUNTIME_GAPS.en.md)
 - [CannonBall](../cannonball/NATIVE_EFFECTS.en.md)
 - [Kagerou](../kagerou/NATIVE_EVIDENCE.en.md)

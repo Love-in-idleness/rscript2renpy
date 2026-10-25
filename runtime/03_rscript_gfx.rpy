@@ -1,5 +1,11 @@
 python early:
 
+    def rscript_colormode(value, layer=None):
+        value = int(value) & 0xffff
+        # CMainCelFull omits Power; CMainCelLim (object mode 0) implements it.
+        if value == 15 and store.layer_mode.get(layer, 0) == 1:
+            return 0
+        return value if value <= store.rscript_colormode_limit else 0
 
 
 
@@ -20,8 +26,8 @@ python early:
         if not isinstance(args.Colormode, (int, float)):
             return
 
-        if not args.Colormode in [0, 1, 2, 3, 4, 5, 6]:
-            print("Unhandled colormode for load/clear effect", args.Colormode)
+        # Native dispatchers leave unlisted colour numbers unchanged.
+        rscript_colormode(args.Colormode)
 
     renpy.register_statement("_load", parse = parse_load, execute = execute_load, predict = predict_load, lint = lint_load)
 
@@ -107,13 +113,15 @@ python early:
         if not persistent.widescreen_cg and renpy.has_image(img + "_o"):
             shown_img += "_o"
 
-        at_list = [Transform(shader = "rscript.colormode", u_colormode = args.Colormode)]
+        color = rscript_colormode(args.Colormode)
+        at_list = [Transform(shader = "rscript.colormode", u_colormode = color)]
 
         queue_draw(renpy.scene, layer = CG_LAYER)
         queue_draw(renpy.show, shown_img, tag = CG_TAG, layer = CG_LAYER, at_list = at_list)
         process_draw_queue()
 
         store.layer_info[CG_LAYER] = shown_img
+        store.layer_color[CG_LAYER] = color
         store.layer_pos[CG_LAYER] = (0, 0)
 
 
@@ -151,6 +159,7 @@ python early:
         process_draw_queue()
 
         store.layer_info.pop(CG_LAYER, None)
+        store.layer_color.pop(CG_LAYER, None)
         store.layer_pos.pop(CG_LAYER, None)
 
     def predict_gcls(args):
@@ -374,8 +383,7 @@ python early:
         layer_blend[args.Layer] = (args.Mode, args.Level)
 
     def lint_draw(args):
-        if args.Mode == 3:
-            print("[Lint] Unhandled blend mode:", args.Mode)
+        pass
 
     renpy.register_statement("_draw", parse = parse_draw, execute = execute_draw, lint = lint_draw)
 
@@ -398,6 +406,7 @@ python early:
 
         if args.EffectNo == 0:
             renpy.hide(EFFECT_TAG, layer = IMAGE_LAYER)
+            store.layer_blend.pop(EFFECT_TAG, None)
 
 
         elif args.EffectNo >= 11:
@@ -406,8 +415,11 @@ python early:
                 at_list = [Transform(shader = "rscript.effect_invert",
                                      blend = "rscript_invert")]
             else:
-                at_list = [Transform(shader = "rscript.effect", u_effectmode = args.Mode)]
-            renpy.show(img, zorder = store.effect_zorder, tag = EFFECT_TAG, layer = IMAGE_LAYER, at_list = at_list)
+                store.layer_blend[EFFECT_TAG] = (3, 0)
+                at_list = [Transform(shader="rscript.blend", u_blendmode=0, u_blendlevel=0,
+                                     function=RScriptObjectVisibility(EFFECT_TAG))]
+            renpy.show(EFFECT_TAG, what=renpy.displayable(img), zorder = store.effect_zorder,
+                       tag = EFFECT_TAG, layer = IMAGE_LAYER, at_list = at_list)
             renpy.pause(1. / 120.)
 
         else:

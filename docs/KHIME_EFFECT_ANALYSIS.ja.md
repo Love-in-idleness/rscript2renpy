@@ -18,7 +18,7 @@ load `0x422d70 → 0x4218d0 → 0x4064f0`、font `0x422e20 → 0x421a00 → 0x40
 
 renderer4 `0x436c2e → 0x439d60` は RGB を白へ混合。vtable `+0x40/+0x44` は `0x407d60` (ret4) で、引数20から縮放と推定できません。
 
-_effect `0x4235a0` の Mode1は renderer `0x67 → 0x43b0f0`、mask 赤ゼロ領域で target RGB 反転。それ以外 `0x68 → 0x43b1f0` は中灰輝度混合。共通 shader に target 反転を加え、Mode0 は既存近似を維持。`ES101.png` 等の大小文字は無視して探索し、実パスを保持します。コピー・改名は不要です。
+_effect `0x4235a0` の Mode1は renderer `0x67 → 0x43b0f0`、mask 赤ゼロ領域で target RGB 反転。それ以外 `0x68 → 0x43b1f0` は中灰輝度混合。共通層は反転を保ち、それ以外を [チャンネル別 Grade](NATIVE_VISUAL_MODES.ja.md) へ変更し、Color-to-Alpha 近似を使いません。`ES101.png` 等の大小文字は無視して探索し、実パスを保持します。コピー・改名は不要です。
 
 effect3 の 0.5 秒を基準に19は2秒、15は1秒。原 frame 間隔、加速度、pixel 丸めは未再現です。未確認効果は注釈付き平坦化、文字 effect0 は既存 Forest fade を維持します。静的解析・lint は見た目一致の証明ではありません。
 

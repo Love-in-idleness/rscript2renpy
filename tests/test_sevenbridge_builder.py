@@ -23,12 +23,16 @@ def main():
         movie.write_bytes(b"unplayed movie fixture")
         script = source / "scr/0000.tsc"
         script.write_text(';@gsc-byte-format modern-36\n;@gsc-schema rscript18\n'
-                          '*locmode 0 0 0\n*se 1\n*movie 3\n*getflag 1 1\n*getflag 1 0\n*end\n')
+                          '*locmode 0 0 0\n*se 1\n*movie 3\n*getflag 1 1\n*getflag 1 0\n'
+                          '*load 28 1161 0 0 0 8\n*gload 5603 11\n*end\n')
         before = script.read_bytes()
         scenes = build_sevenbridge(source, project)
         assert len(scenes) == 1 and "_getflag 1 1" in scenes["scr/0000.rpy"]
         assert "_se 0 1" in scenes["scr/0000.rpy"]
         assert "_movie 3" in scenes["scr/0000.rpy"]
+        output = (project / "game/scr/0000.rpy").read_text()
+        assert "_load 28 1161 0 0 0 8" in output
+        assert "_gload 5603 11" in output and "flattened" not in output
         assert (project / "game/mov/0003.mpg").read_bytes() == movie.read_bytes()
         assert (project / "game/engine/options.rpy").read_bytes() == (ROOT / "sevenbridge/game/options.rpy").read_bytes()
         assert (project / "game/engine/gallery.rpy").read_bytes() == (ROOT / "sevenbridge/game/gallery.rpy").read_bytes()

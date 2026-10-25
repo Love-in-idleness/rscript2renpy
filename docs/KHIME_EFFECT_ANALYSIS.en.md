@@ -22,7 +22,8 @@ Text and image objects share effects: do not zero every nonzero _oload effect.
 Renderer 4: `0x436c2e → 0x439d60`, blends RGB toward white.
 Vtable +0x40/+0x44 calls target `0x407d60` (ret 4); operand 20 does not establish scaling.
 _effect `0x4235a0` selects renderer by Mode: mode 1 `0x67 → 0x43b0f0` inverts target RGB under zero-red mask;
-others `0x68 → 0x43b1f0` blend mid-grey brightness. Shared shader adds target inversion; mode 0 keeps brightness approximation.
+others `0x68 → 0x43b1f0` grade destination channels. The shared layer preserves inversion;
+non-1 modes now use [per-channel Grade](NATIVE_VISUAL_MODES.en.md), not Color-to-Alpha.
 Actual files include uppercase ES101.png: generated compatibility lookup ignores case but preserves actual paths, without copying/renaming.
 Using existing effect-3 baseline 0.5s gives effect 19=2s and 15=1s.
 Original frame intervals, acceleration and integer rounding remain approximate; static analysis/lint do not prove visual equivalence.

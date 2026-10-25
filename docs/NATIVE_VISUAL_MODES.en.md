@@ -1,0 +1,102 @@
+# Developer reference: native color and drawing modes
+
+[中文](NATIVE_VISUAL_MODES.zh.md) | [English](NATIVE_VISUAL_MODES.en.md) | [Русский](NATIVE_VISUAL_MODES.ru.md) | [日本語](NATIVE_VISUAL_MODES.ja.md)
+
+[Documentation](README.en.md)
+
+## Samples and scope
+
+Start from the newer Evermaiden engine, then compare all six ports and Khime Zero.
+The original EXEs were inspected read-only, not launched. Addresses are sample-specific VAs.
+
+| Sample | SHA-256 |
+| --- | --- |
+| Forest / Forest.exe | `8eb71d07304d362ec26cc47d93c6ef5854b5acadd7c9fe941755ad50820a3e56` |
+| Khime / KhimeDL.exe | `2dfc7b78d32867716ab0406ccbf176b55a76faea1cb9c40feac25c90775222fe` |
+| Khime Zero / Khime_zero.exe | `56e3b1316c2fd3bdc7826606fedf938a5b7509385e4ba4300010c7892a7af76c` |
+| CannonBall / Cannonball.exe | `df4b5b6dffc7002370d0772869baaba551b08fca970e92609ca64b08174f89ba` |
+| SevenBridge / SBridge_jp.exe | `c7d5fc38cf0c354a61d056b607cf1367b2529557e9e0407d0b0fdf12771b35e3` |
+| Kagerou / kagerou.exe | `f02998fae350945f4de4dc7eab47997e1e2d9b8aa43d49740a80aad893dcde9b` |
+| Evermaiden / startup_jp.exe | `88820f28b8f770b486407e55dda28266c6fec42145192d5bc8ad5be21ab895af` |
+
+SevenBridge uses `SBridge_jp.exe`, not another similarly named launcher in that directory.
+
+## Color modes
+
+0 is unchanged, 1 black, 2 inverse, 3 arithmetic-mean grayscale; 14 is unchanged.
+Modes 4–13 use these algorithms and RGB constants, not HSV filters.
+
+| Mode | Algorithm | RGB |
+| --- | --- | --- |
+| 4 | Tint | `8b4513` |
+| 5 | Tint | `483d8b` |
+| 6 | Tint | `ff8000` |
+| 7 | Night | `181020` |
+| 8 | Level | `282040` |
+| 9 | Level | `383080` |
+| 10 | Level | `802d50` |
+| 11 | Night | `904030` |
+| 12 | Level | `805030` |
+| 13 | Level | `a06040` |
+
+```text
+Grade(x,k) = floor(x*(k+1)/128)                  if k < 128
+             floor(x+(256-x)*(2*k-255)/256)     otherwise
+Tint(C,T) = Grade(T, floor((R+G+B)/3))
+m = min(R,G,B)
+Night(C,T) = floor(C*(256-m)/256) + floor(Grade(C,T)*(m+1)/256)
+```
+
+Color conversion preserves alpha. Mode 15 is HSL Power with byte quantization and a piecewise
+hue warp, not a uniform saturation increase. Native RGB examples: red→(255,1,1),
+green→(7,255,1), blue→(255,192,1).
+
+Forest supports 1–6; CannonBall and Khime Zero support 1–5.
+The extended Khime, SevenBridge, Kagerou and Evermaiden family distinguishes object classes:
+Full supports through 13, Lim additionally supports 15, and 14 remains unchanged.
+Evermaiden object mode 1 selects Full. Unlisted WORD values leave the image unchanged;
+they are not unsupported effects to flatten. The shared layer retains color through
+movement, rotation and animated clearing.
+
+## Drawing and masks
+
+Modern `draw 3` applies `Grade(destination, mask)` independently to each channel.
+It ignores Level and is not ordinary alpha drawing. By user decision, early engines'
+normal-drawing alias 3 now uses this modern meaning; other early aliases remain intact.
+`draw 4/5` use black/white LUTs with strength `WORD(Level)*255//100`.
+Kagerou's existing named `dim256` path still accepts an already-converted byte strength.
+Non-1 `effect` modes reuse Grade instead of the GIMP Color-to-Alpha approximation;
+mode 1 remains destination inversion.
+
+Grade uses two GPU passes: scale the destination per channel, then add highlights.
+Separate framebuffer rounding permits a two-level difference; this is not a claim of
+byte-identical GDI edges. Coverage, depth and ordinary raster stitching are preserved;
+text objects remain outside raster batches.
+
+## Evidence
+
+- Evermaiden: `4154d0 / 415810` (Full / Lim), `44d880` (CMath),
+  `461a70 / 461c90 / 461e50` (Level / Night / Power).
+- Forest: `407fe0 / 408200`; Khime: `40b1a0 / 40b710`;
+  Zero: `407910 / 407b00`; CannonBall: `4056d0`;
+  SevenBridge: `409820`.
+- REA: `ev_75cb85845a085eaa225b93c2ab638203ea2858f7a100edc6ed6a153582bb224a`,
+  `ev_8fd952896a36ca15b3b46ccc02fbd32d104f0c3c516dfe76985a7b10aea65ac9`,
+  `ev_f8cf3c06d5dfc8f6cb7d77e805c6e00d8fc35f59be596699c1fea2aca8f7a730`,
+  `ev_905392cadc15179ebc74e6479ea8cad674b695c001ad6199612d5bb5dfea6b06`.
+- Draw: `4129b0` → renderer `2 / 14 / 104 / 3 / 4`,
+  `4464e0` case `104`;
+  `ev_d72f2de30d9317ab80890eccc8c6d517851b60fbe84c35787f324ef2d2975b49`,
+  `ev_2cb8389d102a8c15d2314404097b4b9c666238e5159e510d42ef00c7551d4863`.
+
+## Checks and remaining work
+
+An independent float32 Power reference matched the bounded native pixel routine on 5102
+synthetic RGBA samples. Native code and private harnesses are not committed.
+Shared GL2 checks cover colors, active/final movement, rotation, clearing, draw 3/4/5,
+normal-mode restoration and blending across the CG layer, not complete gameplay.
+
+Accepting a parameter does not establish a faithful implementation of every effect.
+Diagonal load/cls paths, effect 18, complex exits 30–35, move 4/11–13 and other oaction
+commands still need trajectory, object-class and timing verification.
+Existing approximate animations are not frame-exact implementations either.

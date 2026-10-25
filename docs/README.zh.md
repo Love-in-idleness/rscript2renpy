@@ -27,6 +27,7 @@
 - [文字布局](TEXT_WRAPPING.zh.md) · [Forest 字体](FOREST_FONT_ANALYSIS.zh.md)
 - [Khime 点击](KHIME_CLICK_ANALYSIS.zh.md) · [图像效果](KHIME_EFFECT_ANALYSIS.zh.md) · [控制符](KHIME_TEXT_CONTROLS.zh.md)
 - [效果 2](UPDATE_EFFECT2.zh.md)
+- [原生色彩与绘制模式](NATIVE_VISUAL_MODES.zh.md)
 - [Evermaiden 运行时](EVERMAIDEN_RUNTIME_GAPS.zh.md)
 - [CannonBall 引擎行为](../cannonball/NATIVE_EFFECTS.zh.md)
 - [Kagerou 原程序依据](../kagerou/NATIVE_EVIDENCE.zh.md)

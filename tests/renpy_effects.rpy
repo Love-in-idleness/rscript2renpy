@@ -8,6 +8,7 @@ init 100 python:
     renpy.image("grpo 9990", Solid("#204060", xsize=100, ysize=80))
     renpy.image("grps es101", Solid("#000000", xsize=100, ysize=80))
     renpy.image("grps es102", Solid("#808080", xsize=100, ysize=80))
+    renpy.image("grps es103", Solid("#4080c0", xsize=100, ysize=80))
     renpy.image("grpo 9980", Solid("#ff0000", xsize=100, ysize=80))
     renpy.image("grpo 9981", Solid("#0000ff", xsize=100, ysize=80))
     renpy.image("grpo 9982", Solid("#00ff00", xsize=100, ysize=80))
@@ -136,10 +137,86 @@ label _0000:
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((32, 64, 96))
     _effect 0 0
+    _effect 103 0
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((16, 64, 176))
+    _effect 0 0
     $ renpy.show("white_probe", what=Solid("#204060", xsize=100, ysize=80), at_list=[Transform(shader="rscript.white", u_rscript_white=1.0)])
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((255, 255, 255))
     $ renpy.hide("white_probe")
+    python:
+        # Native CMath byte tables and Level/Night constants, not HSV tinting.
+        expected_colors = ((0, 0, 0), (223, 191, 159), (64, 64, 64),
+            (70, 35, 9), (36, 30, 70), (129, 65, 0), (28, 57, 87),
+            (10, 16, 48), (14, 24, 96), (32, 23, 60), (35, 60, 88),
+            (32, 40, 36), (88, 48, 48))
+        for mode, expected in enumerate(expected_colors, 1):
+            renpy.show("color_probe", what=Solid("#204060", xsize=100, ysize=80),
+                       at_list=[Transform(shader="rscript.colormode", u_colormode=mode)])
+            renpy.pause(.05, hard=True)
+            effects_test_pixel(expected)
+        renpy.hide("color_probe")
+        # Expected bytes from the independently executed, reviewed Power routine.
+        for source, expected in (("#ff0000", (255, 1, 1)),
+                                 ("#00ff00", (7, 255, 1)),
+                                 ("#0000ff", (255, 192, 1)),
+                                 ("#ff00ff", (255, 1, 240)),
+                                 ("#00f6ff", (1, 228, 255)),
+                                 ("#00f0ff", (1, 186, 255))):
+            renpy.show("color_probe", what=Solid(source, xsize=100, ysize=80),
+                       at_list=[Transform(shader="rscript.colormode", u_colormode=15)])
+            renpy.pause(.05, hard=True)
+            effects_test_pixel(expected)
+        renpy.hide("color_probe")
+        store.layer_mode[20] = 1
+        assert rscript_colormode(15, 20) == 0
+        store.layer_mode[20] = 0
+        assert rscript_colormode(65536) == 0
+        assert rscript_colormode(-65535) == 1
+        assert rscript_colormode(999) == 0
+        original_limit = store.rscript_colormode_limit
+        store.rscript_colormode_limit = 5
+        assert rscript_colormode(6) == 0
+        store.rscript_colormode_limit = original_limit
+    _load 20 9990 0 0 0 5
+    _move 20 0 0 0 0
+    $ renpy.pause(.05, hard=True)
+    $ effects_test_pixel((36, 30, 70))
+    python:
+        # Check the active movement, before its final transform is restored.
+        store.in_queue = True
+        move_layer(20, 0, 0, 1, 16)
+        store.in_queue = False
+        moving = store.draw_queue.pop(0)
+        moving[0](*moving[1], **moving[2])
+        store.draw_queue.clear()
+        store.draw_queue_delayed.clear()
+        store.draw_queue_extra_delayed.clear()
+    $ renpy.pause(.05, hard=True)
+    $ effects_test_pixel((36, 30, 70))
+    _oaction 20 4
+    $ renpy.pause(.05, hard=True)
+    $ effects_test_pixel((36, 30, 70))
+    _cls 20 0
+    $ assert 20 not in store.layer_color
+    _load 20 9990 0 0 0 0
+    _draw 20 3 50
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((8, 32, 72))
+    $ rscript_show_layer("layer20", what=Solid("#204060", xsize=100, ysize=80))
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((8, 32, 72))
+    _draw 20 4 50
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((16, 32, 48))
+    _draw 20 5 50
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((143, 159, 175))
+    _draw 20 0 0
+    $ renpy.pause(.1, hard=True)
+    $ effects_test_pixel((32, 64, 96))
+    _cls 20 0
     python:
         for level in (-1, 0, 128, 255):
             renpy.show("grid_probe", what=Solid("#ff0000", xsize=100, ysize=80),

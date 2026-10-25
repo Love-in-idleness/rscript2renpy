@@ -31,7 +31,8 @@ renderer 4 经 `0x436c2e → 0x439d60`，将 RGB 混向白色。
 `_effect` 的 `0x4235a0` 按 Mode 选择 renderer：
 Mode 1 的 `0x67 → 0x43b0f0` 以遮罩零红色区域反转目标 RGB；
 其他模式的 `0x68 → 0x43b1f0` 是中灰亮度混合。
-公共 shader 增加目标反色混合；Mode 0 沿用既有亮度混合近似。
+公共层保留目标反色；非 1 模式改用逐通道 Grade，见
+[原生色彩与绘制模式](NATIVE_VISUAL_MODES.zh.md)，不再沿用 Color-to-Alpha 近似。
 Khime 实际资源名为大写 `ES101.png` 等，生成兼容检查必须忽略文件名大小写，
 但保留真实路径；无需复制或重命名资源。
 

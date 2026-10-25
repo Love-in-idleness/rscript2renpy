@@ -28,6 +28,7 @@
 - [Вёрстка текста](TEXT_WRAPPING.ru.md), [шрифты Forest](FOREST_FONT_ANALYSIS.ru.md)
 - [Khime: клики](KHIME_CLICK_ANALYSIS.ru.md), [эффекты](KHIME_EFFECT_ANALYSIS.ru.md), [управление текстом](KHIME_TEXT_CONTROLS.ru.md)
 - [Эффект 2](UPDATE_EFFECT2.ru.md), [runtime Evermaiden](EVERMAIDEN_RUNTIME_GAPS.ru.md)
+- [Исходные режимы цвета и рисования](NATIVE_VISUAL_MODES.ru.md)
 - [CannonBall](../cannonball/NATIVE_EFFECTS.ru.md), [Kagerou](../kagerou/NATIVE_EVIDENCE.ru.md)
 - [Изменения общего слоя от 2026-10-12](OPTIMIZATION_REPORT_2026-10-12.ru.md)
 

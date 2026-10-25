@@ -85,10 +85,11 @@ def main() -> None:
     assert "u_colormode == 3.0" in shader
     assert "u_colormode == 5.0" in shader
     assert "u_colormode == 6.0" in shader
-    assert "18.0 / 32.0, 15.0 / 32.0, 35.0 / 32.0" in shader
-    assert "return vec3(1.0, l, 2.0 * l - 1.0);" in shader
+    assert "vec3(72.0, 61.0, 139.0)" in shader
+    assert "vec3(255.0, 128.0, 0.0)" in shader
+    assert "vec3 rscript_grade" in shader
     gfx = (ROOT / "runtime" / "03_rscript_gfx.rpy").read_text(encoding="utf-8")
-    assert "args.Colormode in [0, 1, 2, 3, 4, 5, 6]" in gfx
+    assert "def rscript_colormode(value, layer=None):" in gfx
     assert "store.layer_info[CG_LAYER] = shown_img" in gfx
     assert "color = args.Colormode, displayable = text)" in gfx
     assert "at_list.append(oload_fade)" in (ROOT / "runtime/effects.rpy").read_text()
@@ -342,7 +343,7 @@ def main() -> None:
     assert "xpos" not in centered
     assert "background rscript_textbox_background()" in FOREST_COMPAT
     assert "alpha=persistent.rscript_textbox_opacity" in FOREST_COMPAT
-    assert "textpos = (absolute(text_indent + 1), 8)" in FOREST_COMPAT
+    assert 'textpos = rscript_ui.get("text_pos", (absolute(text_indent + 1), 8))' in FOREST_COMPAT
     assert "xsize config.screen_width - text_indent - 1" not in FOREST_COMPAT
     assert "default persistent.rscript_say_line_chars = 19" in FOREST_COMPAT
     assert "default persistent.rscript_oload_line_chars = 20" in FOREST_COMPAT
@@ -382,11 +383,11 @@ def main() -> None:
     assert 'if kind in ("save", "load", "quick_save", "quick_load"):' in FOREST_COMPAT
     assert 'return rscript_permission("save")' in FOREST_COMPAT
     assert 'style rscript_volume_bar is bar:' in FOREST_COMPAT
-    assert '"grps/nonbl/%d.png" % number' in FOREST_COMPAT
+    assert '"grps/nonbl/%s.png" % candidate' in FOREST_COMPAT
     assert 'renpy.loadable(rscript_image_path("grps/nonbl/0.png"))' in FOREST_COMPAT
     assert 'data["rscript_dt1"] = int(store._r[1])' in FOREST_COMPAT
     assert 'FileJson(slot, key="forest_dt1")' in FOREST_COMPAT
-    assert 'grps/dt1_%04d.png' in FOREST_COMPAT
+    assert 'grps/%s_%04d.png' in FOREST_COMPAT
     assert 'FileScreenshot' in FOREST_COMPAT
     assert '"selected_plain_folders": ("confscrn",)' in FOREST_COMPAT
     assert 'register_rscript_ui_aliases("forest")' in FOREST_COMPAT

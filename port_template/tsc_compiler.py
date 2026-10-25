@@ -310,11 +310,11 @@ def compile_scene(source: Path | RScriptTsc, patches=(), *, zero=False, zero_tit
                     args[-1] = "int(bool(%s))" % args[-1] if parameters[-1] >= 65536 else str(int(bool(parameters[-1])))
                     args.append("2000")
                 if legacy and op == 39:
-                    # Native 405490 maps only 1/2 specially; all others are normal.
+                    # Keep early aliases, except draw 3 uses the agreed modern Grade.
                     mode = parameters[1]
                     if mode >= 65536:
-                        args[1] = "{1:1,2:2}.get(%s,0)" % args[1]
-                    elif mode not in (0, 1, 2):
+                        args[1] = "{1:1,2:2,3:3}.get(%s,0)" % args[1]
+                    elif mode not in (0, 1, 2, 3):
                         lines.append("    # Legacy draw mode %s: native normal-drawing alias, not an unsupported effect." % args[1])
                         args[1] = "0"
                 if legacy and op == 21:

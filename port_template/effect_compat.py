@@ -33,9 +33,10 @@ MOVE_EFFECTS = {0, 1, 2, 3, 5, 6, 7, 8, 9, 10}
 def _supported(command: str, field: str, value: int,
                resources: Path) -> tuple[bool, str]:
     if field == "colormode":
-        return value in range(7), "not implemented"
+        # Each native dispatcher leaves unlisted WORD values unchanged.
+        return True, ""
     if command == "_draw":
-        return value in (0, 1, 2), "not implemented"
+        return True, ""  # Unlisted native renderer modes select ordinary drawing.
     if command == "_oaction":
         return value == 4, "not implemented"
     if command in ("_load", "_cls", "_oload"):

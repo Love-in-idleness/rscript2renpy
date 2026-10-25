@@ -40,7 +40,7 @@ def main() -> None:
     assert "_khime_setclk 41 1 3 0" in title
     assert "_khime_click 0 0 0" in title
     setup = compile_scene(next(path for path in sources if path.stem == "0111"))
-    assert "_khime_locmode 0 1 1" in setup
+    assert "_locmode 0 1 1" in setup
     effect = compile_scene(next(path for path in sources if path.stem == "1102"))
     assert "_cls 1 19" in effect
     assert "_load 1 5043 400 300 19 0" in effect
