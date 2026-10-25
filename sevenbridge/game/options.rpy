@@ -7,6 +7,7 @@ define config.has_voice = True
 init -100 python:
     # SBridge_jp.exe APINI 469740, dispatcher 41cc40 and voice path 41b5b0.
     rscript_screen_size = (800, 600)
+    rscript_move4_timing = "fixed-steps"
     rscript_base_text_size = 24
     rscript_inline_base_size = 24
     rscript_use_speaker_images = True

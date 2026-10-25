@@ -144,6 +144,11 @@ def main() -> None:
         assert "    pass\n" in scene
         assert flatten_unsupported_effects(scene, resources) == scene
         assert flatten_unsupported_effects("    _cls 42 14\n", resources) == "    _cls 42 14\n"
+        for effect in (4, 104, 204):
+            for statement in ("_move 42 300 100 %d 15", "_movi 42 -300 0 %d 0",
+                              "_gmove %d 300 100 15"):
+                source = "    " + statement % effect + "\n"
+                assert flatten_unsupported_effects(source, resources) == source
         for effect in (31, 34):
             source = "    _cls 42 %d\n" % effect
             assert flatten_unsupported_effects(source, resources) == source

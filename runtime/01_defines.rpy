@@ -40,6 +40,7 @@ init:
     define FRAME = 1 / 60.
     define rscript_update_timing = "legacy"
     define rscript_colormode_limit = 15
+    define rscript_move4_timing = "script"
 
     define rscript_voice_format = "voice/%05d.opus"
     define rscript_voice_groups = False

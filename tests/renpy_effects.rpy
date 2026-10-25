@@ -250,6 +250,66 @@ label _0000:
             effects_test_pixel(expected, pos)
         renpy.hide("diagonal_probe")
         print("OK: native diagonal path frames and stripe pixels", flush=True)
+        old_timing = store.rscript_move4_timing
+        old_grid = (store.layer_x_grid, store.layer_y_grid)
+        old_anchor = dict(store.layer_anchor)
+        try:
+            for timing, steps in (("fixed-steps", 15), ("fixed-speed", 10), ("script", 10)):
+                store.rscript_move4_timing = timing
+                path = rscript_wave_path((150, 200), (450, 200), 10)
+                assert path[2] == steps
+                for tick in (0, steps // 2, steps + 1):
+                    center = rscript_wave_position(path, tick * rscript_dynamic_tick)
+                    image = Transform(Solid("#ff0000", xsize=100, ysize=80), alpha=1.,
+                                      function=renpy.curry(rscript_wave_move)(path, (.5, .5), (1, 1)))
+                    canvas = Fixed(image, xysize=(800, 600))
+                    renpy.show("wave_probe", what=EffectsTimeProbe(canvas, tick * rscript_dynamic_tick))
+                    renpy.pause(.05, hard=True)
+                    effects_test_pixel((255, 0, 0), (center[0], center[1] - 30))
+                    effects_test_pixel((32, 64, 96), (center[0] - 60, center[1]))
+            renpy.hide("wave_probe")
+            store.rscript_move4_timing = "fixed-speed"
+            store.layer_info[20] = "grpo 9990"
+            store.layer_pos[20] = (150, 200)
+            store.layer_color[20] = 5
+            store.layer_anchor[20] = (.5, .5)
+            store.in_queue = True
+            move_layer(20, 450, 200, 4, 99)
+            assert store.layer_pos[20] == (450, 200)
+            motion = store.draw_queue[0][2]["at_list"][0]
+            assert motion.u_colormode == 5
+            assert (_queue_ef_pause, (11 * rscript_dynamic_tick,), {}) in store.draw_queue
+            motion.function(motion, .25, .25)
+            assert motion.anchor == (.5, .5)
+            assert motion.pos == rscript_wave_position(rscript_wave_path((150, 200), (450, 200), 99), .25)
+            store.draw_queue.clear()
+            store.draw_queue_delayed.clear()
+            store.draw_queue_extra_delayed.clear()
+            # Short CannonBall moves do not activate CMath, even with afterimages.
+            for effect in (4, 104, 204):
+                move_layer(20, 1, 0, effect, 0, relative=True)
+                assert store.layer_pos[20] == (450, 200)
+                store.draw_queue.clear()
+                store.draw_queue_delayed.clear()
+                store.draw_queue_extra_delayed.clear()
+            # Resource coordinates must stay native in the scaled Khime Zero overlay.
+            store.layer_x_grid = store.layer_y_grid = 1.25
+            store.layer_pos[20] = (187.5, 250)
+            move_layer(20, 450, 200, 4, 0)
+            motion = store.draw_queue[0][2]["at_list"][0]
+            motion.function(motion, .25, .25)
+            native = rscript_wave_position(rscript_wave_path((150, 200), (450, 200), 0), .25)
+            assert motion.pos == (native[0] * 1.25, native[1] * 1.25)
+        finally:
+            store.rscript_move4_timing = old_timing
+            store.layer_x_grid, store.layer_y_grid = old_grid
+            store.layer_anchor.clear()
+            store.layer_anchor.update(old_anchor)
+            store.in_queue = False
+            store.draw_queue.clear()
+            store.draw_queue_delayed.clear()
+            store.draw_queue_extra_delayed.clear()
+        print("OK: native move 4 timing, wave frames, anchors and color", flush=True)
     _load 20 9990 0 0 15 0
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((32, 64, 96))

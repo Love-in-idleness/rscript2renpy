@@ -19,6 +19,7 @@ init python:
         store.layer_info = {}
         store.layer_color = {}
         store.rscript_colormode_limit = 5
+        store.rscript_move4_timing = "fixed-steps"
         store.layer_pos = {}
         store.layer_alpha = {}
         store.layer_blend = {}

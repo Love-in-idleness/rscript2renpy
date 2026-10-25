@@ -465,6 +465,45 @@ init python:
             return tuple(b + int((a - b) * sample / 65535) for a, b in zip(start, end))
         return tuple(a + int((b - a) * sample / 65535) for a, b in zip(start, end))
 
+    def rscript_trunc_div(value, divisor):
+        return value // divisor if value >= 0 else -((-value) // divisor)
+
+    def rscript_wave_path(start, end, speed):
+        import math
+        delta = tuple(b - a for a, b in zip(start, end))
+        distance = math.isqrt(sum(d * d for d in delta))
+        if rscript_move4_timing == "fixed-speed":
+            pixels = 30
+        else:
+            count = 15 if rscript_move4_timing == "fixed-steps" else (int(speed) & 0xffff) or 15
+            pixels = max(1, (distance // count) & 0xffff)
+        steps = (distance // pixels) & 0xffff
+        velocity = tuple(rscript_trunc_div(d * 65535, steps) for d in delta) if steps else (0, 0)
+        perpendicular = tuple(rscript_trunc_div(d * 3, 20) for d in (delta[1], -delta[0]))
+        phase = ((2 * 65535) // steps) & 0xffff if steps else 0
+        return start, end, steps, velocity, perpendicular, phase
+
+    def rscript_wave_position(path, elapsed):
+        import math
+        start, end, steps, velocity, perpendicular, phase = path
+        tick = int(elapsed / rscript_dynamic_tick + 1e-9)
+        if not steps or tick == 0:
+            return start
+        if tick > steps:
+            return end
+        remaining = steps - tick + 1
+        index = (phase * remaining // 255) % 255
+        sample = int(math.sin(index / 256.0 * 6.283185308) * 65535)
+        return tuple(b - rscript_trunc_div(v * remaining, 65535) +
+                     rscript_trunc_div(p * sample, 65535)
+                     for b, v, p in zip(end, velocity, perpendicular))
+
+    def rscript_wave_move(path, anchor, grid, trans, st, at):
+        x, y = rscript_wave_position(path, st)
+        trans.pos = (absolute(x * grid[0]), absolute(y * grid[1]))
+        trans.anchor = anchor
+        return rscript_dynamic_tick if st < (path[2] + 1) * rscript_dynamic_tick else None
+
     def rscript_diagonal_path(effect, size, pos, anchor, clear):
         import math
         w, h = size
@@ -1081,9 +1120,14 @@ init python:
         with_afterimage = False
         start = None
 
-        if effect > 100:
+        encoded_effect = int(effect) & 0xffff
+        if encoded_effect % 100 == 4:
+            with_afterimage = encoded_effect >= 100
+            effect = 4
+        elif effect > 100:
             effect -= 100
             with_afterimage = True
+        if with_afterimage:
             start = _effect_start(img, xpos, ypos, anchor)
 
 
@@ -1099,6 +1143,15 @@ init python:
 
 
         xpos, ypos = absolute(xpos), absolute(ypos)
+        if effect == 4:
+            # Native CMath works in resource pixels, before the port's grid scaling.
+            grid = (store.layer_x_grid, store.layer_y_grid)
+            native_start = tuple(int(p / scale) for p, scale in zip(origin, grid))
+            native_end = tuple(int(p / scale) for p, scale in zip((xpos, ypos), grid))
+            path = rscript_wave_path(native_start, native_end, speed)
+            dur = (path[2] + 1) * rscript_dynamic_tick if path[2] else 0
+            if not path[2]:
+                xpos, ypos = origin
         store.layer_pos[layer] = (xpos, ypos)
 
         effects = {
@@ -1112,13 +1165,15 @@ init python:
       10: move_shake_h_sm,
     }
 
-        if effect not in effects and effect not in (5, 6):
+        if effect not in effects and effect not in (4, 5, 6):
             raise Exception("Move effect %d not defined." % effect)
 
         # Replacing _oload's fade must not inherit its initial alpha=0.
         trans = Transform(xpos = xpos, ypos = ypos, anchor = anchor, alpha = 1.0,
                           shader="rscript.colormode", u_colormode=store.layer_color.get(layer, 0))
-        if effect in (5, 6):
+        if effect == 4:
+            ef = Transform(alpha=1.0, function=renpy.curry(rscript_wave_move)(path, anchor, grid))
+        elif effect in (5, 6):
             # Native 413e40 -> 44d3c0: opposite half-circle paths, not shakes.
             ef = Transform(alpha=1.0, function=renpy.curry(rscript_arc_move)(
                 origin, (xpos, ypos), anchor, dur, 1 if effect == 5 else -1))
@@ -1128,6 +1183,7 @@ init python:
 
 
         if with_afterimage:
+            # shortcut: retain shared ATL trails; native clone timing needs separate calibration.
             ef = afterimage(start, ef)
 
 

@@ -98,6 +98,37 @@ REA: `ev_d9a7d2b4a36144041f457d8269e9a0043f32474366870c125e98132d9e1f7210`,
 `ev_500edda26e2d17c7ecb107b1553abf292437b9b826a64f6e039ac4fb1f1aa231`,
 `ev_21e4dc7d33cac2c8ef9a1b30a02e32ae135bf467534de6539d7991b7eaac044b`.
 
+## move 4: preserve each game's behavior
+
+The actual movement call chains all use a sine-displaced wavy path, not an image-copy transition.
+Forest's `401280` image-switch table was previously misidentified as movement; the movement
+entry is `405f00`. The user's decision still applies: preserve each game's speed rules.
+
+| Game | Movement entry → initializer | Native speed rule |
+| --- | --- | --- |
+| CannonBall | `404d80 → 4253c0` | Fixed 30 resource pixels per tick |
+| Khime Zero | `405890 → 42e950` | `max(1, WORD(distance//15))` |
+| Forest | `405f00 → 436e20` | Same; ignores script Speed |
+| SevenBridge | `407090 → 43c310` | Same; ignores script Speed |
+| Khime | `408f30 → 43da10` | `max(1, WORD(distance//(WORD(Speed) or 15)))` |
+| Kagerou | `408530 → 4463b0` | Same |
+| Evermaiden | `413e40 → 44d730` | Same |
+
+The path uses `steps=WORD(distance//speed)` and perpendicular amplitude `(dy,-dx)*3/20`.
+Its linear component is Q16 integer arithmetic; the sine phase increment is
+`WORD(2*65535//steps)`, with division truncating toward zero. The initial frame holds
+the start; after the native steps, position is set to the endpoint. Zero steps do not
+activate movement and must not force a teleport. Compute in resource pixels before port
+scaling; retain anchors, color, concurrent groups and the longest wait.
+`_move/_movi/_gmove` share this implementation. 104/204 retain the existing afterimage
+path; afterimages are not claimed to be frame-exact.
+
+REA: `ev_e8d83ef9e7e6a073bc784176918a94c06b5e7715f298ce93921418e9d26f5764`,
+`ev_14e88ba825c8a4919b11bd063c48134ac3331867e94a68b6831db5c864491c73`,
+`ev_cc4f3dfd1759d85c74ad594f7fe11fcf30b2196cec83aaaaa5b5e59a161bb42f`,
+`ev_387005b14b0fcd75ea8e3547485156aa791cdc29b0ea59735d34b482758e432b`,
+`ev_ff72b51a8553cb687a0287fd749e36556fe9da490823b482309d1e885a8b0e61`.
+
 ## Evidence
 
 - Evermaiden: `4154d0 / 415810` (Full / Lim), `44d880` (CMath),
@@ -122,6 +153,6 @@ Shared GL2 checks cover colors, active/final movement, rotation, clearing, draw 
 normal-mode restoration and blending across the CG layer, not complete gameplay.
 
 Accepting a parameter does not establish a faithful implementation of every effect.
-Complex exits 30/32/33/35, move 4/11–13 and other oaction
+Complex exits 30/32/33/35, move 11–13 and other oaction
 commands still need trajectory, object-class and timing verification.
 Existing approximate animations are not frame-exact implementations either.

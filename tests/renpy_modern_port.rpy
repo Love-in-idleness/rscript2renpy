@@ -289,6 +289,17 @@ python early:
             loadcls(0, 1, clear=True)
             assert pauses == [.5], pauses  # all objects animate together
             assert store.layer_info == {CG_LAYER: "grpe 1020"}
+            assert rscript_move4_timing == "script"
+            store.layer_info.update({11: "grpo_map 0009", 12: "grpo_map 0012"})
+            store.layer_pos.update({11: (0, 100), 12: (0, 200)})
+            pauses.clear()
+            move_layer(0, 300, 0, 4, 10, relative=True)
+            assert len(pauses) == 1 and abs(pauses[0] - 11 * .042) < .00001, pauses
+            assert store.layer_pos[11] == (300, 100) and store.layer_pos[12] == (300, 200)
+            pauses.clear()
+            execute_gmove(SimpleNamespace(Effect=4, xLoc=300, yLoc=0, Speed=10))
+            assert store.layer_pos[CG_LAYER] == (300, 0)
+            assert len(pauses) == 1 and abs(pauses[0] - 11 * .042) < .00001
             store.layer_info.update({11: "grpo_map 0009", 12: "grpo_map 0012"})
             store.in_queue = True
             loadcls(0, 3, clear=True)

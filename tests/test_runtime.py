@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from textwrap import dedent
 from unittest.mock import patch
 import sys
 
@@ -60,6 +61,37 @@ def main() -> None:
     assert 'Tile("engine/gui/rscript_dither.svg")' in combined
     assert "im.Tile" not in combined
     assert "elif effect == 4:" in combined
+    effects = (ROOT / "runtime/effects.rpy").read_text(encoding="utf-8")
+    wave = effects[effects.index("    def rscript_trunc_div"):effects.index("    def rscript_wave_move")]
+    motion = {"rscript_move4_timing": "fixed-steps", "rscript_dynamic_tick": .05}
+    exec(dedent(wave), motion)
+    path = motion["rscript_wave_path"]((0, 100), (300, 100), 1)
+    assert path[2:] == (15, (1310700, 0), (0, -45), 8738)
+    assert path == motion["rscript_wave_path"]((0, 100), (300, 100), 100)
+    position = motion["rscript_wave_position"]
+    assert position(path, 0) == (0, 100)
+    assert position(path, .4) == (140, 80)
+    assert position(path, .8) == (300, 100)
+    reverse = motion["rscript_wave_path"]((300, 100), (0, 100), 0)
+    assert position(reverse, .4) == (160, 120)
+    diagonal = motion["rscript_wave_path"]((10, -20), (-90, 80), 0)
+    assert position(diagonal, .3) == (-12, 26)
+    motion["rscript_move4_timing"] = "script"
+    assert motion["rscript_wave_path"]((0, 0), (300, 0), 10)[2] == 10
+    assert motion["rscript_wave_path"]((0, 0), (300, 0), 30)[2] == 30
+    assert motion["rscript_wave_path"]((0, 0), (300, 0), 65536)[2] == 15
+    motion["rscript_move4_timing"] = "fixed-speed"
+    assert motion["rscript_wave_path"]((0, 0), (300, 0), 99)[2] == 10
+    short = motion["rscript_wave_path"]((10, 20), (11, 20), 0)
+    assert short[2] == 0 and position(short, 10) == (10, 20)
+    for timing in ("fixed-steps", "fixed-speed", "script"):
+        motion["rscript_move4_timing"] = timing
+        stationary = motion["rscript_wave_path"]((-10, -20), (-10, -20), 0)
+        assert stationary[2] == 0 and position(stationary, 10) == (-10, -20)
+    for folder in ("forest", "sevenbridge"):
+        assert 'rscript_move4_timing = "fixed-steps"' in (ROOT / folder / "game/options.rpy").read_text()
+    assert 'rscript_move4_timing = "fixed-speed"' in (ROOT / "cannonball/game/options.rpy").read_text()
+    assert 'store.rscript_move4_timing = "fixed-steps"' in (ROOT / "khime/game/khime_zero.rpy").read_text()
     assert "elif effect == 2:" in combined
     assert 'define rscript_update_timing = "legacy"' in combined
     assert 'class RScriptOrderedDissolve(' in combined

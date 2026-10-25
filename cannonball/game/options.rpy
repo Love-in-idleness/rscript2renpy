@@ -14,6 +14,7 @@ init -130 python:
 # scr/0101.tsc: 29px body, nameplate indent 200, textbox starts at y=465.
 init -100 python:
     rscript_colormode_limit = 5
+    rscript_move4_timing = "fixed-speed"
     rscript_initial_folders = {number: "grpo" for number in range(100)}
     rscript_screen_size = (800, 600)
     rscript_base_text_size = 29
