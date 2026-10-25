@@ -145,22 +145,6 @@ init python:
             paths.append((start, end, steps, exiting and index != 0))
         return paths
 
-    def rscript_dynamic_position(path, elapsed):
-        import math
-        start, end, steps, sine = path
-        tick = int(elapsed / rscript_dynamic_tick)
-        if not steps or tick > steps:
-            return end
-        if tick == 0:
-            return start
-        # 44d070 / 44d880: quantized Q16 sin/cos table, then truncating division.
-        index = ((0x4000 // steps) * (steps - tick + 1) // 255) % 255
-        angle = index / 256.0 * 6.283185308
-        sample = int((math.sin(angle) if sine else math.cos(angle)) * 65535)
-        if sine:
-            return tuple(b + int((a - b) * sample / 65535) for a, b in zip(start, end))
-        return tuple(a + int((b - a) * sample / 65535) for a, b in zip(start, end))
-
     def rscript_dynamic_transform(path, normal, trans, st, at):
         x, y = rscript_dynamic_position(path, st)
         trans.xoffset, trans.yoffset = x - normal[0], y - normal[1]

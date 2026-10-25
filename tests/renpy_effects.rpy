@@ -23,11 +23,11 @@ init 100 python:
         def visit(self):
             return [self.child]
 
-    def effects_test_pixel(expected):
+    def effects_test_pixel(expected, pos=(20, 20)):
         import io
         import pygame_sdl2 as pygame
         image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
-        actual = image.get_at((20, 20))[:3]
+        actual = image.get_at(pos)[:3]
         assert all(abs(a - b) <= 3 for a, b in zip(actual, expected)), (actual, expected)
 
     def effects_test_native_exit(when, effect=31):
@@ -56,13 +56,13 @@ init 100 python:
                 actual = image.get_at((x, y))[:3]
                 assert all(abs(a - b) <= 3 for a, b in zip(actual, (32, 64, 96))), (x, y, actual)
 
-    def effects_test_grid(level):
+    def effects_test_grid(level, vertical=False):
         import io
         import pygame_sdl2 as pygame
         image = pygame.image.load(io.BytesIO(renpy.screenshot_to_bytes((800, 600))))
         for y in range(32):
             for x in range(32):
-                visible = y % 16 > level // 16 and (x + y) % 16 > level // 16
+                visible = x % 16 > level // 16 if vertical else (y % 16 > level // 16 and (x + y) % 16 > level // 16)
                 expected = (255, 0, 0) if visible else (32, 64, 96)
                 actual = image.get_at((x, y))[:3]
                 assert all(abs(a - b) <= 3 for a, b in zip(actual, expected)), (level, x, y, actual, expected)
@@ -218,12 +218,38 @@ label _0000:
     $ effects_test_pixel((32, 64, 96))
     _cls 20 0
     python:
+        print("OK: native colors and draw 3/4/5", flush=True)
         for level in (-1, 0, 128, 255):
             renpy.show("grid_probe", what=Solid("#ff0000", xsize=100, ysize=80),
                        at_list=[Transform(mesh=True, shader="rscript.grid_wipe", u_rscript_grid=level)])
             renpy.pause(0.1, hard=True)
             effects_test_grid(level)
+            renpy.show("grid_probe", what=Solid("#ff0000", xsize=100, ysize=80),
+                       at_list=[Transform(mesh=True, shader="rscript.column_wipe", u_rscript_grid=level)])
+            renpy.pause(.05, hard=True)
+            effects_test_grid(level, vertical=True)
         renpy.hide("grid_probe")
+        for effect, corner in ((11, (-100, -80)), (12, (800, -80)),
+                               (13, (-100, 600)), (14, (800, 600))):
+            path = rscript_diagonal_path(effect, (100, 80), (250, 190), (.5, .5), False)
+            assert path[0] == corner and path[1] == (200, 150), path
+            assert rscript_dynamic_position(path, 0) == corner
+            assert rscript_dynamic_position(path, (path[2] + 1) * rscript_dynamic_tick) == (200, 150)
+            reverse = rscript_diagonal_path(effect, (100, 80), (250, 190), (.5, .5), True)
+            assert reverse[:2] == ((200, 150), corner)
+        path = rscript_diagonal_path(11, (100, 80), (250, 190), (.5, .5), False)
+        assert path[2] == 15
+        assert rscript_dynamic_position(path, 8 * rscript_dynamic_tick) == (101, 74)
+        assert rscript_diagonal_path(11, (1, 1), (0, 0), (0, 0), False)[:2] == ((-1, -1), (-1, -1))
+        motion = RScriptDiagonal(Solid("#ff0000", xsize=100, ysize=80), 11, (250, 190), (.5, .5), False)
+        for tick, pos, expected in ((0, (20, 20), (32, 64, 96)),
+                                    (8, (120, 94), (255, 0, 0)),
+                                    (16, (220, 170), (255, 0, 0))):
+            renpy.show("diagonal_probe", what=EffectsTimeProbe(motion, tick * rscript_dynamic_tick))
+            renpy.pause(.05, hard=True)
+            effects_test_pixel(expected, pos)
+        renpy.hide("diagonal_probe")
+        print("OK: native diagonal path frames and stripe pixels", flush=True)
     _load 20 9990 0 0 15 0
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((32, 64, 96))
@@ -355,7 +381,7 @@ label _0000:
     _cls 11 0
     _cls 40 0
     python:
-        for effect in (0, 2, 3, 4, 9, 15, 17, 19, 24, 28):
+        for effect in (0, 2, 3, 4, 9, 11, 12, 13, 14, 15, 17, 18, 19, 24, 28):
             lex = renpy.lexer.Lexer([("effects-test", 1,
                 "20 200 100 %d 0 'object'" % effect, [])])
             lex.advance()

@@ -263,7 +263,7 @@ def main():
                                           stderr=subprocess.STDOUT, text=True,
                                           start_new_session=True) as process:
                         try:
-                            output, _ = process.communicate(timeout=45)
+                            output, _ = process.communicate(timeout=90 if driver == "renpy_effects" else 45)
                         except subprocess.TimeoutExpired:
                             os.killpg(process.pid, signal.SIGKILL)
                             output, _ = process.communicate()

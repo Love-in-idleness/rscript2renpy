@@ -244,8 +244,12 @@ python early:
         execute_tonedep(RScriptArguments(Depth=0))
         old_info, old_pos, old_groups = store.layer_info, store.layer_pos, store.layer_groups
         old_pause = renpy.pause
+        old_diagonal_path = RScriptDiagonal.path
         pauses = []
         try:
+            # This SDK command has no renderer; the GL2 effects driver checks geometry.
+            RScriptDiagonal.path = lambda motion: rscript_diagonal_path(
+                motion.effect, (20, 20), motion.pos, motion.anchor, motion.clear)
             store.layer_info = {11: "grpo_map 0009", 12: "grpo_map 0012", CG_LAYER: "grpe 1020"}
             store.layer_pos = {11: (0, 0), 12: (10, 20)}
             store.layer_groups = {}
@@ -275,6 +279,11 @@ python early:
                 assert not any(fn == renpy.hide for fn, args, kwargs in store.draw_queue)
                 store.in_queue = False
                 process_draw_queue()
+            store.layer_info.update({11: "grpo_map 0009", 12: "grpo_map 0012"})
+            pauses.clear()
+            loadcls(0, 14, clear=True)
+            assert len(pauses) == 1  # Concurrent corner exits share one wait.
+            store.layer_info.update({11: "grpo_map 0009", 12: "grpo_map 0012"})
             store.layer_info[11] = "grpo_map 0009"
             pauses.clear()
             loadcls(0, 1, clear=True)
@@ -291,6 +300,7 @@ python early:
         finally:
             store.in_queue = False
             renpy.pause = old_pause
+            RScriptDiagonal.path = old_diagonal_path
             store.layer_info, store.layer_pos, store.layer_groups = old_info, old_pos, old_groups
         args = SimpleNamespace(Effect=2, Layout=0, Mode=1)
         old_menu = renpy.display_menu

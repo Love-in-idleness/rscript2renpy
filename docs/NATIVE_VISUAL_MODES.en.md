@@ -73,6 +73,31 @@ Separate framebuffer rounding permits a two-level difference; this is not a clai
 byte-identical GDI edges. Coverage, depth and ordinary raster stitching are preserved;
 text objects remain outside raster batches.
 
+## Diagonal paths and striped wipes
+
+`load/cls 11–14` use quantized cosine movement toward/from top-left, top-right,
+bottom-left and bottom-right. Corners are `(-width,-height)`, `(canvasWidth,-height)`,
+`(-width,canvasHeight)`, `(canvasWidth,canvasHeight)`; normal coordinates first subtract
+the locmode image anchor.
+
+The third argument of native `44d4c0` is speed, not a frame count:
+`speed=(distance & 65535)//15`, then `steps=distance//speed`.
+Movement reuses the dynamic choice menu's Q16 cosine lookup, holds the initial position
+on the first tick and explicitly finishes at the endpoint. Grouped objects start together
+and share the longest wait, rather than summing per-object delays.
+
+`load/cls 18` is a vertical striped wipe: `x % 16 > level//16`.
+The existing alpha path for 17 combines rows and diagonals; these are distinct effects.
+For 17/18, level changes by 16 per port-specific `rscript_dynamic_tick`.
+All `update 5–99` values select efNN masks; the previous range omitted 5–10.
+
+Evidence: `412e40 / 411b10` (corners and renderer 21), `44d4c0 / 44d070` (movement),
+`443900` (stripe loop), `45a710` (initial level), `43b390` (update range).
+REA: `ev_d9a7d2b4a36144041f457d8269e9a0043f32474366870c125e98132d9e1f7210`,
+`ev_5397d397711d9b7194b22de4675c82e3c8e7bb18695dc368a985c8acb4083876`,
+`ev_500edda26e2d17c7ecb107b1553abf292437b9b826a64f6e039ac4fb1f1aa231`,
+`ev_21e4dc7d33cac2c8ef9a1b30a02e32ae135bf467534de6539d7991b7eaac044b`.
+
 ## Evidence
 
 - Evermaiden: `4154d0 / 415810` (Full / Lim), `44d880` (CMath),
@@ -97,6 +122,6 @@ Shared GL2 checks cover colors, active/final movement, rotation, clearing, draw 
 normal-mode restoration and blending across the CG layer, not complete gameplay.
 
 Accepting a parameter does not establish a faithful implementation of every effect.
-Diagonal load/cls paths, effect 18, complex exits 30–35, move 4/11–13 and other oaction
+Complex exits 30/32/33/35, move 4/11–13 and other oaction
 commands still need trajectory, object-class and timing verification.
 Existing approximate animations are not frame-exact implementations either.

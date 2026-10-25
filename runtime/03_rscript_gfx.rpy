@@ -272,7 +272,7 @@ python early:
         elif 100 <= effect < 300:
             trans = renpy.curry(RScriptCompoundZoom)(effect)
 
-        elif effect >= 11:
+        elif 5 <= effect < 100:
             trans = rscript_ef(effect, step, wait)
 
 

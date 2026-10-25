@@ -232,4 +232,16 @@ float visible = step(threshold + 1.0, mod(pixel.y, 16.0))
               * step(threshold + 1.0, mod(pixel.x + pixel.y, 16.0));
 gl_FragColor *= visible;
 """)
+
+    renpy.register_shader("rscript.column_wipe",
+        variables="""
+uniform float u_rscript_grid;
+attribute vec4 a_position;
+varying vec2 v__pixel;
+""",
+        vertex_300="v__pixel = a_position.xy;",
+        fragment_1200="""
+float threshold = floor(u_rscript_grid / 16.0);
+gl_FragColor *= step(threshold + 1.0, mod(floor(v__pixel.x), 16.0));
+""")
 # Decompiled by unrpyc: https://github.com/CensoredUsername/unrpyc

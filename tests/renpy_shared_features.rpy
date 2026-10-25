@@ -11,6 +11,7 @@ python early:
         assert RScriptOrderedDissolve.masks[-1] == 0
         assert rscript_update_duration(1, 16, 16) == 2.56
         assert rscript_update_duration(11, 16, 16) == 5.12
+        assert rscript_update_duration(5, 16, 16) == 5.12
         assert rscript_update_duration(2, 16, 16) == .240
         assert rscript_update_duration(2, 0, 16) == .144
         renpy.game.context().init_phase = False

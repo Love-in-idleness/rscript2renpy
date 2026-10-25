@@ -26,7 +26,7 @@ COUNTS = {
     "_gmove": 4, "_flash": 2, "_zupdate": 2,
     "_draw": 3, "_oaction": 2,
 }
-LOAD_EFFECTS = set(range(11)) | {15, 16, 17, 19} | set(range(20, 29))
+LOAD_EFFECTS = set(range(29))
 MOVE_EFFECTS = {0, 1, 2, 3, 5, 6, 7, 8, 9, 10}
 
 
@@ -53,7 +53,7 @@ def _supported(command: str, field: str, value: int,
             return value < 300, "compound zoom family not implemented"
         if value == 0 or (command == "_update" and value in range(1, 5)):
             return True, ""
-        if value < 11:
+        if value < (5 if command == "_update" else 11):
             return False, "not implemented"
         mask = ("ef%02d.png" if command == "_update" else "es%03d.png") % value
         relative = Path("grps") / mask

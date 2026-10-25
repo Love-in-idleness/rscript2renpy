@@ -48,7 +48,8 @@ startup_jp.exe, not every version.
   evidenced by 42a410 / 42a460 / 42aad0.
 - cls 14 moves bottom-right then disappears, no longer instant clear: 43a9a0 → 410660 → 411b10
   jump-table entry 14 at 411f6a; endpoint uses canvas dimensions copied on object initialization.
-  Shared 0.5s remains, not native distance/15 frame scheduling.
+  It now shares the quantized cosine path of load/cls 11–14: distance/15 is speed,
+  then distance/speed determines steps. See [native visual modes](NATIVE_VISUAL_MODES.en.md).
 
 Layout call chains: 43b600 / 43b690 / 43b270 (box/body/name), 43a850 (controls), 43b870 (size),
 43b840 → 42d0d0 (ruby), 43b920 / 43b900 / 43b8d0 (wait image).

@@ -77,18 +77,15 @@ transform rscript_white_out:
     u_rscript_white 0.0
     linear 1.0 u_rscript_white 1.0
 
-transform rscript_grid_in:
-    # shortcut: shared 1s cadence; calibrate against native playback if needed.
+transform rscript_grid_in(vertical=False):
     mesh True
-    shader "rscript.grid_wipe"
-    u_rscript_grid 255.0
-    linear 1.0 u_rscript_grid -1.0
+    shader ("rscript.column_wipe" if vertical else "rscript.grid_wipe")
+    function renpy.curry(rscript_grid_frame)(False)
 
-transform rscript_grid_out:
+transform rscript_grid_out(vertical=False):
     mesh True
-    shader "rscript.grid_wipe"
-    u_rscript_grid 0.0
-    linear 1.0 u_rscript_grid 255.0
+    shader ("rscript.column_wipe" if vertical else "rscript.grid_wipe")
+    function renpy.curry(rscript_grid_frame)(True)
 
 
 
@@ -163,11 +160,6 @@ transform rscript_zoom_out:
     transform_anchor True
     zoom 1.0
     linear 0.5 zoom 0.0
-
-transform rscript_exit_bottom_right(x, y, origin_anchor):
-    xpos absolute(x) ypos absolute(y)
-    anchor origin_anchor
-    linear 0.5 xpos absolute(config.screen_width) ypos absolute(config.screen_height)
 
 transform rotate_clockwise:
     transform_anchor True
@@ -452,6 +444,70 @@ transform grayscale(img):
 
 init python:
 
+    def rscript_grid_frame(clear, trans, st, at):
+        tick = int(st / rscript_dynamic_tick + 1e-9)
+        trans.u_rscript_grid = min(255, 16 * tick) if clear else max(-1, 255 - 16 * tick)
+        return rscript_dynamic_tick if tick < 16 else None
+
+    def rscript_dynamic_position(path, elapsed):
+        import math
+        start, end, steps, sine = path
+        tick = int(elapsed / rscript_dynamic_tick + 1e-9)
+        if not steps or tick > steps:
+            return end
+        if tick == 0:
+            return start
+        # 44d070 / 44d880: quantized Q16 sin/cos table, then truncating division.
+        index = ((0x4000 // steps) * (steps - tick + 1) // 255) % 255
+        angle = index / 256.0 * 6.283185308
+        sample = int((math.sin(angle) if sine else math.cos(angle)) * 65535)
+        if sine:
+            return tuple(b + int((a - b) * sample / 65535) for a, b in zip(start, end))
+        return tuple(a + int((b - a) * sample / 65535) for a, b in zip(start, end))
+
+    def rscript_diagonal_path(effect, size, pos, anchor, clear):
+        import math
+        w, h = size
+        normal = (pos[0] - w * anchor[0], pos[1] - h * anchor[1])
+        corner = ((-w, -h), (config.screen_width, -h),
+                  (-w, config.screen_height), (config.screen_width, config.screen_height))[effect - 11]
+        start, end = (normal, corner) if clear else (corner, normal)
+        distance = int(math.hypot(end[0] - start[0], end[1] - start[1]))
+        speed = (distance & 0xffff) // 15
+        steps = (distance // speed) & 0xffff if speed else 0
+        # A zero native speed leaves the object at its initial position.
+        return start, end if speed else start, steps, False
+
+    class RScriptDiagonal(renpy.Displayable):
+        def __init__(self, child, effect, pos, anchor, clear):
+            super(RScriptDiagonal, self).__init__()
+            self.child = renpy.displayable(child)
+            self.effect, self.pos, self.anchor, self.clear = effect, pos, anchor, clear
+
+        def path(self):
+            source = renpy.render(self.child, config.screen_width, config.screen_height, 0, 0)
+            return rscript_diagonal_path(self.effect, source.get_size(), self.pos, self.anchor, self.clear)
+
+        def render(self, width, height, st, at):
+            path = self.path()
+            x, y = rscript_dynamic_position(path, st)
+            image = Transform(self.child, xpos=absolute(x), ypos=absolute(y))
+            result = renpy.render(Fixed(image, xysize=(config.screen_width, config.screen_height)), width, height, st, at)
+            if st < (path[2] + 1) * rscript_dynamic_tick:
+                renpy.redraw(self, rscript_dynamic_tick)
+            return result
+
+        def visit(self):
+            return [self.child]
+
+    def rscript_queue_diagonal_pause(motion):
+        _queue_ef_pause((motion.path()[2] + 1) * rscript_dynamic_tick)
+
+    def rscript_finish_diagonal(tag, motion, trans, zorder):
+        if motion.path()[2]:
+            rscript_show_layer(tag, what=motion.child, at_list=[trans],
+                               zorder=zorder, layer=IMAGE_LAYER)
+
     def rscript_clear_frame(effect, tick):
         import math
         if effect == 31:
@@ -589,13 +645,13 @@ init python:
             # Native 43b390 / Kagerou 41e5b0: zero selects 10; waits are milliseconds.
             # shortcut: nominal waits omit Windows Sleep(5) jitter; calibrate with native playback.
             step = step or 10
-            if effect >= 11:
+            if 5 <= effect < 100:
                 frames = 2 * step - 1
             else:
                 frames = step + 1
             return frames * wait / 1000.0
         if store.rscript_update_timing == "legacy":
-            return step * wait / 100.0 * (2 if effect >= 11 else 1)
+            return step * wait / 100.0 * (2 if 5 <= effect < 100 else 1)
         raise ValueError("Unknown RScript update timing: %s" % store.rscript_update_timing)
 
     def rscript_arc_position(start, end, fraction, direction):
@@ -737,13 +793,13 @@ init python:
 
 
 
-        def _queue_load():
+        def _queue_load(what=None):
             if not clear:
                 img = displayable if displayable is not None else "%s %04d" % (folder[layer], cg)
                 store.layer_info[layer] = img
                 store.layer_color[layer] = color
                 store.layer_pos[layer] = (xpos or 0, ypos or 0)
-                queue_draw(rscript_show_layer, tag, what = renpy.displayable(img),
+                queue_draw(rscript_show_layer, tag, what = what if what is not None else renpy.displayable(img),
                            at_list = at_list, zorder = zorder, layer = IMAGE_LAYER)
 
 
@@ -833,32 +889,40 @@ init python:
             _queue_load()
             queue_ef(renpy.with_statement, moveoutbottom if clear else moveinbottom)
 
-        elif effect == 14 and clear:
-            # Native 43a9a0 -> 410660 -> 411b10 case 14 (411f6a).
-            # Target is the canvas bottom-right; retain shared animation timing.
-            if layer in store.layer_info:
-                queue_draw(rscript_show_layer, tag,
-                           what=renpy.displayable(store.layer_info[layer]),
-                           at_list=[trans, rscript_exit_bottom_right(xpos, ypos, anchor)],
-                           zorder=zorder, layer=IMAGE_LAYER)
-                queue_ef_pause(0.5)
-                queue_draw_delayed(renpy.hide, tag, layer=IMAGE_LAYER)
+        elif effect in (11, 12, 13, 14):
+            img = store.layer_info.get(layer) if clear else (displayable if displayable is not None else "%s %04d" % (folder[layer], cg))
+            if img is not None:
+                motion = RScriptDiagonal(img, effect, (xpos, ypos), anchor, clear)
+                at_list = [Transform(pos=(absolute(0), absolute(0)), anchor=(0, 0),
+                                     shader="rscript.colormode", u_colormode=color)]
+                if clear:
+                    queue_draw(rscript_show_layer, tag, what=motion, at_list=at_list,
+                               zorder=zorder, layer=IMAGE_LAYER)
+                else:
+                    _queue_load(motion)
+                queue_draw(rscript_queue_diagonal_pause, motion)
+                queue_draw_delayed(_execute_ef_pause)
+                if clear:
+                    queue_draw_extra_delayed(renpy.hide, tag, layer=IMAGE_LAYER)
+                else:
+                    queue_draw_extra_delayed(rscript_finish_diagonal, tag, motion, trans, zorder)
 
-        elif effect in (15, 17):
+        elif effect in (15, 17, 18):
             # White fade / native 16-pixel grid wipe; both use level step 16.
-            fade_in = rscript_white_in if effect == 15 else rscript_grid_in
-            fade_out = rscript_white_out if effect == 15 else rscript_grid_out
+            fade_in = rscript_white_in if effect == 15 else rscript_grid_in(effect == 18)
+            fade_out = rscript_white_out if effect == 15 else rscript_grid_out(effect == 18)
+            duration = 1.0 if effect == 15 else 16 * rscript_dynamic_tick
             if not clear:
                 at_list.append(fade_in)
                 _queue_load()
-                queue_ef_pause(1.0)
+                queue_ef_pause(duration)
             elif layer in store.layer_info:
                 img = store.layer_info.pop(layer)
                 store.layer_pos.pop(layer, None)
                 queue_draw(rscript_show_layer, tag, what = renpy.displayable(img),
                            at_list = [trans, fade_out],
                            zorder = zorder, layer = IMAGE_LAYER)
-                queue_ef_pause(1.0)
+                queue_ef_pause(duration)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
         elif effect == 19:
