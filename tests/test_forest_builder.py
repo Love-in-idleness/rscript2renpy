@@ -345,9 +345,9 @@ def main() -> None:
     assert "alpha=persistent.rscript_textbox_opacity" in FOREST_COMPAT
     assert 'textpos = rscript_ui.get("text_pos", (absolute(text_indent + 1), 8))' in FOREST_COMPAT
     assert "xsize config.screen_width - text_indent - 1" not in FOREST_COMPAT
-    assert "default persistent.rscript_say_line_chars = 19" in FOREST_COMPAT
+    assert "default persistent.rscript_say_line_chars = rscript_say_line_chars_default" in FOREST_COMPAT
     assert "default persistent.rscript_oload_line_chars = 20" in FOREST_COMPAT
-    assert "default persistent.rscript_line_spacing = 7" in FOREST_COMPAT
+    assert "default persistent.rscript_line_spacing = rscript_text_line_spacing_default" in FOREST_COMPAT
     assert "line_spacing persistent.rscript_line_spacing" in FOREST_COMPAT
     assert 'text "Line Spacing" yalign 0.5' in FOREST_COMPAT
     assert ('rscript_adjust_text, "rscript_line_spacing", -1, -10, 30' in

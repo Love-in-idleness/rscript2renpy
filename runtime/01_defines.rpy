@@ -77,6 +77,8 @@ init:
     define rscript_mode_rebuild = False
     define rscript_native_text_metrics = False
     define rscript_line_spacing_default = 7
+    define rscript_say_line_chars_default = 19
+    define rscript_text_line_spacing_default = 7
     define rscript_font_slots = {}
     default rscript_click_values = {}
     default rscript_click_links = {}

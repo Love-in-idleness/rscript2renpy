@@ -95,9 +95,9 @@ def main() -> None:
         assert "    rscript_languages = [(None, 'Original'), ('english', 'english')]" in compat_text
         assert "screen forest_title_preferences():" in compat_text
         assert "default persistent.rscript_text_size = rscript_base_text_size" in compat_text
-        assert "default persistent.rscript_say_line_chars = 19" in compat_text
+        assert "default persistent.rscript_say_line_chars = rscript_say_line_chars_default" in compat_text
         assert "default persistent.rscript_oload_line_chars = 20" in compat_text
-        assert "default persistent.rscript_line_spacing = 7" in compat_text
+        assert "default persistent.rscript_line_spacing = rscript_text_line_spacing_default" in compat_text
         assert "default persistent.rscript_wiki_mode = False" in compat_text
         assert "'https://example.test/a//b'" in compat_text
         assert 'if _preferences.language in rscript_wiki_keywords:' in compat_text

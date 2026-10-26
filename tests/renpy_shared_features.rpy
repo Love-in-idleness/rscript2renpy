@@ -617,3 +617,25 @@ python early:
         print("OK: shared settings, fonts, progress, Wiki, speaker lifetime and native menus: " + config.name)
         return False
     renpy.arguments.register_command("sharedporttest", check_shared_port_features)
+
+    def check_text_preferences():
+        renpy.execute_default_statement(True)
+        fields = ("rscript_text_size", "rscript_say_line_chars", "rscript_line_spacing")
+        current = tuple(getattr(persistent, field) for field in fields)
+        saved = (37, 26, 0)
+        defaults = (22, 19, 7) if rscript_use_speaker_images else (29, 21, -5)
+        if current == saved:
+            # Ren'Py also merges game/saves; restore fixture defaults for later tests.
+            for field, value in zip(fields, defaults):
+                setattr(persistent, field, value)
+            renpy.save_persistent()
+            print("OK: text preferences retained")
+        else:
+            assert current == defaults, current
+            for field, value in zip(fields, saved):
+                setattr(persistent, field, value)
+            renpy.save_persistent()
+            print("OK: text preferences saved")
+        return False
+
+    renpy.arguments.register_command("textpreferencetest", check_text_preferences)

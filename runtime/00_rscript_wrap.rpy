@@ -1,4 +1,4 @@
-default persistent.rscript_say_line_chars = 19
+default persistent.rscript_say_line_chars = rscript_say_line_chars_default
 default persistent.rscript_oload_line_chars = 20
 
 python early:

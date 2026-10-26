@@ -6,11 +6,11 @@ define config.has_music = True
 define config.has_voice = True
 
 # Install Khime defaults before the shared defaults; retain saved preferences.
-init offset = -130
-default persistent.rscript_text_size = 29
-default persistent.rscript_say_line_chars = 21
-default persistent.rscript_line_spacing = -5
-init offset = 0
+init -130 python:
+    if persistent.rscript_text_size is None:
+        persistent.rscript_text_size = 29
+    rscript_say_line_chars_default = 21
+    rscript_text_line_spacing_default = -5
 
 init -100 python:
     rscript_base_text_size = 29

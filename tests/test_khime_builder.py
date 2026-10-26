@@ -4,6 +4,8 @@
 from pathlib import Path
 import json
 from tempfile import TemporaryDirectory
+from textwrap import dedent
+from types import SimpleNamespace
 import shutil
 import struct
 import sys
@@ -124,10 +126,21 @@ def main() -> None:
         options = (project / "game" / "engine" / "options.rpy").read_text(encoding="utf-8")
         assert "config.version" not in options
         assert 'define config.window_icon = "icon.png"' in options
-        assert "init offset = -130" in options
-        assert "default persistent.rscript_text_size = 29" in options
-        assert "default persistent.rscript_say_line_chars = 21" in options
-        assert "default persistent.rscript_line_spacing = -5" in options
+        assert "init -130 python:" in options
+        assert "default persistent." not in options
+        defaults = options.split("init -130 python:\n", 1)[1].split("\ninit -100 python:", 1)[0]
+        fields = ("rscript_text_size", "rscript_say_line_chars", "rscript_line_spacing")
+        for before, expected in (((None, None, None), (29, 21, -5)),
+                                 ((37, 26, 0), (37, 26, 0)),
+                                 ((None, 26, None), (29, 26, -5))):
+            persistent = SimpleNamespace(**dict(zip(fields, before)))
+            settings = {"persistent": persistent}
+            exec(dedent(defaults), settings)
+            assert persistent.rscript_text_size == expected[0]
+            assert persistent.rscript_say_line_chars == before[1]
+            assert persistent.rscript_line_spacing == before[2]
+            assert settings["rscript_say_line_chars_default"] == 21
+            assert settings["rscript_text_line_spacing_default"] == -5
         assert "rscript_base_text_size = 29" in options
         assert "rscript_inline_base_size = 29" in options
         assert 'rscript_voice_format = "voice/%04d.ogg"' in options

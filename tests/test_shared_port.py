@@ -4,7 +4,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
 import os
-import re
 import shutil
 import signal
 import subprocess
@@ -206,19 +205,8 @@ def main():
                                       capture_output=True, text=True,
                                       env=os.environ | {"RENPY_PATH_TO_SAVES": str(temporary / "sdk-saves")})
                 report = lint.stdout + lint.stderr
-                if lint.returncode:
-                    # shortcut: retain only these pre-existing Khime defaults until a separate defaults cleanup.
-                    errors = {re.sub(r":\d+", "", line) for line in report.splitlines()
-                              if line.startswith("game/")}
-                    expected = {
-                        "game/engine/options.rpy default persistent.rscript_say_line_chars already defined at game/engine/00_rscript_wrap.rpy",
-                        "game/engine/text_features.rpy default persistent.rscript_text_size already defined at game/engine/options.rpy",
-                        "game/engine/text_features.rpy default persistent.rscript_line_spacing already defined at game/engine/options.rpy",
-                    }
-                    assert name == "Khime" and lint.returncode == 1 and errors == expected, report
-                    print("KNOWN: Khime lint reports three existing duplicate persistent defaults")
-                else:
-                    print("OK: Ren'Py lint: " + name)
+                assert lint.returncode == 0, report
+                print("OK: Ren'Py lint: " + name)
                 # Native 4x4 replacement raster, then ordinary window filtering.
                 for mask in (0xffdf, 0xefdf, 0x6fdf, 0x6fd7, 0x6bd7, 0x6bd6, 0x6b56,
                              0x6a56, 0x2a56, 0x2a52, 0x0a52, 0x0a12, 0x0812,
@@ -230,6 +218,15 @@ def main():
                         project / ('game/ordered-%04x.png' % mask))
                 shutil.copy2(ROOT / "tests/renpy_shared_features.rpy",
                              project / "game/shared_features_test.rpy")
+                for marker in ("saved", "retained"):
+                    preferences = subprocess.run(
+                        [str(Path(sys.argv[1]) / "renpy.sh"), str(project),
+                         "textpreferencetest", "--savedir", str(project / "preference-saves")],
+                        capture_output=True, text=True,
+                        env=os.environ | {"RENPY_PATH_TO_SAVES": str(project / "preference-sdk-saves")})
+                    assert preferences.returncode == 0, preferences.stdout + preferences.stderr
+                    assert "OK: text preferences " + marker in preferences.stdout, preferences.stdout
+                print("OK: text preferences survive restart: " + name)
                 subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), str(project),
                                 "sharedporttest", "--savedir", str(project / "test-saves")], check=True,
                                env=os.environ | {"RENPY_PATH_TO_SAVES": str(temporary / "sdk-saves")})
