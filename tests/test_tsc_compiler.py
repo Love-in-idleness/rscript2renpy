@@ -58,6 +58,11 @@ def main():
         assert "_jump 1\n" in result
         assert "_getflag _r[100] 1\n    _getflag 23 0" in result
         modern = ";@gsc-byte-format modern-36\n;@gsc-schema modern\n"
+        source.write_text(modern + '*move 1 20 30 11 0\n*phase 1 7\n*return 0\n', encoding="utf-8")
+        for adapter in ("modern", "khime", "kagerou"):
+            result = compile_scene(source, adapter=adapter)
+            assert "    _move 1 20 30 11 0\n" in result
+            assert "    _oaction 1 7\n" in result
         trailer = (struct.pack('<4I', 0, 1, 0, 46) + b'\0TOP1\0').hex()
         named = modern + ';@gsc-trailer-header 8 6\n;@gsc-trailer ' + trailer + '\n'
         named += '*insub L_00002e 0 0 0 0 0 0 0 0 0 0\n:L_00002e\n*return 0\n'

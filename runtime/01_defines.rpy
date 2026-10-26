@@ -41,6 +41,7 @@ init:
     define rscript_update_timing = "legacy"
     define rscript_colormode_limit = 15
     define rscript_move4_timing = "script"
+    define rscript_affine_always = False
 
     define rscript_voice_format = "voice/%05d.opus"
     define rscript_voice_groups = False
@@ -90,6 +91,7 @@ init:
     default layer_mode = {}
     default layer_info = {}
     default layer_color = {}
+    default layer_actions = {}
     default layer_groups = {}
     default layer_pos = {}
     default layer_alpha = {}

@@ -124,7 +124,8 @@ def main() -> None:
         assert "_update effect 16 flattened to 0 (missing grps/ef16.png)" in scene
         assert "_effect effect 101 flattened to 0 (missing grps/es101.png)" in scene
         assert "_draw 1 3 30" in scene
-        assert "_oaction action 7 flattened to no-op" in scene
+        assert "    _oaction 1 7\n" in scene
+        assert "_oaction action 7 flattened" not in scene
         assert "unsupported text control ^fz, ^q flattened to empty" in scene
         assert "_khime_say '^fmHello ^crred ^g001^nnext ^cyyellow unknown '" in scene
         controls = "    _oload 1 0 0 0 0 '^FM^CRred^FG^CW ^CB^CS^CP^CV^CO ^V-123^N'\n"
@@ -141,8 +142,11 @@ def main() -> None:
             for number in ("39", "0039", "63", "1000", " \t-1"):
                 text = "    %s %r\n" % (command, "^G" + number + "正文")
                 assert flatten_unsupported_text_controls(text) == text
-        assert "    pass\n" in scene
+        assert "    pass\n" not in scene
         assert flatten_unsupported_effects(scene, resources) == scene
+        for action in (*range(13), 65535, 65543):
+            source = "    _oaction 1 %d\n" % action
+            assert flatten_unsupported_effects(source, resources) == source
         assert flatten_unsupported_effects("    _cls 42 14\n", resources) == "    _cls 42 14\n"
         for effect in (4, 104, 204, 11, 12, 13, 111, 213):
             for statement in ("_move 42 300 100 %d 15", "_movi 42 -300 0 %d 0",

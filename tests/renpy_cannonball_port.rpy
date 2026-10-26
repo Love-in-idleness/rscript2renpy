@@ -10,6 +10,7 @@ python early:
         assert (persistent.rscript_text_size, persistent.rscript_say_line_chars) == (29, 19)
         assert rscript_use_speaker_images
         assert folder[1] == folder[49] == "grpo"
+        assert rscript_full_object(1) and rscript_full_object(49)
         lex = renpy.lexer.Lexer([("startup-test", 1, "1 2 90 0 0 0", [])])
         lex.advance()
         load = parse_load(lex)
@@ -17,6 +18,17 @@ python early:
         execute_load(load)
         assert layer_info[1] == "grpo 0002"
         process_draw_queue()
+        pause, waits = renpy.pause, []
+        try:
+            renpy.pause = lambda delay, **kwargs: waits.append(delay)
+            for action in (5, 6):
+                action_layer(1, action)
+                assert layer_actions[1] == (action, True)
+            action_layer(1, 0)
+            assert 1 not in layer_actions
+            assert waits == [13 * rscript_dynamic_tick, 7 * rscript_dynamic_tick]
+        finally:
+            renpy.pause = pause
         assert rscript_layouts()["confscrn"]["size"] == (518, 387)
         assert rscript_layouts()["compane"]["items"]["hide"] == (179, 1, 17, 17)
         for language in (None, "zh"):

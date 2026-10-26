@@ -198,6 +198,109 @@ label _0000:
     _oaction 20 4
     $ renpy.pause(.05, hard=True)
     $ effects_test_pixel((36, 30, 70))
+    python:
+        assert 20 not in store.layer_actions  # Lim action slots are no-ops.
+        for action, final, expected, empty in ((7, 64, (150, 250), (270, 300)),
+                                               (10, 192, (350, 250), (250, 290))):
+            steps = rscript_action_steps(action)
+            child = Transform(Solid("#ff0000", xsize=100, ysize=80),
+                              pos=(absolute(250), absolute(290)), anchor=(.5, .5))
+            image = Transform(child, function=RScriptObjectAction((action, False)),
+                              transform_anchor=True, rotate_pad=False, nearest=True)
+            for tick in (0, steps):
+                renpy.show("action_probe", what=EffectsTimeProbe(Fixed(image, xysize=(800, 600)), tick * rscript_dynamic_tick))
+                renpy.pause(.1, hard=True)
+                effects_test_pixel((255, 0, 0), (250, 290) if tick == 0 else expected)
+                if tick:
+                    effects_test_pixel((32, 64, 96), empty)
+                    assert image.rotate == -final * 360 / 256.
+            renpy.hide("action_probe")
+        for action, tick in ((5, 6), (6, 3)):
+            child = Transform(Solid("#ff0000", xsize=100, ysize=80),
+                              pos=(absolute(250), absolute(290)), anchor=(.5, .5))
+            image = Transform(child, function=RScriptObjectAction((action, False)),
+                              transform_anchor=True, rotate_pad=False, nearest=True)
+            renpy.show("action_probe", what=EffectsTimeProbe(Fixed(image, xysize=(800, 600)), tick * rscript_dynamic_tick))
+            renpy.pause(.1, hard=True)
+            effects_test_pixel((255, 0, 0), (180, 300))
+            effects_test_pixel((32, 64, 96), (250, 260))
+            renpy.hide("action_probe")
+        store.layer_mode[20] = 1
+        store.layer_anchor[20] = (.5, .5)
+        loadcls(20, 0, cg=9990, xpos=250, ypos=290, color=5)
+        action_layer(20, 4)
+        assert store.layer_actions[20] == (4, True)
+        renpy.pause(.05, hard=True)
+        effects_test_pixel((36, 30, 70), (250, 290))
+        action_layer(20, 9)
+        assert store.layer_actions[20] == (9, True)
+        renpy.pause(.05, hard=True)
+        effects_test_pixel((36, 30, 70), (150, 250))
+        effects_test_pixel((32, 64, 96), (250, 290))
+        move_layer(20, 50, 0, 0, 0, relative=True)
+        renpy.pause(.05, hard=True)
+        effects_test_pixel((36, 30, 70), (200, 250))
+        action_layer(20, 0)
+        assert 20 not in store.layer_actions
+        renpy.pause(.05, hard=True)
+        effects_test_pixel((36, 30, 70), (300, 290))
+        # All ports use the bottom-anchored stretch, including the newer engine.
+        pause = renpy.pause
+        def check_live_stretch(delay):
+            # Exercise both a lone raster and the stitched multi-object path.
+            batched = store.layer_actions[20][0] == 6
+            if batched:
+                rscript_show_layer("layer99", what=renpy.displayable("grpo 9990"),
+                                   at_list=[Transform(pos=(0, 0), anchor=(0, 0))], layer=IMAGE_LAYER)
+            pause(delay * .45, hard=True)
+            effects_test_pixel((36, 30, 70), (240, 310))
+            effects_test_pixel((32, 64, 96), (300, 260))
+            if batched:
+                renpy.hide("layer99", layer=IMAGE_LAYER)
+            pause(delay * .55, hard=True)
+        try:
+            renpy.pause = check_live_stretch
+            for action in (5, 6):
+                action_layer(20, action)
+                assert store.layer_actions[20] == (action, True)
+        finally:
+            renpy.pause = pause
+        # Separate queued objects start together and share the longest wait.
+        store.layer_mode[21] = 1
+        loadcls(21, 0, displayable="grpo 9990")
+        store.in_queue = True
+        action_layer(20, 1)
+        action_layer(21, 2)
+        assert store.layer_actions[20] == (1, False)
+        action_layer(20, 65535)
+        assert store.layer_actions[20] == (1, False)
+        store.in_queue = False
+        pause, pauses = renpy.pause, []
+        try:
+            renpy.pause = lambda delay, **kwargs: pauses.append(delay)
+            process_draw_queue()
+        finally:
+            renpy.pause = pause
+        assert pauses == [26 * rscript_dynamic_tick], pauses
+        assert store.layer_actions[20] == (1, True)
+        assert store.layer_actions[21] == (2, True)
+        loadcls(21, 0, clear=True)
+        transitions = _preferences.transitions
+        try:
+            _preferences.transitions = 0
+            action_layer(20, 9)
+            assert 20 not in store.layer_actions
+        finally:
+            _preferences.transitions = transitions
+        action_layer(20, 9)
+        execute_mode(RScriptArguments(Layer=20, Mode=0))
+        assert 20 not in store.layer_actions
+        renpy.pause(.05, hard=True)
+        effects_test_pixel((36, 30, 70), (300, 290))
+        loadcls(20, 0, clear=True)
+        assert 20 not in store.layer_actions
+        store.layer_anchor[20] = (0., 0.)
+        store.layer_mode[20] = 0
     _cls 20 0
     $ assert 20 not in store.layer_color
     _load 20 9990 0 0 0 0

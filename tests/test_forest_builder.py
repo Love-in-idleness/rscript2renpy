@@ -105,8 +105,8 @@ def main() -> None:
     assert "linear 0.5 rotate 0 zoom 1.0" in effects
     assert "transform rotate_zoom_out:" in effects
     assert "linear 0.5 rotate 360 zoom 0.0" in effects
-    assert "transform rotate_clockwise:" in effects
-    assert "def rotate_layer(layer):" in effects
+    assert "class RScriptObjectAction:" in effects
+    assert "def action_layer(layer, action):" in effects
     commands = (ROOT / "runtime" / "02_rscript_cmd.rpy").read_text(encoding="utf-8")
     assert "def parse_setclksub(lex):" in commands
     assert "label = label_insub" in commands
@@ -122,9 +122,9 @@ def main() -> None:
     assert "store.text_indent = args.Indent" in text_runtime
     assert "def parse_oload(lex):" in gfx
     assert "store.object_size[args.Layer] = args.Size" in gfx
-    assert "rotate_layer(args.Layer)" in gfx
+    assert "action_layer(args.Layer, args.Action)" in gfx
     assert "def parse_oload(lex):" in RSCRIPT_OBJECTS
-    assert "rotate_layer(args.Layer)" in RSCRIPT_OBJECTS
+    assert "action_layer(args.Layer, args.Action)" in RSCRIPT_OBJECTS
     assert 'gfx_text.replace' not in builder
     assert 'default object_size = {}' in definitions
     with TemporaryDirectory() as temporary:

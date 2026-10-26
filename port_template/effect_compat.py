@@ -38,7 +38,7 @@ def _supported(command: str, field: str, value: int,
     if command == "_draw":
         return True, ""  # Unlisted native renderer modes select ordinary drawing.
     if command == "_oaction":
-        return value == 4, "not implemented"
+        return True, ""  # Unlisted native WORD actions are no-ops.
     if command in ("_load", "_cls", "_oload"):
         return value in LOAD_EFFECTS or (command == "_cls" and value in range(30, 36)), "not implemented"
     if command in ("_move", "_movi", "_gmove"):

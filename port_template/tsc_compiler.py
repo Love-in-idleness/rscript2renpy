@@ -14,7 +14,8 @@ from tsc_patches import (language_patch_data, instruction_strings, menu_text,
 
 PASSTHROUGH = {
     10: "hit", 13: "wait", 20: "gload", 23: "quake", 26: "queue",
-    27: "action", 28: "update", 30: "load", 36: "cls", 37: "enabl",
+    27: "action", 28: "update", 30: "load", 33: "move", 35: "oaction",
+    36: "cls", 37: "enabl",
     39: "draw", 42: "tbox", 43: "effect", 45: "tone",
     46: "tonedep", 47: "locgrid", 49: "mode", 52: "stop",
     56: "sysmode", 60: "bgm_on", 61: "bgm_off", 65: "movie",
@@ -41,7 +42,7 @@ KHIME_COMMANDS = {
 EARLY_COMMANDS = dict(MODERN_PASSTHROUGH)
 for _modern_only in (106, 107, 108):
     EARLY_COMMANDS.pop(_modern_only)
-EARLY_COMMANDS.update({33: "move", 35: "oaction", 38: "locmode", 120: "osize"})
+EARLY_COMMANDS.update({38: "locmode", 120: "osize"})
 
 EARLY_PATCH_OPCODES = set(EARLY_COMMANDS) - {30, 36, 64}
 EARLY_PATCH_OPCODES.update({70, 71, 72, 73, 75})

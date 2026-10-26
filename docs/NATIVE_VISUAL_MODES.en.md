@@ -142,6 +142,8 @@ right/left. Fade is 14/256 per tick for 30/32 and 16/256 for 31/35.
 33 bounces by 250 pixels and grows from 6% on its first tick; 34 combines the same bounce
 with rotation and shrinking. Cuts, scaling and rotation affect Full only; the corresponding
 Lim/Anim virtual slots are stubs, retaining movement and fading.
+CannonBall calls affine objects directly, without the later Full/Lim switch;
+its default mode 0 must not disable these effects.
 33/34 wait 21/22 ticks; non-Full 34 waits only the 21-tick bounce.
 Groups run concurrently with one longest wait and clean up layers afterward.
 
@@ -150,6 +152,34 @@ Evidence: `413e40 / 44d570 / 44d070` (bounce), `411b10` (exit dispatch),
 REA: `ev_a1576cf9d2880f5839d03d362097d8db9095dbb47cf870b75e172d95f5e0fb4f`,
 `ev_d28ed370b7e7430a2ffd97d08b1d96ce6ab4732ba25aae3982a7b4dc241ff9dc`,
 `ev_6d2c711654b8de936d6dba4104fb9e76f52cc8cbcccab87d1a3dab6e5d8277ea`.
+
+## Object actions: phase / oaction
+
+The shared compiler now lowers TSC `phase` to `_oaction` for every adapter, not only early dialects.
+0 restores the image; 1/2 rotate counterclockwise around the center in steps of 10/20,
+restoring at 256. 3/4 count down from 255 in steps of 10/20, rotating clockwise and restoring.
+7/8/9 rotate counterclockwise around the bottom-left corner to 64; 10/11/12 rotate
+clockwise around bottom-right to 192. Both groups use steps 8/12/30 and retain their
+final pose until reset/clear; movement must not replay the action.
+
+By the user's latest decision, 5/6 use the older type-18 bottom-center stretch in every port. Phase advances by
+10/20 per tick; `u=trunc(sin(phase/256*2π)*50)` gives width/height percentages
+`100+u / 100-u`. Sizes retain Q16 integer truncation; phase 128 restores the image.
+Evermaiden's original Full vtable slot `+0x54` instead points to its tick function;
+its special single-step behavior is deliberately not used, with no compatibility switch.
+Unlisted WORD actions do nothing;
+disabled effects or skipping restore the image. Rollback state retains position, color
+and depth; clearing/rebuilding also removes action state.
+Raster batches convert each layer's show time to elapsed animation time, both for lone
+images and stitched groups; absolute clocks no longer make animations finish instantly.
+
+Evidence: Evermaiden `4145c0 / 415e80 / 46c3b0 / 46cd80`;
+stretch initializers Forest `4077c0`, Khime `40a980`, Zero `4070f0`, Kagerou `40a800`,
+CannonBall `4247e0`; SevenBridge dispatch `407740`.
+REA: `ev_ec0d3fd6f8b2523fde9f7a676a88206246ed28ad00ac2965863a4a0540deb23f`,
+`ev_8671b6a05e98ec7f5a2a4fbb7969e1b6dca469b930bcebe324cbe72f8e83b070`,
+`ev_9d78c679eb00e624a39e10e228850a608347efe6e8f5578232c8c88b2a148147`,
+`ev_ab013bbb9b37ab7772b276bb3503d84148bf934523e6cc6cfe3568118afe130e`.
 
 ## Evidence
 
@@ -175,7 +205,7 @@ Shared GL2 checks cover colors, active/final movement, rotation, clearing, draw 
 normal-mode restoration and blending across the CG layer, not complete gameplay.
 
 Accepting a parameter does not establish a faithful implementation of every effect.
-Other oaction commands still need trajectory, object-class and timing verification.
-GL2 tests cover initial, intermediate and final bounce/exit frames and Full/Lim differences.
+GL2 tests cover initial, intermediate and final bounce/exit frames, Full/Lim differences,
+action pivots, live stretching, lone/grouped raster clocks, final poses, movement-state retention and cleanup.
 Cut edges, affine sampling and existing approximate animations are not claimed to be
 pixel-identical to GDI.

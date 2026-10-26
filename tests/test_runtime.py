@@ -91,6 +91,7 @@ def main() -> None:
     for folder in ("forest", "sevenbridge"):
         assert 'rscript_move4_timing = "fixed-steps"' in (ROOT / folder / "game/options.rpy").read_text()
     assert 'rscript_move4_timing = "fixed-speed"' in (ROOT / "cannonball/game/options.rpy").read_text()
+    assert 'rscript_affine_always = True' in (ROOT / "cannonball/game/options.rpy").read_text()
     assert 'store.rscript_move4_timing = "fixed-steps"' in (ROOT / "khime/game/khime_zero.rpy").read_text()
     for amplitude, steps, first, middle in ((40, 4, 1, -28), (100, 10, 4, -97), (300, 15, 14, -291)):
         offset = motion["rscript_bounce_offset"]
@@ -101,6 +102,22 @@ def main() -> None:
     assert "elif effect == 2:" in combined
     assert 'define rscript_update_timing = "legacy"' in combined
     assert 'class RScriptOrderedDissolve(' in combined
+    action_code = effects[effects.index("    def rscript_action_steps"):effects.index("    class RScriptObjectAction")]
+    actions = {"rscript_trunc_div": motion["rscript_trunc_div"]}
+    exec(dedent(action_code), actions)
+    frame, steps = actions["rscript_action_frame"], actions["rscript_action_steps"]
+    for action in range(1, 13):
+        assert frame(action, 0)[0] == 0
+        assert frame(action, steps(action))[0] == (64 if 7 <= action <= 9 else 192 if action >= 10 else 0)
+    assert frame(1, 1) == (10, (.5, .5))
+    assert frame(4, 1) == (235, (.5, .5))
+    assert frame(7, 1) == (8, (0., 1.))
+    assert frame(12, 1) == (225, (1., 1.))
+    for action, tick in ((5, 6), (6, 3)):
+        assert frame(action, tick) == (0, (.5, 1.))
+        assert actions["rscript_action_scale"](action, 0) == (100, 100)
+        assert actions["rscript_action_scale"](action, tick) == (149, 51)
+        assert actions["rscript_action_scale"](action, steps(action)) == (100, 100)
     assert '# trans = Pixellate(ef_time, step / 2)' in combined
     assert 'renpy.curry(RScriptOrderedDissolve)(ef_time, step or 10)' in combined
     assert "ef_time = rscript_update_duration(effect, step, wait)" in combined

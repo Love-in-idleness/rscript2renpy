@@ -80,10 +80,7 @@ python early:
         return args
 
     def execute_oaction(args):
-        if args.Action == 4:
-            rotate_layer(args.Layer)
-        else:
-            raise Exception("Unhandled object action %d" % args.Action)
+        action_layer(args.Layer, args.Action)
 
     renpy.register_statement("_oaction", parse = parse_oaction, execute = execute_oaction, lint = lint_undef)
 
@@ -348,8 +345,12 @@ python early:
         layers = range(1, 100) if args.Layer == 0 else rscript_selected_layers(args.Layer)
         for layer in layers:
             store.layer_mode[layer] = args.Mode
+            action = store.layer_actions.pop(layer, None)
             if store.rscript_mode_rebuild:
                 loadcls(layer, 0, clear=True)
+            elif action is not None:
+                queue_draw(rscript_restore_action_layer, layer)
+        process_draw_queue()
 
     renpy.register_statement("_mode", parse = parse_mode, execute = execute_mode, lint = lint_undef)
 

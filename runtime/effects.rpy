@@ -161,13 +161,6 @@ transform rscript_zoom_out:
     zoom 1.0
     linear 0.5 zoom 0.0
 
-transform rotate_clockwise:
-    transform_anchor True
-    rotate 0
-    linear 0.5 rotate 360
-
-
-
 transform _zupdate_in(new_widget, old_widget, new_anchor):
     delay 0.5
 
@@ -793,12 +786,75 @@ init python:
             # use destination-texture integer composition for byte-exact edges.
             return result
 
+    def rscript_full_object(layer):
+        return store.rscript_affine_always or store.layer_mode.get(layer, 0) == 1
+
+    def rscript_action_steps(action):
+        if action in (1, 2, 3, 4):
+            return 26 if action in (1, 3) else 13
+        return {5: 13, 6: 7, 7: 8, 8: 6, 9: 3, 10: 8, 11: 6, 12: 3}[action]
+
+    def rscript_action_frame(action, tick):
+        if action in (1, 2):
+            level = tick * (10 if action == 1 else 20)
+            return (level if level < 256 else 0), (.5, .5)
+        if action in (3, 4):
+            level = 255 - tick * (10 if action == 3 else 20)
+            return (max(0, level) if tick else 0), (.5, .5)
+        if action in (5, 6):
+            return 0, (.5, 1.)
+        if action in (7, 8, 9):
+            return min(64, tick * {7: 8, 8: 12, 9: 30}[action]), (0., 1.)
+        if action in (10, 11, 12):
+            level = max(192, 255 - tick * {10: 8, 11: 12, 12: 30}[action])
+            return (level if tick else 0), (1., 1.)
+        raise ValueError("Unsupported native object action: %s" % action)
+
+    def rscript_action_scale(action, tick):
+        import math
+        level = tick * (10 if action == 5 else 20)
+        if level >= 128:
+            return 100, 100
+        sample = int(math.sin(level * 6.283185308 / 256) * 65535)
+        stretch = rscript_trunc_div(sample * 50, 65535)
+        return 100 + stretch, 100 - stretch
+
+    class RScriptObjectAction:
+        def __init__(self, state):
+            self.action, self.finished = state
+
+        def __call__(self, trans, st, at):
+            w, h = trans.child_size
+            if not w or not h:
+                return 0
+            steps = rscript_action_steps(self.action)
+            tick = steps if self.finished else int(st / rscript_dynamic_tick + 1e-9)
+            level, pivot = rscript_action_frame(self.action, tick)
+            x, y, ax, ay, dx, dy, subpixel = trans.child.get_placement()
+            # Preserve the moving child's source anchor while rotating about a native pivot.
+            trans.pos = (absolute(absolute.compute_raw(x or 0, config.screen_width)
+                                  - absolute.compute_raw(ax or 0, w) + (dx or 0) + pivot[0] * w),
+                         absolute(absolute.compute_raw(y or 0, config.screen_height)
+                                  - absolute.compute_raw(ay or 0, h) + (dy or 0) + pivot[1] * h))
+            trans.anchor = pivot
+            trans.rotate = -level * 360 / 256.
+            if self.action in (5, 6):
+                sx, sy = rscript_action_scale(self.action, tick)
+                trans.xzoom = ((sx * 65535 // 100) * w // 65535) / w
+                trans.yzoom = ((sy * 65535 // 100) * h // 65535) / h
+            else:
+                trans.xzoom = trans.yzoom = 1.
+            return rscript_dynamic_tick if tick < steps else None
+
     def rscript_show_layer(name, at_list=None, **kwargs):
         transforms = list(at_list or [])
         if name.startswith("layer") and name[5:].isdigit():
             number = int(name[5:])
             # Moves/effects must retain native depth, not renpy.show's default 0.
             kwargs.setdefault("zorder", store.layer_zorder.get(number, number * 2))
+            if number in store.layer_actions and rscript_full_object(number):
+                transforms.append(Transform(function=RScriptObjectAction(store.layer_actions[number]),
+                                            transform_anchor=True, rotate_pad=False, nearest=True))
             visibility = (RScriptRasterVisibility if isinstance(kwargs.get("what"), renpy.display.image.ImageReference)
                           else RScriptObjectVisibility)
             transforms.append(Transform(shader="rscript.blend", u_blendmode=0, u_blendlevel=0,
@@ -845,6 +901,9 @@ init python:
         if clear and store.rscript_click_native_effects:
             # Native Khime 4067ce -> 406a90 resets both links even in a queue.
             execute_resetclk(RScriptArguments(Layer=layer))
+
+        if clear:
+            store.layer_actions.pop(layer, None)
 
         anchor = layer_anchor.get(layer, (0.0, 0.0))
 
@@ -1086,7 +1145,7 @@ init python:
 
         elif clear and effect in (30, 31, 32, 33, 34, 35):
             if layer in store.layer_info:
-                full = store.layer_mode.get(layer, 0) == 1
+                full = rscript_full_object(layer)
                 trans.pos, trans.anchor = (absolute(0), absolute(0)), (0, 0)
                 queue_draw(rscript_show_layer, tag,
                            what=RScriptClearExit(store.layer_info[layer], effect, (xpos, ypos), anchor, full),
@@ -1118,22 +1177,37 @@ init python:
         process_draw_queue()
 
 
-    def rotate_layer(layer):
+    def rscript_restore_action_layer(layer):
         if layer not in store.layer_info:
             return
-
-        img = store.layer_info[layer]
         xpos, ypos = store.layer_pos.get(layer, (0, 0))
         anchor = store.layer_anchor.get(layer, (0.0, 0.0))
-        tag = "layer%d" % layer
-        stable = Transform(xpos = xpos, ypos = ypos, anchor = anchor,
+        stable = Transform(pos=(absolute(xpos), absolute(ypos)), anchor=anchor,
                            shader="rscript.colormode", u_colormode=store.layer_color.get(layer, 0))
+        rscript_show_layer("layer%d" % layer, what=renpy.displayable(store.layer_info[layer]),
+                           at_list=[stable], layer=IMAGE_LAYER)
 
-        queue_draw(rscript_show_layer, tag, what = renpy.displayable(img),
-                   at_list = [stable, rotate_clockwise], layer = IMAGE_LAYER)
-        queue_ef_pause(0.5)
-        queue_draw_extra_delayed(rscript_show_layer, tag, what = renpy.displayable(img),
-                                 at_list = [stable], layer = IMAGE_LAYER)
+    def rscript_finish_object_action(layer, state):
+        if store.layer_actions.get(layer) == state:
+            store.layer_actions[layer] = (state[0], True)
+            rscript_restore_action_layer(layer)
+
+    def action_layer(layer, action):
+        action = int(action) & 0xffff
+        if layer not in store.layer_info or not rscript_full_object(layer):
+            return
+        if not _preferences.transitions or renpy.is_skipping():
+            action = 0
+        if action == 0:
+            store.layer_actions.pop(layer, None)
+            queue_draw(rscript_restore_action_layer, layer)
+        elif 1 <= action <= 12:
+            # 5/6 deliberately use the original stretch, including in Evermaiden.
+            state = (action, False)
+            store.layer_actions[layer] = state
+            queue_draw(rscript_restore_action_layer, layer)
+            queue_ef_pause(rscript_action_steps(action) * rscript_dynamic_tick)
+            queue_draw_extra_delayed(rscript_finish_object_action, layer, state)
         process_draw_queue()
 
 

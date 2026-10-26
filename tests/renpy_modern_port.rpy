@@ -252,6 +252,15 @@ python early:
                 motion.effect, (20, 20), motion.pos, motion.anchor, motion.clear)
             store.layer_info = {11: "grpo_map 0009", 12: "grpo_map 0012", CG_LAYER: "grpe 1020"}
             store.layer_pos = {11: (0, 0), 12: (10, 20)}
+            renpy.pause = lambda delay, **kwargs: pauses.append(delay)
+            for action, steps in ((5, 13), (6, 7)):
+                pauses.clear()
+                action_layer(11, action)
+                assert store.layer_actions[11] == (action, True)
+                assert pauses == [steps * .042], pauses
+            action_layer(11, 0)
+            assert 11 not in store.layer_actions
+            renpy.pause = old_pause
             store.layer_groups = {}
             execute_group(SimpleNamespace(Layer=11, Group=2))
             execute_group(SimpleNamespace(Layer=0, Group=0))

@@ -15,6 +15,8 @@ init -130 python:
 init -100 python:
     rscript_colormode_limit = 5
     rscript_move4_timing = "fixed-speed"
+    # 405380 calls the affine object directly, without the later Full/Lim switch.
+    rscript_affine_always = True
     rscript_initial_folders = {number: "grpo" for number in range(100)}
     rscript_screen_size = (800, 600)
     rscript_base_text_size = 29

@@ -58,11 +58,14 @@ init python:
         if not entries:
             return child
         result = renpy.display.layout.MultiBox(layout="fixed")
+        # SceneListEntry clocks are wall times, not elapsed transform times.
+        result.adjust_times = True
         batch = []
 
         def flush():
             if len(batch) > 1:
                 group = renpy.display.layout.MultiBox(layout="fixed")
+                group.adjust_times = True
                 group.append_scene_list(batch)
                 # Stitch only raster pieces, never text, screens or blend effects.
                 result.add(Flatten(Transform(group, nearest=True),
