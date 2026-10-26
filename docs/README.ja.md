@@ -22,7 +22,7 @@
 - [新ゲーム移植と AI プロンプト](NEW_GAME_PORTING.ja.md)
 - [共通テンプレート](../port_template/README.ja.md)
 - [UI 資源の役割](../port_template/README.ja.md#ui-リソースの役割)
-- [ソースの役割](SHARED_TEMPLATE_MIGRATION.ja.md) · [ローカルパス](LOCAL_WORKFLOW.ja.md)
+- [ソースの役割](SHARED_TEMPLATE_MIGRATION.ja.md)
 - [初期設定](RSCRIPT_INITIALIZATION.ja.md)
 - [組版](TEXT_WRAPPING.ja.md) · [Forest 字体](FOREST_FONT_ANALYSIS.ja.md)
 - [Khime クリック](KHIME_CLICK_ANALYSIS.ja.md) · [画像効果](KHIME_EFFECT_ANALYSIS.ja.md) · [制御符](KHIME_TEXT_CONTROLS.ja.md)
@@ -32,7 +32,6 @@
 - [CannonBall 原動作](../cannonball/NATIVE_EFFECTS.ja.md)
 - [Kagerou 原プログラム](../kagerou/NATIVE_EVIDENCE.ja.md)
 - [SevenBridge 原プログラム](../sevenbridge/NATIVE_EVIDENCE.ja.md)
-- [2026-10-12 共通層整理](OPTIMIZATION_REPORT_2026-10-12.ja.md)
 
 アドレスと結論は明記されたハッシュのビルドだけに適用し、全作品共通の仕様ではありません。
 

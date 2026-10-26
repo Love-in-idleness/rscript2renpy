@@ -6,7 +6,7 @@
 
 This development reference records program identity, commands and layouts used by the bonus-edition adapter. Addresses and samples do not establish behavior for other engine versions.
 
-Recorded 2026-10-10; bonus resources updated 2026-10-11. This is static analysis, not a run of the original game. Addresses are VAs at image base `0x400000`, not file offsets. The reader is implemented independently in this directory; it does not import command semantics from other adapters.
+This is static analysis, not a run of the original game. Addresses are VAs at image base `0x400000`, not file offsets. The reader is implemented independently in this directory; it does not import command semantics from other adapters.
 
 ## Input versions
 
@@ -17,7 +17,7 @@ Recorded 2026-10-10; bonus resources updated 2026-10-11. This is static analysis
 
 Both are i386 PE32. The only changes in `.text` are `0x80 → 0x86` at `0x456d4a` and `0x45d0f3`: charset arguments in two font-creation paths. Other sections contain localization changes; the entire EXE is not a two-byte patch.
 
-The initial audit used 147 original / 140 patch scenes. Supported bonus resources now contain 162 original scenes: 98 `modern`, 64 `rscript19`. The rebuilt patch has 155 scenes, with seven untranslated scenes falling back to Japanese. A `modern-36` container does not imply an identical opcode schema. Each old set had 861 `excmd` calls; the bonus original has 936, with modes `0:590 / 1:263 / 2:83`.
+Only resources with 「ハチポチ特典」 installed are supported. A `modern-36` container may use different opcode schemas; read each TSC's metadata. Patches must match this edition; missing translations fall back to the original.
 
 ## Dispatch
 
@@ -111,7 +111,7 @@ After `_gosub 999`, 0050 passes 1000 as the first `_insub` argument to a local e
 - `0x41f0e1` clears through `0x41ee80` when `WORD[0x482ae0]==1`. `tclsmode` at `0x4206d0` writes it; startup explicitly selects 2.
 - `0x42d81a` prepends `^n` from `0x47ee88` when existing text and a nonzero wait are present. At `0x42d86c`, a body starting with CP932 `【` at `0x47ee94` gets an extra `U+3000,^n` from `0x47ee80`. TXT is not raw concatenation.
 - Append `0x42d8d1 → 0x430db0`; on failure, `0x42d8da → 0x430f30` clears then appends the current paragraph. Ren'Py checks actual layout height, not native byte capacity; within-paragraph pagination remains unfinished.
-- Direction `WORD[0x482a5e]`: native 0=vertical, 1=horizontal (earlier icon interpretation was reversed). SETE `0x430437`, WORD=0: `0x453ef0` sets `+0x1b0=1`; `0x455400 → 0x455800` advances Y and columns right-to-left. WORD=1 uses `0x455420`, advancing X and rows downward. Port settings retain 1=vertical/0=horizontal, remapping native tables/buttons. User-confirmed port default is vertical. New CFG initialization `0x419bb0` zeros BSS fields, so the EXE file does not prove a default direction byte of 1. Native CFG is not imported.
+- Direction `WORD[0x482a5e]`: native 0=vertical, 1=horizontal (earlier icon interpretation was reversed). SETE `0x430437`, WORD=0: `0x453ef0` sets `+0x1b0=1`; `0x455400 → 0x455800` advances Y and columns right-to-left. WORD=1 uses `0x455420`, advancing X and rows downward. Port settings retain 1=vertical/0=horizontal, remapping native tables/buttons. The port defaults to vertical text. New CFG initialization `0x419bb0` zeros BSS fields, so the EXE file does not prove a default direction byte of 1. Native CFG is not imported.
 
 Presets `0x43027f..0x43042b`; `0x453eb0` writes physical dimensions to `+0x170/+0x16c`, not transposed virtual dimensions:
 
@@ -124,12 +124,12 @@ Presets `0x43027f..0x43042b`; `0x453eb0` writes physical dimensions to `+0x170/+
 | Horizontal | 1 | 16 | 320×456 | 8 | 8 |
 | Horizontal | 2 | 12 | 240×342 | 6 | 6 |
 
-These are native constants, not proof of pixel equivalence. At the user's request the port uses 24/18/12px in both directions; switching changes geometry/glyph direction only. Native areas, origins and gaps remain; large vertical text uses 646×480, not the horizontal 360×513.
+These are native constants, not proof of pixel equivalence. The port uses 24/18/12px in both directions; switching changes geometry/glyph direction only. Native areas, origins and gaps remain; large vertical text uses 646×480, not the horizontal 360×513.
 
 - `0x43045c..0x430788` indexes interleaved X/Y stack constants by `snap+54*direction+18*size`, using native direction. All 54 combinations are in `native.py`: vertical 0/0=(114,30), horizontal 0/0=(400,20), vertical 2/8=(20,270). Ren'Py anchors vertical text at (x+width,y), wrapping by physical height. SDK TextSegment does not inherit direction: HarfBuzz vertical forms are needed to avoid sideways CJK. Isolated captures checked upright glyphs and switching.
 - `tbox`, `0x41c8cb → 0x41f220`, calls `0x41e550/0x41e570` according to argument two and refreshes conditionally. Hide `0x42da47` also calls clear-page `0x42d9d0`. Since 0999 ends with `tbox 0 0` without `txcls`, hide must clear the page. `txcls` is `0x41ca48 → 0x41ecd0 → 0x41e590`.
 - `locmode`, `0x41c801 → 0x41f890`, reads four expressions; layer 0 visits 1..99. `0x41e310 → 0x405740` writes origins. Nonzero fourth-field behavior is unresolved; samples use zero. `0x408569..0x4085d5` subtracts integer half-width/height for nonzero first/second fields, proving centered origins here. Half-pixel edges need visual comparison.
-- `endscene` at `0x41cb25` checks replay WORD `0x4821f8`: normal play continues, nonzero exits the interpreter. Runtime default is false; this observation originally lacked a native gallery entry.
+- `endscene` at `0x41cb25` checks replay WORD `0x4821f8`: normal play continues, nonzero exits the interpreter. The runtime defaults to normal play; replay calls explicitly set the replay flag.
 
 The shared runtime supplies established registers/media/widgets, not copied game-specific overrides. General transitions use compatibility behavior; timing is detailed below, precise pixels remain unverified.
 
@@ -154,11 +154,9 @@ Tests cover both syntaxes, cross-line/column allocation, offsets and SDK glyph d
 - Vertical opening brackets `『「【` can have HarfBuzz ink beyond advance. The shared native text layer fits allowable bearing into its cell without changing fullwidth advance or gap. Actual SDK bounds at 24/18/12px are tested.
 - `folder`, `0x41cee0 → 0x41fb80`, layer 0 loops 1..99 at `0x41fbb1..0x41fbc8`. Gallery `folder 0 "grpo_ex"` and `locmode 0 0 0 0` must both apply: thumbnails must not inherit centered portrait origins. Forest/Khime folder-all machinery is reused on this EXE's evidence; bonus TSC remains in charge, without a replacement gallery menu.
 
-2026-10-11 checks: real EXE constants, read-only inspection of 162 TSCs, isolated SDK page/folder/origin/font/bounds regressions and both-direction captures. Generated lint retains Japanese filename and unreachable warnings. Full routes and Android devices were not tested.
-
 ## Reading controls
 
-### Bonus portrait-folder leak (2026-10-11)
+### Bonus portrait-folder leak
 
 Bonus 0001 sets every object's folder to grpo; galleries use grpo_ex/top-left. The 0050→0999→1000 path does not rerun 0000's grpo_bu/centered settings for slots 1..6. EXCMD consequently asks for nonexistent grpo/3011; shared missing-image fallback is transparent, hiding portraits throughout play. The assets were present, not omitted during copying.
 
@@ -170,7 +168,7 @@ The port restores the folders/origins explicitly declared in 0000/9999 when EXCM
 | --- | --- | --- |
 | skip / +60 | 42d5f0 → 42ce10 → 417f10 | Skip |
 | rev / +68 | 42d630 → 42ce90 → 417ee0 | Rollback |
-| bak / +74 | 42d5d0 → 42c890, native history | User-requested wheel-equivalent Ren'Py rollback |
+| bak / +74 | 42d5d0 → 42c890, native history | Wheel-equivalent Ren'Py rollback |
 | hide / +78 | 42d6d0 → 42ced0 → 417e10 | Hide UI |
 | voc / +7c | 42d6f0 → 42cc30 → 417e90 | Replay voice |
 | auto / +84 | 42d710 → 42cda0 → 417fe0 | Auto |
@@ -178,7 +176,7 @@ The port restores the folders/origins explicitly declared in 0000/9999 when EXCM
 
 Only available asset buttons are shown; no extra menu/save buttons. Back deliberately reuses shared rollback/permissions rather than native history or the old compatibility history page. The slider writes textbox background `+58` object's `+b4` alpha. Constructor `42fd4c → 431070` initializes 128; the shared opaque 255 hid backgrounds/portraits. Port default is 128/255; old default 1.0 is migrated once, preserving other choices and allowing 1.0 again later. Native pixel blending is not visually compared.
 
-Save slot constructor `404135` reads saveconf. `404272/4042ac` keep date/new positions but release placeholder images; `40448b..404528` positions dynamic objects. `4048b5` formats `%04d/%02d/%02d %02d:%02d`. `404a0c` finds newest; `404a1c` loads dat_new there, not the black saveconf/new.png. The shared images map supplies it, saved chapter metadata selects previews, and metadata defines slots/pages. Native date font/color/blending is unverified. Isolated SDK tests trigger both Back and wheel rollback, restoring previous dialogue/local registers; this user policy is not claimed as EXE behavior.
+Save slot constructor `404135` reads saveconf. `404272/4042ac` keep date/new positions but release placeholder images; `40448b..404528` positions dynamic objects. `4048b5` formats `%04d/%02d/%02d %02d:%02d`. `404a0c` finds newest; `404a1c` loads dat_new there, not the black saveconf/new.png. The shared images map supplies it, saved chapter metadata selects previews, and metadata defines slots/pages. Native date font/color/blending is unverified. Isolated SDK tests trigger both Back and wheel rollback, restoring previous dialogue/local registers; this is a deliberate port difference, not EXE behavior.
 
 excompane callbacks refresh through message 433:
 
@@ -207,7 +205,7 @@ With tfcs=0, `0x430f40 → 0x455b90` sets old paragraph images to mode 2/alpha12
 
 See the [game guide](README.en.md#checks-and-limitations).
 
-## Music gallery (2026-10-11)
+## Music gallery
 
 The existing EXE supports the bonus script's music entry; modification dates do not prove a missing new EXE. Title `setclksys 23 7 3 0` uses `0x409d82 → 0x417cb0 / 0x417d88[7] → 0x417d57 → 0x419ac0`. This reads window ID `0x482164` and calls `0x44eab0`. Registration `0x4196ab` pushes constructor `0x41a8a0`, `0x4196b6` calls registration, then `0x4196d2` stores returned AX in `0x482164`: the store belongs to the preceding call, not the next registration. Resource name: `0x47e8f0: muscmenu`.
 
@@ -225,11 +223,7 @@ The existing EXE supports the bonus script's music entry; modification dates do 
 
 Automated tests cover selection, pause, switching, boundaries, decode start/end, temporary volume and cleanup. Isolated graphical tests use synthetic WAVs to check real Ren'Py completion advances and exit does not resume outer BGM. They do not verify real sound-card volume, full native UI or every replay route.
 
-## Nonfocused portraits (2026-10-11)
-
-EXE checks cover dispatch, vtables, LUT and lctr refresh; the algorithm is not inferred from other ports. Isolated SDK tests cover focus, preserved-focus loading, queues, immediate lctr changes and refresh preserving r20/depth/slot7 with dedicated persistent state. GL2 synthetic pixels cover transparency, strength and normal-mode restoration; Forest/Khime common regressions pass. Regenerated Kagerou lint retains existing warnings. No native runtime pixel comparison, old-save or Android GPU verification; exact transitions and history remained separate tasks at that audit date.
-
-## update timing in milliseconds (2026-10-11)
+## update timing in milliseconds
 
 `0x41cae7 → 0x41ff40 → 0x41e5b0` reads effect/steps/wait. `0x41e5cc..0x41e5d1` replaces zero steps with10. `0x41e7e0` dispatches immediate, dissolve, ordered replacement, white and black.
 
@@ -241,9 +235,9 @@ EXE checks cover dispatch, vtables, LUT and lctr refresh; the algorithm is not i
 | Mask | `0x450380`, double steps then subtract1 | `(2*step-1)*wait/1000` |
 | 1xx / 2xx | `0x4507a0 / 0x450940`, two fixed31/41-frame loops, Sleep(5) each | 0.310 / 0.410 |
 
-The loop uses WINMM!timeGetTime (IAT `0x4732dc`), sleeping at least once through KERNEL32!Sleep(5) (IAT `0x473070`) until actual difference is **greater than** wait. Shared codex-ms calculates nominal counts, not Windows scheduling. Effect2 still used pixelation at that audit point; corrected below. Current Japanese constant effects are0..3: `1 32 40`=1.32s, `1 16 20`=.34s, 0999 `1 15 100`=1.60s (old centisecond results12.8/3.2/15). Kagerou opts into ms mode; other ports received only the shared effect2 timing correction in this audit. Zero steps become10 before constructors too, avoiding division by zero. EXE-byte assertions/isolated SDK tests cover durations, register arguments and queues, not exact native pixels/scheduling.
+The loop uses WINMM!timeGetTime (IAT `0x4732dc`), sleeping at least once through KERNEL32!Sleep(5) (IAT `0x473070`) until actual difference is **greater than** wait. Shared codex-ms calculates nominal counts, not Windows scheduling. Current Japanese constant effects are0..3: `1 32 40`=1.32s, `1 16 20`=.34s, 0999 `1 15 100`=1.60s (old centisecond results12.8/3.2/15). Kagerou opts into ms mode; other ports received only the shared effect2 timing correction in this audit. Zero steps become10 before constructors too, avoiding division by zero. EXE-byte assertions/isolated SDK tests cover durations, register arguments and queues, not exact native pixels/scheduling.
 
-## update 2: ordered replacement (2026-10-11)
+## update 2: ordered replacement
 
 `0x45050a` sets draw mode **18**, not scaling. `0x4412c4[18] → 0x44125c[13] → 0x440c17`; opaque `0x440c33 → 0x4437d0`. `0x443855..0x44385b` shifts strength right4, selecting one of16 WORDs at `0x47ef38`. `0x443899..0x4438ef` tests bit `(x%4)+4*(y%4)`:1 copies the new pixel,0 retains old. `0x45e01a..0x45e01c` negates DIB height, establishing top-down rows.
 

@@ -84,7 +84,7 @@ python3 forest/build_forest_rscript.py /path/to/prepared/Forest /path/to/project
 
 没有补丁就省略 `--language zh=...`。
 `jp` 是基准语言标签，`zh=目录` 添加可切换的语言包；标签不负责转换文件编码。
-各游戏的补丁规则不同，请以 [游戏说明](../README.zh.md#游戏移植说明) 为准。
+各游戏的补丁规则不同，请以 [游戏说明](../README.zh.md#游戏指南) 为准。
 
 首次构建使用新目录。重建前备份生成工程内的手工修改，按生成器要求使用 `--force`。
 
@@ -103,8 +103,6 @@ lint 通过后仍应检查实际画面、音频、选择和存读档。
 
 ## 其他说明
 
-`local.paths.toml` 是可选的本机路径备忘，不是生成器必需配置，
-见 [本机路径](LOCAL_WORKFLOW.zh.md)。
 
 项目不提供游戏本体或预构建游戏包。分发前请检查
 [第三方资源授权](../THIRD_PARTY_NOTICES.zh.md)，不要包含自己的存档或签名密钥。

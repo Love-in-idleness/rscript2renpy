@@ -22,7 +22,7 @@
 - [新游戏移植指南与 AI 提示词](NEW_GAME_PORTING.zh.md)
 - [通用模板](../port_template/README.zh.md)
 - [通用界面资源分工](../port_template/README.zh.md#界面资源分工)
-- [源码分工](SHARED_TEMPLATE_MIGRATION.zh.md) · [本机路径](LOCAL_WORKFLOW.zh.md)
+- [源码分工](SHARED_TEMPLATE_MIGRATION.zh.md)
 - [初始化配置](RSCRIPT_INITIALIZATION.zh.md)
 - [文字布局](TEXT_WRAPPING.zh.md) · [Forest 字体](FOREST_FONT_ANALYSIS.zh.md)
 - [Khime 点击](KHIME_CLICK_ANALYSIS.zh.md) · [图像效果](KHIME_EFFECT_ANALYSIS.zh.md) · [控制符](KHIME_TEXT_CONTROLS.zh.md)
@@ -32,7 +32,6 @@
 - [CannonBall 引擎行为](../cannonball/NATIVE_EFFECTS.zh.md)
 - [Kagerou 原程序依据](../kagerou/NATIVE_EVIDENCE.zh.md)
 - [SevenBridge 原程序依据](../sevenbridge/NATIVE_EVIDENCE.zh.md)
-- [2026-10-12 公共层整理记录](OPTIMIZATION_REPORT_2026-10-12.zh.md)
 
 原生参考中的地址和结论只适用于标明哈希的构建，不是所有游戏共用的规范。
 

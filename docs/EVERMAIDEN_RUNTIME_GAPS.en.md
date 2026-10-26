@@ -5,7 +5,7 @@
 [Documentation](README.en.md)
 
 Modern instruction implementation, native evidence and remaining work. This record uses modern-36 input;
-the EXE is read-only static evidence, not required by generated projects. Addresses are VAs in the user's
+the EXE is read-only static evidence, not required by generated projects. Addresses are VAs in the sample
 startup_jp.exe, not every version.
 
 ## Implementation and evidence
@@ -54,7 +54,7 @@ startup_jp.exe, not every version.
 Layout call chains: 43b600 / 43b690 / 43b270 (box/body/name), 43a850 (controls), 43b870 (size),
 43b840 → 42d0d0 (ruby), 43b920 / 43b900 / 43b8d0 (wait image).
 
-- update 100..299 implemented 2026-10-10, no longer degraded. 43b390 chooses 453a60 / 4537e0 by hundreds;
+- update 100..299 uses native crop and frame timing. 43b390 chooses 453a60 / 4537e0 by hundreds;
   tens/units select old/new nine-grid centres through 43ba20. 4542c0 / 451b60 crop using integer W*100/(100+level),
   clamping out-of-screen centres. Hundreds=1: level 0..600 step 20, two phases of 31×5ms=0.310s;
   hundreds=2: 0..2000 step 50, two 41×5ms=0.410s. Step/Wait are unused. Shared crops/timing pass actual isolated Ren'Py framebuffer tests;

@@ -14,14 +14,7 @@ Addresses are PE VAs, not transferable to other versions.
 | BGM fade | 4181b0/4181f0 → 42c6f0/42c790 → 43a510/43a570: nonzero switch; 43d122 sets 20ms timer, 43db4f/43dba6 ends at step 100, 2000ms | Lowering preserves switch/value comments; shared dual-channel crossfade enabled here |
 | load/cls 9 | 40371a/4041b2 → 425690: start/end Y = negative image height | Shared top slide-in/out |
 | load/cls 17 | 403aa1/4044a2 → 425d30: draw mode 20, step 16; 41df89 → 420320 draws only (y & 15) > (level >> 4) and ((x+y) & 15) > (level >> 4) | Shared grid-wipe shader preserving alpha/depth |
-| draw 3, other non-1/2 | 405490: 1→mode 2, 2→mode 14, others→mode 0 | Old dialect normal-draw equivalence, not an unknown effect |
-
-405490 → 41cc90/41cd60 changes the shown image immediately, without another load.
-Shared display maintains dynamic blending through load, move, hide/restore and hover replacement, without resetting position/animation.
-Draw follows queue order. SDK framebuffer checks normal, alpha, additive and pre/post queue states.
-The percentage shader uses shared precision, not guaranteed exact integer native blending.
-Before fixes, JP/ZH generated scripts contained 1979 explicit degradations: 1938 BGM, 19 image effects,
-20 draw 3 and three incomplete text controls. Removing them does not mean all native behaviour is reproduced.
+| draw 3, other non-1/2 | 405490: 1→mode 2, 2→mode 14, others→mode 0 | draw 3 uses modern Grade blending; other aliases retain native behavior |
 
 ## Exact text corrections
 
@@ -29,10 +22,10 @@ Only complete matched CannonBall lines are corrected during generation; source g
 JP scene 6101 voice 19604 uses ^n, confirming the Chinese bare ^g as a newline typo.
 For 2402 voice 446/448, Chinese ^g63 is valid; Japanese has ^g63150/^g6340.
 The common parser reads consecutive integers, so no zero-padding fix is applied to Chinese.
-For the user-confirmed original bug, only the two Japanese lines become ^g063^cw150 / ^g063^cw40,
+To separate name IDs from body digits, only the two Japanese lines become ^g063^cw150 / ^g063^cw40,
 separating image ID from body digits with white control. Other numeric boundaries are not guessed.
 These corrections and 6101's typo receive generated comments.
-Chinese 2108 _oload 44 171 95 0 0 '１１３０' is changed to １１３０（正确） by request,
+Chinese 2108 _oload 44 171 95 0 0 '１１３０' is changed to １１３０（正确） during generation,
 only in that Chinese scene, not original or other choices.
 
 ^g evidence: 426d1b/426d4e dispatches G/g to 426f18; 426f6c calls integer reader 42eaa0 and advances text cursor.

@@ -4,7 +4,7 @@
 
 [User guide](README.en.md)
 
-Checked 2026-10-22. Target: Japanese `SBridge_jp.exe`, PE32/i386, image base `0x400000`, SHA-256:
+Target: Japanese `SBridge_jp.exe`, PE32/i386, image base `0x400000`, SHA-256:
 
 ```text
 c7d5fc38cf0c354a61d056b607cf1367b2529557e9e0407d0b0fdf12771b35e3
@@ -14,9 +14,9 @@ These are file and Ghidra static-analysis results, not a recording of the origin
 
 ## Resources and entry points
 
-Original scr.xfl contains111 GSCs. The112 older TSCs already in the resource directory are not the build baseline: re-export copies with current LiarsoftTool. Containers are modern-36; each TSC's rscript18/rscript19/modern metadata determines its argument schema.
+Export current-format TSC from the original `scr.xfl`, rather than relying on old exports. Containers are `modern-36`; each TSC's `rscript18`, `rscript19`, or `modern` metadata determines its argument schema.
 
-0000 initializes then jumps to0001. Start follows0100→0110→2001. CG galleries use0201–0208/0210; scene replay uses0301/0302/0310 and5001–5013; music uses0400/0401. Scripts control these screens; unused EXE top_me* fallback titles are not the adapter's menu. Preserve the original title, opening common Text Settings only from its settings action. The maintainer confirmed that another left click after a group's final CG returns to thumbnails. The viewer returns to the source page in r[299], without overwriting hit's register result.
+0000 initializes then jumps to0001. Start follows0100→0110→2001. CG galleries use0201–0208/0210; scene replay uses0301/0302/0310 and5001–5013; music uses0400/0401. Scripts control these screens; unused EXE top_me* fallback titles are not the adapter's menu. Preserve the original title, opening common Text Settings only from its settings action. Another left click after a group's final CG returns to thumbnails. The viewer returns to the source page in r[299], without overwriting hit's register result.
 
 APINI is at `0x469740`; `0x41a260` initializes resource paths and800×600 dimensions. `0x41ab90` tries external RsInit.cfg then RsInit.dll. Neither is supplied in the baseline, so internal EXE settings apply.
 
@@ -44,15 +44,9 @@ getflag mode0 reads the bit into r[0] as Boolean; nonzero sets it, preserving r[
 
 `0x41b5b0` groups voice IDs by10000: group0 voice/%04d.wav, others voice/<group>/%04d.wav. Converted OGG is used; PCM WAV remains unchanged. `0x4218d0` preserves repeat,999 loops.
 
-Rechecked2026-10-23: original mov contains0002/0003/0004.mpg, all MPEG-1 video/MP2 audio. Earlier conversion copies omitted the folder. Startup callback `0x4238a0` references mov/0002.mpg and mov/0001.mpg at `0x4238eb/0x42390e`, calling `0x445240`. Common startup order is(2,1), skipping absent0001. Scripts0110/0302 call movies3/4,2004 calls2. Copy mov/*.mpg and preserve these commands.
+The original `mov` contains `0002.mpg`, `0003.mpg`, and `0004.mpg`, with MPEG-1 video and MP2 audio. Startup callback `0x4238a0` references `mov/0002.mpg` and `mov/0001.mpg` at `0x4238eb/0x42390e`, calling `0x445240`. The port plays available files in order `(2, 1)`, skipping absent `0001`. Scripts `0110/0302` call movies 3/4 and `2004` calls 2; builds must retain `mov/*.mpg` and these commands.
 
-Startup REA evidence:
-`ev_0a8303ae0ac91d42cca1fa64a481fcf91c1ab0bfc78cbd8821b840268a01c474`,
-`ev_177a58fd85e2021bd3409f818451f41c36da4a3b309aa5a2872d1d5d49969876`.
-GNU objdump instructions:
-`ev_32b12957eff616758728f349b1d051ff7ad77752533cd13b791d6b687a91bf83`.
-
-## Evidence and repeatable checks
+## Repeatable checks
 
 ```bash
 python3 -B tests/test_sevenbridge_builder.py
@@ -60,17 +54,6 @@ python3 -B tests/run_sevenbridge_port.py /path/to/generated-sevenbridge /path/to
 ```
 
 Add --capture /path/to/captures to capture title, body, settings, save and load screens with isolated saves. Headless runs can use xvfb-run -a. Lint retains warnings for original fullwidth-number filenames and dynamically unreachable branches.
-
-Key REA/Ghidra12.1.4 records:
-
-- Dispatch: `ev_6e60215a5db021d73ca2e5b31caeab471f13ce6021c2770e151610381da40311`
-- Progress query: `ev_2094337b09290b909f5863fb0a103aed4f01e10b48c67aad27faf23a5ddda192`
-- CG recording: `ev_7f029987eebd0e711fd2b5d454465b8a1f31e3c4fd1c3891731d03d30491942c`
-- Audio: `ev_0e12bcca631fa9ef551e87ad96278d2d2c9da8f193376ea1f5f5fb800dade10d`
-- Text layout: `ev_8f8d19a742c865ecddd9c34cc6be37ef9fcd394cf9bf4a919cc1039a72f99d83`
-- Initialization: `ev_2a124917ccf0f8ee508a62dc67e9d85f8e4934a81db6f81540d7f625beeee713`
-- Save header: `ev_782a08b1a9610744432bee9a92493d79bdc1910c99d01bccca39da1cc75f7237`
-- Save images: `ev_09e1bf507945becc87a6ff904be3610141ae649d35952d7fd0053fab971de964`
 
 SDK checks are not comparisons with the running original. Font rasterization, every transition, full routes, native Windows and Android devices still need separate acceptance.
 

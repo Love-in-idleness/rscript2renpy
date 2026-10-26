@@ -4,7 +4,7 @@
 
 [利用ガイド](README.ja.md)
 
-確認日2026-10-22。日本語 `SBridge_jp.exe`、PE32/i386、ImageBase `0x400000`、SHA-256:
+日本語 `SBridge_jp.exe`、PE32/i386、ImageBase `0x400000`、SHA-256:
 
 ```text
 c7d5fc38cf0c354a61d056b607cf1367b2529557e9e0407d0b0fdf12771b35e3
@@ -14,9 +14,9 @@ c7d5fc38cf0c354a61d056b607cf1367b2529557e9e0407d0b0fdf12771b35e3
 
 ## 資源と入口
 
-scr.xfl は111 GSC。既存112旧TSCは基準にせず、現LiarsoftToolでコピー上に再生成します。modern-36 containerと各TSCのrscript18/rscript19/modern schemaを区別します。
+原版の `scr.xfl` から現行形式の TSC を出力し、古い出力を基準にしません。コンテナーは `modern-36` で、引数の構造は各 TSC の `rscript18`、`rscript19`、`modern` メタデータで決まります。
 
-0000→0001、開始は0100→0110→2001。CG鑑賞は0201–0208/0210、回想は0301/0302/0310と5001–5013、音楽は0400/0401。脚本が鑑賞を制御するため、EXE内の未使用top_me*を採用しません。タイトルを保持し、環境設定のみ共通Text Settings。利用者確認によりCG組の末尾で次の左クリックはthumbnailへ戻ります。移植はr[299]の元頁へ帰り、hitのレジスターを強制変更しません。
+0000→0001、開始は0100→0110→2001。CG鑑賞は0201–0208/0210、回想は0301/0302/0310と5001–5013、音楽は0400/0401。脚本が鑑賞を制御するため、EXE内の未使用top_me*を採用しません。タイトルを保持し、環境設定のみ共通Text Settings。CG 組の末尾で次の左クリックはサムネイルへ戻ります。移植はr[299]の元頁へ帰り、hitのレジスターを強制変更しません。
 
 APINIは `0x469740`、初期化 `0x41a260`、800×600。`0x41ab90` はRsInit.cfg、次にRsInit.dllを試しますが基準環境に両方ないため、EXE内蔵設定です。
 
@@ -42,15 +42,9 @@ getflag mode0はbitをr[0]へ、非零は進捗を立てr[0]保持。番号はun
 
 `0x41b5b0` はvoice番号を10000で組分けし、0はvoice/%04d.wav、他はvoice/<組>/%04d.wav。変換後は同名OGG、PCM WAVは原状保持。`0x4218d0` はRepeatを保持し999=loop。
 
-2026-10-23再確認で、原movは0002/0003/0004.mpg（MPEG-1動画+MP2音声）。旧コピーでmovを落としていました。起動callback `0x4238a0` の `0x4238eb/0x42390e` はmov/0002と0001を参照し `0x445240` を呼びます。共通順序(2,1)を使い、ない0001は既存処理で飛ばします。0110/0302は動画3/4、2004は2。mov/*.mpgをコピーして脚本呼出を保持します。
+原版の `mov` には `0002.mpg`、`0003.mpg`、`0004.mpg` があり、MPEG-1 動画と MP2 音声を含みます。起動コールバック `0x4238a0` は `0x4238eb/0x42390e` で `mov/0002.mpg` と `mov/0001.mpg` を参照し、`0x445240` を呼びます。移植は存在する動画を `(2, 1)` 順で再生し、ない `0001` は飛ばします。`0110/0302` は動画 3/4、`2004` は 2 を呼ぶため、`mov/*.mpg` と呼出命令を保持します。
 
-起動のREA Evidence:
-`ev_0a8303ae0ac91d42cca1fa64a481fcf91c1ab0bfc78cbd8821b840268a01c474`、
-`ev_177a58fd85e2021bd3409f818451f41c36da4a3b309aa5a2872d1d5d49969876`。
-GNU objdump:
-`ev_32b12957eff616758728f349b1d051ff7ad77752533cd13b791d6b687a91bf83`。
-
-## 検証記録
+## 検証
 
 ```bash
 python3 -B tests/test_sevenbridge_builder.py
@@ -58,16 +52,5 @@ python3 -B tests/run_sevenbridge_port.py /path/to/generated-sevenbridge /path/to
 ```
 
 `--capture /path/to/captures` で隔離セーブからタイトル、本文、設定、保存・読込を捕捉できます。画面なしではxvfb-run -aで包めます。lintには原全角数字ファイル名と動的分岐の不可達警告が残ります。
-
-REA/Ghidra12.1.4の主要記録:
-
-- dispatch: `ev_6e60215a5db021d73ca2e5b31caeab471f13ce6021c2770e151610381da40311`
-- 進捗問合せ: `ev_2094337b09290b909f5863fb0a103aed4f01e10b48c67aad27faf23a5ddda192`
-- CG記録: `ev_7f029987eebd0e711fd2b5d454465b8a1f31e3c4fd1c3891731d03d30491942c`
-- 音声: `ev_0e12bcca631fa9ef551e87ad96278d2d2c9da8f193376ea1f5f5fb800dade10d`
-- 文字配置: `ev_8f8d19a742c865ecddd9c34cc6be37ef9fcd394cf9bf4a919cc1039a72f99d83`
-- 初期化: `ev_2a124917ccf0f8ee508a62dc67e9d85f8e4934a81db6f81540d7f625beeee713`
-- セーブheader: `ev_782a08b1a9610744432bee9a92493d79bdc1910c99d01bccca39da1cc75f7237`
-- 保存画像: `ev_09e1bf507945becc87a6ff904be3610141ae649d35952d7fd0053fab971de964`
 
 SDK検査は原作実行との比較ではありません。字形、全転換、全ルート、Windows/Android実機は別途確認が必要です。

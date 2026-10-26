@@ -62,7 +62,7 @@ python3 cannonball/build_cannonball_rscript.py \
 /path/to/renpy-sdk/renpy.sh /path/to/renpy/CannonBall lint
 ```
 
-- 数字皮肤、计数动画和历史文本页尚未完全还原。
+- 历史文本页外观尚未完全还原。
 - 部分转场、音乐淡化与原版可能有差异。
 - 中文补丁的流程来源、跨语言存档及完整赛车、战斗、剧情路线需另行检查。
 - Android 需要实机测试。

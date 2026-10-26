@@ -4,7 +4,7 @@
 
 [Documentation](README.en.md)
 
-Read-only analysis of user-supplied KhimeDL_CHS.exe, neither executed nor distributed.
+Read-only analysis of sample KhimeDL_CHS.exe, neither executed nor distributed.
 SHA-256 `522bec3e93340ffd3bdb24ba98cfb775f80df9d85460819da840d824ad4822a8`.
 PE32, ImageBase `0x400000`; VAs below, specific to this build.
 
@@ -27,14 +27,6 @@ PE32, ImageBase `0x400000`; VAs below, specific to this build.
   Queue mode clears metadata immediately, drawing can follow. resetclk 0 is skipped at `0x4239a4`, not a global reset.
 
 ## Adapter policy
-
-Previously Khime treated slot 0 as the body replacement/hit origin and retained bindings after cls:
-0501's hint layer 41 became an old CG-gallery button; 0401 tracks without setlink reused old images/coordinates;
-0301 scene replay was affected too.
-Khime now declares rscript_click_link_is_preview and rscript_click_native_effects. Shared runtime hits the body position/alpha,
-applies native body modes and displays two independent previews; native-dialect cls clears bindings.
-Forest/default keeps its existing replacement semantics; these EXE rules are not imposed on unrelated versions.
-No player saves were modified or removed. Side-story entry recognizes title body 9006, not old hover replacement 9106.
 
 Tests: tests/test_shared_port.py /path/to/renpy-sdk covers queued clears, reused hint layers, tracks without links,
 separate hit/preview positions and both slots. Isolated graphics checks enter/leave, both previews, pixels and return values.

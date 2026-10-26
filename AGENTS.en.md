@@ -1,47 +1,38 @@
-# Working agreements
+# Repository guidelines
 
 [中文](AGENTS.zh.md) | [English](AGENTS.en.md) | [Русский](AGENTS.ru.md) | [日本語](AGENTS.ja.md)
 
-## Before starting
+## Change boundaries
 
-- Inspect Git status, preserve user changes and search with rg.
-- Read the project and affected game READMEs. Path examples: local.paths.example.toml; private paths: ignored local.paths.toml.
-- For cross-repository work also read LiarsoftTool's AGENTS.md and its linked instructions.
-  Resource conversion belongs to LiarsoftTool; TSC-to-Ren'Py compilation, runtime and UI belong here.
-
-## Implementation boundaries
-
-- Put common functionality in runtime/ and port_template/; dialect and game differences in adapters.
-- Do not maintain long-lived copies of shared code or string-patch installed files; fix generators or templates.
-- Verify unknown behaviour against this game's EXE, scripts and actual output, not guesses from another game.
-- Originals are read-only; convert copies and test temporary projects. Do not commit game assets, generated projects, saves, keys or personal paths.
-- Check manual edits before overwriting, following generator permissions. Do not automatically install administrator dependencies or execute unknown EXEs.
+- Check Git status, preserve existing edits, and read the affected modules and game guides.
+- LiarsoftTool owns resource unpacking and conversion; this repository owns TSC-to-Ren'Py generation, runtime, and UI.
+- Keep shared implementations in `runtime/` and `port_template/`, game differences in adapters. Fix source, not only generated projects.
+- Establish unknown behavior from the relevant game's EXE, scripts, and observed behavior, not assumptions from another game.
+- Keep originals read-only and use copies for conversion and tests. Do not commit game assets, generated projects, saves, personal paths, or keys.
+- Check manual edits before overwriting. Preserve input validation and file-level safe writes; do not broaden cleanup targets.
 
 ## Documentation
 
-- README is for users: purpose, dependencies, resource preparation, build commands, patches and necessary limitations.
-- Every project-authored document has separate .zh.md, .en.md, .ru.md and .ja.md versions in the same directory, updated together.
-  The unsuffixed .md is navigation only. Do not keep mixed-language bodies or substitute short summaries for translations.
-- Preserve original licenses and third-party legal text unchanged; provide translations of project-authored explanations.
-- Follow the user's Chinese writing; English, Russian and Japanese must carry the same facts without invented features.
-- Write short direct instructions. Error internals, legacy migration, internal fields, regression logs, commit histories and repeated disclaimers do not belong in user guides.
-- Game guides use overview, resource preparation, generation, language patches, use, checks and limitations.
-- Reverse-engineering hashes, addresses, operands and uncertainties belong in developer references. Static evidence is not gameplay.
-- Link each game from the root README; separate user guides and technical references in the documentation index.
-- Check options, examples and local links; remove references when removing features. Preserve license, copyright and provenance meaning.
+- READMEs serve users: purpose, installation, operation, supported versions, and practical limitations. Put technical evidence in developer references.
+- Maintain separate `.zh.md`, `.en.md`, `.ru.md`, and `.ja.md` files for project-authored documents; unsuffixed entries only select a language.
+- Keep facts and structure aligned. Use replaceable paths, not maintainer-specific configuration or private material.
+- Omit task diaries, chat decisions, commit histories, and obsolete test counts. State useful conclusions as current behavior or limitations.
+- Preserve original licenses, attribution, and asset provenance. Identify samples and scope when citing native programs.
+- Update instructions, parameters, and links with features; remove all references to deleted documents.
 
-## Validation
+## Checks
 
-- For documentation check links, headings, arguments and git diff --check; do not rerun full games for text-only changes.
-- Common code: tests/test_runtime.py and tests/test_port_template.py.
-- File installation: tests/test_file_install.py; native images: tests/test_native_images.py.
-- Compilation/patches: tests/test_tsc_compiler.py and tests/test_tsc_patches.py.
-- Shared project: tests/test_shared_port.py <SDK> --logic-only, plus affected game tests and lint.
-- Text/touch changes: tests/run_native_text_wrap.py and tests/run_touch_controls.py.
-- Visuals, audio, routes, old saves and Android need actual execution. Report automated checks separately from device results.
+Run [shared checks](docs/README.en.md#development-checks) from the repository root, then tests for affected games.
+Use your own SDK path for checks requiring Ren'Py.
 
-## Git
+- Cover compiler, patch, file installation, and native image changes with their corresponding tests.
+- Font, wrapping, and touch changes also need native Ren'Py tests and visual checks.
+- For documentation, check links, anchors, fences, actual `--help`, and `git diff --check`; no full game run is required.
+- Report unit tests, lint, static analysis, and device checks separately. Generation success is not full playthrough verification.
 
-- Commit verified independent tasks locally, with only their files. Honour explicit requests not to commit.
-- Without an explicit request do not push, publish releases, raise versions or Android requirements.
-- Prefer the current checkout; new branches use codex/.
+## Git and permissions
+
+- Commit independently verified tasks separately, including only relevant files.
+- Pushes, releases, version changes, and raised minimum system requirements need an explicit request.
+- Use the `codex/` prefix for new branches; do not switch branches without a reason.
+- Do not execute unknown EXEs, perform administrator operations, or install globally without authorization.

@@ -4,9 +4,7 @@
 
 [Documentation](README.en.md)
 
-On 2026-10-11 five user-supplied PE32 EXEs were inspected read-only. Effect 2 is ordered 4×4 pixel replacement,
-not mosaic or enlargement followed by shrinking. The old Pixellate call remains commented out as requested, no longer executed.
-Evidence is limited to these builds, not every engine version.
+Effect 2 is **ordered 4×4 pixel replacement**, not mosaic or scaling. The table below records static call chains in five PE32 samples; findings are specific to those builds.
 
 ## Calls and table
 

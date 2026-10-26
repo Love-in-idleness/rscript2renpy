@@ -4,7 +4,7 @@
 
 [文書一覧](../docs/README.ja.md)
 
-特典版アダプターの識別、命令、配置の開発資料です。2026-10-10記録、特典資源は2026-10-11更新。原ゲーム実行ではなく静的解析で、アドレスはImageBase0x400000のVAです。読取器は本ディレクトリに独立実装し、他アダプターから意味を借用しません。
+特典版アダプターの識別、命令、配置の開発資料です。原ゲーム実行ではなく静的解析で、アドレスはImageBase0x400000のVAです。読取器は本ディレクトリに独立実装し、他アダプターから意味を借用しません。
 
 ## 入力版
 
@@ -148,11 +148,9 @@ preset0x43027f..0x43042b、0x453eb0は+170/+16cに物理寸法:
 - 縦の『「【はHarfBuzz inkがadvanceを超えることがある。共通native層で許容bearingをcellに収め、全角advance/gapを変えない。24/18/12pxでSDK境界検査。
 - folder0x41cee0→0x41fb80、層0は0x41fbb1..0x41fbc8で1..99。gallery folder0 grpo_exとlocmode0 0 0 0を両方適用し、thumbnailに立ち絵中央原点を残さない。共通folder-allを本作根拠で使い、特典TSCに鑑賞を任せる。
 
-2026-10-11は実EXE定数、162TSC、隔離SDK消去/folder/原点/字体/boundsと両方向captureを確認。lintの日本語名・不可達警告は保持。全ルート・Androidは未確認。
-
 ## 読書コントロール
 
-### 特典版の立ち絵folder漏れ（2026-10-11）
+### 特典版の立ち絵folder漏れ
 
 特典0001は全層grpo、galleryはgrpo_ex/top-left。0050→0999→1000は0000のslots1..6 grpo_bu/中央設定を再実行せず、EXCMDがないgrpo/3011を要求し、透明fallbackで立ち絵が消えていました。コピー不足ではありません。
 
@@ -201,7 +199,7 @@ tfcs0の0x430f40→0x455b90は旧段落mode2/alpha128、移植は{alpha=128/255}
 
 [利用ガイド](README.ja.md#確認と制限)を参照してください。
 
-## 音楽鑑賞（2026-10-11）
+## 音楽鑑賞
 
 現EXEで特典の音楽入口を処理できます。更新日だけで新EXE不足と判断しません。title setclksys23 7 3 0は0x409d82→0x417cb0/0x417d88[7]→0x417d57→0x419ac0、windowID0x482164から0x44eab0。0x4196abはconstructor0x41a8a0、0x4196b6は登録、0x4196d2は戻りAXを0x482164へ。保存先は直前callに属し次の登録ではありません。resource0x47e8f0=muscmenu。
 
@@ -219,11 +217,7 @@ tfcs0の0x430f40→0x455b90は旧段落mode2/alpha128、移植は{alpha=128/255}
 
 自動テストは選択、pause、切替、境界、decode開始/終了、一時音量、清理。合成WAVの隔離描画テストで実Ren'Py完了→次曲、退出時外BGM非再開を確認。実音量、native全UI、全回想は未検証。
 
-## 非focus立ち絵（2026-10-11）
-
-分派、vtable、LUT、lctr refreshを本EXEから確認し、他移植から推定しません。隔離SDKでfocus、focus保持load、queue、即lctr変更、r20/depth/slot7保持を専用persistentで検査。GL2合成pixelで透明、強度、通常復元、Forest/Khime回帰も確認。lintの既存警告は残ります。native実行pixel、旧セーブ、Android GPUは未検証で、正確な転換・履歴は別課題です。
-
-## update のミリ秒計時（2026-10-11）
+## update のミリ秒計時
 
 0x41cae7→0x41ff40→0x41e5b0がeffect/steps/wait。0x41e5cc..0x41e5d1でsteps0→10、0x41e7e0で即時/溶解/点陣/白/黒。
 
@@ -237,7 +231,7 @@ tfcs0の0x430f40→0x455b90は旧段落mode2/alpha128、移植は{alpha=128/255}
 
 WINMM timeGetTime IAT0x4732dc、Sleep5 IAT0x473070は少なくとも一回待ち、差がWaitより大きくなるまで反復。codex-msは名目回数でWindows調度を再現しません。当時の効果2 pixelationは次節で修正。現日本語定数0..3、1 32 40=1.32秒、1 16 20=.34秒、0999の1 15 100=1.60秒（旧12.8/3.2/15）。Kagerouのみms選択、他移植は本調査でeffect2時刻のみ修正。constructor前もsteps0→10としてゼロ除算回避。byte検査/隔離SDKは時間・register引数・queueを確認し精密pixel/調度は未確認。
 
-## update2: 順序付き置換（2026-10-11）
+## update2: 順序付き置換
 
 0x45050aはdraw18で縮放ではありません。0x4412c4[18]→0x44125c[13]→0x440c17、不透明0x440c33→0x4437d0。0x443855..0x44385bは強度>>4で0x47ef38の16WORDを選び、0x443899..0x4438efは(x%4)+4*(y%4)bit1で新pixel、0で旧。0x45e01a..0x45e01cのDIB高符号反転によりtop-downです。
 

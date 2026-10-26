@@ -2,19 +2,22 @@
 
 [中文](ROADMAP.zh.md) | [English](ROADMAP.en.md) | [Русский](ROADMAP.ru.md) | [日本語](ROADMAP.ja.md)
 
-[プロジェクトの説明](../README.ja.md)
+[メインガイド](../README.ja.md)
 
-## 現在の方針
+## 継続的な改善
 
-- SevenBridge 日本語移植の生成・実行確認を先に完了し、他作品へ広げます。
-- 共通機能はテンプレート・ランタイムへ、作品差分は本作 EXE とスクリプトを根拠に実装します。
-- 中国語、英語、ロシア語、日本語の文書を機能と同期します。
-- LiarsoftTool と独立し、展開、文字コード、画像・音声変換はそちらが担当します。
+対応ゲームの互換性と動作確認を進め、共通ランタイムの修正を優先します。
+対応版、機能、制限は各ゲームのガイドを参照してください。
 
-## 長期計画: 実験的 `--pure-renpy`
+リソースの展開・変換は独立した LiarsoftTool が担当し、
+本プロジェクトは TSC からの Ren'Py 生成と実行に集中します。
 
-将来、TSC のシナリオをネイティブ Ren'Py 文に変換する別バックエンドを追加します。標準 Python、screen、ATL は利用できますが、生成工程に TSC パーサーや実行時命令ディスパッチを持ち込みません。
+## 長期目標：実験的な `--pure-renpy`
 
-今回は実装せず、仮のスイッチも追加しません。現在の生成器は RScript 互換ランタイムを使用します。命令範囲、セーブ互換、移行方法はその段階で決めます。
+TSC を通常の Ren'Py 文へ変換する独立バックエンドを計画しています。
+必要に応じて標準 Python、screen、ATL を使い、生成物には TSC パーサーや命令ディスパッチャーを含めません。
 
-グラフィカル TSC エディターは [LiarsoftTool の長期計画](https://github.com/Love-in-idleness/LiarsoftTool/blob/master/docs/ROADMAP.ja.md)です。
+未実装であり、現在 `--pure-renpy` オプションはありません。
+命令範囲、セーブ互換、移行方法は開発時に決定します。
+
+TSC 編集ツールは [LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool/blob/master/docs/ROADMAP.md) で管理します。

@@ -54,7 +54,7 @@ Licensing for shared cursor, fonts and game icon: [notices](../THIRD_PARTY_NOTIC
 /path/to/renpy-sdk/renpy.sh /path/to/renpy/CannonBall lint
 ```
 
-- Numeric skins, counter animation and history pages are not completely reproduced.
+- History-page appearance is not completely reproduced.
 - Some transitions and music fades may differ.
 - Chinese patch flow provenance, cross-language saves, full racing, combat and story routes require separate checks.
 - Android requires device testing.

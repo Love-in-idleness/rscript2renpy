@@ -20,7 +20,7 @@
 - [Roadmap](ROADMAP.en.md)
 - [New games and AI prompt](NEW_GAME_PORTING.en.md)
 - [Shared template and UI assets](../port_template/README.en.md)
-- [Source ownership](SHARED_TEMPLATE_MIGRATION.en.md) · [Local paths](LOCAL_WORKFLOW.en.md)
+- [Source ownership](SHARED_TEMPLATE_MIGRATION.en.md)
 - [Initialization](RSCRIPT_INITIALIZATION.en.md)
 - [Text layout](TEXT_WRAPPING.en.md) · [Forest fonts](FOREST_FONT_ANALYSIS.en.md)
 - [Khime clicks](KHIME_CLICK_ANALYSIS.en.md) · [Effects](KHIME_EFFECT_ANALYSIS.en.md) · [Text controls](KHIME_TEXT_CONTROLS.en.md)
@@ -30,7 +30,6 @@
 - [CannonBall](../cannonball/NATIVE_EFFECTS.en.md)
 - [Kagerou](../kagerou/NATIVE_EVIDENCE.en.md)
 - [SevenBridge](../sevenbridge/NATIVE_EVIDENCE.en.md)
-- [2026-10-12 shared-layer changes](OPTIMIZATION_REPORT_2026-10-12.en.md)
 - [Working agreements](../AGENTS.en.md)
 
 Addresses and conclusions apply only to the specified file hashes, not every game engine.

@@ -46,7 +46,7 @@ python3 cannonball/build_cannonball_rscript.py \
 /path/to/renpy-sdk/renpy.sh /path/to/renpy/CannonBall lint
 ```
 
-- 数字スキン、計数アニメーション、履歴ページは完全再現ではありません。
+- 履歴ページの外観は完全再現ではありません。
 - 一部転換と音楽 fade は原作と異なる可能性があります。
 - 中国語パッチのフロー由来、言語間セーブ、全レース・戦闘・ルートは別途確認が必要です。
 - Android は実機確認が必要です。

@@ -7,7 +7,7 @@
 说明按钮命中、关联图和图层清理的原生行为。
 本文供适配开发查阅，样本和地址不代表其他引擎版本。
 
-只读分析用户提供的 `KhimeDL_CHS.exe`，不运行或分发 EXE。
+只读分析样本 `KhimeDL_CHS.exe`，不运行或分发 EXE。
 SHA-256：`522bec3e93340ffd3bdb24ba98cfb775f80df9d85460819da840d824ad4822a8`。
 PE32，ImageBase `0x400000`，以下地址均为 VA。
 
@@ -35,14 +35,10 @@ PE32，ImageBase `0x400000`，以下地址均为 VA。
 
 ## 适配策略
 
-之前 Khime 没启用公共原生点击语义：把槽 0 当作本体替换图及命中位置，
-并在 `cls` 后保留旧绑定。于是 0501 的提示图层 41 重新成为旧的“画像鉴赏”
-按钮；0401 曲目无 `setlink` 时使用旧图片和坐标；0301 场面回想也受同一问题影响。
-
-Khime 现在声明 `rscript_click_link_is_preview` 与 `rscript_click_native_effects`。
+Khime 启用 `rscript_click_link_is_preview` 与 `rscript_click_native_effects`。
 公共运行时用本体位置及透明遮罩命中、按模式变换本体、独立显示两槽关联图；
 原生方言的 `cls` 同时清除绑定。Forest/默认方言保留既有替换图语义，
-不把本 EXE 的规则强套给其他引擎版本。没有修改或清除玩家存档。
+不把本 EXE 的规则强套给其他引擎版本。
 归省入口改为识别标题按钮本体 `9006`，不再依赖旧的悬停替换图 `9106`。
 
 回归：`tests/test_shared_port.py /path/to/renpy-sdk` 覆盖队列清除、提示图层复用、

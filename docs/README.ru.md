@@ -18,7 +18,7 @@
 - [План развития](ROADMAP.ru.md)
 - [Новая игра и запрос для ИИ](NEW_GAME_PORTING.ru.md)
 - [Общий шаблон и назначение UI-ресурсов](../port_template/README.ru.md)
-- [Локальные пути](LOCAL_WORKFLOW.ru.md)
+
 - [Правила работы](../AGENTS.ru.md)
 
 Технические справочники:
@@ -30,7 +30,6 @@
 - [Эффект 2](UPDATE_EFFECT2.ru.md), [runtime Evermaiden](EVERMAIDEN_RUNTIME_GAPS.ru.md)
 - [Исходные режимы цвета и рисования](NATIVE_VISUAL_MODES.ru.md)
 - [CannonBall](../cannonball/NATIVE_EFFECTS.ru.md), [Kagerou](../kagerou/NATIVE_EVIDENCE.ru.md)
-- [Изменения общего слоя от 2026-10-12](OPTIMIZATION_REPORT_2026-10-12.ru.md)
 
 [Анализ SevenBridge](../sevenbridge/NATIVE_EVIDENCE.ru.md).
 Адреса и выводы действуют только для файлов с указанными хешами, не являются

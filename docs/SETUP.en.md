@@ -96,6 +96,5 @@ Lint does not replace actual image, audio, choice and save/load checks.
 
 ## Other notes
 
-local.paths.toml is an optional local path note, not required generator configuration: see [local paths](LOCAL_WORKFLOW.en.md).
 The project supplies neither original games nor prebuilt game packages. Review [asset licensing](../THIRD_PARTY_NOTICES.en.md)
 before distribution and exclude personal saves and signing keys.

@@ -28,7 +28,7 @@ modern-36 入力における実装、原生根拠、課題です。原 EXE は�
 
 ### 拡大転換とオブジェクト
 
-- update100..299 は2026-10-10に実装。`43b390` が百位で `453a60 / 4537e0`、`43ba20` が十位/一位から旧/新画面の九点中心を選びます。`4542c0 / 451b60` の crop は整数 `W*100/(100+level)`、中心を画面内へ clamp。百位1は0..600 step20、各31×5ms=0.310秒、百位2は0..2000 step50、各41×5ms=0.410秒。Step/Waitは無関係。隔離 framebuffer テスト済みですが、GDI sampling・混合は未逐pixel比較。
+- update100..299 は原作の crop とフレーム時刻を使用。`43b390` が百位で `453a60 / 4537e0`、`43ba20` が十位/一位から旧/新画面の九点中心を選びます。`4542c0 / 451b60` の crop は整数 `W*100/(100+level)`、中心を画面内へ clamp。百位1は0..600 step20、各31×5ms=0.310秒、百位2は0..2000 step50、各41×5ms=0.410秒。Step/Waitは無関係。隔離 framebuffer テスト済みですが、GDI sampling・混合は未逐pixel比較。
 - mode `43c3b0 → 412b00` は再構築・原表示消去。0は未ロード含む1..99、>100は組。modeを記録し、背景CG・folder・group・depthを保持。Evermaidenのみ有効、mode1/2のnative pixel storage/GDI差は未複製。
 - numenable `43bd20 → 41c7c0` は独立数字層を有効化。キュー引数はsnapshot。実脚本はmode0のみ。
 

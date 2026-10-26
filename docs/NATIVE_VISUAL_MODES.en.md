@@ -61,8 +61,7 @@ movement, rotation and animated clearing.
 ## Drawing and masks
 
 Modern `draw 3` applies `Grade(destination, mask)` independently to each channel.
-It ignores Level and is not ordinary alpha drawing. By user decision, early engines'
-normal-drawing alias 3 now uses this modern meaning; other early aliases remain intact.
+It ignores Level and is not ordinary alpha drawing. All ports use this modern meaning for draw 3; other early aliases remain intact.
 `draw 4/5` use black/white LUTs with strength `WORD(Level)*255//100`.
 Kagerou's existing named `dim256` path still accepts an already-converted byte strength.
 Non-1 `effect` modes reuse Grade instead of the GIMP Color-to-Alpha approximation;
@@ -89,20 +88,15 @@ and share the longest wait, rather than summing per-object delays.
 `load/cls 18` is a vertical striped wipe: `x % 16 > level//16`.
 The existing alpha path for 17 combines rows and diagonals; these are distinct effects.
 For 17/18, level changes by 16 per port-specific `rscript_dynamic_tick`.
-All `update 5–99` values select efNN masks; the previous range omitted 5–10.
+All `update 5–99` values select efNN masks; including 5–10.
 
 Evidence: `412e40 / 411b10` (corners and renderer 21), `44d4c0 / 44d070` (movement),
 `443900` (stripe loop), `45a710` (initial level), `43b390` (update range).
-REA: `ev_d9a7d2b4a36144041f457d8269e9a0043f32474366870c125e98132d9e1f7210`,
-`ev_5397d397711d9b7194b22de4675c82e3c8e7bb18695dc368a985c8acb4083876`,
-`ev_500edda26e2d17c7ecb107b1553abf292437b9b826a64f6e039ac4fb1f1aa231`,
-`ev_21e4dc7d33cac2c8ef9a1b30a02e32ae135bf467534de6539d7991b7eaac044b`.
 
 ## move 4: preserve each game's behavior
 
 The actual movement call chains all use a sine-displaced wavy path, not an image-copy transition.
-Forest's `401280` image-switch table was previously misidentified as movement; the movement
-entry is `405f00`. The user's decision still applies: preserve each game's speed rules.
+Forest's movement entry is `405f00`; `401280` switches images. Preserve each game's speed rules.
 
 | Game | Movement entry → initializer | Native speed rule |
 | --- | --- | --- |
@@ -122,12 +116,6 @@ activate movement and must not force a teleport. Compute in resource pixels befo
 scaling; retain anchors, color, concurrent groups and the longest wait.
 `_move/_movi/_gmove` share this implementation. 104/204 retain the existing afterimage
 path; afterimages are not claimed to be frame-exact.
-
-REA: `ev_e8d83ef9e7e6a073bc784176918a94c06b5e7715f298ce93921418e9d26f5764`,
-`ev_14e88ba825c8a4919b11bd063c48134ac3331867e94a68b6831db5c864491c73`,
-`ev_cc4f3dfd1759d85c74ad594f7fe11fcf30b2196cec83aaaaa5b5e59a161bb42f`,
-`ev_387005b14b0fcd75ea8e3547485156aa791cdc29b0ea59735d34b482758e432b`,
-`ev_ff72b51a8553cb687a0287fd749e36556fe9da490823b482309d1e885a8b0e61`.
 
 ## In-place bounce and complex exits
 
@@ -149,9 +137,6 @@ Groups run concurrently with one longest wait and clean up layers afterward.
 
 Evidence: `413e40 / 44d570 / 44d070` (bounce), `411b10` (exit dispatch),
 `46be30` (cuts), `415e80` (affine stepping), `412b00` (object types).
-REA: `ev_a1576cf9d2880f5839d03d362097d8db9095dbb47cf870b75e172d95f5e0fb4f`,
-`ev_d28ed370b7e7430a2ffd97d08b1d96ce6ab4732ba25aae3982a7b4dc241ff9dc`,
-`ev_6d2c711654b8de936d6dba4104fb9e76f52cc8cbcccab87d1a3dab6e5d8277ea`.
 
 ## Object actions: phase / oaction
 
@@ -162,7 +147,7 @@ restoring at 256. 3/4 count down from 255 in steps of 10/20, rotating clockwise 
 clockwise around bottom-right to 192. Both groups use steps 8/12/30 and retain their
 final pose until reset/clear; movement must not replay the action.
 
-By the user's latest decision, 5/6 use the older type-18 bottom-center stretch in every port. Phase advances by
+Actions 5/6 use the older type-18 bottom-center stretch in every port. Phase advances by
 10/20 per tick; `u=trunc(sin(phase/256*2π)*50)` gives width/height percentages
 `100+u / 100-u`. Sizes retain Q16 integer truncation; phase 128 restores the image.
 Evermaiden's original Full vtable slot `+0x54` instead points to its tick function;
@@ -176,10 +161,6 @@ images and stitched groups; absolute clocks no longer make animations finish ins
 Evidence: Evermaiden `4145c0 / 415e80 / 46c3b0 / 46cd80`;
 stretch initializers Forest `4077c0`, Khime `40a980`, Zero `4070f0`, Kagerou `40a800`,
 CannonBall `4247e0`; SevenBridge dispatch `407740`.
-REA: `ev_ec0d3fd6f8b2523fde9f7a676a88206246ed28ad00ac2965863a4a0540deb23f`,
-`ev_8671b6a05e98ec7f5a2a4fbb7969e1b6dca469b930bcebe324cbe72f8e83b070`,
-`ev_9d78c679eb00e624a39e10e228850a608347efe6e8f5578232c8c88b2a148147`,
-`ev_ab013bbb9b37ab7772b276bb3503d84148bf934523e6cc6cfe3568118afe130e`.
 
 ## Evidence
 
@@ -188,21 +169,12 @@ REA: `ev_ec0d3fd6f8b2523fde9f7a676a88206246ed28ad00ac2965863a4a0540deb23f`,
 - Forest: `407fe0 / 408200`; Khime: `40b1a0 / 40b710`;
   Zero: `407910 / 407b00`; CannonBall: `4056d0`;
   SevenBridge: `409820`.
-- REA: `ev_75cb85845a085eaa225b93c2ab638203ea2858f7a100edc6ed6a153582bb224a`,
-  `ev_8fd952896a36ca15b3b46ccc02fbd32d104f0c3c516dfe76985a7b10aea65ac9`,
-  `ev_f8cf3c06d5dfc8f6cb7d77e805c6e00d8fc35f59be596699c1fea2aca8f7a730`,
-  `ev_905392cadc15179ebc74e6479ea8cad674b695c001ad6199612d5bb5dfea6b06`.
 - Draw: `4129b0` → renderer `2 / 14 / 104 / 3 / 4`,
-  `4464e0` case `104`;
-  `ev_d72f2de30d9317ab80890eccc8c6d517851b60fbe84c35787f324ef2d2975b49`,
-  `ev_2cb8389d102a8c15d2314404097b4b9c666238e5159e510d42ef00c7551d4863`.
+  `4464e0` case `104`.
 
 ## Checks and remaining work
 
-An independent float32 Power reference matched the bounded native pixel routine on 5102
-synthetic RGBA samples. Native code and private harnesses are not committed.
-Shared GL2 checks cover colors, active/final movement, rotation, clearing, draw 3/4/5,
-normal-mode restoration and blending across the CG layer, not complete gameplay.
+Shared GL2 checks cover colors, movement, rotation, clearing, draw 3/4/5, normal-mode restoration and cross-CG blending.
 
 Accepting a parameter does not establish a faithful implementation of every effect.
 GL2 tests cover initial, intermediate and final bounce/exit frames, Full/Lim differences,

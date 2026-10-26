@@ -2,16 +2,22 @@
 
 [中文](ROADMAP.zh.md) | [English](ROADMAP.en.md) | [Русский](ROADMAP.ru.md) | [日本語](ROADMAP.ja.md)
 
-[Project overview](../README.en.md)
+[Main guide](../README.en.md)
 
-Current work prioritizes the Japanese SevenBridge port, shared runtime reuse and
-Chinese, English, Russian and Japanese documentation. LiarsoftTool remains a separate project
-responsible for resource extraction and conversion.
+## Ongoing improvements
 
-An experimental `--pure-renpy` backend is a long-term goal, not an available option.
-It would emit native Ren'Py statements, with standard Python, screens and ATL where
-needed, but no TSC parser or runtime opcode dispatcher. This phase adds neither an
-implementation nor a placeholder flag. Supported instructions, save compatibility
-and migration remain future decisions.
+Improve compatibility and runtime checks for supported games, prioritizing shared runtime fixes.
+Each game guide defines its supported versions, features, and limitations.
 
-The graphical TSC editor belongs to [LiarsoftTool's long-term roadmap](https://github.com/Love-in-idleness/LiarsoftTool/blob/master/docs/ROADMAP.md).
+Resource unpacking and conversion remain in the independent LiarsoftTool project.
+This repository focuses on generating and running Ren'Py projects from TSC.
+
+## Long-term goal: experimental `--pure-renpy`
+
+A separate backend is planned to produce native Ren'Py statements, with standard Python, screen, and ATL
+where needed, without a TSC parser or runtime instruction dispatcher.
+
+This backend is not implemented; there is no `--pure-renpy` option.
+Instruction coverage, save compatibility, and migration will be defined when development begins.
+
+TSC editing tools are maintained by [LiarsoftTool](https://github.com/Love-in-idleness/LiarsoftTool/blob/master/docs/ROADMAP.md).

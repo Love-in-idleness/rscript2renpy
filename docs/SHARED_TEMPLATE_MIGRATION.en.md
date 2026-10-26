@@ -26,6 +26,8 @@ Common installation copies media/configuration and removes corresponding .rpyc. 
 Resolve errors and rebuild after interruption. Scripts live in game/scr/, runtime in game/engine/,
 languages in game/tl/<language>/; media keeps original directories.
 
+Installation protects individual file replacements, not whole-project transactions. A failed build after language-directory cleanup may leave incomplete output; fix the error and rebuild. Do not run multiple builders against the same output directory.
+
 ## Patches
 
 | Game | Policy |
