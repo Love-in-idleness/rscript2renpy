@@ -27,7 +27,7 @@ COUNTS = {
     "_draw": 3, "_oaction": 2,
 }
 LOAD_EFFECTS = set(range(29))
-MOVE_EFFECTS = set(range(11))
+MOVE_EFFECTS = set(range(14))
 
 
 def _supported(command: str, field: str, value: int,
@@ -40,11 +40,9 @@ def _supported(command: str, field: str, value: int,
     if command == "_oaction":
         return value == 4, "not implemented"
     if command in ("_load", "_cls", "_oload"):
-        return value in LOAD_EFFECTS or (command == "_cls" and value in (14, 31, 34)), "not implemented"
+        return value in LOAD_EFFECTS or (command == "_cls" and value in range(30, 36)), "not implemented"
     if command in ("_move", "_movi", "_gmove"):
-        if (value & 0xffff) % 100 == 4:
-            return True, ""
-        effect = value - 100 if value > 100 else value
+        effect = (value & 0xffff) % 100
         return effect in MOVE_EFFECTS, "not implemented"
     if command == "_flash":
         return value in range(4), "not implemented"

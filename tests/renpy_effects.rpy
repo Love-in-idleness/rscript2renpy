@@ -310,6 +310,16 @@ label _0000:
             store.draw_queue_delayed.clear()
             store.draw_queue_extra_delayed.clear()
         print("OK: native move 4 timing, wave frames, anchors and color", flush=True)
+        for amplitude, steps in ((40, 4), (100, 10), (300, 15)):
+            for tick in (0, steps // 2, steps + 1):
+                y = 400 + rscript_bounce_offset(amplitude, steps, tick)
+                image = Transform(Solid("#ff0000", xsize=40, ysize=40), alpha=1.,
+                    function=renpy.curry(rscript_bounce_move)((400, 400), (.5, .5), amplitude, steps, 1))
+                renpy.show("bounce_probe", what=EffectsTimeProbe(Fixed(image, xysize=(800, 600)), tick * rscript_dynamic_tick))
+                renpy.pause(.05, hard=True)
+                effects_test_pixel((255, 0, 0), (400, y))
+            renpy.hide("bounce_probe")
+        print("OK: native bounce frames return to the original position", flush=True)
     _load 20 9990 0 0 15 0
     $ renpy.pause(0.1, hard=True)
     $ effects_test_pixel((32, 64, 96))
@@ -362,15 +372,42 @@ label _0000:
             renpy.pause(.1, hard=True)
             effects_test_native_exit(when, 34)
         renpy.hide("clear_probe")
-        for effect in (31, 34):
+        for effect, samples in ((30, ((210, 300), (285, 280), (220, 255))),
+                                 (32, ((150, 175), (220, 310), (220, 260))),
+                                 (35, ((270, 270), (180, 310), (220, 270)))):
+            probe = RScriptClearExit(Solid("#ff0000", xsize=100, ysize=80), effect, (250, 290), (.5, .5))
+            renpy.show("clear_probe", what=EffectsTimeProbe(probe, 5 * rscript_dynamic_tick))
+            renpy.pause(.1, hard=True)
+            for pos in samples[:2]:
+                effects_test_pixel((194, 17, 26) if effect != 35 else (185, 20, 30), pos)
+            effects_test_pixel((32, 64, 96), samples[2])
+            renpy.hide("clear_probe")
+        assert rscript_clear_frame(33, 1) == (1, 12, 0, .06)
+        assert rscript_clear_frame(33, 21)[0] == 0
+        # Lim/Anim affine slots are stubs: no cuts or rotation/resize.
+        for effect in (30, 32, 35, 33, 34):
+            probe = RScriptClearExit(Solid("#ff0000", xsize=100, ysize=80), effect,
+                                    (250, 290), (.5, .5), full=False)
+            renpy.show("clear_probe", what=EffectsTimeProbe(probe, 5 * rscript_dynamic_tick))
+            renpy.pause(.1, hard=True)
+            if effect in (33, 34):
+                effects_test_pixel((255, 0, 0), (210, 290 + rscript_bounce_offset(250, 20, 5)))
+            else:
+                effects_test_pixel((185, 20, 30) if effect == 35 else (194, 17, 26),
+                                   {30: (210, 340), 32: (220, 280), 35: (300, 280)}[effect])
+            renpy.hide("clear_probe")
+        store.layer_mode[20] = 1
+        for effect in range(30, 36):
             loadcls(20, 0, cg=9990)
             store.in_queue = True
             loadcls(20, effect, clear=True)
-            assert (_queue_ef_pause, (.8 if effect == 31 else 1.1,), {}) in store.draw_queue
+            assert (_queue_ef_pause, (rscript_clear_duration(effect),), {}) in store.draw_queue
             assert 20 not in store.layer_info and 20 not in store.layer_pos
             store.in_queue = False
             process_draw_queue()
             assert not renpy.showing("layer20", layer=IMAGE_LAYER)
+        store.layer_mode[20] = 0
+        assert rscript_clear_duration(34, False) == 21 * rscript_dynamic_tick
     python:
         renpy.set_physical_size((800, 600))
         renpy.pause(.2, hard=True)

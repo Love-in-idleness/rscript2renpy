@@ -233,6 +233,33 @@ float visible = step(threshold + 1.0, mod(pixel.y, 16.0))
 gl_FragColor *= visible;
 """)
 
+    renpy.register_shader("rscript.fragment_mask",
+        variables="""
+            uniform vec4 u_rscript_fragment;
+            uniform float u_rscript_fragment_axis;
+            varying vec2 v_tex_coord;
+        """,
+        fragment_300="""
+            vec2 p = floor(v_tex_coord * u_rscript_fragment.xy);
+            float extent = u_rscript_fragment.x;
+            float breadth = u_rscript_fragment.y;
+            if (u_rscript_fragment_axis > 0.5) {
+                p = p.yx;
+                extent = u_rscript_fragment.y;
+                breadth = u_rscript_fragment.x;
+            }
+            float split = floor(extent * u_rscript_fragment.z / 100.0);
+            float slope = (extent - 2.0 * split) * 65535.0 / max(1.0, breadth);
+            slope = sign(slope) * floor(abs(slope));
+            float cut = split + sign(slope) * floor(abs(slope * p.y) / 65535.0);
+            float small = min(split, extent - split);
+            float large = max(split, extent - split);
+            float keep = u_rscript_fragment.w < 0.5
+                ? float(p.x < cut && p.x < large)
+                : float(p.x >= cut && p.x >= small);
+            gl_FragColor *= keep;
+        """)
+
     renpy.register_shader("rscript.column_wipe",
         variables="""
 uniform float u_rscript_grid;

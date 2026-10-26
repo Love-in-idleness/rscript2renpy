@@ -62,7 +62,7 @@ def main() -> None:
     assert "im.Tile" not in combined
     assert "elif effect == 4:" in combined
     effects = (ROOT / "runtime/effects.rpy").read_text(encoding="utf-8")
-    wave = effects[effects.index("    def rscript_trunc_div"):effects.index("    def rscript_wave_move")]
+    wave = effects[effects.index("    def rscript_trunc_div"):effects.index("    def rscript_diagonal_path")]
     motion = {"rscript_move4_timing": "fixed-steps", "rscript_dynamic_tick": .05}
     exec(dedent(wave), motion)
     path = motion["rscript_wave_path"]((0, 100), (300, 100), 1)
@@ -92,6 +92,12 @@ def main() -> None:
         assert 'rscript_move4_timing = "fixed-steps"' in (ROOT / folder / "game/options.rpy").read_text()
     assert 'rscript_move4_timing = "fixed-speed"' in (ROOT / "cannonball/game/options.rpy").read_text()
     assert 'store.rscript_move4_timing = "fixed-steps"' in (ROOT / "khime/game/khime_zero.rpy").read_text()
+    for amplitude, steps, first, middle in ((40, 4, 1, -28), (100, 10, 4, -97), (300, 15, 14, -291)):
+        offset = motion["rscript_bounce_offset"]
+        assert offset(amplitude, steps, 0) == 0
+        assert offset(amplitude, steps, 1) == first
+        assert offset(amplitude, steps, steps // 2) == middle
+        assert offset(amplitude, steps, steps + 1) == 0
     assert "elif effect == 2:" in combined
     assert 'define rscript_update_timing = "legacy"' in combined
     assert 'class RScriptOrderedDissolve(' in combined

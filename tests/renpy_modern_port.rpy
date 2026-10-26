@@ -300,6 +300,12 @@ python early:
             execute_gmove(SimpleNamespace(Effect=4, xLoc=300, yLoc=0, Speed=10))
             assert store.layer_pos[CG_LAYER] == (300, 0)
             assert len(pauses) == 1 and abs(pauses[0] - 11 * .042) < .00001
+            for effect, steps in ((11, 4), (12, 10), (13, 15)):
+                before = dict(store.layer_pos)
+                pauses.clear()
+                move_layer(0, -999, 999, effect, 65535)
+                assert store.layer_pos == before
+                assert len(pauses) == 1 and abs(pauses[0] - (steps + 1) * .042) < .00001
             store.layer_info.update({11: "grpo_map 0009", 12: "grpo_map 0012"})
             store.in_queue = True
             loadcls(0, 3, clear=True)

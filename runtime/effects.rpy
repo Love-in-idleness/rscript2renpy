@@ -504,6 +504,22 @@ init python:
         trans.anchor = anchor
         return rscript_dynamic_tick if st < (path[2] + 1) * rscript_dynamic_tick else None
 
+    def rscript_bounce_offset(amplitude, steps, tick):
+        import math
+        if not 0 < tick <= steps:
+            return 0
+        phase = 0x8800 // steps + 2
+        index = (390 - phase * (steps - tick + 1) // 255) % 255
+        sample = int(math.sin(index / 256.0 * 6.283185308) * 65535)
+        return rscript_trunc_div(-amplitude * sample, 65535)
+
+    def rscript_bounce_move(origin, anchor, amplitude, steps, scale, trans, st, at):
+        tick = int(st / rscript_dynamic_tick + 1e-9)
+        trans.pos = (absolute(origin[0]), absolute(origin[1] +
+                     rscript_bounce_offset(amplitude, steps, tick) * scale))
+        trans.anchor = anchor
+        return rscript_dynamic_tick if tick <= steps else None
+
     def rscript_diagonal_path(effect, size, pos, anchor, clear):
         import math
         w, h = size
@@ -554,41 +570,70 @@ init python:
             angle = (0x4000 // 9) * min(9, remaining) // 255
             offset = 0 if tick == 0 else 150 - int(150 * int(math.sin(angle * math.tau / 256) * 65535) / 65535)
             return (max(0., 1 - min(256, tick * 16) / 256.), offset, 0, 1)
-        if effect == 34:
+        if effect in (33, 34):
             if tick == 0:
                 return (1, 0, 0, 1)
+            offset = rscript_bounce_offset(250, 20, tick)
+            if effect == 33:
+                return (float(tick < 21), offset, 0, min(100, tick * 6) / 100.)
             level = max(0, 254 - tick * 12)
-            remaining = max(0, 21 - tick)
-            angle = (390 - ((0x8800 // 20 + 2) * remaining // 255)) % 255
-            offset = int(-250 * int(math.sin(angle * math.tau / 256) * 65535) / 65535) if remaining else 0
             return (float(level > 0), offset, -level * 360 / 256., max(1, level * 100 // 256) / 100.)
         raise ValueError("Unsupported native clear effect: %s" % effect)
 
+    def rscript_split_exit_positions(effect, tick):
+        import math
+        if effect == 32:
+            delta, steps = (-250, 0), 15
+            path = ((0, 0), delta, steps, (-1092250, 0), (0, -125), 0x8000 // steps)
+            return (rscript_wave_position(path, tick * rscript_dynamic_tick), (0, 0))
+        deltas = {30: ((-100, 200), (0, 0)),
+                  31: ((0, 150), (0, -150)), 35: ((150, 0), (-150, 0))}[effect]
+        return tuple(rscript_dynamic_position(((0, 0), delta,
+                     int(math.hypot(*delta)) // 16, True), tick * rscript_dynamic_tick)
+                     for delta in deltas)
+
+    def rscript_clear_duration(effect, full=True):
+        return {30: 19, 31: 16, 32: 19, 33: 21, 34: 22 if full else 21,
+                35: 16}[effect] * rscript_dynamic_tick
+
     class RScriptClearExit(renpy.Displayable):
-        def __init__(self, child, effect, pos=(0, 0), anchor=(0, 0)):
+        def __init__(self, child, effect, pos=(0, 0), anchor=(0, 0), full=True):
             super(RScriptClearExit, self).__init__()
             self.child, self.effect = renpy.displayable(child), effect
             self.pos, self.anchor = pos, anchor
+            self.full = full
 
         def render(self, width, height, st, at):
             source = renpy.render(self.child, width, height, st, at)
             w, h = map(int, source.get_size())
             left, top = self.pos[0] - w * self.anchor[0], self.pos[1] - h * self.anchor[1]
-            alpha, offset, angle, zoom = rscript_clear_frame(self.effect, int(st / .05 + 1e-9))
-            if self.effect == 31:
-                split = w // 2
-                # shortcut: odd-width native split has a one-pixel seam; calibrate if a game uses it.
-                children = [Transform(self.child, crop=(0, 0, split, h),
-                                      pos=(absolute(left), absolute(top + offset)), alpha=alpha),
-                            Transform(self.child, crop=(split, 0, w - split, h),
-                                      pos=(absolute(left + split), absolute(top - offset)), alpha=alpha)]
+            tick = int(st / rscript_dynamic_tick + 1e-9)
+            if self.effect in (30, 31, 32, 35):
+                step = 14 if self.effect in (30, 32) else 16
+                alpha = max(0., 1 - min(256, tick * step) / 256.)
+                ratio = 75 if self.effect == 30 else 50
+                horizontal = self.effect in (32, 35)
+                children = []
+                for side, (dx, dy) in enumerate(rscript_split_exit_positions(self.effect, tick)):
+                    fragment = (Transform(self.child, mesh=True, shader="rscript.fragment_mask",
+                                         u_rscript_fragment=(w, h, ratio, side),
+                                         u_rscript_fragment_axis=float(horizontal))
+                                if self.full else self.child)
+                    children.append(Transform(fragment, alpha=alpha,
+                        pos=(absolute(left + dx * store.layer_x_grid),
+                             absolute(top + dy * store.layer_y_grid))))
             else:
+                alpha, offset, angle, zoom = rscript_clear_frame(self.effect, tick)
+                if not self.full:
+                    alpha, angle, zoom = float(tick < 21), 0, 1
                 children = [Transform(self.child, anchor=(.5, .5), zoom=zoom, rotate=angle,
-                                      pos=(absolute(left + w / 2.), absolute(top + h / 2. + offset)), alpha=alpha)]
+                                      rotate_pad=False, nearest=True,
+                                      pos=(absolute(left + w / 2.),
+                                           absolute(top + h / 2. + offset * store.layer_y_grid)), alpha=alpha)]
             # Keep displaced fragments in source-space coordinates on the game canvas.
             result = renpy.render(Fixed(*children, xysize=(config.screen_width, config.screen_height)), width, height, st, at)
             if alpha:
-                renpy.redraw(self, .05)
+                renpy.redraw(self, rscript_dynamic_tick)
             return result
 
         def visit(self):
@@ -1039,13 +1084,14 @@ init python:
                 queue_ef_pause(0.5)
                 queue_draw_delayed(renpy.hide, tag, layer = IMAGE_LAYER)
 
-        elif clear and effect in (31, 34):
+        elif clear and effect in (30, 31, 32, 33, 34, 35):
             if layer in store.layer_info:
+                full = store.layer_mode.get(layer, 0) == 1
                 trans.pos, trans.anchor = (absolute(0), absolute(0)), (0, 0)
                 queue_draw(rscript_show_layer, tag,
-                           what=RScriptClearExit(store.layer_info[layer], effect, (xpos, ypos), anchor),
+                           what=RScriptClearExit(store.layer_info[layer], effect, (xpos, ypos), anchor, full),
                            at_list=[trans], zorder=zorder, layer=IMAGE_LAYER)
-                queue_ef_pause(.8 if effect == 31 else 1.1)
+                queue_ef_pause(rscript_clear_duration(effect, full))
                 queue_draw_delayed(renpy.hide, tag, layer=IMAGE_LAYER)
 
         elif effect == 28:
@@ -1121,12 +1167,7 @@ init python:
         start = None
 
         encoded_effect = int(effect) & 0xffff
-        if encoded_effect % 100 == 4:
-            with_afterimage = encoded_effect >= 100
-            effect = 4
-        elif effect > 100:
-            effect -= 100
-            with_afterimage = True
+        with_afterimage, effect = divmod(encoded_effect, 100)
         if with_afterimage:
             start = _effect_start(img, xpos, ypos, anchor)
 
@@ -1143,7 +1184,12 @@ init python:
 
 
         xpos, ypos = absolute(xpos), absolute(ypos)
-        if effect == 4:
+        if effect in (11, 12, 13):
+            # Native type 6 bounces at the current position; X/Y/Speed are ignored.
+            amplitude, steps = {11: (40, 4), 12: (100, 10), 13: (300, 15)}[effect]
+            xpos, ypos = origin
+            dur = (steps + 1) * rscript_dynamic_tick
+        elif effect == 4:
             # Native CMath works in resource pixels, before the port's grid scaling.
             grid = (store.layer_x_grid, store.layer_y_grid)
             native_start = tuple(int(p / scale) for p, scale in zip(origin, grid))
@@ -1165,13 +1211,16 @@ init python:
       10: move_shake_h_sm,
     }
 
-        if effect not in effects and effect not in (4, 5, 6):
+        if effect not in effects and effect not in (4, 5, 6, 11, 12, 13):
             raise Exception("Move effect %d not defined." % effect)
 
         # Replacing _oload's fade must not inherit its initial alpha=0.
         trans = Transform(xpos = xpos, ypos = ypos, anchor = anchor, alpha = 1.0,
                           shader="rscript.colormode", u_colormode=store.layer_color.get(layer, 0))
-        if effect == 4:
+        if effect in (11, 12, 13):
+            ef = Transform(alpha=1.0, function=renpy.curry(rscript_bounce_move)(
+                origin, anchor, amplitude, steps, store.layer_y_grid))
+        elif effect == 4:
             ef = Transform(alpha=1.0, function=renpy.curry(rscript_wave_move)(path, anchor, grid))
         elif effect in (5, 6):
             # Native 413e40 -> 44d3c0: opposite half-circle paths, not shakes.

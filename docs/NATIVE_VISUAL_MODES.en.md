@@ -129,6 +129,28 @@ REA: `ev_e8d83ef9e7e6a073bc784176918a94c06b5e7715f298ce93921418e9d26f5764`,
 `ev_387005b14b0fcd75ea8e3547485156aa791cdc29b0ea59735d34b482758e432b`,
 `ev_ff72b51a8553cb687a0287fd749e36556fe9da490823b482309d1e885a8b0e61`.
 
+## In-place bounce and complex exits
+
+In all seven samples, `move 11/12/13` ignore X/Y/Speed and bounce vertically in place.
+Amplitude/steps are 40/4, 100/10 and 300/15; phase increment is `0x8800//steps+2`.
+The initial frame stays still, lookup starts on the next tick, and tick `steps+1`
+restores the origin. Afterimage IDs use WORD then `%100`; retain each port's tick and scaling.
+
+`cls 30–35` share the native dispatch: 30 cuts at 75% and moves one piece down-left;
+31 moves two pieces up/down; 32 arcs the upper piece left; 35 moves upper/lower pieces
+right/left. Fade is 14/256 per tick for 30/32 and 16/256 for 31/35.
+33 bounces by 250 pixels and grows from 6% on its first tick; 34 combines the same bounce
+with rotation and shrinking. Cuts, scaling and rotation affect Full only; the corresponding
+Lim/Anim virtual slots are stubs, retaining movement and fading.
+33/34 wait 21/22 ticks; non-Full 34 waits only the 21-tick bounce.
+Groups run concurrently with one longest wait and clean up layers afterward.
+
+Evidence: `413e40 / 44d570 / 44d070` (bounce), `411b10` (exit dispatch),
+`46be30` (cuts), `415e80` (affine stepping), `412b00` (object types).
+REA: `ev_a1576cf9d2880f5839d03d362097d8db9095dbb47cf870b75e172d95f5e0fb4f`,
+`ev_d28ed370b7e7430a2ffd97d08b1d96ce6ab4732ba25aae3982a7b4dc241ff9dc`,
+`ev_6d2c711654b8de936d6dba4104fb9e76f52cc8cbcccab87d1a3dab6e5d8277ea`.
+
 ## Evidence
 
 - Evermaiden: `4154d0 / 415810` (Full / Lim), `44d880` (CMath),
@@ -153,6 +175,7 @@ Shared GL2 checks cover colors, active/final movement, rotation, clearing, draw 
 normal-mode restoration and blending across the CG layer, not complete gameplay.
 
 Accepting a parameter does not establish a faithful implementation of every effect.
-Complex exits 30/32/33/35, move 11–13 and other oaction
-commands still need trajectory, object-class and timing verification.
-Existing approximate animations are not frame-exact implementations either.
+Other oaction commands still need trajectory, object-class and timing verification.
+GL2 tests cover initial, intermediate and final bounce/exit frames and Full/Lim differences.
+Cut edges, affine sampling and existing approximate animations are not claimed to be
+pixel-identical to GDI.
