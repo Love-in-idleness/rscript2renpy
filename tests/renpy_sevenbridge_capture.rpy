@@ -57,7 +57,7 @@ init python:
             FilePage(1)()
             FileSave(1, confirm=False)()
             assert FileJson(1, key="rscript_dt2") == 1
-            assert rscript_slot_image(1) == "grps/dt2_0001.png"
+            assert rscript_slot_image(1) == rscript_image_path("grps/dt2_0001.png")
             renpy.show_screen("save")
         elif stage == 3:
             renpy.hide_screen("save")

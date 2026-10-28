@@ -3,6 +3,6 @@ init python:
     config.label_overrides["_0210"] = "sevenbridge_cg_viewer"
 
 label sevenbridge_cg_viewer:
-    call _rscript_variant0_0210
+    call sevenbridge_cg_body
     # The native UI returns to the originating thumbnail page after the last CG.
     _jump _r[299]

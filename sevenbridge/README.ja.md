@@ -6,7 +6,8 @@
 
 ## 概要
 
-『SEVEN-BRIDGE』日本語資源から Ren'Py 8 工程を生成します。日本語 `SBridge_jp.exe` を根拠とし、中国語パッチは未接続です。
+『SEVEN-BRIDGE』の日本語リソースと任意の中国語パッチから Ren'Py 8 プロジェクトを生成します。
+原作の動作は日本語 `SBridge_jp.exe` を基準とし、言語パッチは別途用意します。
 
 ## リソースの準備
 
@@ -26,7 +27,27 @@ python3 sevenbridge/build_sevenbridge_rscript.py /path/to/prepared-sevenbridge /
 
 ## 言語パッチ
 
-現在は日本語スクリプトのみです。他言語パッチは接続していません。
+中国語パッチの `scr.xfl` と `grps.xfl` を別の作業ディレクトリへコピーし、LiarsoftTool で個別に展開・変換します。
+翻訳スクリプトは **GBK** ですが、`grps.xfl` と内部 LWG のファイル名は引き続き **CP932** です。
+
+```bash
+liarsofttool --unpack-only -R -e gbk /path/to/patch-copy/scr.xfl
+liarsofttool --unpack-only -R -e cp932 /path/to/patch-copy/grps.xfl
+```
+
+パッチ全体を GBK で変換すると、`nonbl/１` などの全角数字ファイル名を誤って復号します。
+日本語原版は CP932 です。生成器は変換済みの `scr/*.tsc` を読み、EXE、GSC、アーカイブを直接処理しません。
+
+パッチの `grps` 画像と `.meta.xml` を保持すると、メニュー、鑑賞、名前画像、右クリック画面も選択言語の素材を使用します。
+完全な日本語原版をリソースの基礎として使います。変更のない素材はパッチ側に複製する必要はありません。
+
+```bash
+python3 sevenbridge/build_sevenbridge_rscript.py /path/to/prepared-sevenbridge /path/to/renpy-sevenbridge \
+    --language jp --language zh=/path/to/patch-copy
+```
+
+`--language jp` は原文の表示名、`zh=...` は Text Settings で選べる中国語パッチを指定します。
+パッチはシナリオ単位で置き換えるため、命令構造の変更やシーン追加に対応します。パッチにないシーンは日本語版を使用します。
 
 ## 操作
 

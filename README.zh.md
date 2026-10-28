@@ -24,7 +24,7 @@
 | Khime Kusaritop | [构建、语言补丁与可选 Khime Zero](khime/README.zh.md) |
 | Evermaiden | [构建与语言补丁](evermaiden/README.zh.md) |
 | CannonBall | [构建与语言补丁](cannonball/README.zh.md) |
-| SevenBridge | [日文版构建](sevenbridge/README.zh.md)，暂不接入语言补丁 |
+| SevenBridge | [构建与语言补丁](sevenbridge/README.zh.md) |
 | KagerouTouryuuki | [特典版构建](kagerou/README.zh.md)，仅支持安装「ハチポチ特典」后 |
 
 各适配的功能与限制见游戏指南；能成功生成工程不等于所有路线均已验证。

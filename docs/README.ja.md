@@ -12,7 +12,7 @@
 - [Evermaiden](../evermaiden/README.ja.md)
 - [CannonBall](../cannonball/README.ja.md)
 - [霞外籠逗留記](../kagerou/README.ja.md)
-- [SevenBridge（日本語版）](../sevenbridge/README.ja.md)
+- [SevenBridge の生成と言語パッチ](../sevenbridge/README.ja.md)
 - [第三者資産とライセンス](../THIRD_PARTY_NOTICES.ja.md)
 
 ## 開発資料

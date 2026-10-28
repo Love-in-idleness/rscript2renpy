@@ -10,7 +10,7 @@
 - [Evermaiden](../evermaiden/README.ru.md)
 - [CannonBall](../cannonball/README.ru.md)
 - [KagerouTouryuuki](../kagerou/README.ru.md)
-- [SevenBridge, японская версия](../sevenbridge/README.ru.md)
+- [Сборка SevenBridge и языковые патчи](../sevenbridge/README.ru.md)
 - [Сторонние ресурсы и лицензии](../THIRD_PARTY_NOTICES.ru.md)
 
 ## Разработка

@@ -24,7 +24,7 @@ Python 3、Pillow、Ren'Py 8 SDK、および展開・変換用の
 | Khime Kusaritop | [生成、言語パッチ、任意の Khime Zero](khime/README.ja.md) |
 | Evermaiden | [生成と言語パッチ](evermaiden/README.ja.md) |
 | CannonBall | [生成と言語パッチ](cannonball/README.ja.md) |
-| SevenBridge | [日本語版](sevenbridge/README.ja.md)。言語パッチは未対応 |
+| SevenBridge | [生成と言語パッチ](sevenbridge/README.ja.md) |
 | KagerouTouryuuki | [特典版](kagerou/README.ja.md)。「ハチポチ特典」の適用が必要 |
 
 機能と制限は各ガイドを参照してください。生成成功は全ルートの動作確認を意味しません。

@@ -41,11 +41,14 @@ def main():
             destination.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(Path(__file__).with_name("renpy_sevenbridge_capture.rpy"),
                             game / "sevenbridge_capture.rpy")
+            capture_environment = environment | {
+                "SEVENBRIDGE_CAPTURE": str(destination),
+                "RENPY_SKIP_SPLASHSCREEN": "1", "RENPY_PERFORMANCE_TEST": "0"}
+            if (game / "tl/zh").is_dir():
+                capture_environment["RENPY_LANGUAGE"] = "zh"
             subprocess.run([str(sdk / "renpy.sh"), str(project), "run",
                             "--savedir", str(project / "capture-saves")],
-                           check=True, timeout=60, env=environment | {
-                               "SEVENBRIDGE_CAPTURE": str(destination),
-                               "RENPY_SKIP_SPLASHSCREEN": "1", "RENPY_PERFORMANCE_TEST": "0"})
+                           check=True, timeout=60, env=capture_environment)
             for name in ("title.png", "dialogue.png", "preferences.png", "save.png", "load.png"):
                 if not (destination / name).is_file():
                     raise AssertionError("missing capture: " + name)

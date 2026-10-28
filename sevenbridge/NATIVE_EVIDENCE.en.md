@@ -12,6 +12,31 @@ c7d5fc38cf0c354a61d056b607cf1367b2529557e9e0407d0b0fdf12771b35e3
 
 These are file and Ghidra static-analysis results, not a recording of the original game. Originals were neither modified nor executed. All addresses are virtual.
 
+## Chinese patch EXE comparison
+
+The comparison sample is `SBridge.gbk.exe`, SHA-256:
+
+```text
+ca0b635abe9861652182df0ed2ccc6854b580b1c8b41aa8ccf4368390944b74d
+```
+
+Both EXEs are 462848 bytes long; `.rdata`, `.data`, and `.rsrc` are identical.
+All differences occupy 110 bytes in `.text`: 11 font-charset arguments change
+from `0x80` (Japanese) to `0x86` (Simplified Chinese), while the other 99 bytes
+change kinsoku character constants. For example, `CreateFontA` in `0x448290`
+retains height 14 and weight 700; the face at `0x4690b0` remains `ＭＳ ゴシック`.
+
+The kinsoku classifier at `0x43e450` uses CP936 bytes. Compared with the existing
+shared rules, it adds `：；％·〃々〗℃′″` to forbidden line starts and `〖` to
+forbidden line ends. These characters are now included in shared wrapping.
+The remaining code, built-in configuration, and fixed-text data are unchanged.
+This sample therefore needs no extra EXE text mapping and provides no evidence
+for changing menu actions, galleries, or text geometry.
+
+These are byte-diff and static-decompilation findings. The Chinese EXE was not
+executed; they do not establish the encoding of every archived string, runtime
+font appearance, or the behavior of other patch versions.
+
 ## Resources and entry points
 
 Export current-format TSC from the original `scr.xfl`, rather than relying on old exports. Containers are `modern-36`; each TSC's `rscript18`, `rscript19`, or `modern` metadata determines its argument schema.

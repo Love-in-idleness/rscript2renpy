@@ -6,8 +6,8 @@
 
 ## 概述
 
-将《SEVEN-BRIDGE》的日文资源生成为 Ren'Py 8 工程。
-本适配以日文 `SBridge_jp.exe` 为依据，暂不支持中文补丁。
+将《SEVEN-BRIDGE》的日文资源与可选中文补丁生成为 Ren'Py 8 工程。
+原作行为以日文 `SBridge_jp.exe` 为依据，语言补丁单独提供。
 
 ## 准备资源
 
@@ -32,7 +32,27 @@ python3 sevenbridge/build_sevenbridge_rscript.py /path/to/prepared-sevenbridge /
 
 ## 语言补丁
 
-当前只生成日文剧本，没有接入其他语言补丁。
+先把中文补丁中的 `scr.xfl`、`grps.xfl` 复制到独立目录，再用 LiarsoftTool 分别转换。
+汉化脚本使用 **GBK**，但 `grps.xfl` 及内部 LWG 的成员文件名仍使用 **CP932**：
+
+```bash
+liarsofttool --unpack-only -R -e gbk /path/to/patch-copy/scr.xfl
+liarsofttool --unpack-only -R -e cp932 /path/to/patch-copy/grps.xfl
+```
+
+不要对整个补丁目录统一使用 GBK，否则 `nonbl/１` 等全角数字文件名会被解错。
+日文原版使用 CP932。生成器读取转换后的 `scr/*.tsc`，不直接读取 EXE、GSC 或封包。
+
+保留补丁中的 `grps` 图像与 `.meta.xml`，让菜单、鉴赏、姓名牌和右键界面随语言切换。
+日文原版仍作为完整资源基础；补丁不必重复提供未修改的素材。
+
+```bash
+python3 sevenbridge/build_sevenbridge_rscript.py /path/to/prepared-sevenbridge /path/to/renpy-sevenbridge \
+    --language jp --language zh=/path/to/patch-copy
+```
+
+`--language jp` 设置原文标签；`zh=...` 添加可在 Text Settings 中选择的中文补丁。
+补丁按完整场景覆盖，允许翻译脚本调整指令结构或增加场景；未提供的场景沿用日文。
 
 ## 使用说明
 

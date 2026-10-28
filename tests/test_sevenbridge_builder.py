@@ -4,6 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import shutil
 import sys
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "sevenbridge"))
@@ -51,6 +52,78 @@ def main():
             assert "overlap" in str(error)
         else:
             raise AssertionError("overlapping input/output accepted")
+
+        patch, localized = root / "汉化 Русский patch", root / "localized"
+        (patch / "scr").mkdir(parents=True)
+        header = ';@gsc-byte-format modern-36\n;@gsc-schema rscript18\n'
+        (source / "scr/0001.tsc").write_text(header + '*return 0\n', encoding="utf-8")
+        (source / "scr/0210.tsc").write_text(header + '*wait 1\n*return 0\n', encoding="utf-8")
+        translated = patch / "scr/0000.tsc"
+        translated.write_text(
+            header + '*TXT 0 0 0 0 "^g001" "译文正文" 1\n'
+            '*font 44 10 20 0 0 "新增字幕"\n'
+            '*select 1 "中文问题" END END END END END "中文选项" "" "" "" "" 0 0 0\n'
+            ':END\n*end\n', encoding="utf-8")
+        (patch / "scr/0002.tsc").write_text(header + '*return 0\n', encoding="utf-8")
+        (patch / "scr/0210.tsc").write_text(header + '*wait 2\n*return 0\n', encoding="utf-8")
+        for directory, x in ((source, 10), (patch, 30)):
+            panel = directory / "grps/confscrn"
+            panel.mkdir(parents=True)
+            Image.new("RGBA", (13, 9), "white" if directory == source else "black").save(panel / "close.png")
+            (panel / ".meta.xml").write_text(
+                '<Canvas><Width>800</Width><Height>600</Height><Items>'
+                '<Item x="%d" y="40" flag="40">close</Item>'
+                '</Items></Canvas>' % x, encoding="utf-8")
+        inputs = {path: path.read_bytes() for directory in (source, patch)
+                  for path in directory.rglob("*") if path.is_file()}
+        languages = ["jp", "zh=" + str(patch)]
+        variants = build_sevenbridge(source, localized, languages=languages)
+        game = localized / "game"
+        assert "_preferences.language == 'zh'" in variants["scr/0000.rpy"]
+        assert "jump _rscript_variant1_0000" in variants["scr/0000.rpy"]
+        assert "jump _rscript_variant0_0000" in variants["scr/0000.rpy"]
+        translated_output = (game / "tl/zh/scr/0000.rpy").read_text()
+        assert "_rscript_say ('^g001', '译文正文', 1)" in translated_output
+        assert "_oload 44 10 20 0 0 '新增字幕'" in translated_output
+        assert "rscript_choice_prompt = '中文问题'" in translated_output
+        assert "'中文选项':" in translated_output
+        assert "_preferences.language" not in variants["scr/0001.rpy"]
+        assert "jump _rscript_variant0_0001" in variants["scr/0001.rpy"]
+        assert not (game / "tl/zh/scr/0001.rpy").exists()
+        assert "only available" in variants["scr/0002.rpy"]
+        assert "label _0210:\nlabel sevenbridge_cg_body:\n" in variants["scr/0210.rpy"]
+        assert "jump _rscript_variant1_0210" in variants["scr/0210.rpy"]
+        assert "_wait 2" in variants["tl/zh/scr/0210.rpy"]
+        gallery = (game / "engine/gallery.rpy").read_text()
+        assert "call sevenbridge_cg_body" in gallery and "call _rscript_variant0_0210" not in gallery
+        config = (game / "engine/language_config.rpy").read_text()
+        assert "[(None, 'jp'), ('zh', 'zh')]" in config
+        for name in ("close.png", ".meta.xml"):
+            assert (game / "tl/zh/grps/confscrn" / name).read_bytes() == (patch / "grps/confscrn" / name).read_bytes()
+        layout = (game / "tl/zh/grps_layout.rpy").read_text()
+        assert "'close': (30, 40, 13, 9)" in layout
+        caches = [game / "scr/0000.rpyc", game / "tl/zh/scr/0000.rpyc"]
+        for cache in caches:
+            cache.write_bytes(b"stale localized cache")
+        build_sevenbridge(source, localized, languages=languages)
+        assert all(not cache.exists() for cache in caches)
+        assert all(path.read_bytes() == contents for path, contents in inputs.items())
+        for output in (patch, patch / "output"):
+            try:
+                build_sevenbridge(source, output, languages=languages)
+            except ValueError as error:
+                assert "overlap" in str(error)
+            else:
+                raise AssertionError("patch/output overlap accepted")
+        translated.write_text('obsolete translated source\n', encoding="utf-8")
+        invalid_patch_project = root / "invalid-patch-project"
+        try:
+            build_sevenbridge(source, invalid_patch_project, languages=languages)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid patch script accepted")
+        assert not invalid_patch_project.exists()
         script.write_text('obsolete source\n')
         try:
             build_sevenbridge(source, root / "invalid-project")
@@ -59,7 +132,7 @@ def main():
         else:
             raise AssertionError("invalid script accepted")
         assert not (root / "invalid-project").exists()
-    print("OK: SevenBridge builder preserves inputs and validates before installation")
+    print("OK: SevenBridge language scenes/assets, fallback, cache cleanup and input preservation")
 
 
 if __name__ == "__main__":

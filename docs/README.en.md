@@ -12,7 +12,7 @@
 - [Evermaiden](../evermaiden/README.en.md)
 - [CannonBall](../cannonball/README.en.md)
 - [KagerouTouryuuki](../kagerou/README.en.md)
-- [SevenBridge, Japanese edition](../sevenbridge/README.en.md)
+- [SevenBridge build and language patches](../sevenbridge/README.en.md)
 - [Asset provenance and licensing](../THIRD_PARTY_NOTICES.en.md)
 
 ## Developer references

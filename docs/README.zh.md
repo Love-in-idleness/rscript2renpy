@@ -12,7 +12,7 @@
 - [Evermaiden](../evermaiden/README.zh.md)
 - [CannonBall](../cannonball/README.zh.md)
 - [KagerouTouryuuki](../kagerou/README.zh.md)
-- [SevenBridge（日文版）](../sevenbridge/README.zh.md)
+- [SevenBridge 构建与语言补丁](../sevenbridge/README.zh.md)
 - [第三方资源与授权](../THIRD_PARTY_NOTICES.zh.md)
 
 ## 开发参考

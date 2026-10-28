@@ -6,8 +6,8 @@
 
 ## Overview
 
-Build a Ren'Py 8 project from the Japanese SEVEN-BRIDGE resources.
-This adapter targets `SBridge_jp.exe`; Chinese patches are not supported yet.
+Build a Ren'Py 8 project from Japanese SEVEN-BRIDGE resources and an optional Chinese patch.
+Original behavior follows `SBridge_jp.exe`; language patches are supplied separately.
 
 ## Prepare resources
 
@@ -34,7 +34,31 @@ Back up manual edits before rebuilding. `--force` replaces differing generated f
 
 ## Language patches
 
-Only Japanese scenarios are currently supported.
+Copy the Chinese patch's `scr.xfl` and `grps.xfl` into a separate working directory, then convert them
+separately with LiarsoftTool. The translated scripts use **GBK**, but member filenames in
+`grps.xfl` and its nested LWG archives still use **CP932**:
+
+```bash
+liarsofttool --unpack-only -R -e gbk /path/to/patch-copy/scr.xfl
+liarsofttool --unpack-only -R -e cp932 /path/to/patch-copy/grps.xfl
+```
+
+Do not convert the entire patch directory as GBK: full-width digit filenames such as `nonbl/１`
+would be decoded incorrectly. The Japanese base uses CP932.
+The builder reads converted `scr/*.tsc`, not EXE, GSC or archive files.
+
+Keep the patch's `grps` images and `.meta.xml` so menus, galleries, nameplates and the right-click
+interface can follow the selected language. The Japanese game remains the complete resource base;
+the patch need not duplicate unchanged assets.
+
+```bash
+python3 sevenbridge/build_sevenbridge_rscript.py /path/to/prepared-sevenbridge /path/to/renpy-sevenbridge \
+    --language jp --language zh=/path/to/patch-copy
+```
+
+`--language jp` labels the original language; `zh=...` adds a Chinese patch selectable in Text Settings.
+Patches replace whole scenarios and may change command structure or add scenes.
+Scenes not supplied by the patch use the Japanese version.
 
 ## Using the port
 

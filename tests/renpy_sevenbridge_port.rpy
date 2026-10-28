@@ -80,7 +80,9 @@ python early:
         old_play, old_stop = renpy.music.play, renpy.music.stop
         old_restart = renpy.full_restart
         old_movie = renpy.movie_cutscene
-        calls, voices, movies = [], [], []
+        old_language = _preferences.language
+        old_label_callbacks = config.label_callbacks[:]
+        calls, voices, movies, labels = [], [], [], []
         try:
             config.exception_handler = fail_fast
             renpy.pause = lambda *a, **kw: None
@@ -92,6 +94,7 @@ python early:
                 assert renpy.loadable(filename), filename
                 movies.append(filename)
             renpy.movie_cutscene = movie
+            config.label_callbacks.append(lambda name, abnormal: labels.append(name))
             # Command mode has no menu context; run only the splashscreen's Python.
             node = renpy.game.script.lookup("splashscreen")
             while not isinstance(node, renpy.ast.Python):
@@ -112,26 +115,46 @@ python early:
                 assert 1 in calls[-1], calls
                 return 1
             def say(who, what, **kwargs):
-                assert "越えてゆけ" in what, what
+                assert ("跨过去吧" if selected_language == "zh" else "越えてゆけ") in what, what
                 assert store.rscript_speaker == 3
                 assert any(file == "voice/1001.ogg" for file, args in voices), voices
                 raise Finished()
             renpy.call_screen, renpy.say = click, say
-            try:
-                renpy.call_in_new_context("_0000")
-            except Finished:
-                pass
-            else:
-                raise AssertionError("native title did not reach the opening scene")
-            assert calls, "title choice was not executed"
+            languages = [None] + (["zh"] if any(name == "zh" for name, _ in rscript_languages) else [])
+            for selected_language in languages:
+                renpy.change_language(selected_language)
+                calls.clear()
+                voices.clear()
+                labels.clear()
+                for path in ("grps/dt2_0001.png", "grps/confscrn/close.png", "grps/gf001.png"):
+                    expected = ("tl/zh/" if selected_language == "zh" else "") + path
+                    assert renpy.loadable(expected, tl=False), expected
+                    assert rscript_image_path(path) == expected, (path, rscript_image_path(path))
+                if selected_language == "zh":
+                    for page in range(1, 11):
+                        name = str(page) if page == 10 else chr(ord("０") + page)
+                        path = "grps/nonbl/%s.png" % name
+                        assert rscript_image_path(path) == "tl/zh/" + path, path
+                assert rscript_image_path("grpe/3001.png") == "grpe/3001.png"
+                try:
+                    renpy.call_in_new_context("_0000")
+                except Finished:
+                    pass
+                else:
+                    raise AssertionError("native title did not reach the opening scene")
+                assert calls, "title choice was not executed"
+                variant = next(index for index, (name, _) in enumerate(rscript_languages)
+                               if name == selected_language)
+                assert "_rscript_variant%d_2001" % variant in labels, labels
+                print("OK: SevenBridge script 0000 -> title -> opening, name and voice", selected_language, calls)
             print("OK: SevenBridge boot and scenario movie paths are loadable")
-            print("OK: SevenBridge script 0000 -> title -> opening, name and voice", calls)
             for scene, choice, exit_value in (("0201", 1, 13), ("0301", 5001, 20), ("0400", 1, 49)):
                 persistent.seen_cg.update(("grpe %04d" % number, True) for number in range(1, 3301))
                 for key in range(8000, 8030):
                     _r[key] = 1
                 _r[7999] = 1
                 steps, dialogue = [], []
+                labels.clear()
                 store.jump_back_point = "sdk-gallery"  # Command mode has no rollback log.
                 def gallery_click(name, **kwargs):
                     assert name == "rscript_click_screen", name
@@ -159,9 +182,16 @@ python early:
                 else:
                     raise AssertionError(("gallery did not return to title", scene, steps, dict(store.layer_info)))
                 assert len(steps) == 3, (scene, steps)
+                assert "_rscript_variant%d_%s" % (variant, scene) in labels, (scene, labels)
+                if scene == "0201":
+                    assert "sevenbridge_cg_body" in labels, labels
+                    assert "_rscript_variant%d_0210" % variant in labels, labels
+                    if selected_language == "zh":
+                        assert "_rscript_variant0_0210" not in labels, labels
                 if scene == "0301":
                     assert dialogue, "scene replay did not execute dialogue"
-                print("OK: SevenBridge gallery return", scene, len(dialogue), "dialogue lines")
+                    assert "_rscript_variant%d_5001" % variant in labels, labels
+                print("OK: SevenBridge gallery return", selected_language, scene, len(dialogue), "dialogue lines")
         finally:
             config.exception_handler = old_handler
             renpy.pause, renpy.with_statement = old_pause, old_with
@@ -169,5 +199,7 @@ python early:
             renpy.music.play, renpy.music.stop = old_play, old_stop
             renpy.full_restart = old_restart
             renpy.movie_cutscene = old_movie
+            config.label_callbacks = old_label_callbacks
+            renpy.change_language(old_language)
         return False
     renpy.arguments.register_command("sevenbridgetest", check_sevenbridge_port)

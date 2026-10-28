@@ -24,7 +24,7 @@
 | Khime Kusaritop | [Сборка, языковые патчи и необязательная Khime Zero](khime/README.ru.md) |
 | Evermaiden | [Сборка и языковые патчи](evermaiden/README.ru.md) |
 | CannonBall | [Сборка и языковые патчи](cannonball/README.ru.md) |
-| SevenBridge | [Японское издание](sevenbridge/README.ru.md), пока без языковых патчей |
+| SevenBridge | [Сборка и языковые патчи](sevenbridge/README.ru.md) |
 | KagerouTouryuuki | [Бонусное издание](kagerou/README.ru.md), требуется 「ハチポチ特典」 |
 
 Возможности и ограничения перечислены в руководствах. Успешная генерация не означает проверки всех маршрутов.

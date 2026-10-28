@@ -24,7 +24,7 @@ Keep input resources separate from the output project. Builders read TSC, not GS
 | Khime Kusaritop | [Build, language patches, and optional Khime Zero](khime/README.en.md) |
 | Evermaiden | [Build and language patches](evermaiden/README.en.md) |
 | CannonBall | [Build and language patches](cannonball/README.en.md) |
-| SevenBridge | [Japanese edition](sevenbridge/README.en.md); no language patches yet |
+| SevenBridge | [Build and language patches](sevenbridge/README.en.md) |
 | KagerouTouryuuki | [Bonus edition](kagerou/README.en.md); requires 「ハチポチ特典」 |
 
 See each guide for features and limitations. Successful generation does not establish that every route works.

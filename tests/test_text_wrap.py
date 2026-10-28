@@ -34,6 +34,9 @@ def main():
     assert wrap("甲乙“丙", 2) == ["甲乙", "“丙"]
     for char in "\u3000\u00a0っゃァ»—-%™®":
         assert wrap("甲乙" + char + "丙", 2) == ["甲乙" + char, "丙"]
+    for char in "：；％·〃々〗℃′″":
+        assert wrap("甲乙" + char + "丙", 2) == ["甲乙" + char, "丙"]
+    assert wrap("甲〖乙", 2) == ["甲", "〖乙"]
     assert wrap("Ж«Ю", 2) == ["Ж", "«Ю"]
     assert wrap("甲Я。A", 2) == ["甲Я。", "A"]
     assert wrap("Wi甲", 10, [8, 2, 10]) == ["Wi", "甲"]

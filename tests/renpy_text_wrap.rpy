@@ -1,5 +1,6 @@
 # Run with tests/run_native_text_wrap.py (no graphical session).
 define gui.text_font = "fonts/NotoSansCJKjp-Regular.otf"
+define -150 rscript_say_line_chars_default = 19
 
 python early:
     def check_rscript_native_layout():
@@ -139,6 +140,9 @@ python early:
         for char in "\u3000\u00a0っ»—":
             _, sample = shaped("甲乙" + char + "丙")
             assert lines(sample) == ["甲乙" + char, "丙"], lines(sample)
+        for char in "：；％·〃々〗℃′″":
+            assert lines(shaped("甲乙" + char + "丙")[1]) == ["甲乙" + char, "丙"]
+        assert lines(shaped("甲〖乙")[1]) == ["甲", "〖乙"]
         assert lines(shaped("甲乙“")[1]) == ["甲乙“"]
         assert lines(shaped("甲乙“丙")[1]) == ["甲乙", "“丙"]
         # Explicit breaks reset hanging, and nested links retain token order.
