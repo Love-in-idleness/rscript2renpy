@@ -148,7 +148,10 @@ python early:
                     for page in range(1, 11):
                         name = str(page) if page == 10 else chr(ord("０") + page)
                         path = "grps/nonbl/%s.png" % name
-                        assert rscript_image_path(path) == "tl/zh/" + path, path
+                        translated = "tl/zh/" + path
+                        expected = translated if renpy.loadable(translated, tl=False) else path
+                        assert renpy.loadable(expected, tl=False), expected
+                        assert rscript_image_path(path) == expected, path
                 assert rscript_image_path("grpe/3001.png") == "grpe/3001.png"
                 try:
                     renpy.call_in_new_context("_0000")
