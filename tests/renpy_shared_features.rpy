@@ -34,6 +34,48 @@ python early:
                                if isinstance(d, renpy.text.text.Text) else None)
                 assert heading in texts, (language, texts)
                 renpy.hide_screen("rscript_text_preferences")
+            # Use SDK prompts, including messages emitted by native actions.
+            native_prompts = [getattr(layout, name) for name in (
+                "ARE_YOU_SURE", "DELETE_SAVE", "OVERWRITE_SAVE", "LOADING", "QUIT",
+                "MAIN_MENU", "CONTINUE", "END_REPLAY", "SLOW_SKIP",
+                "FAST_SKIP_SEEN", "FAST_SKIP_UNSEEN")]
+            native_prompts.extend((gui.UNKNOWN_TOKEN, gui.TRUST_TOKEN))
+            old_yesno, old_can_load = layout.yesno_screen, renpy.can_load
+            old_scan, old_autosave = renpy.scan_saved_game, config.autosave_on_quit
+            old_main_menu = store.main_menu
+            emitted = []
+            try:
+                layout.yesno_screen = lambda message, *args, **kwargs: emitted.append(message)
+                renpy.can_load = lambda *args, **kwargs: True
+                renpy.scan_saved_game = lambda *args, **kwargs: True
+                config.autosave_on_quit = False
+                store.main_menu = False
+                for action, expected in ((Quit(confirm=True), layout.QUIT),
+                                         (FileLoad(1, page="1"), layout.LOADING),
+                                         (FileSave(1, page="1"), layout.OVERWRITE_SAVE),
+                                         (FileDelete(1, page="1"), layout.DELETE_SAVE)):
+                    renpy.run(action)
+                    assert emitted[-1] == expected
+            finally:
+                layout.yesno_screen, renpy.can_load = old_yesno, old_can_load
+                renpy.scan_saved_game, config.autosave_on_quit = old_scan, old_autosave
+                store.main_menu = old_main_menu
+            for language in (None, "jp", "zh", "ru", "en"):
+                _preferences.language = language
+                table = rscript_ui_strings.get(language or "jp", {})
+                for message in native_prompts:
+                    expected = table[message] if table else message
+                    assert expected != message or not table, (language, message)
+                    renpy.show_screen("confirm", message=message,
+                                      yes_action=NullAction(), no_action=NullAction())
+                    prompt = renpy.get_screen("confirm")
+                    prompt.update()
+                    texts = []
+                    prompt.visit_all(lambda d: texts.append("".join(d.text))
+                                     if isinstance(d, renpy.text.text.Text) else None)
+                    assert expected in texts, (language, message, texts)
+                    assert rscript_ui_text("Yes") in texts and rscript_ui_text("No") in texts
+                    renpy.hide_screen("confirm")
             # Generated ports must use the same labels on Android controls.
             renpy.variant = lambda name: name == "touch"
             for language, captions in (
@@ -83,6 +125,7 @@ python early:
         finally:
             renpy.variant = old_variant
             renpy.hide_screen("rscript_touch_controls")
+            renpy.hide_screen("confirm")
             store.rscript_languages = old_languages
             renpy.change_language(old_language)
         # Complete metadata-based slots, including digit artwork and page buttons.
