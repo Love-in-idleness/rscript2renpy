@@ -173,7 +173,8 @@ def main():
             translated_bmp = project / "game/tl/bmp_test/grpo/0707.BMP"
             translated_bmp.parent.mkdir(parents=True)
             translated_bmp.write_bytes(bmp_v4())
-            for filename in ("text_features.rpy", "touch_controls.rpy", "gui.rpy"):
+            for filename in ("text_features.rpy", "touch_controls.rpy", "ui_strings.rpy",
+                             "ui_features.rpy", "grps_ui.rpy", "gui.rpy"):
                 assert (project / "game" / "engine" / filename).read_bytes() == \
                     (ROOT / "port_template/game" / filename).read_bytes()
             save_directory = ("Forest-rscript2renpy" if name == "Forest" else

@@ -19,6 +19,7 @@ python early:
         renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
         renpy.display.screen.prepare_screens()
         old_language, old_languages = _preferences.language, store.rscript_languages
+        old_variant = renpy.variant
         try:
             store.rscript_languages = [(None, "jp"), ("zh", "zh"), ("ru", "ru")]
             assert set(rscript_ui_strings["zh"]) == set(rscript_ui_strings["ru"]) == set(rscript_ui_strings["jp"])
@@ -33,6 +34,23 @@ python early:
                                if isinstance(d, renpy.text.text.Text) else None)
                 assert heading in texts, (language, texts)
                 renpy.hide_screen("rscript_text_preferences")
+            # Generated ports must use the same labels on Android controls.
+            renpy.variant = lambda name: name == "touch"
+            for language, captions in (
+                    (None, ("戻る", "スキップ", "オート", "非表示", "撮影", "メニュー")),
+                    ("jp", ("戻る", "スキップ", "オート", "非表示", "撮影", "メニュー")),
+                    ("zh", ("返回", "跳过", "自动", "隐藏", "截图", "菜单")),
+                    ("ru", ("Назад", "Пропуск", "Авто", "Скрыть", "Снимок", "Меню"))):
+                _preferences.language = language
+                renpy.show_screen("rscript_touch_controls")
+                controls = renpy.get_screen("rscript_touch_controls")
+                controls.update()
+                texts = []
+                controls.visit_all(lambda d: texts.append("".join(d.text))
+                                   if isinstance(d, renpy.text.text.Text) else None)
+                assert all(caption in texts for caption in captions), (language, texts)
+                renpy.hide_screen("rscript_touch_controls")
+            renpy.variant = old_variant
             # A menu return rebuilds the current line, without advancing its script.
             _preferences.language = None
             old_say = renpy.say
@@ -63,6 +81,8 @@ python early:
                 store.rscript_speaker_images_override = old_speaker_override
                 rscript_dialogue_end()
         finally:
+            renpy.variant = old_variant
+            renpy.hide_screen("rscript_touch_controls")
             store.rscript_languages = old_languages
             renpy.change_language(old_language)
         # Complete metadata-based slots, including digit artwork and page buttons.
