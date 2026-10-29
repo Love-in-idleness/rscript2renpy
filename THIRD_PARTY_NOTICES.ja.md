@@ -37,3 +37,18 @@ MIT の renpy-rscript と、Sona-Nyl Ren'Py プロジェクトの互換 RScript 
 Microsoft 提供の専有字体で、MIT/OFL は適用されません。追加の再配布権を取得・検証していません。出典表示は許可ではありません。[SimHei の説明](port_template/fonts/SimHei-NOTICE.ja.md)と [Microsoft FAQ](https://learn.microsoft.com/en-us/typography/fonts/font-faq)を参照してください。
 
 Forest に含める Noto Sans CJK JP Regular、Noto Sans CJK Light、Noto Serif CJK Regular は SIL Open Font License 1.1 で、原文は `port_template/fonts/NotoSans.txt` にあります。
+
+## その他のテンプレート字体
+
+次のファイルは `port_template/fonts/` にあります。
+
+| ファイル | 字体 | バージョン |
+| --- | --- | --- |
+| `simfang.ttf` | FangSong（仿宋） | 5.01 |
+| `simkai.ttf` | KaiTi（楷体） | 5.01 |
+| `simsun.ttc` | SimSun（宋体）、NSimSun（新宋体） | 5.21 |
+
+仿宋・楷体の内蔵著作権表示は © Beijing ZhongYi Electronics Co., 1995-2005, All rights reserved、
+宋体コレクションは © Copyright ZHONGYI Electronic Co. 2001, 2020, 2022 です。
+三つとも Microsoft supplied font の許諾条件を内蔵し、プロジェクトの MIT や Noto の OFL は適用されません。
+使用・埋込・配布は字体および提供元製品の許諾に従います。収録・出典表示は追加の権利を与えません。

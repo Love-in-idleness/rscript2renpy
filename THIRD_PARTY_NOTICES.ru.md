@@ -55,3 +55,19 @@ MIT неприменима, все права у исходного правоо
 
 Генератор Forest включает Noto Sans CJK JP Regular, Noto Sans CJK Light и Noto Serif CJK Regular.
 Их лицензия SIL Open Font License 1.1 сохранена в `port_template/fonts/NotoSans.txt`.
+
+## Другие шрифты шаблона
+
+Следующие файлы находятся в `port_template/fonts/`:
+
+| Файл | Шрифт | Версия |
+| --- | --- | --- |
+| `simfang.ttf` | FangSong (仿宋) | 5.01 |
+| `simkai.ttf` | KaiTi (楷体) | 5.01 |
+| `simsun.ttc` | SimSun (宋体), NSimSun (新宋体) | 5.21 |
+
+FangSong и KaiTi содержат © Beijing ZhongYi Electronics Co., 1995-2005, All rights reserved;
+коллекция SimSun — © Copyright ZHONGYI Electronic Co. 2001, 2020, 2022.
+Все три файла содержат условия Microsoft supplied font; MIT проекта и OFL Noto на них не распространяются.
+Использование, встраивание и распространение регулируются лицензиями шрифтов и исходного продукта;
+включение в проект и указание авторства не предоставляют дополнительных прав.

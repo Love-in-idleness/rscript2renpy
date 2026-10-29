@@ -48,3 +48,18 @@ RScript 兼容运行时合并并修改了 MIT 授权的 renpy-rscript，以及 S
 
 Forest 生成器附带 Noto Sans CJK JP Regular、Noto Sans CJK Light、Noto Serif CJK Regular，
 适用 SIL Open Font License 1.1，原文保存在 `port_template/fonts/NotoSans.txt`。
+
+## 其他模板字体
+
+以下文件位于 `port_template/fonts/`：
+
+| 文件 | 字体 | 版本 |
+| --- | --- | --- |
+| `simfang.ttf` | FangSong（仿宋） | 5.01 |
+| `simkai.ttf` | KaiTi（楷体） | 5.01 |
+| `simsun.ttc` | SimSun（宋体）、NSimSun（新宋体） | 5.21 |
+
+仿宋和楷体的内嵌版权为 © Beijing ZhongYi Electronics Co., 1995-2005, All rights reserved；
+宋体集合为 © Copyright ZHONGYI Electronic Co. 2001, 2020, 2022。
+三份文件均内嵌 Microsoft supplied font 许可条款，不适用本项目的 MIT 或 Noto 的 OFL。
+使用、嵌入和分发须遵守字体本身及来源产品的许可；收录与署名不授予额外权利。
