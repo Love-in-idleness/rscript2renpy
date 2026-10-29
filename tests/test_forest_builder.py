@@ -349,7 +349,7 @@ def main() -> None:
     assert "default persistent.rscript_oload_line_chars = 20" in FOREST_COMPAT
     assert "default persistent.rscript_line_spacing = rscript_text_line_spacing_default" in FOREST_COMPAT
     assert "line_spacing persistent.rscript_line_spacing" in FOREST_COMPAT
-    assert 'text "Line Spacing" yalign 0.5' in FOREST_COMPAT
+    assert 'text rscript_ui_text("Line Spacing") yalign 0.5' in FOREST_COMPAT
     assert ('rscript_adjust_text, "rscript_line_spacing", -1, -10, 30' in
             FOREST_COMPAT)
     assert "screen forest_title_preferences():" in FOREST_COMPAT

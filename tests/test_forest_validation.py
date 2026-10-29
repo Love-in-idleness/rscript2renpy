@@ -126,8 +126,8 @@ def main() -> None:
         settings.rscript_previous_default_font = previous_font
         update_font()
         assert settings.rscript_text_font == "fonts/NotoSerifCJK-Regular.ttc"
-        assert 'textbutton "Previous Font"' in compat_text
-        assert 'textbutton "Next Font"' in compat_text
+        assert 'textbutton rscript_ui_text("Previous Font")' in compat_text
+        assert 'textbutton rscript_ui_text("Next Font")' in compat_text
         for old_text in ("原文", "持久化", "戻る", "スキップ", "オート",
                          "メニュー", "文本", "字号", "字体", "语言",
                          "返回", "はい", "いいえ"):
@@ -149,8 +149,8 @@ def main() -> None:
         assert "text = rscript_prepare_text(text)" in util_runtime
         assert "text = rscript_prepare_wiki_text(text)" in compat_text
         assert '"g": rscript_green_color()' in util_runtime
-        say_start = text_runtime.index("    def execute_say(o, interact=True):")
-        append_start = text_runtime.index("    def execute_append(o, interact=True):")
+        say_start = text_runtime.index("    def execute_say(o, interact=True, source=None):")
+        append_start = text_runtime.index("    def execute_append(o, interact=True, source=None):")
         say_runtime = text_runtime[say_start:append_start]
         append_runtime = text_runtime[append_start:]
         assert "parse_rscript_text(what, True)" in say_runtime
