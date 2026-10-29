@@ -10,7 +10,8 @@ sys.path.insert(0, str(ROOT / "port_template"))
 from build_port import assemble_port, validate_resources
 from file_install import reject_overlap
 from port_resources import parse_language_options
-from tsc_compiler import compile_overlays
+from tsc_compiler import compile_scene
+from tsc_patches import language_patch_data, menu_text, scenario_sources
 
 
 def build_sevenbridge(resources, project, force=False, languages=()):
@@ -22,9 +23,18 @@ def build_sevenbridge(resources, project, force=False, languages=()):
         "scr", "grpe", "grpo", "grpo_bu", "grpo_ex", "grps", "bgm", "voice", "wav"),
         files=("grpe/3001.png",),
         alternatives=(("bgm/Track01.ogg", "bgm/Track01.wav"),))
-    scenes = compile_overlays(resources, patches, adapter="sevenbridge")
+    patch_data = {language: language_patch_data(
+        resources / "scr", directory / "scr", dialect="modern", menu_transform=menu_text)
+        for language, directory in patches}
+    scenes = {}
+    for source in scenario_sources(resources / "scr"):
+        texts, insertions = ({language: data[index][source.name]
+                              for language, data in patch_data.items() if source.name in data[index]}
+                             for index in (0, 1))
+        scenes["scr/%s.rpy" % source.stem] = compile_scene(
+            source, adapter="sevenbridge", language_texts=texts, language_insertions=insertions)
     if "scr/0210.rpy" in scenes:
-        # Reuse language dispatch without re-entering the gallery return override.
+        # Enter the CG body without re-entering the gallery return override.
         scenes["scr/0210.rpy"] = scenes["scr/0210.rpy"].replace(
             "label _0210:\n", "label _0210:\nlabel sevenbridge_cg_body:\n", 1)
     assemble_port(resources, project, scenes, Path(__file__).parent,

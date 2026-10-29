@@ -14,11 +14,13 @@ python early:
     def execute_rscript_say(value):
         name, body, wait = eval(value)
         execute_say((None, repr(name) if name else None,
-                     repr(body)), interact=bool(wait))
+                     repr(body)), interact=bool(wait),
+                    source=(None, "(%s)[0]" % value, "(%s)[1]" % value))
 
     def execute_rscript_append(value):
         body, wait = eval(value)
-        execute_append((None, repr(body)), interact=bool(wait))
+        execute_append((None, repr(body)), interact=bool(wait),
+                       source=(None, "(%s)[0]" % value))
 
     def parse_flagset(lex):
         args = rscript_arguments(lex, ["First", "Last", "Value"])

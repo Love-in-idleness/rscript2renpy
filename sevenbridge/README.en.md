@@ -57,12 +57,14 @@ python3 sevenbridge/build_sevenbridge_rscript.py /path/to/prepared-sevenbridge /
 ```
 
 `--language jp` labels the original language; `zh=...` adds a Chinese patch selectable in Text Settings.
-Patches replace whole scenarios and may change command structure or add scenes.
-Scenes not supplied by the patch use the Japanese version.
+Patches align with the original instructions, replacing text and optionally adding subtitles;
+the Japanese script keeps control of the story flow. Missing text uses Japanese.
+Changing language refreshes the current dialogue without advancing the story.
 
 ## Using the port
 
 The original main menu is retained; its settings button opens Text Settings.
+The right-click menu has no Text Settings link.
 In-game controls, the right-click menu and save/load
 screens use original artwork with `.meta.xml` layouts. See the
 [shared UI resource map](../port_template/README.en.md#ui-resource-map) for each directory's role.

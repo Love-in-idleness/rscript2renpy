@@ -1,3 +1,7 @@
+default rscript_dialogue_sources = []
+default rscript_dialogue_language = None
+default rscript_dialogue_translation = None
+
 python early:
 
     def rscript_textbox_state(box=None):
@@ -46,8 +50,11 @@ python early:
         what = lex.rest()
         return lang, who, what
 
-    def execute_say(o, interact=True):
+    def execute_say(o, interact=True, source=None):
         lang, who, what = o
+        store.rscript_dialogue_sources = [("say", source or o)]
+        store.rscript_dialogue_language = _preferences.language
+        store.rscript_dialogue_translation = None
 
         if who:
             who = who.strip(u"：")
@@ -108,8 +115,11 @@ python early:
         what = lex.rest()
         return lang, what
 
-    def execute_append(o, interact=True):
+    def execute_append(o, interact=True, source=None):
         lang, what = o
+        store.rscript_dialogue_sources.append(("append", source or o))
+        store.rscript_dialogue_language = _preferences.language
+        store.rscript_dialogue_translation = None
 
         who  = store.last_spk
         store.rscript_voice_pending = False

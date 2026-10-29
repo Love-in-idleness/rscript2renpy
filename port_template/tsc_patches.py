@@ -64,6 +64,8 @@ def instruction_strings(tsc, item, menu_transform=lambda value: value) -> dict[s
                 result["choice%d" % number] = menu_transform(tsc.string(index))
     elif opcode == 81:
         name, text = tsc.string(operands[4]), tsc.string(operands[5])
+        result["say_name"] = name
+        result["say_body"] = text
         if re.fullmatch(r"(?:\^c[ygwk])+", name):
             name = ""
         result["say"] = (name + "：" if name else "") + text

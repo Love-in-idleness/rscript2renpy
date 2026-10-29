@@ -44,6 +44,10 @@ Use metadata for layout first. Naming and button behavior need adaptation: filen
 
 ## UI resource map
 
+Text menus and Android touch controls use Chinese, Russian or Japanese for the
+`zh`, `ru` and `jp` language tags, including the original-language tag. Other tags use English.
+Text inside game images comes from the language pack.
+
 Check these resources before implementing screens. This is a shared checklist; verify missing directories or different naming against the particular game's assets.
 
 | Path | Role |

@@ -2,6 +2,7 @@
 default sevenbridge_capture_stage = 0
 default sevenbridge_drag_stage = 0
 default sevenbridge_drag_dialogue = None
+default sevenbridge_language_stage = 0
 
 init python:
     def sevenbridge_capture_error(short, full, info):
@@ -20,7 +21,8 @@ init python:
             step = store.sevenbridge_drag_stage
             if step == 0:
                 store.sevenbridge_drag_dialogue = store.last_say
-            assert store.last_say == store.sevenbridge_drag_dialogue, "opacity drag advanced dialogue"
+            if store.sevenbridge_language_stage == 0:
+                assert store.last_say == store.sevenbridge_drag_dialogue, "opacity drag advanced dialogue"
             if step == 3:
                 assert persistent.rscript_textbox_opacity < .05, persistent.rscript_textbox_opacity
             if step < 6:
@@ -42,6 +44,16 @@ init python:
                 return
             assert persistent.rscript_textbox_opacity > .95
             print("OK: SevenBridge opacity drags down/up without advancing dialogue")
+            if any(language == "zh" for language, _ in rscript_languages):
+                language_step = store.sevenbridge_language_stage
+                if language_step < 2:
+                    if language_step == 1:
+                        assert "越えてゆけ" in "".join(renpy.get_widget("say", "what").text)
+                    store.sevenbridge_language_stage += 1
+                    renpy.run(Language(None if language_step == 0 else "zh"))
+                    return
+                assert "跨过去吧" in "".join(renpy.get_widget("say", "what").text)
+                print("OK: displayed dialogue switches Japanese/Chinese without advancing")
         destination = os.environ["SEVENBRIDGE_CAPTURE"]
         names = ("title.png", "dialogue.png", "preferences.png", "save.png", "load.png")
         renpy.screenshot(os.path.join(destination, names[stage]))

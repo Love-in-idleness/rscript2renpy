@@ -15,6 +15,7 @@ python early:
             assert renpy.loadable("mov/%04d.mpg" % number)
         assert cur_textbox == 0 and text_indent == 146
         assert rscript_ui["text_pos"] == (147, 11)
+        assert not rscript_ui["game_text_settings"]
         renpy.show_screen("rscript_compane")
         panel = renpy.get_screen("rscript_compane")
         panel.update()
@@ -118,6 +119,19 @@ python early:
                 assert ("跨过去吧" if selected_language == "zh" else "越えてゆけ") in what, what
                 assert store.rscript_speaker == 3
                 assert any(file == "voice/1001.ogg" for file, args in voices), voices
+                if selected_language is None and any(name == "zh" for name, _ in rscript_languages):
+                    voice_count, label_count = len(voices), len(labels)
+                    renpy.show_screen("say", who=None, what=what)
+                    for language, phrase in (("zh", "跨过去吧"), (None, "越えてゆけ")):
+                        renpy.run(Language(language))
+                        renpy.show_screen("say", who=None, what=what)
+                        renpy.get_screen("say").update()
+                        actual = "".join(renpy.get_widget("say", "what").text)
+                        assert phrase in actual, (language, actual, store.rscript_dialogue_language,
+                                                  store.rscript_speaker_visible, store.rscript_dialogue_sources)
+                        assert store.rscript_speaker == 3
+                        assert (len(voices), len(labels)) == (voice_count, label_count)
+                    renpy.hide_screen("say")
                 raise Finished()
             renpy.call_screen, renpy.say = click, say
             languages = [None] + (["zh"] if any(name == "zh" for name, _ in rscript_languages) else [])
@@ -143,9 +157,7 @@ python early:
                 else:
                     raise AssertionError("native title did not reach the opening scene")
                 assert calls, "title choice was not executed"
-                variant = next(index for index, (name, _) in enumerate(rscript_languages)
-                               if name == selected_language)
-                assert "_rscript_variant%d_2001" % variant in labels, labels
+                assert "_2001" in labels, labels
                 print("OK: SevenBridge script 0000 -> title -> opening, name and voice", selected_language, calls)
             print("OK: SevenBridge boot and scenario movie paths are loadable")
             for scene, choice, exit_value in (("0201", 1, 13), ("0301", 5001, 20), ("0400", 1, 49)):
@@ -182,15 +194,13 @@ python early:
                 else:
                     raise AssertionError(("gallery did not return to title", scene, steps, dict(store.layer_info)))
                 assert len(steps) == 3, (scene, steps)
-                assert "_rscript_variant%d_%s" % (variant, scene) in labels, (scene, labels)
+                assert "_" + scene in labels, (scene, labels)
                 if scene == "0201":
                     assert "sevenbridge_cg_body" in labels, labels
-                    assert "_rscript_variant%d_0210" % variant in labels, labels
-                    if selected_language == "zh":
-                        assert "_rscript_variant0_0210" not in labels, labels
+                    assert not any(name.startswith("_rscript_variant") for name in labels), labels
                 if scene == "0301":
                     assert dialogue, "scene replay did not execute dialogue"
-                    assert "_rscript_variant%d_5001" % variant in labels, labels
+                    assert "_5001" in labels, labels
                 print("OK: SevenBridge gallery return", selected_language, scene, len(dialogue), "dialogue lines")
         finally:
             config.exception_handler = old_handler

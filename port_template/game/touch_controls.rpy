@@ -80,10 +80,10 @@ init -1 python:
             uri = rscript_publish_screenshot(data, name)
         except Exception as error:
             renpy.log("RScript screenshot failed: %r" % error)
-            renpy.notify("Screenshot failed. No image was saved.")
+            renpy.notify(rscript_ui_text("Screenshot failed. No image was saved."))
         else:
             renpy.log("RScript screenshot saved to gallery: %s" % uri)
-            renpy.notify("Screenshot saved to Gallery / Pictures / RScript.")
+            renpy.notify(rscript_ui_text("Screenshot saved to Gallery / Pictures / RScript."))
 
     def rscript_take_screenshot():
         if renpy.android:
@@ -101,12 +101,12 @@ screen rscript_touch_controls():
             xalign 0.995
             yalign 0.01
 
-            textbutton "Back" action Rollback(force=False) sensitive roll_enabled and _rollback and not rscript_touch_locked()
-            textbutton "Skip" action Skip()
-            textbutton "Auto" action [Function(rscript_ensure_auto_delay), Preference("auto-forward", "toggle")]
-            textbutton "Hide" action HideInterface()
-            textbutton "Screenshot" action Function(rscript_take_screenshot)
-            textbutton "Menu" action ShowMenu("preferences") sensitive menu_enabled and not rscript_touch_locked()
+            textbutton rscript_ui_text("Back") action Rollback(force=False) sensitive roll_enabled and _rollback and not rscript_touch_locked()
+            textbutton rscript_ui_text("Skip") action Skip()
+            textbutton rscript_ui_text("Auto") action [Function(rscript_ensure_auto_delay), Preference("auto-forward", "toggle")]
+            textbutton rscript_ui_text("Hide") action HideInterface()
+            textbutton rscript_ui_text("Screenshot") action Function(rscript_take_screenshot)
+            textbutton rscript_ui_text("Menu") action ShowMenu("preferences") sensitive menu_enabled and not rscript_touch_locked()
 
 style rscript_touch_button:
     xminimum 90

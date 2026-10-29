@@ -14,6 +14,7 @@ def main():
         game = Path(temporary) / "game"
         game.mkdir()
         shutil.copy2(ROOT / "port_template/game/touch_controls.rpy", game)
+        shutil.copy2(ROOT / "port_template/game/ui_strings.rpy", game)
         shutil.copy2(ROOT / "tests/renpy_touch_controls.rpy", game)
         subprocess.run([str(Path(sys.argv[1]) / "renpy.sh"), temporary,
                         "run" if "--capture" in sys.argv else "touchtest"], check=True)

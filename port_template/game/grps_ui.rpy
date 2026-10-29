@@ -96,6 +96,7 @@ init python:
         renpy.save_persistent()
 
 screen rscript_font_picker():
+    style_prefix "rscript_menu"
     modal True
     zorder 200
     key "game_menu" action Hide("rscript_font_picker")
@@ -136,7 +137,7 @@ screen rscript_font_picker():
             vbox:
                 for path in rscript_fonts():
                     textbutton path.rsplit("/", 1)[-1] action Function(rscript_select_font, path)
-                textbutton "Back" action Hide("rscript_font_picker")
+                textbutton rscript_ui_text("Back") action Hide("rscript_font_picker")
 
 screen rscript_grps_button(folder, name, button_action, enabled=True, selected=None):
     $ items = rscript_layouts().get(folder, {}).get("items", {})
@@ -173,6 +174,7 @@ style rscript_volume_bar is bar:
     hover_right_bar Solid("#00000000")
 
 screen preferences(title_mode=False):
+    style_prefix "rscript_menu"
     tag menu
     modal True
     key "game_menu" action Return()
@@ -180,7 +182,7 @@ screen preferences(title_mode=False):
     if layout and layout.get("background_dim", 0):
         add Solid("#000000") alpha layout["background_dim"]
     if rscript_ui.get("game_text_settings", True):
-        textbutton "Text Settings":
+        textbutton rscript_ui_text("Text Settings"):
             xalign 0.5
             yalign 0.97
             action ShowMenu("rscript_text_preferences")
@@ -234,14 +236,14 @@ screen preferences(title_mode=False):
             xalign 0.5
             yalign 0.5
             vbox:
-                textbutton "Music" action Preference("music mute", "toggle")
-                textbutton "Sound" action Preference("sound mute", "toggle")
-                textbutton "Voice" action Preference("voice mute", "toggle")
-                textbutton "Save" action rscript_ui_action(("save",)) sensitive rscript_permission("save")
-                textbutton "Load" action rscript_ui_action(("load",)) sensitive rscript_permission("save")
-                textbutton "Main Menu" action rscript_main_menu_action()
-                textbutton "Quit" action rscript_quit_action()
-                textbutton "Back" action Return()
+                textbutton rscript_ui_text("Music") action Preference("music mute", "toggle")
+                textbutton rscript_ui_text("Sound") action Preference("sound mute", "toggle")
+                textbutton rscript_ui_text("Voice") action Preference("voice mute", "toggle")
+                textbutton rscript_ui_text("Save") action rscript_ui_action(("save",)) sensitive rscript_permission("save")
+                textbutton rscript_ui_text("Load") action rscript_ui_action(("load",)) sensitive rscript_permission("save")
+                textbutton rscript_ui_text("Main Menu") action rscript_main_menu_action()
+                textbutton rscript_ui_text("Quit") action rscript_quit_action()
+                textbutton rscript_ui_text("Back") action Return()
 
 screen rscript_compane():
     $ layout = rscript_layouts().get("compane")
@@ -430,6 +432,7 @@ screen rscript_save_slot(slot, slot_size):
             add rscript_ui_image("saveconf", "new") pos items["new"][:2] xysize items["new"][2:]
 
 screen rscript_file_slots(mode):
+    style_prefix "rscript_menu"
     modal True
     key "game_menu" action Return()
     $ layout = rscript_layouts().get("savescrn")
@@ -487,6 +490,6 @@ screen rscript_file_slots(mode):
             vbox:
                 for slot in range(1, 11):
                     $ slot_action = FileSave(slot) if mode == "save" else FileLoad(slot)
-                    textbutton ("Save %d" % slot if mode == "save" else "Load %d" % slot):
+                    textbutton (rscript_ui_text("Save %d" if mode == "save" else "Load %d") % slot):
                         action slot_action
-                textbutton "Back" action Return()
+                textbutton rscript_ui_text("Back") action Return()

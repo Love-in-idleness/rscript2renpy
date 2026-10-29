@@ -1,4 +1,5 @@
 define gui.interface_text_font = "DejaVuSans.ttf"
+define rscript_languages = [(None, "Original")]
 default roll_enabled = 1
 default menu_enabled = 1
 
@@ -29,6 +30,10 @@ python early:
         try:
             for name in ("back", "skip", "auto", "hide", "screenshot", "menu"):
                 assert widget(name) is not None, name
+            for language, caption in (("zh", "返回"), ("ru", "Назад"), ("jp", "戻る")):
+                _preferences.language = language
+                assert widget(caption.lower()) is not None, language
+            _preferences.language = None
             assert widget("back").is_sensitive()
             assert widget("back").action.kwargs["force"] is False
             store._rollback = False

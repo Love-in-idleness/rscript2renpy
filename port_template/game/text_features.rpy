@@ -55,6 +55,26 @@ init python:
     def rscript_dialogue_end():
         store.rscript_speaker_visible = False
 
+    def rscript_live_dialogue(who, what, center):
+        if renpy.predicting() or not rscript_speaker_visible or not rscript_dialogue_sources:
+            return who, what, center
+        if rscript_dialogue_language != _preferences.language:
+            # Reparse text only; scene commands and voices must not run again.
+            rscript_dialogue_begin()
+            for kind, source in rscript_dialogue_sources:
+                if kind == "say":
+                    _, name, expression = source
+                    who = eval(name) if name else None
+                    what, center = parse_rscript_text(expression, True)
+                else:
+                    text, centered = parse_rscript_text(source[1], True)
+                    what += "{fast}" + text
+                    center = center or centered
+            store.last_say, store.last_center = what, center
+            store.rscript_dialogue_translation = (who, what, center)
+            store.rscript_dialogue_language = _preferences.language
+        return rscript_dialogue_translation or (who, what, center)
+
     def rscript_open_game_menu():
         if store.menu_enabled and not rscript_touch_locked():
             renpy.run(ShowMenu("preferences"))
@@ -204,27 +224,28 @@ init python:
             "seen_cg": dict(persistent.seen_cg),
         }
         renpy.save_persistent()
-        renpy.notify("Progress backup saved.")
+        renpy.notify(rscript_ui_text("Progress backup saved."))
 
     def rscript_load_progress():
         data = persistent.rscript_progress_backup
         if data is None:
-            renpy.notify("No progress backup is available.")
+            renpy.notify(rscript_ui_text("No progress backup is available."))
             return
         persistent._reg = dict(data["reg"])
         persistent.seen_cg = dict(data["seen_cg"])
         renpy.save_persistent()
-        renpy.notify("Progress backup restored.")
+        renpy.notify(rscript_ui_text("Progress backup restored."))
 
     def rscript_clear_progress():
         persistent._reg = {}
         persistent.seen_cg = {}
         renpy.save_persistent()
-        renpy.notify("Persistent progress cleared (backup kept).")
+        renpy.notify(rscript_ui_text("Persistent progress cleared (backup kept)."))
 
     config.say_menu_text_filter = renpy.translation.translate_string
 
 screen rscript_text_preferences(wiki=True):
+    style_prefix "rscript_menu"
     tag menu
     modal True
     key "game_menu" action Return()
@@ -240,13 +261,13 @@ screen rscript_text_preferences(wiki=True):
         vbox:
             xfill True
             spacing 3
-            text "Text Display":
+            text rscript_ui_text("Text Display"):
                 size 26
                 xalign 0.5
             fixed:
                 xfill True
                 ysize 34
-                text "Text Size" yalign 0.5
+                text rscript_ui_text("Text Size") yalign 0.5
                 hbox:
                     xalign 1.0
                     yalign 0.5
@@ -261,7 +282,7 @@ screen rscript_text_preferences(wiki=True):
             fixed:
                 xfill True
                 ysize 34
-                text "Dialogue Characters per Line" yalign 0.5
+                text rscript_ui_text("Dialogue Characters per Line") yalign 0.5
                 hbox:
                     xalign 1.0
                     yalign 0.5
@@ -276,7 +297,7 @@ screen rscript_text_preferences(wiki=True):
             fixed:
                 xfill True
                 ysize 34
-                text "Overlay Characters per Line" yalign 0.5
+                text rscript_ui_text("Overlay Characters per Line") yalign 0.5
                 hbox:
                     xalign 1.0
                     yalign 0.5
@@ -291,7 +312,7 @@ screen rscript_text_preferences(wiki=True):
             fixed:
                 xfill True
                 ysize 34
-                text "Line Spacing" yalign 0.5
+                text rscript_ui_text("Line Spacing") yalign 0.5
                 hbox:
                     xalign 1.0
                     yalign 0.5
@@ -306,18 +327,18 @@ screen rscript_text_preferences(wiki=True):
             vbox:
                 xfill True
                 spacing 4
-                text "Font" xalign 0.5
+                text rscript_ui_text("Font") xalign 0.5
                 text "[rscript_font_name()]":
                     size 18
                     xalign 0.5
                 hbox:
                     xalign 0.5
                     spacing 16
-                    textbutton "Previous Font" action Function(rscript_cycle_font, -1)
-                    textbutton "Next Font" action Function(rscript_cycle_font, 1)
+                    textbutton rscript_ui_text("Previous Font") action Function(rscript_cycle_font, -1)
+                    textbutton rscript_ui_text("Next Font") action Function(rscript_cycle_font, 1)
 
             if len(rscript_languages) > 1:
-                text "Language" xalign 0.5
+                text rscript_ui_text("Language") xalign 0.5
                 hbox:
                     xalign 0.5
                     spacing 14
@@ -330,25 +351,26 @@ screen rscript_text_preferences(wiki=True):
                 hbox:
                     xalign 0.5
                     spacing 14
-                    text "Wiki"
-                    textbutton "On" action Function(rscript_set_wiki, True) selected persistent.rscript_wiki_mode
-                    textbutton "Off" action Function(rscript_set_wiki, False) selected not persistent.rscript_wiki_mode
+                    text rscript_ui_text("Wiki")
+                    textbutton rscript_ui_text("On") action Function(rscript_set_wiki, True) selected persistent.rscript_wiki_mode
+                    textbutton rscript_ui_text("Off") action Function(rscript_set_wiki, False) selected not persistent.rscript_wiki_mode
 
-            text "Persistent Progress" xalign 0.5
+            text rscript_ui_text("Persistent Progress") xalign 0.5
             hbox:
                 xalign 0.5
                 spacing 14
-                textbutton "Save Backup" action Function(rscript_save_progress)
-                textbutton "Load Backup" action Function(rscript_load_progress)
-                textbutton "Clear Progress":
+                textbutton rscript_ui_text("Save Backup") action Function(rscript_save_progress)
+                textbutton rscript_ui_text("Load Backup") action Function(rscript_load_progress)
+                textbutton rscript_ui_text("Clear Progress"):
                     action Confirm(
                         "Clear persistent progress? The backup will be kept.",
                         Function(rscript_clear_progress))
-            textbutton "Back":
+            textbutton rscript_ui_text("Back"):
                 xalign 0.5
                 action Return()
 
 screen confirm(message, yes_action, no_action):
+    style_prefix "rscript_menu"
     modal True
     add Solid("#000000a0")
     frame:
@@ -358,7 +380,7 @@ screen confirm(message, yes_action, no_action):
         ypadding 26
         vbox:
             spacing 20
-            text message:
+            text rscript_ui_text(message):
                 substitute False
                 xalign 0.5
                 text_align 0.5
@@ -366,5 +388,5 @@ screen confirm(message, yes_action, no_action):
             hbox:
                 xalign 0.5
                 spacing 50
-                textbutton "Yes" action yes_action substitute False
-                textbutton "No" action no_action substitute False
+                textbutton rscript_ui_text("Yes") action yes_action substitute False
+                textbutton rscript_ui_text("No") action no_action substitute False

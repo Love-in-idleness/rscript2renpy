@@ -59,13 +59,16 @@ def main():
         (source / "scr/0001.tsc").write_text(header + '*return 0\n', encoding="utf-8")
         (source / "scr/0210.tsc").write_text(header + '*wait 1\n*return 0\n', encoding="utf-8")
         translated = patch / "scr/0000.tsc"
+        script.write_text(
+            header + '*TXT 0 0 0 0 "^g001" "本文" 1\n'
+            '*select 1 "質問" END END END END END "選択肢" "" "" "" "" 0 0 0\n'
+            ':END\n*end\n', encoding="utf-8")
         translated.write_text(
             header + '*TXT 0 0 0 0 "^g001" "译文正文" 1\n'
             '*font 44 10 20 0 0 "新增字幕"\n'
             '*select 1 "中文问题" END END END END END "中文选项" "" "" "" "" 0 0 0\n'
             ':END\n*end\n', encoding="utf-8")
-        (patch / "scr/0002.tsc").write_text(header + '*return 0\n', encoding="utf-8")
-        (patch / "scr/0210.tsc").write_text(header + '*wait 2\n*return 0\n', encoding="utf-8")
+        (patch / "scr/0210.tsc").write_text(header + '*wait 1\n*return 0\n', encoding="utf-8")
         for directory, x in ((source, 10), (patch, 30)):
             panel = directory / "grps/confscrn"
             panel.mkdir(parents=True)
@@ -79,21 +82,19 @@ def main():
         languages = ["jp", "zh=" + str(patch)]
         variants = build_sevenbridge(source, localized, languages=languages)
         game = localized / "game"
-        assert "_preferences.language == 'zh'" in variants["scr/0000.rpy"]
-        assert "jump _rscript_variant1_0000" in variants["scr/0000.rpy"]
-        assert "jump _rscript_variant0_0000" in variants["scr/0000.rpy"]
-        translated_output = (game / "tl/zh/scr/0000.rpy").read_text()
-        assert "_rscript_say ('^g001', '译文正文', 1)" in translated_output
+        translated_output = variants["scr/0000.rpy"]
+        assert "_rscript_variant" not in translated_output
+        assert "{'zh': '译文正文'}.get(_preferences.language, '本文')" in translated_output
+        assert "_rscript_say ('^g001'," in translated_output
         assert "_oload 44 10 20 0 0 '新增字幕'" in translated_output
-        assert "rscript_choice_prompt = '中文问题'" in translated_output
-        assert "'中文选项':" in translated_output
+        assert "{'zh': '中文问题'}.get(_preferences.language, '質問')" in translated_output
+        assert "{'zh': '中文选项'}.get(_preferences.language, '選択肢')" in translated_output
         assert "_preferences.language" not in variants["scr/0001.rpy"]
-        assert "jump _rscript_variant0_0001" in variants["scr/0001.rpy"]
+        assert "label _0001:" in variants["scr/0001.rpy"]
         assert not (game / "tl/zh/scr/0001.rpy").exists()
-        assert "only available" in variants["scr/0002.rpy"]
+        assert not (game / "tl/zh/scr").exists()
         assert "label _0210:\nlabel sevenbridge_cg_body:\n" in variants["scr/0210.rpy"]
-        assert "jump _rscript_variant1_0210" in variants["scr/0210.rpy"]
-        assert "_wait 2" in variants["tl/zh/scr/0210.rpy"]
+        assert "_wait 1" in variants["scr/0210.rpy"]
         gallery = (game / "engine/gallery.rpy").read_text()
         assert "call sevenbridge_cg_body" in gallery and "call _rscript_variant0_0210" not in gallery
         config = (game / "engine/language_config.rpy").read_text()
@@ -102,12 +103,22 @@ def main():
             assert (game / "tl/zh/grps/confscrn" / name).read_bytes() == (patch / "grps/confscrn" / name).read_bytes()
         layout = (game / "tl/zh/grps_layout.rpy").read_text()
         assert "'close': (30, 40, 13, 9)" in layout
-        caches = [game / "scr/0000.rpyc", game / "tl/zh/scr/0000.rpyc"]
+        caches = [game / "scr/0000.rpyc"]
         for cache in caches:
             cache.write_bytes(b"stale localized cache")
         build_sevenbridge(source, localized, languages=languages)
         assert all(not cache.exists() for cache in caches)
         assert all(path.read_bytes() == contents for path, contents in inputs.items())
+        extra = patch / "scr/0002.tsc"
+        extra.write_text(header + '*return 0\n', encoding="utf-8")
+        try:
+            build_sevenbridge(source, root / "extra-scene", languages=languages)
+        except FileNotFoundError as error:
+            assert "no matching base scenario" in str(error)
+        else:
+            raise AssertionError("unaligned extra scenario accepted")
+        assert not (root / "extra-scene").exists()
+        extra.unlink()
         for output in (patch, patch / "output"):
             try:
                 build_sevenbridge(source, output, languages=languages)

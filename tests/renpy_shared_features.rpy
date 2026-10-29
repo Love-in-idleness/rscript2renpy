@@ -18,6 +18,53 @@ python early:
         renpy.display.scenelists.init_layers()
         renpy.game.context().scene_lists = renpy.display.scenelists.SceneLists(None, renpy.game.context().images)
         renpy.display.screen.prepare_screens()
+        old_language, old_languages = _preferences.language, store.rscript_languages
+        try:
+            store.rscript_languages = [(None, "jp"), ("zh", "zh"), ("ru", "ru")]
+            assert set(rscript_ui_strings["zh"]) == set(rscript_ui_strings["ru"]) == set(rscript_ui_strings["jp"])
+            for language, heading in ((None, "文字表示"), ("jp", "文字表示"),
+                                      ("zh", "文字显示"), ("ru", "Текст"), ("custom", "Text Display")):
+                _preferences.language = language
+                renpy.show_screen("rscript_text_preferences")
+                menu = renpy.get_screen("rscript_text_preferences")
+                menu.update()
+                texts = []
+                menu.visit_all(lambda d: texts.append("".join(d.text))
+                               if isinstance(d, renpy.text.text.Text) else None)
+                assert heading in texts, (language, texts)
+                renpy.hide_screen("rscript_text_preferences")
+            # A menu return rebuilds the current line, without advancing its script.
+            _preferences.language = None
+            old_say = renpy.say
+            old_point = store.jump_back_point
+            old_speaker_override = store.rscript_speaker_images_override
+            try:
+                renpy.say = lambda *args, **kwargs: None
+                store.jump_back_point = "language-test"
+                store.rscript_speaker_images_override = True
+                execute_rscript_say("('', {'zh': '^g707中文'}.get(_preferences.language, '^g707原文'), 0)")
+                execute_rscript_append("({'zh': '追加译文'}.get(_preferences.language, '追加原文'), 0)")
+                original_registers = (dict(store._reg), dict(persistent._reg))
+                for language, expected in ((None, "原文{fast}追加原文"),
+                                           ("zh", "中文{fast}追加译文"), (None, "原文{fast}追加原文")):
+                    renpy.change_language(language)
+                    renpy.show_screen("say", who=None, what=store.last_say)
+                    screen = renpy.get_screen("say")
+                    screen.update()
+                    assert "".join(renpy.get_widget("say", "what").text) == expected
+                    assert store.last_say == expected and store.rscript_speaker == 707
+                    screen.update()
+                    assert "".join(renpy.get_widget("say", "what").text) == expected
+                    assert (dict(store._reg), dict(persistent._reg)) == original_registers
+                    renpy.hide_screen("say")
+            finally:
+                renpy.say = old_say
+                store.jump_back_point = old_point
+                store.rscript_speaker_images_override = old_speaker_override
+                rscript_dialogue_end()
+        finally:
+            store.rscript_languages = old_languages
+            renpy.change_language(old_language)
         # Complete metadata-based slots, including digit artwork and page buttons.
         original_json, original_loadable = FileJson, FileLoadable
         original_time, original_newest = FileTime, FileNewest
@@ -531,7 +578,7 @@ python early:
         title_texts = []
         title_screen.visit_all(lambda d: title_texts.append("".join(d.text))
             if isinstance(d, renpy.text.text.Text) else None)
-        assert "Text Display" in title_texts
+        assert rscript_ui_text("Text Display") in title_texts
         renpy.hide_screen("rscript_title_preferences")
         # <NN> chooses the requested skin for both prompts and answers, without
         # discarding translated text or disturbing Forest image-only choices.
@@ -608,7 +655,7 @@ python early:
         assert "Text Speed" not in texts, texts
         for caption in ("Previous Font", "Next Font", "Save Backup",
                         "Load Backup", "Clear Progress", "Back"):
-            assert caption in captions, captions
+            assert rscript_ui_text(caption) in captions, captions
         renpy.hide_screen("rscript_text_preferences")
         renpy.show_screen("say", who=None, what="甲乙。", center=True)
         renpy.get_screen("say").update()

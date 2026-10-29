@@ -263,6 +263,7 @@ screen rscript_speaker(who):
             pos namepos
 
 screen say(who, what, center=False):
+    $ who, what, center = rscript_live_dialogue(who, what, center)
     $ boxstate = rscript_textbox_state()
     $ textbox = rscript_layouts().get("tbox%02d" % cur_textbox, {})
     $ textpos = textbox.get("items", {}).get("text", (34, 12))

@@ -95,7 +95,7 @@ def compile_scene(source: Path | RScriptTsc, patches=(), *, zero=False, zero_tit
         original = tsc.string(item.operands[index])
         if item.opcode == 14:
             original = menu_text(original)
-        kind = ({14: {1: "prompt"}, 32: {5: "oload"},
+        kind = ({14: {1: "prompt"}, 32: {5: "oload"}, 81: {4: "say_name", 5: "say_body"},
                  82: {4: "append"}}.get(item.opcode, {}).get(index)
                 or "choice%d" % (index - 7))
         return patch_text_expression(patch_texts, item, kind, original)[0]
@@ -239,7 +239,7 @@ def compile_scene(source: Path | RScriptTsc, patches=(), *, zero=False, zero_tit
             if values[1]:
                 lines.append("    _voice %s 0 0 0" % operands[1])
             if modern:
-                raw = "(%r, %r, %s)" % (tsc.string(values[4]), tsc.string(values[5]), operands[6])
+                raw = "(%s, %s, %s)" % (text(item, 4), text(item, 5), operands[6])
                 if any(values[index] for index in (0, 2, 3)):
                     lines.append("    # CodeX TXT box/voice mode operands %s are not implemented." % " ".join(operands[:4]))
             command = "say" + (" " + language if language else "") if early else prefix + "_say"

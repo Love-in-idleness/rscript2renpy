@@ -27,6 +27,7 @@ init -100 python:
     rscript_ui = {"show_speaker": True, "speaker_pos": (0, 11),
                   "text_pos": (147, 11), "textbox_size": (800, 130),
                   "textbox_opacity": 128 / 255.0,
+                  "game_text_settings": False,
                   "selected_plain_folders": ("confscrn",)}
 
 init -130 python:
