@@ -4,8 +4,9 @@ from pathlib import Path
 import re
 import wave
 
-from build_port import copy_file, copy_tree, write_scenario
+from build_port import copy_file, write_scenario
 from grps_layout import ui_image, IMAGE_SUFFIXES
+from port_resources import copy_assets
 from khime_tsc import compile_scene, read_tsc
 from file_install import reject_overlap
 
@@ -79,10 +80,11 @@ def install_zero(resources: Path, patches, game: Path, content: str, force: bool
                          *((patch, game / "tl" / language) for language, patch in patches)]:
         for folder in IMAGE_FOLDERS:
             output = target / "khime_zero" / folder
-            copy_tree(root / folder, output, {*IMAGE_SUFFIXES, ".xml"}, force)
+            copy_assets(root / folder, (*("*" + suffix for suffix in IMAGE_SUFFIXES), "*.xml"),
+                        output, force=force, metadata=True)
         for folder in ("bgm", "wav", "voice"):
             output = target / "khime_zero" / folder
-            copy_tree(root / folder, output, {".ogg"}, force)
+            copy_assets(root / folder, "*.ogg", output, force=force, metadata=True)
             if folder == "bgm":
                 for wav in (root / folder).glob("*.WAV"):
                     if wav.with_suffix(".ogg").is_file():

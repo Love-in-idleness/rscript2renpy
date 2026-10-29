@@ -10,9 +10,9 @@ from bmp_fixture import bmp_v4
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "port_template"))
-from build_port import copy_tree, validate_resources
-from grps_layout import collect_layout, IMAGE_SUFFIXES, ui_image
-from port_resources import copy_assets, copy_language_assets
+from build_port import validate_resources
+from grps_layout import collect_layout, ui_image
+from port_resources import RESOURCE_PATTERNS, copy_assets, copy_language_assets
 
 
 def fails(action, text):
@@ -52,7 +52,7 @@ def main():
         assert collect_layout(source)["tbox01"]["items"]["back"] == (4, 5, 3, 1)
         output = project / "game/grps"
         for _ in range(2):
-            copy_tree(source / "grps", output, set(IMAGE_SUFFIXES) | {".xml"}, False)
+            copy_assets(source / "grps", RESOURCE_PATTERNS, output, force=False, metadata=True)
             assert (output / "tbox01/back.BMP").read_bytes() == bmp_v4()
             assert not (output / "tbox01/back.png").exists()
             assert (output / "ef11.msk").read_bytes() == (source / "grps/ef11.msk").read_bytes()
@@ -61,10 +61,10 @@ def main():
         assert (project / "game/tl/fixture/grps/ef11.msk").is_file()
         stale = output / "tbox01/back.PNG"
         stale.write_bytes(b"old generated PNG")
-        fails(lambda: copy_tree(source / "grps", output, set(IMAGE_SUFFIXES), True), "obsolete converted PNG")
+        fails(lambda: copy_assets(source / "grps", RESOURCE_PATTERNS, output), "obsolete converted PNG")
         assert stale.read_bytes() == b"old generated PNG"
         Image.new("RGB", (3, 1)).save(folder / "back.PNG")
-        copy_tree(source / "grps", output, set(IMAGE_SUFFIXES), True)
+        copy_assets(source / "grps", RESOURCE_PATTERNS, output)
         assert stale.read_bytes() == (folder / "back.PNG").read_bytes()
         raw = root / "raw"
         raw.mkdir()

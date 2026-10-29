@@ -19,6 +19,9 @@ LiarsoftTool normalizes CodeX BMP inverse alpha. This project copies BMP/MSK dir
 
 Generated scripts live in `game/scr/`, runtime/UI in `game/engine/`. Media keep their original directory names. Language assets go in `game/tl/<language>/`.
 
+Base resources and language packages use the same media selection rules, ignoring extension case; OGG takes precedence over WAV with the same name in the same directory.
+The original-language label and patch labels must be distinct, and patch paths must name existing directories.
+
 ## Start an adapter
 
 1. Create a game directory without forking `runtime/` or `port_template/`.

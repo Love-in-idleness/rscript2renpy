@@ -5,8 +5,11 @@ from fnmatch import fnmatch
 import json
 import re
 import shutil
-from grps_layout import collect_layout
+from grps_layout import collect_layout, IMAGE_SUFFIXES
 from file_install import copy_file, reject_overlap, write_text
+
+RESOURCE_PATTERNS = (*("*" + suffix for suffix in IMAGE_SUFFIXES),
+                     "*.ogg", "*.wav", "*.mpg", ".meta.xml")
 
 
 def write_language_config(game: Path, labels, keywords, images=None) -> None:
@@ -33,13 +36,7 @@ def copy_language_assets(patch: Path, language: str, game: Path, base: Path | No
         if folder.name in {"engine", "scr", "scenario", "saves", "tl"} or folder.name.startswith("."):
             continue
         output = target / folder.name
-        copy_assets(folder, ("*.png", "*.jpg", "*.webp", "*.bmp", "*.msk", "*.ogg", ".meta.xml"), output)
-        for asset in folder.rglob("*.wav"):
-            if not asset.with_suffix(".ogg").is_file():
-                destination = output / asset.relative_to(folder)
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                copy_file(asset, destination, force=True, metadata=False)
-    copy_movies(patch / "mov", target / "mov")
+        copy_assets(folder, RESOURCE_PATTERNS, output)
     if (patch / "keywords.json").is_file():
         read_keywords(patch / "keywords.json")
         copy_file(patch / "keywords.json", target / "keywords.json", force=True, metadata=False)
@@ -121,26 +118,39 @@ def parse_language_options(specs: list[str]) -> tuple[str | None,
             raise ValueError("invalid language name: %s" % language)
         if language in names:
             raise ValueError("duplicate language patch: %s" % language)
+        if not folder:
+            raise ValueError("language patch directory is empty: %s" % language)
         patch = Path(folder).resolve()
         if not patch.is_dir():
             raise FileNotFoundError("language patch directory not found: %s" % patch)
         names.add(language)
         patches.append((language, patch))
+    if marker in names:
+        raise ValueError("original language and patch use the same name: %s" % marker)
     return marker, patches
 
 
-def copy_assets(source: Path, pattern: str | tuple[str, ...], target: Path) -> None:
+def copy_assets(source: Path, pattern: str | tuple[str, ...], target: Path, *,
+                force: bool = True, metadata: bool = False) -> int:
     """Copy one or several filename patterns with a single directory walk."""
     if not source.is_dir():
-        return
-    assets = (source.rglob(pattern) if isinstance(pattern, str) else
-              (asset for asset in source.rglob("*")
-               if asset.is_file() and any(fnmatch(asset.name.lower(), item) for item in pattern)))
+        return 0
+    patterns = (pattern,) if isinstance(pattern, str) else pattern
+    patterns = tuple(item.lower() for item in patterns)
+    assets = sorted(asset for asset in source.rglob("*")
+                    if asset.is_file() and any(fnmatch(asset.name.lower(), item)
+                                              for item in patterns))
+    ogg = {(asset.parent, asset.stem.lower()) for asset in assets
+           if asset.suffix.lower() == ".ogg"}
+    copied = 0
     for asset in assets:
+        if asset.suffix.lower() == ".wav" and (asset.parent, asset.stem.lower()) in ogg:
+            continue
         output = target / asset.relative_to(source)
         check_native_image(asset, output)
-        output.parent.mkdir(parents=True, exist_ok=True)
-        copy_file(asset, output, force=True, metadata=False)
+        copy_file(asset, output, force=force, metadata=metadata)
+        copied += 1
+    return copied
 
 
 def check_native_image(asset: Path, output: Path) -> None:

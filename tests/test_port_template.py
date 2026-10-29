@@ -17,7 +17,7 @@ from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout  # noqa: E402
 from rscript_tsc import read_tsc  # noqa: E402
-from port_resources import copy_assets  # noqa: E402
+from port_resources import RESOURCE_PATTERNS, copy_assets, copy_language_assets, parse_language_options  # noqa: E402
 
 
 def main() -> None:
@@ -45,6 +45,39 @@ def main() -> None:
         copy_assets(assets, ".meta.xml", root / "metadata-only")
         assert (root / "metadata-only/nested/.meta.xml").read_bytes() == b"nested/.meta.xml"
         assert not (root / "metadata-only/a.png").exists()
+        copy_assets(assets, "*.PNG", root / "single-pattern")
+        assert (root / "single-pattern/B.PNG").read_bytes() == b"B.PNG"
+        package = root / "package"
+        for name in ("bgm/Track01.WAV", "bgm/track01.OGG", "voice/0002.WaV",
+                     "grpo/nested/image.WEBP", "grpo/nested/.meta.xml", "mov/0001.MPG"):
+            asset = package / name
+            asset.parent.mkdir(parents=True, exist_ok=True)
+            asset.write_bytes(name.encode("utf-8"))
+        for folder in package.iterdir():
+            copy_assets(folder, RESOURCE_PATTERNS, root / "base-assets" / folder.name,
+                        force=False, metadata=True)
+        copy_language_assets(package, "zh", root / "patched/game")
+        def contents(directory):
+            return {path.relative_to(directory): path.read_bytes()
+                    for path in directory.rglob("*") if path.is_file() and
+                    path.suffix != ".rpy"}
+        base_assets = contents(root / "base-assets")
+        assert base_assets == contents(root / "patched/game/tl/zh")
+        assert Path("bgm/Track01.WAV") not in base_assets
+        assert base_assets[Path("voice/0002.WaV")] == b"voice/0002.WaV"
+        # Explicitly requesting only WAV still copies the requested original.
+        copy_assets(package / "bgm", "*.wav", root / "wav-only")
+        assert (root / "wav-only/Track01.WAV").is_file()
+        assert parse_language_options(["jp", "zh=" + str(package)]) == ("jp", [("zh", package)])
+        for specs in (["zh="], ["zh", "zh=" + str(package)],
+                      ["zh=" + str(package), "zh"],
+                      ["zh=" + str(package), "zh=" + str(package)]):
+            try:
+                parse_language_options(specs)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("ambiguous language options accepted: %r" % specs)
         choices = root / "choices.tsc"
         choices.write_text(
             ';@gsc-byte-format modern-36\n;@gsc-schema modern\n'

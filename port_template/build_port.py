@@ -17,7 +17,7 @@ from install_runtime import (install, copy_file, write_script,
 from effect_compat import flatten_unsupported_effects  # noqa: E402
 from text_compat import flatten_unsupported_text_controls  # noqa: E402
 from grps_layout import collect_layout, ui_image, IMAGE_SUFFIXES  # noqa: E402
-from port_resources import (check_native_image, read_keywords,
+from port_resources import (RESOURCE_PATTERNS, copy_assets, read_keywords,
                             copy_language_assets, write_language_config)  # noqa: E402
 from tsc_patches import scenario_sources  # noqa: E402
 from file_install import reject_overlap, write_text  # noqa: E402
@@ -139,22 +139,6 @@ def install_icon(source: Path, project: Path, force: bool = False) -> None:
             copy_file(generated, project / name, force)
 
 
-def copy_tree(source: Path, target: Path, suffixes: set[str], force: bool) -> int:
-    if not source.is_dir():
-        return 0
-    copied = 0
-    for path in sorted(item for item in source.rglob("*") if item.is_file()):
-        if path.suffix.lower() not in suffixes:
-            continue
-        if path.suffix.lower() == ".wav" and path.with_suffix(".ogg").is_file():
-            continue  # Embedded Ogg was extracted; copy the playable file only.
-        relative = path.relative_to(source)
-        check_native_image(path, target / relative)
-        copy_file(path, target / relative, force)
-        copied += 1
-    return copied
-
-
 def copy_engine_file(source: Path, game: Path, force: bool) -> None:
     destination = game / "engine" / source.name
     reject_legacy_paths(game, (source.name, source.with_suffix(".rpyc").name))
@@ -203,10 +187,7 @@ def install_base(resources: Path, project: Path, force: bool = False) -> tuple[i
         if folder.name in {"engine", "scr", "scenario", "saves", "tl"} or folder.name.startswith("."):
             continue
         output = game / folder.name
-        copied += copy_tree(folder, output, {*IMAGE_SUFFIXES, ".ogg", ".wav", ".mpg"}, force)
-        for metadata in folder.rglob(".meta.xml"):
-            copy_file(metadata, output / metadata.relative_to(folder), force)
-            copied += 1
+        copied += copy_assets(folder, RESOURCE_PATTERNS, output, force=force, metadata=True)
     keywords = resources / "keywords.json"
     if keywords.is_file():
         read_keywords(keywords)  # Validate before enabling clickable links.
