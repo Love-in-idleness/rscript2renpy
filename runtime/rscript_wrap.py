@@ -1,5 +1,6 @@
 """RScript kinsoku rules, operating on already shaped glyph advances."""
 
+import json
 import re
 
 
@@ -9,18 +10,34 @@ def ruby_markup(text):
                   lambda m: "{rb}%s{/rb}{rt}%s{/rt}" % (
                       (m[1], m[2]) if m[1] is not None else (m[3], m[4])), text)
 
-NO_LINE_START = frozenset(
-    " '\".,?!)}]"
-    "\u3000、。，．？！ー～…）〕］｝〉》」』】’”：；％·〃々〗℃′″"
-    "っぁぃぅぇぉゃゅょァィゥェォャュョ"
-    "»“:;%‰°–—-\u00a0™®"
-)
-NO_LINE_END = frozenset(
-    "‘“（〔［｛〈《「『【〖゛«„([{№§$€"
-)
+def parse_kinsoku(text):
+    """Read the same version-1 rule format as LiarsoftTool's runtime."""
+    def unique_fields(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate kinsoku key: %s" % key)
+            result[key] = value
+        return result
+
+    data = json.loads(text, object_pairs_hook=unique_fields)
+    if (not isinstance(data, dict) or
+            set(data) != {"version", "no_line_start", "no_line_end"} or
+            type(data["version"]) is not int or data["version"] != 1):
+        raise ValueError("kinsoku requires version 1 and both character sets")
+    values = [data[key] for key in ("no_line_start", "no_line_end")]
+    if any(not isinstance(value, str) for value in values):
+        raise ValueError("kinsoku character sets must be strings")
+    if any(ord(char) == 0 or 0xd800 <= ord(char) <= 0xdfff or ord(char) > 0xffff
+           for value in values for char in value):
+        raise ValueError("kinsoku rule characters must be non-NUL BMP characters")
+    rules = tuple(frozenset(value) for value in values)
+    if rules[0] & rules[1]:
+        raise ValueError("kinsoku character sets overlap")
+    return rules
 
 
-def glyph_breaks(glyphs, limit, ruby_atomic=True):
+def glyph_breaks(glyphs, limit, rules, ruby_atomic=True):
     """Return indices of line starts. Never mutate advances or discard glyphs."""
     units = []
     index = 0
@@ -41,43 +58,34 @@ def glyph_breaks(glyphs, limit, ruby_atomic=True):
         elif getattr(first, "ruby", 0) >= 2:
             continue
         units.append((start, advance, chr(first.character), chr(last.character)))
-    # Keep both properties: e.g. “ belongs to both sets.
-    no_start = [first in NO_LINE_START for _, _, first, _ in units]
-    no_end = [last in NO_LINE_END for _, _, _, last in units]
+    no_start = [first in rules[0] for _, _, first, _ in units]
+    no_end = [last in rules[1] for _, _, _, last in units]
     starts = []
     start = 0
     width = 0.0
     hanging = False
+    boundary = 0
+    boundary_width = 0.0
     for index, (_, advance, _, _) in enumerate(units):
+        if index > start and not no_end[index - 1] and not no_start[index]:
+            boundary, boundary_width = index, width
         if advance <= 0 or width + advance <= limit or index == start:
             # An oversized first glyph must still be consumed.
             width += advance
             continue
-        if not hanging and (width < limit or no_start[index]):
-            # Forest starts a full glyph while its pen position is still
-            # inside the line. It may extend beyond the edge once, just like
-            # a forbidden line-start glyph at the exact edge.
+        if no_start[index] or (not hanging and width < limit):
+            # Keep an entire punctuation run on its preceding line.
             width += advance
             hanging = True
             continue
-        if index - 1 > start and no_end[index - 1]:
-            # Move exactly one glyph back, never recursively retreat.
-            start = index - 1
+        if boundary > start:
+            # Move the whole opening-bracket run to the last legal boundary.
+            start = boundary
             starts.append(start)
-            width = units[start][1]
-            hanging = False
-            if width + advance <= limit:
-                width += advance
-                continue
-            if width < limit or no_start[index]:
-                width += advance
-                hanging = True
-                continue
-        # A single opening glyph cannot be moved to an empty identical line.
-        start = index
-        starts.append(start)
-        width = advance
-        hanging = False
+            width -= boundary_width
+        # An indivisible run may exceed the limit, but must still progress.
+        width += advance
+        hanging = width > limit
     return [units[index][0] for index in starts]
 
 

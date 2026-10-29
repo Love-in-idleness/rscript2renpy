@@ -28,7 +28,8 @@ retains height 14 and weight 700; the face at `0x4690b0` remains `ＭＳ ゴシ�
 
 The kinsoku classifier at `0x43e450` uses CP936 bytes. Compared with the existing
 shared rules, it adds `：；％·〃々〗℃′″` to forbidden line starts and `〖` to
-forbidden line ends. These characters are now included in shared wrapping.
+forbidden line ends. This describes the native classifier; ports now use the
+[shared JSON rules](../docs/TEXT_WRAPPING.en.md) instead of merging legacy tables per game.
 The remaining code, built-in configuration, and fixed-text data are unchanged.
 This sample therefore needs no extra EXE text mapping and provides no evidence
 for changing menu actions, galleries, or text geometry.

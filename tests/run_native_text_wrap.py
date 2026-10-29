@@ -17,7 +17,7 @@ def main():
         (game / "engine").mkdir()
         shutil.copy2(ROOT / "runtime/__init__.py", game / "engine/__init__.py")
         for name in ("00_debug.rpy", "00_rscript_wrap.rpy", "01_util.rpy", "05_rscript_text.rpy",
-                     "rscript_wrap.py"):
+                     "rscript_wrap.py", "kinsoku.json"):
             shutil.copy2(ROOT / "runtime" / name, game / "engine" / name)
         shutil.copy2(ROOT / "tests" / "renpy_text_wrap.rpy", game)
         for name in ("NotoSansCJKjp-Regular.otf", "NotoSansCJK-Light.ttc",

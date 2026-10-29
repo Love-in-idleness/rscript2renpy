@@ -1,6 +1,11 @@
 default persistent.rscript_say_line_chars = rscript_say_line_chars_default
 default persistent.rscript_oload_line_chars = 20
 
+init -150 python:
+    with renpy.open_file("engine/kinsoku.json") as rscript_rules_file:
+        rscript_kinsoku_rules = rscript_wrap.parse_kinsoku(
+            rscript_rules_file.read().decode("utf-8"))
+
 python early:
     import builtins
     import math
@@ -88,6 +93,7 @@ python early:
                 # this instance's style avoids a global style.rebuild() and
                 # prevents an existing _oload from retaining its old font.
                 prefix = self.style.prefix
+                vertical = box.get("vertical", self.rscript_style.vertical)
                 self.style = self.rscript_style.copy()
                 self.style.font = font
                 slot_font = getattr(store, "rscript_font_slots", {}).get(box.get("font_slot"))
@@ -96,12 +102,12 @@ python early:
                 self.style.size = size
                 if "vertical" in box:
                     self.style.vertical = box["vertical"]
-                    if box["vertical"]:
-                        self.style.shaper = "harfbuzz"
                     rect = box["text_rect"]
                     self.style.pos = (rect[0] + rect[2], rect[1]) if box["vertical"] else rect[:2]
                     self.style.xanchor = 1.0 if box["vertical"] else 0.0
                     self.style.xmaximum, self.style.ymaximum = rect[2:]
+                if vertical:
+                    self.style.shaper = "harfbuzz"
                 self.style.line_spacing = (spacing - getattr(store, "rscript_line_spacing_default", 7)
                     if "pitch" in box and getattr(store, "rscript_native_text_metrics", False) else spacing)
                 if "alignment" in box and not self.rscript_style.text_align:
@@ -228,7 +234,7 @@ python early:
                 metrics = {name: getattr(self, name) for name in names}
                 color = self.color
             super(RScriptTextSegment, self).take_style(style, layout, context)
-            if shared and context is None and "vertical" in rscript_textbox_state():
+            if shared and context is None:
                 # SDK TextSegment does not inherit style.vertical; the font
                 # needs vertical glyph forms before the final layout rotation.
                 self.vertical = style.vertical
@@ -265,7 +271,7 @@ python early:
             extent = rect[3 if text.style.vertical else 2] if rect else 0
             if extent > 0:
                 limit = min(limit, layout.scale(extent))
-        for index in rscript_wrap.glyph_breaks(glyphs, limit,
+        for index in rscript_wrap.glyph_breaks(glyphs, limit, rscript_kinsoku_rules,
                 ruby_atomic=not rscript_native_ruby_enabled(text)):
             glyphs[index].split = 1
 

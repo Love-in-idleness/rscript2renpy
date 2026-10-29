@@ -134,7 +134,8 @@ def main() -> None:
         project = Path(temporary)
         (project / "game").mkdir()
         installed = install(project)
-        assert len(installed) == 25
+        assert len(installed) == 26
+        assert (project / "game/engine/kinsoku.json").read_bytes() == (ROOT / "runtime/kinsoku.json").read_bytes()
         assert (project / "game" / "engine" / "rscript_wrap.py").is_file()
         assert all(path.is_file() for path in installed)
         assert (project / "game" / "engine" / "gui" / "rscript_cursor.png").is_file()

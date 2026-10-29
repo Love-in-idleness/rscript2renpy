@@ -111,7 +111,16 @@ python early:
             else:
                 store.rscript_text_fonts = original_faces
         text, layout = shaped("甲乙。！")
-        assert lines(layout) == ["甲乙。", "！"], lines(layout)
+        assert lines(layout) == ["甲乙。！"], lines(layout)
+        for kind in ("say", "oload"):
+            for vertical in (False, True):
+                probe, probe_layout = shaped("甲乙。！丙", kind=kind, vertical=vertical)
+                assert lines(probe_layout) == ["甲乙。！", "丙"]
+                assert all(segment.vertical == vertical for paragraph in probe_layout.paragraphs
+                           for segment, _ in paragraph)
+                if vertical:
+                    assert probe.style.shaper == "harfbuzz"
+                assert lines(shaped("甲（「乙", kind=kind, vertical=vertical)[1]) == ["甲", "（「乙"]
         assert layout.size[0] >= 66  # overflow glyph is not clipped
         assert lines(shaped("甲（乙")[1]) == ["甲", "（乙"]
         assert lines(shaped("甲（")[1]) == ["甲（"]
@@ -137,13 +146,13 @@ python early:
         assert spaced.paragraph_glyphs[0][0].advance == 25
         _, switched = shaped("W{font=DejaVuSans.ttf}W{/font}", chars=20)
         assert switched.paragraph_glyphs[0][0].advance != switched.paragraph_glyphs[0][1].advance
-        for char in "\u3000\u00a0っ»—":
+        for char in "\u3000っ»ッヵヶㇰ・‥゛":
             _, sample = shaped("甲乙" + char + "丙")
             assert lines(sample) == ["甲乙" + char, "丙"], lines(sample)
-        for char in "：；％·〃々〗℃′″":
+        for char in "：；％々〗℃′″":
             assert lines(shaped("甲乙" + char + "丙")[1]) == ["甲乙" + char, "丙"]
         assert lines(shaped("甲〖乙")[1]) == ["甲", "〖乙"]
-        assert lines(shaped("甲乙“")[1]) == ["甲乙“"]
+        assert lines(shaped("甲乙“")[1]) == ["甲乙", "“"]
         assert lines(shaped("甲乙“丙")[1]) == ["甲乙", "“丙"]
         # Explicit breaks reset hanging, and nested links retain token order.
         assert lines(shaped("甲乙。\n\n{a=https://example.test}{b}甲乙。{/b}{/a}")[1]) == ["甲乙。", "甲乙。"]
@@ -203,7 +212,7 @@ python early:
         text.refresh_settings()
         changed = renpy.text.text.Layout(text, 800, 600, {},
                                         drawable_res=False, size_only=True)
-        assert lines(changed) == ["甲", "乙。", "！"], lines(changed)
+        assert lines(changed) == ["甲", "乙。！"], lines(changed)
         # The same object is invalidated when the font or language changes.
         old_signature = text.rscript_settings
         gui.text_font = "DejaVuSans.ttf"
